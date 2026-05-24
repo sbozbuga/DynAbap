@@ -3,7 +3,7 @@ CLASS lcl_test DEFINITION FOR TESTING
   RISK LEVEL HARMLESS.
 
   PRIVATE SECTION.
-    DATA: cut TYPE REF TO /cdti/cl_repair_print_engine.
+    DATA: cut TYPE REF TO /ctdi/cl_repair_print_engine.
 
     METHODS setup.
     METHODS test_invalid_repair FOR TESTING.
@@ -28,14 +28,14 @@ CLASS lcl_test IMPLEMENTATION.
   ENDMETHOD.
 
   METHOD test_missing_customizing.
-    " Test that calling a non-configured or missing AUART repair raises a /cdti/cx_no_config_found exception
+    " Test that calling a non-configured or missing AUART repair raises a /ctdi/cx_no_config_found exception
     TRY.
         cut->print( iv_repair_id = '9999999999' ).
         cl_abap_unit_assert=>fail( msg = 'Should have raised exception for missing configuration' ).
-      CATCH /cdti/cx_no_config_found.
+      CATCH /ctdi/cx_no_config_found.
         " Success: correct fallback exception successfully raised
       CATCH cx_root.
-        cl_abap_unit_assert=>fail( msg = 'Incorrect exception raised instead of /cdti/cx_no_config_found' ).
+        cl_abap_unit_assert=>fail( msg = 'Incorrect exception raised instead of /ctdi/cx_no_config_found' ).
     ENDTRY.
   ENDMETHOD.
 

@@ -1,4 +1,4 @@
-CLASS /cdti/cx_no_config_found DEFINITION
+CLASS /ctdi/cx_no_config_found DEFINITION
   PUBLIC
   INHERITING FROM cx_static_check
   FINAL
@@ -11,5 +11,5 @@ ENDCLASS.
 
 
 
-CLASS /cdti/cx_no_config_found IMPLEMENTATION.
+CLASS /ctdi/cx_no_config_found IMPLEMENTATION.
 ENDCLASS.

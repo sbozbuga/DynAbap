@@ -1,4 +1,4 @@
-CLASS /cdti/cl_repair_print_engine DEFINITION
+CLASS /ctdi/cl_repair_print_engine DEFINITION
   PUBLIC
   FINAL
   CREATE PUBLIC .
@@ -9,25 +9,25 @@ CLASS /cdti/cl_repair_print_engine DEFINITION
         !iv_repair_id TYPE vbeln_va
         !iv_save_as_pdf TYPE abap_bool DEFAULT abap_false
       RAISING
-        /cdti/cx_no_config_found
+        /ctdi/cx_no_config_found
         cx_static_check.
 
   PROTECTED SECTION.
   PRIVATE SECTION.
-    TYPES: tt_config_buffer TYPE HASHED TABLE OF /cdti/sd_repair_form WITH UNIQUE KEY auart.
+    TYPES: tt_config_buffer TYPE HASHED TABLE OF /ctdi/sd_repair_form WITH UNIQUE KEY auart.
 
     DATA: mt_config_buffer TYPE tt_config_buffer.
 ENDCLASS.
 
 
 
-CLASS /cdti/cl_repair_print_engine IMPLEMENTATION.
+CLASS /ctdi/cl_repair_print_engine IMPLEMENTATION.
 
   METHOD print.
     DATA: lv_auart    TYPE auart,
-          ls_config   TYPE /cdti/sd_repair_form,
+          ls_config   TYPE /ctdi/sd_repair_form,
           lo_instance TYPE REF TO object,
-          lo_provider TYPE REF TO /cdti/if_repair_print_provider.
+          lo_provider TYPE REF TO /ctdi/if_repair_print_provider.
 
     " 1. Retrieve repair type from standard Sales Document Header (VBAK)
     SELECT SINGLE auart FROM vbak INTO @lv_auart WHERE vbeln = @iv_repair_id.
@@ -40,13 +40,13 @@ CLASS /cdti/cl_repair_print_engine IMPLEMENTATION.
     READ TABLE mt_config_buffer INTO ls_config WITH KEY auart = lv_auart.
     IF sy-subrc <> 0.
       SELECT SINGLE *
-        FROM /cdti/sd_repair_form
+        FROM /ctdi/sd_repair_form
         INTO CORRESPONDING FIELDS OF @ls_config
         WHERE auart = @lv_auart.
 
       IF sy-subrc <> 0.
         " No customizing found for this Sales Repair Type - Fallback to print_old exception
-        RAISE EXCEPTION TYPE /cdti/cx_no_config_found.
+        RAISE EXCEPTION TYPE /ctdi/cx_no_config_found.
       ENDIF.
 
       " Insert into hashed buffer

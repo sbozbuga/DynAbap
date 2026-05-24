@@ -1,15 +1,15 @@
-CLASS /cdti/cl_repair_print_sample DEFINITION
+CLASS /ctdi/cl_repair_print_sample DEFINITION
   PUBLIC
   FINAL
   CREATE PUBLIC .
 
   PUBLIC SECTION.
-    INTERFACES /cdti/if_repair_print_provider.
+    INTERFACES /ctdi/if_repair_print_provider.
 
     ALIASES print
-      FOR /cdti/if_repair_print_provider~print.
+      FOR /ctdi/if_repair_print_provider~print.
     ALIASES read_data
-      FOR /cdti/if_repair_print_provider~read_data.
+      FOR /ctdi/if_repair_print_provider~read_data.
 
   PROTECTED SECTION.
   PRIVATE SECTION.
@@ -37,9 +37,9 @@ ENDCLASS.
 
 
 
-CLASS /cdti/cl_repair_print_sample IMPLEMENTATION.
+CLASS /ctdi/cl_repair_print_sample IMPLEMENTATION.
 
-  METHOD /cdti/if_repair_print_provider~read_data.
+  METHOD /ctdi/if_repair_print_provider~read_data.
     DATA: lv_kunnr_we TYPE kunnr.
 
     " 1. Fetch Repair Header and Item Data from VBAK and VBAP
@@ -87,7 +87,7 @@ CLASS /cdti/cl_repair_print_sample IMPLEMENTATION.
     SELECT SINGLE * FROM usr01 INTO @ms_usr01 WHERE bname = @sy-uname.
   ENDMETHOD.
 
-  METHOD /cdti/if_repair_print_provider~print.
+  METHOD /ctdi/if_repair_print_provider~print.
     DATA: lv_fm_name      TYPE rs38l_fnam,
           ls_outputparams TYPE sfpoutputparams,
           ls_docparams    TYPE sfpdocparams.

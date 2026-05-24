@@ -1,4 +1,4 @@
-INTERFACE /cdti/if_repair_print_provider
+INTERFACE /ctdi/if_repair_print_provider
   PUBLIC.
 
   METHODS read_data

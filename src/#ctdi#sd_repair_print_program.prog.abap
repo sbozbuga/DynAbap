@@ -1,9 +1,9 @@
 *&---------------------------------------------------------------------*
-*& Report /cdti/sd_repair_print_program
+*& Report /ctdi/sd_repair_print_program
 *&---------------------------------------------------------------------*
 *& Standard Output Determination Wrapper & Executable Repair Print
 *&---------------------------------------------------------------------*
-REPORT /cdti/sd_repair_print_program.
+REPORT /ctdi/sd_repair_print_program.
 
 " Global data structures for Output Determination (NAST is filled by standard SAP framework)
 TABLES: nast, tnapr.
@@ -20,13 +20,13 @@ SELECTION-SCREEN END OF BLOCK b1.
 *& START-OF-SELECTION (Triggered when run directly via SE38/SA38)
 *&---------------------------------------------------------------------*
 START-OF-SELECTION.
-  DATA: lo_direct_engine TYPE REF TO /cdti/cl_repair_print_engine.
+  DATA: lo_direct_engine TYPE REF TO /ctdi/cl_repair_print_engine.
 
   TRY.
       CREATE OBJECT lo_direct_engine.
       lo_direct_engine->print( iv_repair_id = p_vbeln
                                iv_save_as_pdf = p_pdf ).
-    CATCH /cdti/cx_no_config_found.
+    CATCH /ctdi/cx_no_config_found.
       " Fall back to legacy printing logic
       PERFORM print_old USING p_vbeln p_pdf.
     CATCH cx_root.
@@ -42,7 +42,7 @@ FORM entry USING ent_retco TYPE sysubrc
                  ent_screen TYPE c.
 
   DATA: lv_repair_id TYPE vbeln_va,
-        lo_engine      TYPE REF TO /cdti/cl_repair_print_engine.
+        lo_engine      TYPE REF TO /ctdi/cl_repair_print_engine.
 
   " Clear return code
   ent_retco = 0.
@@ -64,7 +64,7 @@ FORM entry USING ent_retco TYPE sysubrc
       " Call the dynamic printing method (Output Determination always defaults to Spool/Print)
       lo_engine->print( iv_repair_id = lv_repair_id ).
 
-    CATCH /cdti/cx_no_config_found.
+    CATCH /ctdi/cx_no_config_found.
       " Fall back to legacy printing logic
       PERFORM print_old USING lv_repair_id abap_false.
     CATCH cx_root.
@@ -83,7 +83,7 @@ FORM print_old USING iv_repair_id TYPE vbeln_va
                      iv_save_as_pdf TYPE abap_bool.
 
   " Place your legacy repair printing routines here.
-  " This triggers when no custom mapping exists for the Sales Repair AUART in /CDTI/SD_REPAIR_FORM.
+  " This triggers when no custom mapping exists for the Sales Repair AUART in /CTDI/SD_REPAIR_FORM.
   MESSAGE |Executing legacy printing routine (print_old) for repair { iv_repair_id }| TYPE 'I'.
 
 ENDFORM.
