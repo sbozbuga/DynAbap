@@ -6,8 +6,8 @@ CLASS zcl_contract_print_sample DEFINITION
   PUBLIC SECTION.
     INTERFACES zif_contract_print_provider.
 
-    ALIASES print_contract
-      FOR zif_contract_print_provider~print_contract.
+    ALIASES print
+      FOR zif_contract_print_provider~print.
 
   PROTECTED SECTION.
   PRIVATE SECTION.
@@ -17,7 +17,7 @@ ENDCLASS.
 
 CLASS zcl_contract_print_sample IMPLEMENTATION.
 
-  METHOD zif_contract_print_provider~print_contract.
+  METHOD zif_contract_print_provider~print.
     TYPES: BEGIN OF ty_project_info,
              vbeln       TYPE vbeln_va,
              project_id  TYPE ps_posid,

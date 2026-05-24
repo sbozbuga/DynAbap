@@ -1,7 +1,7 @@
 INTERFACE zif_contract_print_provider
   PUBLIC.
 
-  METHODS print_contract
+  METHODS print
     IMPORTING
       !iv_contract_id TYPE vbeln_va
       !iv_form_name   TYPE fpname
