@@ -3,9 +3,9 @@
  <asx:abap xmlns:asx="http://www.sap.com/abapxml" version="1.0">
   <asx:values>
    <VSEOCLASS>
-    <CLSNAME>ZCX_NO_CONFIG_FOUND</CLSNAME>
+    <CLSNAME>/CDTI/CL_REPAIR_PRINT_SAMPLE</CLSNAME>
     <LANGU>E</LANGU>
-    <DESCRIPT>Custom Exception for Missing Print Configuration</DESCRIPT>
+    <DESCRIPT>Sample Sales Repair Adobe Print Class</DESCRIPT>
     <STATE>1</STATE>
     <CLSCCINCL>X</CLSCCINCL>
     <FIXPT>X</FIXPT>

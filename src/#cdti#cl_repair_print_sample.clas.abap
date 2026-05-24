@@ -1,15 +1,15 @@
-CLASS zcl_contract_print_sample DEFINITION
+CLASS /cdti/cl_repair_print_sample DEFINITION
   PUBLIC
   FINAL
   CREATE PUBLIC .
 
   PUBLIC SECTION.
-    INTERFACES zif_contract_print_provider.
+    INTERFACES /cdti/if_repair_print_provider.
 
     ALIASES print
-      FOR zif_contract_print_provider~print.
+      FOR /cdti/if_repair_print_provider~print.
     ALIASES read_data
-      FOR zif_contract_print_provider~read_data.
+      FOR /cdti/if_repair_print_provider~read_data.
 
   PROTECTED SECTION.
   PRIVATE SECTION.
@@ -29,7 +29,7 @@ CLASS zcl_contract_print_sample DEFINITION
 
     METHODS download_pdf
       IMPORTING
-        !iv_contract_id TYPE vbeln_va
+        !iv_repair_id TYPE vbeln_va
         !iv_pdf_data    TYPE xstring
       RAISING
         cx_static_check.
@@ -37,19 +37,19 @@ ENDCLASS.
 
 
 
-CLASS zcl_contract_print_sample IMPLEMENTATION.
+CLASS /cdti/cl_repair_print_sample IMPLEMENTATION.
 
-  METHOD zif_contract_print_provider~read_data.
+  METHOD /cdti/if_repair_print_provider~read_data.
     DATA: lv_kunnr_we TYPE kunnr.
 
-    " 1. Fetch Contract Header and Item Data from VBAK and VBAP
-    SELECT SINGLE * FROM vbak INTO @ms_header WHERE vbeln = @iv_contract_id.
+    " 1. Fetch Repair Header and Item Data from VBAK and VBAP
+    SELECT SINGLE * FROM vbak INTO @ms_header WHERE vbeln = @iv_repair_id.
     IF sy-subrc <> 0.
-      " Exit if contract not found
+      " Exit if repair not found
       RETURN.
     ENDIF.
 
-    SELECT * FROM vbap INTO TABLE @mt_items WHERE vbeln = @iv_contract_id.
+    SELECT * FROM vbap INTO TABLE @mt_items WHERE vbeln = @iv_repair_id.
 
     " 1.1 Fetch Sold-to Customer master data (KNA1) using VBAK-KUNNR
     IF ms_header-kunnr IS NOT INITIAL.
@@ -58,15 +58,15 @@ CLASS zcl_contract_print_sample IMPLEMENTATION.
 
     " 1.2 Fetch Ship-to Customer from Partner table (VBPA) where Role = 'WE' (Ship-to)
     SELECT SINGLE kunnr FROM vbpa INTO @lv_kunnr_we
-      WHERE vbeln = @iv_contract_id
+      WHERE vbeln = @iv_repair_id
         AND parvw = 'WE'.
     IF sy-subrc = 0 AND lv_kunnr_we IS NOT INITIAL.
       SELECT SINGLE * FROM kna1 INTO @ms_shipto WHERE kunnr = @lv_kunnr_we.
     ENDIF.
 
-    " 1.3 Fetch Customer Project / WBS Element details linked to the contract items
-    ms_project-vbeln    = iv_contract_id.
-    ms_project-cust_ref = ms_header-bstnk. " Customer Purchase Order / Reference (often contains project/contract name)
+    " 1.3 Fetch Customer Project / WBS Element details linked to the repair items
+    ms_project-vbeln    = iv_repair_id.
+    ms_project-cust_ref = ms_header-bstnk. " Customer Purchase Order / Reference (often contains project/repair name)
 
     LOOP AT mt_items INTO DATA(ls_item) WHERE ps_psp_eln IS NOT INITIAL.
       SELECT SINGLE posid, post1 FROM prps INTO ( @ms_project-project_id, @ms_project-description )
@@ -87,7 +87,7 @@ CLASS zcl_contract_print_sample IMPLEMENTATION.
     SELECT SINGLE * FROM usr01 INTO @ms_usr01 WHERE bname = @sy-uname.
   ENDMETHOD.
 
-  METHOD zif_contract_print_provider~print.
+  METHOD /cdti/if_repair_print_provider~print.
     DATA: lv_fm_name      TYPE rs38l_fnam,
           ls_outputparams TYPE sfpoutputparams,
           ls_docparams    TYPE sfpdocparams.
@@ -174,7 +174,7 @@ CLASS zcl_contract_print_sample IMPLEMENTATION.
             err_empty_otf         = 3
             others                = 4.
         IF sy-subrc = 0.
-          download_pdf( iv_contract_id = iv_contract_id
+          download_pdf( iv_repair_id = iv_repair_id
                         iv_pdf_data    = lv_pdf_xstring ).
         ELSE.
           RAISE EXCEPTION TYPE cx_sy_dyn_call_illegal_value.
@@ -267,7 +267,7 @@ CLASS zcl_contract_print_sample IMPLEMENTATION.
 
       " If Save as PDF, trigger local download of the retrieved PDF xstring
       IF iv_save_as_pdf = abap_true AND ls_joboutput-pdf IS NOT INITIAL.
-        download_pdf( iv_contract_id = iv_contract_id
+        download_pdf( iv_repair_id = iv_repair_id
                       iv_pdf_data    = ls_joboutput-pdf ).
       ENDIF.
 
@@ -297,7 +297,7 @@ CLASS zcl_contract_print_sample IMPLEMENTATION.
 
     cl_gui_frontend_services=>file_save_dialog(
       EXPORTING
-        default_file_name    = |Repair_Contract_{ iv_contract_id }.pdf|
+        default_file_name    = |Repair_{ iv_repair_id }.pdf|
         default_extension    = 'pdf'
         file_filter          = 'PDF Files (*.pdf)|*.pdf'
       CHANGING

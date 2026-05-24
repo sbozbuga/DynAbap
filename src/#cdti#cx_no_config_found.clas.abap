@@ -1,4 +1,4 @@
-CLASS zcx_no_config_found DEFINITION
+CLASS /cdti/cx_no_config_found DEFINITION
   PUBLIC
   INHERITING FROM cx_static_check
   FINAL
@@ -11,5 +11,5 @@ ENDCLASS.
 
 
 
-CLASS zcx_no_config_found IMPLEMENTATION.
+CLASS /cdti/cx_no_config_found IMPLEMENTATION.
 ENDCLASS.

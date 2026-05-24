@@ -1,4 +1,4 @@
-CLASS zcl_contract_print_engine DEFINITION
+CLASS /cdti/cl_repair_print_engine DEFINITION
   PUBLIC
   FINAL
   CREATE PUBLIC .
@@ -6,47 +6,47 @@ CLASS zcl_contract_print_engine DEFINITION
   PUBLIC SECTION.
     METHODS print
       IMPORTING
-        !iv_contract_id TYPE vbeln_va
+        !iv_repair_id TYPE vbeln_va
         !iv_save_as_pdf TYPE abap_bool DEFAULT abap_false
       RAISING
-        zcx_no_config_found
+        /cdti/cx_no_config_found
         cx_static_check.
 
   PROTECTED SECTION.
   PRIVATE SECTION.
-    TYPES: tt_config_buffer TYPE HASHED TABLE OF zsd_contr_form WITH UNIQUE KEY auart.
+    TYPES: tt_config_buffer TYPE HASHED TABLE OF /cdti/sd_repair_form WITH UNIQUE KEY auart.
 
     DATA: mt_config_buffer TYPE tt_config_buffer.
 ENDCLASS.
 
 
 
-CLASS zcl_contract_print_engine IMPLEMENTATION.
+CLASS /cdti/cl_repair_print_engine IMPLEMENTATION.
 
   METHOD print.
     DATA: lv_auart    TYPE auart,
-          ls_config   TYPE zsd_contr_form,
+          ls_config   TYPE /cdti/sd_repair_form,
           lo_instance TYPE REF TO object,
-          lo_provider TYPE REF TO zif_contract_print_provider.
+          lo_provider TYPE REF TO /cdti/if_repair_print_provider.
 
-    " 1. Retrieve contract type from standard Sales Document Header (VBAK)
-    SELECT SINGLE auart FROM vbak INTO @lv_auart WHERE vbeln = @iv_contract_id.
+    " 1. Retrieve repair type from standard Sales Document Header (VBAK)
+    SELECT SINGLE auart FROM vbak INTO @lv_auart WHERE vbeln = @iv_repair_id.
     IF sy-subrc <> 0.
-      " Raise a generic error if contract doesn't exist
+      " Raise a generic error if repair doesn't exist
       RAISE EXCEPTION TYPE cx_sy_dyn_call_illegal_value.
     ENDIF.
 
-    " 2. Fetch Customizing configuration for the contract type (Check buffer first)
+    " 2. Fetch Customizing configuration for the repair type (Check buffer first)
     READ TABLE mt_config_buffer INTO ls_config WITH KEY auart = lv_auart.
     IF sy-subrc <> 0.
       SELECT SINGLE *
-        FROM zsd_contr_form
+        FROM /cdti/sd_repair_form
         INTO CORRESPONDING FIELDS OF @ls_config
         WHERE auart = @lv_auart.
 
       IF sy-subrc <> 0.
-        " No customizing found for this Sales Contract Type - Fallback to print_old exception
-        RAISE EXCEPTION TYPE zcx_no_config_found.
+        " No customizing found for this Sales Repair Type - Fallback to print_old exception
+        RAISE EXCEPTION TYPE /cdti/cx_no_config_found.
       ENDIF.
 
       " Insert into hashed buffer
@@ -74,10 +74,10 @@ CLASS zcl_contract_print_engine IMPLEMENTATION.
         lo_provider ?= lo_instance.
 
         " Execute method type-safely via the interface
-        lo_provider->read_data( iv_contract_id = iv_contract_id ).
+        lo_provider->read_data( iv_repair_id = iv_repair_id ).
 
         lo_provider->print(
-          iv_contract_id = iv_contract_id
+          iv_repair_id = iv_repair_id
           iv_form_name   = ls_config-form_name
           iv_form_type   = ls_config-form_type
           iv_save_as_pdf = iv_save_as_pdf ).
@@ -88,7 +88,7 @@ CLASS zcl_contract_print_engine IMPLEMENTATION.
         TRY.
             CALL METHOD lo_instance->(ls_config-method_name)
               EXPORTING
-                iv_contract_id = iv_contract_id
+                iv_repair_id = iv_repair_id
                 iv_form_name   = ls_config-form_name
                 iv_form_type   = ls_config-form_type
                 iv_save_as_pdf = iv_save_as_pdf.

@@ -3,15 +3,15 @@
  <asx:abap xmlns:asx="http://www.sap.com/abapxml" version="1.0">
   <asx:values>
    <DD02V>
-    <TABNAME>ZSD_CONTR_FORM</TABNAME>
+    <TABNAME>/CDTI/SD_REPAIR_FORM</TABNAME>
     <DDLANGUAGE>E</DDLANGUAGE>
     <TABCLASS>TRANSP</TABCLASS>
-    <DDTEXT>Sales Contract Adobe Form and Class Custom Mapping</DDTEXT>
+    <DDTEXT>Sales Repair Adobe Form and Class Custom Mapping</DDTEXT>
     <CONTFLAG>C</CONTFLAG>
     <EXCLASS>1</EXCLASS>
    </DD02V>
    <DD09L>
-    <TABNAME>ZSD_CONTR_FORM</TABNAME>
+    <TABNAME>/CDTI/SD_REPAIR_FORM</TABNAME>
     <AS4LOCAL>A</AS4LOCAL>
     <TABKAT>0</TABKAT>
     <TABART>APPL0</TABART>
