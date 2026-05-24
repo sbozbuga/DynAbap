@@ -129,12 +129,46 @@ FORM on_before_save.
       MODIFY total FROM ls_entry.
     ENDIF.
 
-    " Validate class exists in the repository
+    " 3. Validate Form Name existence in Smart Forms (STXFADM) or Adobe Forms (FPCONTEXT)
+    IF ls_entry-form_name IS NOT INITIAL.
+      SELECT SINGLE formname FROM stxfadm
+        INTO @DATA(lv_ssf_exists)
+        WHERE formname = @ls_entry-form_name.
+      IF sy-subrc <> 0.
+        SELECT SINGLE name FROM fpcontext
+          INTO @DATA(lv_fp_exists)
+          WHERE name = @ls_entry-form_name.
+        IF sy-subrc <> 0.
+          MESSAGE |Form { ls_entry-form_name } does not exist as a Smart Form or Adobe Form.| TYPE 'W'.
+        ENDIF.
+      ENDIF.
+    ENDIF.
+
+    " 4. Validate Class existence in Repository (SEOCLASS)
     SELECT SINGLE clsname FROM seoclass
-      INTO @DATA(lv_exists)
+      INTO @DATA(lv_class_exists)
       WHERE clsname = @ls_entry-class_name.
     IF sy-subrc <> 0.
-      MESSAGE |Class { ls_entry-class_name } does not exist. Create it first or use auto-generation.| TYPE 'W'.
+      MESSAGE |Class { ls_entry-class_name } does not exist in the repository.| TYPE 'W'.
+    ELSE.
+      " 5. Validate Method existence in Class Components (SEOCOMPO)
+      IF ls_entry-method_name IS NOT INITIAL.
+        SELECT SINGLE cmpname FROM seocompo
+          INTO @DATA(lv_method_exists)
+          WHERE clsname = @ls_entry-class_name
+            AND cmpname = @ls_entry-method_name.
+        IF sy-subrc <> 0.
+          " Also check if it implements interface method (e.g. /CTDI/IF_REPAIR_PRINT_PROVIDER~PRINT)
+          DATA(lv_interface_method) = |/CTDI/IF_REPAIR_PRINT_PROVIDER~{ ls_entry-method_name }|.
+          SELECT SINGLE cmpname FROM seocompo
+            INTO @lv_method_exists
+            WHERE clsname = @ls_entry-class_name
+              AND cmpname = @lv_interface_method.
+          IF sy-subrc <> 0.
+            MESSAGE |Method { ls_entry-method_name } does not exist in class { ls_entry-class_name }.| TYPE 'W'.
+          ENDIF.
+        ENDIF.
+      ENDIF.
     ENDIF.
   ENDLOOP.
 
