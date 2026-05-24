@@ -40,13 +40,15 @@ ENDCLASS.
 CLASS /ctdi/cl_repair_print_sample IMPLEMENTATION.
 
   METHOD /ctdi/if_repair_print_provider~read_data.
-    DATA: lv_kunnr_we    TYPE kunnr,
-          lv_contract_id TYPE vbeln_va,
-          ls_contract_h  TYPE vbak,
-          lt_contract_i  TYPE TABLE OF vbap,
-          lv_aufnr       TYPE aufnr,
-          ls_aufk        TYPE aufk,
-          lv_kdauf       TYPE kdauf.
+    DATA: lv_kunnr_we      TYPE kunnr,
+          lv_contract_id   TYPE vbeln_va,
+          ls_contract_h    TYPE vbak,
+          lt_contract_i    TYPE TABLE OF vbap,
+          lv_aufnr         TYPE aufnr,
+          ls_aufk          TYPE aufk,
+          lv_kdauf         TYPE kdauf,
+          ls_item          TYPE vbap,
+          ls_contract_item TYPE vbap.
 
     " 1. Format input ID and check if it is a PM/CS Service Order in AUFK
     lv_aufnr = |{ iv_repair_id ALPHA = IN }|.
@@ -108,7 +110,7 @@ CLASS /ctdi/cl_repair_print_sample IMPLEMENTATION.
 
       " Fallback to Contract items if WBS was not directly maintained on the order
       IF ms_project-project_id IS INITIAL AND lv_contract_id IS NOT INITIAL.
-        LOOP AT lt_contract_i INTO DATA(ls_contract_item) WHERE ps_psp_eln IS NOT INITIAL.
+        LOOP AT lt_contract_i INTO ls_contract_item WHERE ps_psp_eln IS NOT INITIAL.
           SELECT SINGLE posid, post1 FROM prps INTO ( @ms_project-project_id, @ms_project-description )
             WHERE pspnr = @ls_contract_item-ps_psp_eln.
           IF sy-subrc = 0.
@@ -163,7 +165,7 @@ CLASS /ctdi/cl_repair_print_sample IMPLEMENTATION.
         ms_project-vbeln    = lv_contract_id. " Use contract Vbeln as key
         ms_project-cust_ref = ls_contract_h-bstnk.
 
-        LOOP AT lt_contract_i INTO DATA(ls_contract_item) WHERE ps_psp_eln IS NOT INITIAL.
+        LOOP AT lt_contract_i INTO ls_contract_item WHERE ps_psp_eln IS NOT INITIAL.
           SELECT SINGLE posid, post1 FROM prps INTO ( @ms_project-project_id, @ms_project-description )
             WHERE pspnr = @ls_contract_item-ps_psp_eln.
           IF sy-subrc = 0.
@@ -280,7 +282,7 @@ CLASS /ctdi/cl_repair_print_sample IMPLEMENTATION.
 
       " If Save as PDF, convert OTF to PDF and trigger local download
       IF iv_save_as_pdf = abap_true.
-        lt_otf[] = ls_output_data-otfdata[].
+        lt_otf = ls_output_data-otfdata.
 
         CALL FUNCTION 'CONVERT_OTF'
           EXPORTING
@@ -303,7 +305,7 @@ CLASS /ctdi/cl_repair_print_sample IMPLEMENTATION.
         ENDIF.
       ENDIF.
 
-    ELSE. " Adobe Forms (iv_form_type = 'A' or default)
+    ELSE. " Adobe Forms (default)
 
       " 2. Initialize Output Parameters (Standard SAP Interactive/Adobe Forms logic)
       ls_outputparams-connection = 'ADS'.       " Adobe Document Services default connection
