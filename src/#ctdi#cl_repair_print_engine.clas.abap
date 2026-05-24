@@ -306,6 +306,64 @@ CLASS /ctdi/cl_repair_print_engine IMPLEMENTATION.
       INTO @DATA(lv_class_exists)
       WHERE clsname = @is_entry-class_name.
     IF sy-subrc <> 0.
+      " Class does not exist! Offer to generate it on-the-fly if system modifiability and authorizations permit
+      IF check_generation_allowed( ) = abap_true.
+        DATA: lv_answer TYPE c.
+
+        CALL FUNCTION 'POPUP_TO_CONFIRM'
+          EXPORTING
+            titlebar              = 'Generate Missing Print Provider Class?'
+            text_question         = |Class { is_entry-class_name } does not exist. Do you want to generate it now?|
+            text_button_1         = 'Yes'
+            text_button_2         = 'No'
+            display_cancel_button = abap_false
+          IMPORTING
+            answer                = lv_answer
+          EXCEPTIONS
+            text_not_found        = 1
+            others                = 2.
+
+        IF sy-subrc = 0 AND lv_answer = '1'.
+          " User clicked Yes: Programmatically generate class
+          DATA: ls_class TYPE vseoclass,
+                lt_intfs TYPE seor_implementing_keys.
+
+          ls_class-clsname    = is_entry-class_name.
+          ls_class-langu      = sy-langu.
+          ls_class-descript   = |Print Provider for Contract { is_entry-vbeln }|.
+          ls_class-state      = '1'. " Active
+          ls_class-clsccincl  = 'X'.
+          ls_class-fixpt      = 'X'.
+          ls_class-unicode    = 'X'.
+          ls_class-exposure   = '2'. " Public
+
+          APPEND VALUE #( clsname    = is_entry-class_name
+                          refclsname = '/CTDI/IF_REPAIR_PRINT_PROVIDER' )
+            TO lt_intfs.
+
+          CALL FUNCTION 'SEO_CLASS_CREATE_COMPLETE'
+            EXPORTING
+              devclass   = '$TMP'     " Assign to $TMP initially
+              overwrite  = abap_false
+            CHANGING
+              class      = ls_class
+              intkey     = lt_intfs
+            EXCEPTIONS
+              others     = 1.
+
+          IF sy-subrc = 0.
+            MESSAGE |Class { is_entry-class_name } generated successfully.| TYPE 'S'.
+            RETURN. " Class now successfully generated, bypass error check
+          ELSE.
+            RAISE EXCEPTION TYPE /ctdi/cx_print_error
+              EXPORTING
+                repair_id = is_entry-vbeln
+                message   = |Failed to generate missing class: { is_entry-class_name }|.
+          ENDIF.
+        ENDIF.
+      ENDIF.
+
+      " Raise validation error if generation is skipped or not permitted (e.g. locked client)
       RAISE EXCEPTION TYPE /ctdi/cx_print_error
         EXPORTING
           repair_id = is_entry-vbeln
