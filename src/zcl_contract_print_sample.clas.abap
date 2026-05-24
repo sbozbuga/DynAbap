@@ -82,9 +82,14 @@ CLASS zcl_contract_print_sample IMPLEMENTATION.
       ls_project-description = ls_header-bstnk.
     ENDIF.
 
+    " 1.4 Fetch User Print Defaults from USR01
+    DATA: ls_usr01 TYPE usr01.
+    SELECT SINGLE * FROM usr01 INTO @ls_usr01 WHERE bname = @sy-uname.
+
     IF iv_form_type = 'S'. " Smart Forms
       DATA: lv_ssf_fm_name        TYPE rs38l_fnam,
             ls_control_parameters TYPE ssfctrlop,
+            ls_output_options     TYPE ssfcompop,
             ls_output_data        TYPE ssfcrescl,
             lt_otf                TYPE TABLE OF itcoo,
             lv_pdf_xstring        TYPE xstring,
@@ -104,6 +109,13 @@ CLASS zcl_contract_print_sample IMPLEMENTATION.
         RAISE EXCEPTION TYPE cx_sy_dyn_call_illegal_value.
       ENDIF.
 
+      " Apply user printing defaults if configured
+      IF ls_usr01-spld IS NOT INITIAL.
+        ls_output_options-tddest   = ls_usr01-spld.
+        ls_output_options-tdimmed  = ls_usr01-splg.
+        ls_output_options-tddel    = ls_usr01-spda.
+      ENDIF.
+
       " If Save as PDF is selected, retrieve OTF data instead of sending directly to spool
       IF iv_save_as_pdf = abap_true.
         ls_control_parameters-getotf    = abap_true.
@@ -114,6 +126,7 @@ CLASS zcl_contract_print_sample IMPLEMENTATION.
       CALL FUNCTION lv_ssf_fm_name
         EXPORTING
           control_parameters = ls_control_parameters
+          output_options     = ls_output_options
           is_header          = ls_header
           is_customer        = ls_customer
           is_shipto          = ls_shipto
@@ -163,6 +176,13 @@ CLASS zcl_contract_print_sample IMPLEMENTATION.
       ls_outputparams-connection = 'ADS'.       " Adobe Document Services default connection
       ls_outputparams-nodialog   = abap_true.   " Suppress print dialog for automated printing
       ls_outputparams-preview    = abap_true.    " Enable print preview
+
+      " Apply user printing defaults if configured
+      IF ls_usr01-spld IS NOT INITIAL.
+        ls_outputparams-dest   = ls_usr01-spld.
+        ls_outputparams-reqimm = ls_usr01-splg.
+        ls_outputparams-reqdel = ls_usr01-spda.
+      ENDIF.
 
       " If Save as PDF is selected, instruct ADS to return PDF data
       IF iv_save_as_pdf = abap_true.
