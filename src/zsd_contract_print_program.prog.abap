@@ -1,12 +1,34 @@
 *&---------------------------------------------------------------------*
 *& Report zsd_contract_print_program
 *&---------------------------------------------------------------------*
-*& Standard Output Determination Wrapper for Sales Contract printing
+*& Standard Output Determination Wrapper & Executable Contract Print
 *&---------------------------------------------------------------------*
 REPORT zsd_contract_print_program.
 
 " Global data structures for Output Determination (NAST is filled by standard SAP framework)
 TABLES: nast, tnapr.
+
+*&---------------------------------------------------------------------*
+*& Selection Screen Definition (For Standalone Executable Mode)
+*&---------------------------------------------------------------------*
+SELECTION-SCREEN BEGIN OF BLOCK b1 WITH FRAME TITLE TEXT-002.
+  PARAMETERS: p_vbeln TYPE vbeln_va OBLIGATORY,
+              p_pdf   TYPE abap_bool AS CHECKBOX DEFAULT abap_false.
+SELECTION-SCREEN END OF BLOCK b1.
+
+*&---------------------------------------------------------------------*
+*& START-OF-SELECTION (Triggered when run directly via SE38/SA38)
+*&---------------------------------------------------------------------*
+START-OF-SELECTION.
+  DATA: lo_direct_engine TYPE REF TO zcl_contract_print_engine.
+
+  TRY.
+      CREATE OBJECT lo_direct_engine.
+      lo_direct_engine->print( iv_contract_id = p_vbeln
+                               iv_save_as_pdf = p_pdf ).
+    CATCH cx_root.
+      MESSAGE 'Error executing dynamic contract print.' TYPE 'E'.
+  ENDTRY.
 
 *&---------------------------------------------------------------------*
 *& Form ENTRY
