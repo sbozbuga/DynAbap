@@ -124,14 +124,25 @@ CLASS /ctdi/cl_repair_print_sample IMPLEMENTATION.
   METHOD /ctdi/if_repair_print_provider~print.
     DATA: lv_fm_name      TYPE rs38l_fnam,
           ls_outputparams TYPE sfpoutputparams,
-          ls_docparams    TYPE sfpdocparams.
+          ls_docparams    TYPE sfpdocparams,
+          lv_form_type    TYPE char1.
 
     " Ensure header data is read
     IF ms_header IS INITIAL.
       RETURN.
     ENDIF.
 
-    IF iv_form_type = 'S'. " Smart Forms
+    " Dynamically detect the form type (Smart Form vs Adobe PDF Form)
+    SELECT SINGLE formname FROM stxfadm 
+      INTO @DATA(lv_ssf_name) 
+      WHERE formname = @iv_form_name.
+    IF sy-subrc = 0.
+      lv_form_type = 'S'. " Smart Form
+    ELSE.
+      lv_form_type = 'A'. " Adobe Form (Default)
+    ENDIF.
+
+    IF lv_form_type = 'S'. " Smart Forms
       DATA: lv_ssf_fm_name        TYPE rs38l_fnam,
             ls_control_parameters TYPE ssfctrlop,
             ls_output_options     TYPE ssfcompop,

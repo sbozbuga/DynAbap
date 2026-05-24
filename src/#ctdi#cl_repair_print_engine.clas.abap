@@ -79,7 +79,6 @@ CLASS /ctdi/cl_repair_print_engine IMPLEMENTATION.
         lo_provider->print(
           iv_repair_id = iv_repair_id
           iv_form_name   = ls_config-form_name
-          iv_form_type   = ls_config-form_type
           iv_save_as_pdf = iv_save_as_pdf ).
 
       CATCH cx_sy_move_cast_error.
@@ -90,7 +89,6 @@ CLASS /ctdi/cl_repair_print_engine IMPLEMENTATION.
               EXPORTING
                 iv_repair_id = iv_repair_id
                 iv_form_name   = ls_config-form_name
-                iv_form_type   = ls_config-form_type
                 iv_save_as_pdf = iv_save_as_pdf.
           CATCH cx_sy_dyn_call_error INTO DATA(lx_dyn_call).
             RAISE EXCEPTION lx_dyn_call.

@@ -6,7 +6,6 @@ CLASS lcl_mock_print_provider DEFINITION CREATE PUBLIC FOR TESTING.
                 gv_print_called     TYPE abap_bool,
                 gv_repair_id        TYPE vbeln_va,
                 gv_form_name        TYPE fpname,
-                gv_form_type        TYPE char1,
                 gv_save_as_pdf      TYPE abap_bool.
 
     CLASS-METHODS: clear.
@@ -21,12 +20,11 @@ CLASS lcl_mock_print_provider IMPLEMENTATION.
     gv_print_called = abap_true.
     gv_repair_id   = iv_repair_id.
     gv_form_name   = iv_form_name.
-    gv_form_type   = iv_form_type.
     gv_save_as_pdf = iv_save_as_pdf.
   ENDMETHOD.
 
   METHOD clear.
-    CLEAR: gv_read_data_called, gv_print_called, gv_repair_id, gv_form_name, gv_form_type, gv_save_as_pdf.
+    CLEAR: gv_read_data_called, gv_print_called, gv_repair_id, gv_form_name, gv_save_as_pdf.
   ENDMETHOD.
 ENDCLASS.
 
@@ -37,13 +35,11 @@ CLASS lcl_mock_legacy_print DEFINITION CREATE PUBLIC FOR TESTING.
       IMPORTING
         !iv_repair_id TYPE vbeln_va
         !iv_form_name   TYPE fpname
-        !iv_form_type   TYPE char1 DEFAULT 'A'
         !iv_save_as_pdf TYPE abap_bool DEFAULT abap_false.
 
     CLASS-DATA: gv_print_called TYPE abap_bool,
                 gv_repair_id    TYPE vbeln_va,
                 gv_form_name    TYPE fpname,
-                gv_form_type    TYPE char1,
                 gv_save_as_pdf  TYPE abap_bool.
 
     CLASS-METHODS: clear.
@@ -54,12 +50,11 @@ CLASS lcl_mock_legacy_print IMPLEMENTATION.
     gv_print_called = abap_true.
     gv_repair_id   = iv_repair_id.
     gv_form_name   = iv_form_name.
-    gv_form_type   = iv_form_type.
     gv_save_as_pdf = iv_save_as_pdf.
   ENDMETHOD.
 
   METHOD clear.
-    CLEAR: gv_print_called, gv_repair_id, gv_form_name, gv_form_type, gv_save_as_pdf.
+    CLEAR: gv_print_called, gv_repair_id, gv_form_name, gv_save_as_pdf.
   ENDMETHOD.
 ENDCLASS.
 
@@ -182,7 +177,6 @@ CLASS lcl_test IMPLEMENTATION.
     ls_config-class_name  = 'LCL_MOCK_PRINT_PROVIDER'.
     ls_config-method_name = 'PRINT'.
     ls_config-form_name   = 'TEST_ADOBE_FORM'.
-    ls_config-form_type   = 'A'.
     APPEND ls_config TO lt_config.
     go_db_environment->insert_test_data( lt_config ).
 
@@ -210,11 +204,6 @@ CLASS lcl_test IMPLEMENTATION.
           msg = 'Incorrect form name passed to print' ).
 
         cl_abap_unit_assert=>assert_equals(
-          act = lcl_mock_print_provider=>gv_form_type
-          exp = 'A'
-          msg = 'Incorrect form type passed to print' ).
-
-        cl_abap_unit_assert=>assert_equals(
           act = lcl_mock_print_provider=>gv_save_as_pdf
           exp = abap_true
           msg = 'Incorrect save as PDF flag passed to print' ).
@@ -240,7 +229,6 @@ CLASS lcl_test IMPLEMENTATION.
     ls_config-class_name  = 'LCL_MOCK_LEGACY_PRINT'.
     ls_config-method_name = 'MY_LEGACY_PRINT'.
     ls_config-form_name   = 'TEST_SMART_FORM'.
-    ls_config-form_type   = 'S'.
     APPEND ls_config TO lt_config.
     go_db_environment->insert_test_data( lt_config ).
 
@@ -262,11 +250,6 @@ CLASS lcl_test IMPLEMENTATION.
           act = lcl_mock_legacy_print=>gv_form_name
           exp = 'TEST_SMART_FORM'
           msg = 'Incorrect form name passed to legacy print' ).
-
-        cl_abap_unit_assert=>assert_equals(
-          act = lcl_mock_legacy_print=>gv_form_type
-          exp = 'S'
-          msg = 'Incorrect form type passed to legacy print' ).
 
         cl_abap_unit_assert=>assert_equals(
           act = lcl_mock_legacy_print=>gv_save_as_pdf
@@ -294,7 +277,6 @@ CLASS lcl_test IMPLEMENTATION.
     ls_config-class_name  = 'LCL_MOCK_PRINT_PROVIDER'.
     ls_config-method_name = 'PRINT'.
     ls_config-form_name   = 'FIRST_FORM'.
-    ls_config-form_type   = 'A'.
     APPEND ls_config TO lt_config.
     go_db_environment->insert_test_data( lt_config ).
 
@@ -319,7 +301,6 @@ CLASS lcl_test IMPLEMENTATION.
         ls_config_new-class_name  = 'LCL_MOCK_PRINT_PROVIDER'.
         ls_config_new-method_name = 'PRINT'.
         ls_config_new-form_name   = 'CHANGED_FORM'.
-        ls_config_new-form_type   = 'A'.
         APPEND ls_config_new TO lt_config_new.
         go_db_environment->insert_test_data( lt_config_new ).
 

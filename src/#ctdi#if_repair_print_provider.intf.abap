@@ -11,7 +11,6 @@ INTERFACE /ctdi/if_repair_print_provider
     IMPORTING
       !iv_repair_id TYPE vbeln_va
       !iv_form_name   TYPE fpname
-      !iv_form_type   TYPE char1 DEFAULT 'A'
       !iv_save_as_pdf TYPE abap_bool DEFAULT abap_false
     RAISING
       cx_static_check.
