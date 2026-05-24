@@ -28,12 +28,14 @@ CLASS lcl_test IMPLEMENTATION.
   ENDMETHOD.
 
   METHOD test_missing_customizing.
-    " Test that calling a non-configured or missing AUART contract raises an exception
+    " Test that calling a non-configured or missing AUART contract raises a zcx_no_config_found exception
     TRY.
         cut->print( iv_contract_id = '9999999999' ).
         cl_abap_unit_assert=>fail( msg = 'Should have raised exception for missing configuration' ).
+      CATCH zcx_no_config_found.
+        " Success: correct fallback exception successfully raised
       CATCH cx_root.
-        " Success: exception correctly raised
+        cl_abap_unit_assert=>fail( msg = 'Incorrect exception raised instead of zcx_no_config_found' ).
     ENDTRY.
   ENDMETHOD.
 
