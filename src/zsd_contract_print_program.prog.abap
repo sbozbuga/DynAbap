@@ -39,9 +39,7 @@ FORM entry USING ent_retco TYPE sysubrc
                  ent_screen TYPE c.
 
   DATA: lv_contract_id TYPE vbeln_va,
-        lo_engine      TYPE REF TO zcl_contract_print_engine,
-        lv_save_as_pdf TYPE abap_bool,
-        lv_answer      TYPE c.
+        lo_engine      TYPE REF TO zcl_contract_print_engine.
 
   " Clear return code
   ent_retco = 0.
@@ -56,33 +54,12 @@ FORM entry USING ent_retco TYPE sysubrc
   " Format the Sales Document / Contract ID (enforce standard internal format)
   lv_contract_id = |{ nast-objky ALPHA = IN }|.
 
-  " If processed interactively in the foreground, prompt the user for printing options
-  IF ent_screen = abap_true.
-    CALL FUNCTION 'POPUP_TO_CONFIRM'
-      EXPORTING
-        titlebar              = 'Contract Output Options'
-        text_question         = 'Do you want to save this Customer Project Repair contract as a local PDF?'
-        text_button_1         = 'Save as PDF'
-        text_button_2         = 'Standard Print/Spool'
-        default_button        = '1'
-        display_cancel_button = abap_false
-      IMPORTING
-        answer                = lv_answer
-      EXCEPTIONS
-        text_not_found        = 1
-        others                = 2.
-    IF sy-subrc = 0 AND lv_answer = '1'.
-      lv_save_as_pdf = abap_true.
-    ENDIF.
-  ENDIF.
-
   TRY.
       " Instantiate the dynamic mapping and printing engine
       CREATE OBJECT lo_engine.
 
-      " Call the dynamic printing method passing the option to save as PDF or spool
-      lo_engine->print( iv_contract_id = lv_contract_id
-                        iv_save_as_pdf = lv_save_as_pdf ).
+      " Call the dynamic printing method (Output Determination always defaults to Spool/Print)
+      lo_engine->print( iv_contract_id = lv_contract_id ).
 
     CATCH cx_root.
       " Set return code to 4 to signal output execution failed
