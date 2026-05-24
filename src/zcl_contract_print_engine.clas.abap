@@ -7,6 +7,7 @@ CLASS zcl_contract_print_engine DEFINITION
     METHODS print
       IMPORTING
         !iv_contract_id TYPE vbeln_va
+        !iv_save_as_pdf TYPE abap_bool DEFAULT abap_false
       RAISING
         cx_static_check.
 
@@ -50,12 +51,13 @@ CLASS zcl_contract_print_engine IMPLEMENTATION.
         " Dynamically instantiate the class
         CREATE OBJECT lo_instance TYPE (ls_config-class_name).
 
-        " Dynamically call the method with contract id, form name, and form type parameters
+        " Dynamically call the method with contract id, form name, form type, and save-as-pdf parameters
         CALL METHOD lo_instance->(ls_config-method_name)
           EXPORTING
             iv_contract_id = iv_contract_id
             iv_form_name   = ls_config-form_name
-            iv_form_type   = ls_config-form_type.
+            iv_form_type   = ls_config-form_type
+            iv_save_as_pdf = iv_save_as_pdf.
 
       CATCH cx_sy_create_object_error INTO DATA(lx_create).
         " Handle instantiation errors (e.g. class doesn't exist or constructor error)

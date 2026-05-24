@@ -11,6 +11,12 @@ CLASS zcl_contract_print_sample DEFINITION
 
   PROTECTED SECTION.
   PRIVATE SECTION.
+    METHODS download_pdf
+      IMPORTING
+        !iv_contract_id TYPE vbeln_va
+        !iv_pdf_data    TYPE xstring
+      RAISING
+        cx_static_check.
 ENDCLASS.
 
 
@@ -77,7 +83,12 @@ CLASS zcl_contract_print_sample IMPLEMENTATION.
     ENDIF.
 
     IF iv_form_type = 'S'. " Smart Forms
-      DATA: lv_ssf_fm_name TYPE rs38l_fnam.
+      DATA: lv_ssf_fm_name        TYPE rs38l_fnam,
+            ls_control_parameters TYPE ssfctrlop,
+            ls_output_data        TYPE ssfcrescl,
+            lt_otf                TYPE TABLE OF itcoo,
+            lv_pdf_xstring        TYPE xstring,
+            lt_pdf_lines          TYPE TABLE OF tline.
 
       " Retrieve the dynamically generated function module name for the Smart Form
       CALL FUNCTION 'SSF_FUNCTION_MODULE_NAME'
@@ -93,23 +104,57 @@ CLASS zcl_contract_print_sample IMPLEMENTATION.
         RAISE EXCEPTION TYPE cx_sy_dyn_call_illegal_value.
       ENDIF.
 
+      " If Save as PDF is selected, retrieve OTF data instead of sending directly to spool
+      IF iv_save_as_pdf = abap_true.
+        ls_control_parameters-getotf    = abap_true.
+        ls_control_parameters-no_dialog = abap_true.
+      ENDIF.
+
       " Call the Smart Form FM dynamically
       CALL FUNCTION lv_ssf_fm_name
         EXPORTING
-          is_header        = ls_header
-          is_customer      = ls_customer
-          is_shipto        = ls_shipto
-          is_project       = ls_project
+          control_parameters = ls_control_parameters
+          is_header          = ls_header
+          is_customer        = ls_customer
+          is_shipto          = ls_shipto
+          is_project         = ls_project
+        IMPORTING
+          job_output_info    = ls_output_data
         TABLES
-          it_items         = lt_items
+          it_items           = lt_items
         EXCEPTIONS
-          formatting_error = 1
-          internal_error   = 2
-          send_error       = 3
-          user_canceled    = 4
-          others           = 5.
+          formatting_error   = 1
+          internal_error     = 2
+          send_error         = 3
+          user_canceled      = 4
+          others             = 5.
       IF sy-subrc <> 0.
         RAISE EXCEPTION TYPE cx_sy_dyn_call_illegal_value.
+      ENDIF.
+
+      " If Save as PDF, convert OTF to PDF and trigger local download
+      IF iv_save_as_pdf = abap_true.
+        lt_otf[] = ls_output_data-otfdata[].
+
+        CALL FUNCTION 'CONVERT_OTF'
+          EXPORTING
+            format                = 'PDF'
+          IMPORTING
+            bin_file              = lv_pdf_xstring
+          TABLES
+            otf                   = lt_otf
+            lines                 = lt_pdf_lines
+          EXCEPTIONS
+            err_max_linewidth     = 1
+            err_bad_keydate       = 2
+            err_empty_otf         = 3
+            others                = 4.
+        IF sy-subrc = 0.
+          download_pdf( iv_contract_id = iv_contract_id
+                        iv_pdf_data    = lv_pdf_xstring ).
+        ELSE.
+          RAISE EXCEPTION TYPE cx_sy_dyn_call_illegal_value.
+        ENDIF.
       ENDIF.
 
     ELSE. " Adobe Forms (iv_form_type = 'A' or default)
@@ -118,6 +163,11 @@ CLASS zcl_contract_print_sample IMPLEMENTATION.
       ls_outputparams-connection = 'ADS'.       " Adobe Document Services default connection
       ls_outputparams-nodialog   = abap_true.   " Suppress print dialog for automated printing
       ls_outputparams-preview    = abap_true.    " Enable print preview
+
+      " If Save as PDF is selected, instruct ADS to return PDF data
+      IF iv_save_as_pdf = abap_true.
+        ls_outputparams-getpdf   = abap_true.
+      ENDIF.
 
       " Open the printing job
       CALL FUNCTION 'FP_JOB_OPEN'
@@ -169,19 +219,93 @@ CLASS zcl_contract_print_sample IMPLEMENTATION.
       DATA(lv_subrc) = sy-subrc.
 
       " 5. Close the printing job
+      DATA: ls_joboutput TYPE sfpjoboutput.
+
       CALL FUNCTION 'FP_JOB_CLOSE'
+        IMPORTING
+          e_joboutput    = ls_joboutput
         EXCEPTIONS
           usage_error    = 1
           system_error   = 2
           internal_error = 3
           others         = 4.
 
-      IF lv_subrc <> 0.
+      IF lv_subrc <> 0 OR sy-subrc <> 0.
         RAISE EXCEPTION TYPE cx_sy_dyn_call_illegal_value.
+      ENDIF.
+
+      " If Save as PDF, trigger local download of the retrieved PDF xstring
+      IF iv_save_as_pdf = abap_true AND ls_joboutput-pdf IS NOT INITIAL.
+        download_pdf( iv_contract_id = iv_contract_id
+                      iv_pdf_data    = ls_joboutput-pdf ).
       ENDIF.
 
     ENDIF.
 
+  ENDMETHOD.
+
+
+  METHOD download_pdf.
+    DATA: lt_filetab  TYPE filetable,
+          lv_rc       TYPE i,
+          lv_action   TYPE i,
+          lv_path     TYPE string,
+          lv_filename TYPE string,
+          lt_data     TYPE solix_tab.
+
+    IF iv_pdf_data IS INITIAL.
+      RETURN.
+    ENDIF.
+
+    " Convert xstring to binary table
+    CALL FUNCTION 'SCMS_XSTRING_TO_BINARY'
+      EXPORTING
+        buffer     = iv_pdf_data
+      TABLES
+        binary_tab = lt_data.
+
+    cl_gui_frontend_services=>file_save_dialog(
+      EXPORTING
+        default_file_name    = |Repair_Contract_{ iv_contract_id }.pdf|
+        default_extension    = 'pdf'
+        file_filter          = 'PDF Files (*.pdf)|*.pdf'
+      CHANGING
+        filename             = lv_filename
+        path                 = lv_path
+        fullpath             = lv_path
+        user_action          = lv_action
+      EXCEPTIONS
+        others               = 1 ).
+
+    IF lv_action = cl_gui_frontend_services=>action_ok AND lv_path IS NOT INITIAL.
+      cl_gui_frontend_services=>gui_download(
+        EXPORTING
+          filename                  = lv_path
+          filetype                  = 'BIN'
+          bin_filesize              = xstrlen( iv_pdf_data )
+        CHANGING
+          data_tab                  = lt_data
+        EXCEPTIONS
+          file_write_error          = 1
+          no_batch                  = 2
+          gui_refuse_filetransfer   = 3
+          invalid_type              = 4
+          no_authority              = 5
+          unknown_error             = 6
+          header_not_allowed        = 7
+          separator_not_allowed     = 8
+          filesize_not_allowed      = 9
+          header_too_long           = 10
+          dp_error                  = 11
+          access_denied             = 12
+          dp_out_of_memory          = 13
+          disk_full                 = 14
+          dp_timeout                = 15
+          file_not_found            = 16
+          dataprovider_exception    = 17
+          control_flush_error       = 18
+          others                    = 19 ).
+    ENDIF.
   ENDMETHOD.
 
 ENDCLASS.
