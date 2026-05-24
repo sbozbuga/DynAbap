@@ -30,7 +30,7 @@ CLASS zcl_contract_print_engine IMPLEMENTATION.
     ENDIF.
 
     " 2. Fetch Customizing configuration for the contract type
-    SELECT SINGLE form_name, class_name, method_name
+    SELECT SINGLE form_name, form_type, class_name, method_name
       FROM zsd_contr_form
       INTO @DATA(ls_config)
       WHERE auart = @lv_auart.
@@ -50,11 +50,12 @@ CLASS zcl_contract_print_engine IMPLEMENTATION.
         " Dynamically instantiate the class
         CREATE OBJECT lo_instance TYPE (ls_config-class_name).
 
-        " Dynamically call the method with contract id and form name parameters
+        " Dynamically call the method with contract id, form name, and form type parameters
         CALL METHOD lo_instance->(ls_config-method_name)
           EXPORTING
             iv_contract_id = iv_contract_id
-            iv_form_name   = ls_config-form_name.
+            iv_form_name   = ls_config-form_name
+            iv_form_type   = ls_config-form_type.
 
       CATCH cx_sy_create_object_error INTO DATA(lx_create).
         " Handle instantiation errors (e.g. class doesn't exist or constructor error)

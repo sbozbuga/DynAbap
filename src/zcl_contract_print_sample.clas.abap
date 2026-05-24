@@ -76,70 +76,110 @@ CLASS zcl_contract_print_sample IMPLEMENTATION.
       ls_project-description = ls_header-bstnk.
     ENDIF.
 
-    " 2. Initialize Output Parameters (Standard SAP Interactive/Adobe Forms logic)
-    ls_outputparams-connection = 'ADS'.       " Adobe Document Services default connection
-    ls_outputparams-nodialog   = abap_true.   " Suppress print dialog for automated printing
-    ls_outputparams-preview    = abap_true.    " Enable print preview
+    IF iv_form_type = 'S'. " Smart Forms
+      DATA: lv_ssf_fm_name TYPE rs38l_fnam.
 
-    " Open the printing job
-    CALL FUNCTION 'FP_JOB_OPEN'
-      CHANGING
-        ie_outputparams = ls_outputparams
-      EXCEPTIONS
-        cancel          = 1
-        usage_error     = 2
-        system_error    = 3
-        internal_error  = 4
-        others          = 5.
-    IF sy-subrc <> 0.
-      RAISE EXCEPTION TYPE cx_sy_dyn_call_illegal_value.
-    ENDIF.
+      " Retrieve the dynamically generated function module name for the Smart Form
+      CALL FUNCTION 'SSF_FUNCTION_MODULE_NAME'
+        EXPORTING
+          formname           = iv_form_name
+        IMPORTING
+          fm_name            = lv_ssf_fm_name
+        EXCEPTIONS
+          no_form            = 1
+          no_function_module = 2
+          others             = 3.
+      IF sy-subrc <> 0.
+        RAISE EXCEPTION TYPE cx_sy_dyn_call_illegal_value.
+      ENDIF.
 
-    " 3. Retrieve the dynamic PDF/Adobe function module name generated for the form
-    TRY.
-        CALL FUNCTION 'FP_FUNCTION_MODULE_NAME'
-          EXPORTING
-            i_name     = iv_form_name
-          IMPORTING
-            e_funcname = lv_fm_name.
-      CATCH cx_root.
-        " Ensure job is closed in case of error
-        CALL FUNCTION 'FP_JOB_CLOSE'.
-        RETURN.
-    ENDTRY.
+      " Call the Smart Form FM dynamically
+      CALL FUNCTION lv_ssf_fm_name
+        EXPORTING
+          is_header        = ls_header
+          is_customer      = ls_customer
+          is_shipto        = ls_shipto
+          is_project       = ls_project
+        TABLES
+          it_items         = lt_items
+        EXCEPTIONS
+          formatting_error = 1
+          internal_error   = 2
+          send_error       = 3
+          user_canceled    = 4
+          others           = 5.
+      IF sy-subrc <> 0.
+        RAISE EXCEPTION TYPE cx_sy_dyn_call_illegal_value.
+      ENDIF.
 
-    " 4. Call the Adobe Form generated function module dynamically
-    " Docparams controls language and country configurations
-    ls_docparams-langu   = sy-langu.
-    ls_docparams-country = 'US'.
+    ELSE. " Adobe Forms (iv_form_type = 'A' or default)
 
-    CALL FUNCTION lv_fm_name
-      EXPORTING
-        /1bcdwb/docparams = ls_docparams
-        " Pass header, items, customer, ship-to partner, and project details to the form
-        is_header         = ls_header
-        it_items          = lt_items
-        is_customer       = ls_customer
-        is_shipto         = ls_shipto
-        is_project        = ls_project
-      EXCEPTIONS
-        usage_error       = 1
-        system_error      = 2
-        internal_error    = 3
-        others            = 4.
+      " 2. Initialize Output Parameters (Standard SAP Interactive/Adobe Forms logic)
+      ls_outputparams-connection = 'ADS'.       " Adobe Document Services default connection
+      ls_outputparams-nodialog   = abap_true.   " Suppress print dialog for automated printing
+      ls_outputparams-preview    = abap_true.    " Enable print preview
 
-    DATA(lv_subrc) = sy-subrc.
+      " Open the printing job
+      CALL FUNCTION 'FP_JOB_OPEN'
+        CHANGING
+          ie_outputparams = ls_outputparams
+        EXCEPTIONS
+          cancel          = 1
+          usage_error     = 2
+          system_error    = 3
+          internal_error  = 4
+          others          = 5.
+      IF sy-subrc <> 0.
+        RAISE EXCEPTION TYPE cx_sy_dyn_call_illegal_value.
+      ENDIF.
 
-    " 5. Close the printing job
-    CALL FUNCTION 'FP_JOB_CLOSE'
-      EXCEPTIONS
-        usage_error    = 1
-        system_error   = 2
-        internal_error = 3
-        others         = 4.
+      " 3. Retrieve the dynamic PDF/Adobe function module name generated for the form
+      TRY.
+          CALL FUNCTION 'FP_FUNCTION_MODULE_NAME'
+            EXPORTING
+              i_name     = iv_form_name
+            IMPORTING
+              e_funcname = lv_fm_name.
+        CATCH cx_root.
+          " Ensure job is closed in case of error
+          CALL FUNCTION 'FP_JOB_CLOSE'.
+          RETURN.
+      ENDTRY.
 
-    IF lv_subrc <> 0.
-      RAISE EXCEPTION TYPE cx_sy_dyn_call_illegal_value.
+      " 4. Call the Adobe Form generated function module dynamically
+      " Docparams controls language and country configurations
+      ls_docparams-langu   = sy-langu.
+      ls_docparams-country = 'US'.
+
+      CALL FUNCTION lv_fm_name
+        EXPORTING
+          /1bcdwb/docparams = ls_docparams
+          " Pass header, items, customer, ship-to partner, and project details to the form
+          is_header         = ls_header
+          it_items          = lt_items
+          is_customer       = ls_customer
+          is_shipto         = ls_shipto
+          is_project        = ls_project
+        EXCEPTIONS
+          usage_error       = 1
+          system_error      = 2
+          internal_error    = 3
+          others            = 4.
+
+      DATA(lv_subrc) = sy-subrc.
+
+      " 5. Close the printing job
+      CALL FUNCTION 'FP_JOB_CLOSE'
+        EXCEPTIONS
+          usage_error    = 1
+          system_error   = 2
+          internal_error = 3
+          others         = 4.
+
+      IF lv_subrc <> 0.
+        RAISE EXCEPTION TYPE cx_sy_dyn_call_illegal_value.
+      ENDIF.
+
     ENDIF.
 
   ENDMETHOD.
