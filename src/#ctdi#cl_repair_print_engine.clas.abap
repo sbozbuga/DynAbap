@@ -4,7 +4,7 @@ CLASS /ctdi/cl_repair_print_engine DEFINITION
   CREATE PUBLIC .
 
   PUBLIC SECTION.
-    METHODS print
+    METHODS execute
       IMPORTING
         !iv_repair_id TYPE vbeln_va
         !iv_save_as_pdf TYPE abap_bool DEFAULT abap_false
@@ -45,7 +45,7 @@ ENDCLASS.
 
 CLASS /ctdi/cl_repair_print_engine IMPLEMENTATION.
 
-  METHOD print.
+  METHOD execute.
     DATA(lv_contract_id) = resolve_contract( iv_repair_id ).
     DATA(ls_config) = get_config( lv_contract_id ).
     execute_provider( iv_repair_id   = iv_repair_id

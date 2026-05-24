@@ -24,8 +24,8 @@ START-OF-SELECTION.
 
   TRY.
       CREATE OBJECT lo_direct_engine.
-      lo_direct_engine->print( iv_repair_id = p_vbeln
-                               iv_save_as_pdf = p_pdf ).
+      lo_direct_engine->execute( iv_repair_id = p_vbeln
+                                 iv_save_as_pdf = p_pdf ).
     CATCH /ctdi/cx_no_config_found.
       " Fall back to legacy printing logic
       PERFORM print_old USING p_vbeln p_pdf.
@@ -33,7 +33,7 @@ START-OF-SELECTION.
       MESSAGE |Print failed: { lx_direct_print_err->message }| TYPE 'E'.
     CATCH cx_root INTO DATA(lx_direct_root).
       MESSAGE |Error executing dynamic repair print: { lx_direct_root->get_text( ) }| TYPE 'E'.
-  ENDTRY.
+    ENDTRY.
 
 *&---------------------------------------------------------------------*
 *& Form ENTRY
@@ -64,7 +64,7 @@ FORM entry USING ent_retco TYPE sysubrc
       CREATE OBJECT lo_engine.
 
       " Call the dynamic printing method (Output Determination always defaults to Spool/Print)
-      lo_engine->print( iv_repair_id = lv_repair_id ).
+      lo_engine->execute( iv_repair_id = lv_repair_id ).
 
     CATCH /ctdi/cx_no_config_found.
       " Fall back to legacy printing logic

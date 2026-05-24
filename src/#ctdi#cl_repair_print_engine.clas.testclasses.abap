@@ -109,7 +109,7 @@ CLASS lcl_test IMPLEMENTATION.
   METHOD test_invalid_repair.
     " Test that an invalid/non-existing repair number correctly raises an exception
     TRY.
-        cut->print( iv_repair_id = '0000000000' ).
+        cut->execute( iv_repair_id = '0000000000' ).
         cl_abap_unit_assert=>fail( msg = 'Should have failed for invalid repair id' ).
       CATCH cx_sy_dyn_call_illegal_value.
         " Success: expected exception type successfully raised
@@ -129,7 +129,7 @@ CLASS lcl_test IMPLEMENTATION.
 
     " Test that calling a non-configured or missing VBELN contract/repair raises a /ctdi/cx_no_config_found exception
     TRY.
-        cut->print( iv_repair_id = '0000000100' ).
+        cut->execute( iv_repair_id = '0000000100' ).
         cl_abap_unit_assert=>fail( msg = 'Should have raised exception for missing configuration' ).
       CATCH /ctdi/cx_no_config_found.
         " Success: correct fallback exception successfully raised
@@ -155,7 +155,7 @@ CLASS lcl_test IMPLEMENTATION.
     go_db_environment->insert_test_data( lt_config ).
 
     TRY.
-        cut->print( iv_repair_id = '0000000100' ).
+        cut->execute( iv_repair_id = '0000000100' ).
         cl_abap_unit_assert=>fail( msg = 'Should have failed due to blank class/method name' ).
       CATCH cx_sy_dyn_call_illegal_value.
         " Success: expected exception type successfully raised
@@ -184,7 +184,7 @@ CLASS lcl_test IMPLEMENTATION.
     go_db_environment->insert_test_data( lt_config ).
 
     TRY.
-        cut->print(
+        cut->execute(
           iv_repair_id   = '0000000100'
           iv_save_as_pdf = abap_true ).
 
@@ -236,7 +236,7 @@ CLASS lcl_test IMPLEMENTATION.
     go_db_environment->insert_test_data( lt_config ).
 
     TRY.
-        cut->print(
+        cut->execute(
           iv_repair_id   = '0000000100'
           iv_save_as_pdf = abap_false ).
 
@@ -285,7 +285,7 @@ CLASS lcl_test IMPLEMENTATION.
 
     TRY.
         " Call print the first time (this will load config from DB into mt_config_buffer)
-        cut->print( iv_repair_id = '0000000100' ).
+        cut->execute( iv_repair_id = '0000000100' ).
 
         cl_abap_unit_assert=>assert_equals(
           act = lcl_mock_print_provider=>gv_form_name
@@ -308,7 +308,7 @@ CLASS lcl_test IMPLEMENTATION.
         go_db_environment->insert_test_data( lt_config_new ).
 
         " Print again - it should STILL use 'FIRST_FORM' because it was cached in mt_config_buffer
-        cut->print( iv_repair_id = '0000000100' ).
+        cut->execute( iv_repair_id = '0000000100' ).
 
         cl_abap_unit_assert=>assert_equals(
           act = lcl_mock_print_provider=>gv_form_name
@@ -356,7 +356,7 @@ CLASS lcl_test IMPLEMENTATION.
     go_db_environment->insert_test_data( lt_config ).
 
     TRY.
-        cut->print(
+        cut->execute(
           iv_repair_id   = '000012345678'
           iv_save_as_pdf = abap_true ).
 
