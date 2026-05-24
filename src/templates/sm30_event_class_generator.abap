@@ -21,10 +21,17 @@
 *& /CTDI/IF_REPAIR_PRINT_PROVIDER if the CLASS_NAME field is empty.
 *&---------------------------------------------------------------------*
 FORM on_new_entry.
-  DATA: ls_entry TYPE /ctdi/sd_repair_form.
+  DATA: ls_entry   TYPE /ctdi/sd_repair_form,
+        lv_allowed TYPE abap_bool.
 
   " Read the new entry from the maintenance view work area
   ls_entry = <vim_total_struc>.
+
+  " Check if programmatic class generation is allowed (DEV system + developer authorizations)
+  PERFORM check_generation_allowed CHANGING lv_allowed.
+  IF lv_allowed = abap_false.
+    RETURN. " Bypass generation in QA/PRD environments, just save the entry
+  ENDIF.
 
   " Skip if class name is already provided by the user
   IF ls_entry-class_name IS NOT INITIAL.
@@ -131,4 +138,40 @@ FORM on_before_save.
     ENDIF.
   ENDLOOP.
 
+ENDFORM.
+
+*&---------------------------------------------------------------------*
+*& Form CHECK_GENERATION_ALLOWED
+*&---------------------------------------------------------------------*
+*& Checks if the user is authorized to create classes (S_DEVELOP) and
+*& if the current system/client repository is modifiable.
+*&---------------------------------------------------------------------*
+FORM check_generation_allowed CHANGING cv_allowed TYPE abap_bool.
+  cv_allowed = abap_false.
+
+  " 1. Check user development authorization (CLAS / Create)
+  AUTHORITY-CHECK OBJECT 'S_DEVELOP'
+    ID 'DEVCLASS' FIELD '*'
+    ID 'OBJTYPE'  FIELD 'CLAS'
+    ID 'OBJNAME'  FIELD '*'
+    ID 'P_GROUP'  FIELD '*'
+    ID 'ACTVT'    FIELD '01'. " Create
+  IF sy-subrc <> 0.
+    RETURN.
+  ENDIF.
+
+  " 2. Check if the current system repository is modifiable
+  DATA: lv_system_edit TYPE c.
+
+  CALL FUNCTION 'TR_SYS_PARAMS'
+    IMPORTING
+      sys_edit      = lv_system_edit  " 'W' = Modifiable, 'R' = Read-only
+    EXCEPTIONS
+      no_systemname = 1
+      no_systemtype = 2
+      others        = 3.
+
+  IF sy-subrc = 0 AND lv_system_edit = 'W'.
+    cv_allowed = abap_true.
+  ENDIF.
 ENDFORM.
