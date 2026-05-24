@@ -12,6 +12,20 @@ CLASS /ctdi/cl_repair_print_engine DEFINITION
         /ctdi/cx_no_config_found
         cx_static_check.
 
+    CLASS-METHODS on_new_entry
+      CHANGING
+        !cs_entry TYPE /ctdi/sd_repair_form.
+
+    CLASS-METHODS validate_entry
+      IMPORTING
+        !is_entry TYPE /ctdi/sd_repair_form
+      RAISING
+        /ctdi/cx_print_error.
+
+    CLASS-METHODS check_generation_allowed
+      RETURNING
+        VALUE(rv_allowed) TYPE abap_bool.
+
   PROTECTED SECTION.
   PRIVATE SECTION.
     TYPES: tt_config_buffer TYPE HASHED TABLE OF /ctdi/sd_repair_form WITH UNIQUE KEY vbeln.
@@ -165,6 +179,160 @@ CLASS /ctdi/cl_repair_print_engine IMPLEMENTATION.
             message   = 'Error occurred during print provider execution'
             previous  = lx_root.
     ENDTRY.
+  ENDMETHOD.
+
+  METHOD check_generation_allowed.
+    rv_allowed = abap_false.
+
+    " 1. Check user development authorization (CLAS / Create)
+    AUTHORITY-CHECK OBJECT 'S_DEVELOP'
+      ID 'DEVCLASS' FIELD '*'
+      ID 'OBJTYPE'  FIELD 'CLAS'
+      ID 'OBJNAME'  FIELD '*'
+      ID 'P_GROUP'  FIELD '*'
+      ID 'ACTVT'    FIELD '01'. " Create
+    IF sy-subrc <> 0.
+      RETURN.
+    ENDIF.
+
+    " 2. Check if the current system repository is modifiable
+    DATA: lv_system_edit TYPE c.
+
+    CALL FUNCTION 'TR_SYS_PARAMS'
+      IMPORTING
+        sys_edit      = lv_system_edit  " 'W' = Modifiable, 'R' = Read-only
+      EXCEPTIONS
+        no_systemname = 1
+        no_systemtype = 2
+        others        = 3.
+
+    IF sy-subrc = 0 AND lv_system_edit = 'W'.
+      rv_allowed = abap_true.
+    ENDIF.
+  ENDMETHOD.
+
+  METHOD on_new_entry.
+    " 1. Bypass generation if system is QA/PRD or user lacks S_DEVELOP
+    IF check_generation_allowed( ) = abap_false.
+      RETURN.
+    ENDIF.
+
+    " 2. Skip if class name is already provided and exists
+    IF cs_entry-class_name IS NOT INITIAL.
+      SELECT SINGLE clsname FROM seoclass
+        INTO @DATA(lv_exists)
+        WHERE clsname = @cs_entry-class_name.
+      IF sy-subrc = 0.
+        RETURN.
+      ENDIF.
+    ENDIF.
+
+    " 3. Auto-generate a class name from the Contract VBELN if not provided
+    IF cs_entry-class_name IS INITIAL.
+      cs_entry-class_name = |/CTDI/CL_REPAIR_PRINT_{ cs_entry-vbeln }|.
+    ENDIF.
+
+    " 4. Verify the class does not already exist
+    SELECT SINGLE clsname FROM seoclass
+      INTO lv_exists
+      WHERE clsname = @cs_entry-class_name.
+    IF sy-subrc = 0.
+      cs_entry-method_name = 'PRINT'.
+      RETURN.
+    ENDIF.
+
+    " 5. Generate the SE24 class with interface /CTDI/IF_REPAIR_PRINT_PROVIDER
+    DATA: ls_class TYPE vseoclass,
+          lt_intfs TYPE seor_implementing_keys.
+
+    ls_class-clsname    = cs_entry-class_name.
+    ls_class-langu      = sy-langu.
+    ls_class-descript   = |Print Provider for Contract { cs_entry-vbeln }|.
+    ls_class-state      = '1'. " Active
+    ls_class-clsccincl  = 'X'.
+    ls_class-fixpt      = 'X'.
+    ls_class-unicode    = 'X'.
+    ls_class-exposure   = '2'. " Public
+
+    " Add interface implementation
+    APPEND VALUE #( clsname    = cs_entry-class_name
+                    refclsname = '/CTDI/IF_REPAIR_PRINT_PROVIDER' )
+      TO lt_intfs.
+
+    CALL FUNCTION 'SEO_CLASS_CREATE_COMPLETE'
+      EXPORTING
+        devclass   = '$TMP'     " Assign to $TMP initially
+        overwrite  = abap_false
+      CHANGING
+        class      = ls_class
+        intkey     = lt_intfs
+      EXCEPTIONS
+        others     = 1.
+
+    IF sy-subrc = 0.
+      cs_entry-method_name = 'PRINT'.
+    ENDIF.
+  ENDMETHOD.
+
+  METHOD validate_entry.
+    " 1. Class name is required
+    IF is_entry-class_name IS INITIAL.
+      RAISE EXCEPTION TYPE /ctdi/cx_print_error
+        EXPORTING
+          repair_id = is_entry-vbeln
+          message   = |Class name is required for Contract { is_entry-vbeln }|.
+    ENDIF.
+
+    " 2. Validate Form Name existence in Smart Forms (STXFADM) or Adobe Forms (FPCONTEXT)
+    IF is_entry-form_name IS NOT INITIAL.
+      SELECT SINGLE formname FROM stxfadm
+        INTO @DATA(lv_ssf_exists)
+        WHERE formname = @is_entry-form_name.
+      IF sy-subrc <> 0.
+        SELECT SINGLE name FROM fpcontext
+          INTO @DATA(lv_fp_exists)
+          WHERE name = @is_entry-form_name.
+        IF sy-subrc <> 0.
+          RAISE EXCEPTION TYPE /ctdi/cx_print_error
+            EXPORTING
+              repair_id = is_entry-vbeln
+              message   = |Form { is_entry-form_name } does not exist as a Smart Form or Adobe Form|.
+        ENDIF.
+      ENDIF.
+    ENDIF.
+
+    " 3. Validate Class existence in Repository (SEOCLASS)
+    SELECT SINGLE clsname FROM seoclass
+      INTO @DATA(lv_class_exists)
+      WHERE clsname = @is_entry-class_name.
+    IF sy-subrc <> 0.
+      RAISE EXCEPTION TYPE /ctdi/cx_print_error
+        EXPORTING
+          repair_id = is_entry-vbeln
+          message   = |Class { is_entry-class_name } does not exist in the repository|.
+    ELSE.
+      " 4. Validate Method existence in Class Components (SEOCOMPO)
+      IF is_entry-method_name IS NOT INITIAL.
+        SELECT SINGLE cmpname FROM seocompo
+          INTO @DATA(lv_method_exists)
+          WHERE clsname = @is_entry-class_name
+            AND cmpname = @is_entry-method_name.
+        IF sy-subrc <> 0.
+          " Also check if it implements interface method (e.g. /CTDI/IF_REPAIR_PRINT_PROVIDER~PRINT)
+          DATA(lv_interface_method) = |/CTDI/IF_REPAIR_PRINT_PROVIDER~{ is_entry-method_name }|.
+          SELECT SINGLE cmpname FROM seocompo
+            INTO @lv_method_exists
+            WHERE clsname = @is_entry-class_name
+              AND cmpname = @lv_interface_method.
+          IF sy-subrc <> 0.
+            RAISE EXCEPTION TYPE /ctdi/cx_print_error
+              EXPORTING
+                repair_id = is_entry-vbeln
+                message   = |Method { is_entry-method_name } does not exist in class { is_entry-class_name }|.
+          ENDIF.
+        ENDIF.
+      ENDIF.
+    ENDIF.
   ENDMETHOD.
 
 ENDCLASS.

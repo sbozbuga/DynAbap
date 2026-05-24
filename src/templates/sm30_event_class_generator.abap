@@ -1,8 +1,9 @@
 *&---------------------------------------------------------------------*
-*& Template: SM30 Table Maintenance Event for Auto-Generating Print Classes
+*& Template: SM30 Table Maintenance Event Include
 *&---------------------------------------------------------------------*
-*& This template provides a FORM routine that can be attached to the
-*& table maintenance events of /CTDI/SD_REPAIR_FORM via SE54.
+*& This template provides a highly simplified, encapsulated FORM routine
+*& include that delegates all SM30 event processing and SE24 class
+*& generation logic directly to the dynamic print engine class.
 *&
 *& Setup Instructions:
 *& 1. Go to Transaction SE54
@@ -17,195 +18,43 @@
 *& Form ON_NEW_ENTRY
 *&---------------------------------------------------------------------*
 *& Triggered when a new row is created in SM30 maintenance view.
-*& Automatically generates a new SE24 class implementing
-*& /CTDI/IF_REPAIR_PRINT_PROVIDER if the CLASS_NAME field is empty.
+*& Delegates class generation and default initialization to engine class.
 *&---------------------------------------------------------------------*
 FORM on_new_entry.
-  DATA: ls_entry   TYPE /ctdi/sd_repair_form,
-        lv_allowed TYPE abap_bool.
+  DATA: ls_entry TYPE /ctdi/sd_repair_form.
 
-  " Read the new entry from the maintenance view work area
+  " Read the new entry from the maintenance view work area structure
   ls_entry = <vim_total_struc>.
 
-  " Check if programmatic class generation is allowed (DEV system + developer authorizations)
-  PERFORM check_generation_allowed CHANGING lv_allowed.
-  IF lv_allowed = abap_false.
-    RETURN. " Bypass generation in QA/PRD environments, just save the entry
-  ENDIF.
+  " Delegate auto-generation to print engine static method
+  /ctdi/cl_repair_print_engine=>on_new_entry( CHANGING cs_entry = ls_entry ).
 
-  " Skip if class name is already provided by the user
-  IF ls_entry-class_name IS NOT INITIAL.
-    " Check if the manually entered class already exists
-    SELECT SINGLE clsname FROM seoclass
-      INTO @DATA(lv_exists)
-      WHERE clsname = @ls_entry-class_name.
-    IF sy-subrc = 0.
-      RETURN. " Class already exists, nothing to generate
-    ENDIF.
-  ENDIF.
-
-  " Auto-generate a class name from the Contract VBELN if not provided
-  IF ls_entry-class_name IS INITIAL.
-    ls_entry-class_name = |/CTDI/CL_REPAIR_PRINT_{ ls_entry-vbeln }|.
-  ENDIF.
-
-  " Verify the auto-generated class does not already exist
-  SELECT SINGLE clsname FROM seoclass
-    INTO @lv_exists
-    WHERE clsname = @ls_entry-class_name.
-  IF sy-subrc = 0.
-    " Class already exists, just update the customizing entry
-    ls_entry-method_name = 'PRINT'.
-    MODIFY /ctdi/sd_repair_form FROM ls_entry.
-    RETURN.
-  ENDIF.
-
-  " ---------------------------------------------------------------
-  " Generate the SE24 class with interface /CTDI/IF_REPAIR_PRINT_PROVIDER
-  " ---------------------------------------------------------------
-  DATA: ls_class TYPE vseoclass,
-        lt_intfs TYPE seor_implementing_keys.
-
-  ls_class-clsname    = ls_entry-class_name.
-  ls_class-langu      = sy-langu.
-  ls_class-descript   = |Print Provider for Contract { ls_entry-vbeln }|.
-  ls_class-state      = '1'. " Active
-  ls_class-clsccincl  = 'X'.
-  ls_class-fixpt      = 'X'.
-  ls_class-unicode    = 'X'.
-  ls_class-exposure   = '2'. " Public
-
-  " Add interface implementation
-  APPEND VALUE #( clsname    = ls_entry-class_name
-                  refclsname = '/CTDI/IF_REPAIR_PRINT_PROVIDER' )
-    TO lt_intfs.
-
-  CALL FUNCTION 'SEO_CLASS_CREATE_COMPLETE'
-    EXPORTING
-      devclass   = '$TMP'     " Assign to $TMP initially; reassign via transport later
-      overwrite  = abap_false
-    CHANGING
-      class      = ls_class
-      intkey     = lt_intfs
-    EXCEPTIONS
-      existing   = 1
-      is_class   = 2
-      db_error   = 3
-      component_error = 4
-      no_access  = 5
-      other      = 6
-      others     = 7.
-
-  IF sy-subrc = 0.
-    " Update the customizing entry with the generated class name and method
-    ls_entry-method_name = 'PRINT'.
-    MODIFY /ctdi/sd_repair_form FROM ls_entry.
-    MESSAGE |Class { ls_entry-class_name } successfully generated.| TYPE 'S'.
-  ELSE.
-    MESSAGE |Error generating class { ls_entry-class_name }. RC={ sy-subrc }| TYPE 'W'.
-  ENDIF.
-
+  " Update the maintenance view work area structure
+  <vim_total_struc> = ls_entry.
 ENDFORM.
 
 *&---------------------------------------------------------------------*
 *& Form ON_BEFORE_SAVE
 *&---------------------------------------------------------------------*
 *& Triggered before saving all changes to the database.
-*& Validates that all entries have valid class and method configurations.
+*& Delegates form, class, and method existence validation to engine.
 *&---------------------------------------------------------------------*
 FORM on_before_save.
   DATA: ls_entry TYPE /ctdi/sd_repair_form.
 
   LOOP AT total INTO ls_entry.
-    " Validate class name is not empty
-    IF ls_entry-class_name IS INITIAL.
-      MESSAGE |Class name is required for Contract { ls_entry-vbeln }.| TYPE 'E'.
-      RETURN.
-    ENDIF.
-
-    " Validate method name defaults to PRINT if empty
+    " Validate and default method name to PRINT if empty
     IF ls_entry-method_name IS INITIAL.
       ls_entry-method_name = 'PRINT'.
       MODIFY total FROM ls_entry.
     ENDIF.
 
-    " 3. Validate Form Name existence in Smart Forms (STXFADM) or Adobe Forms (FPCONTEXT)
-    IF ls_entry-form_name IS NOT INITIAL.
-      SELECT SINGLE formname FROM stxfadm
-        INTO @DATA(lv_ssf_exists)
-        WHERE formname = @ls_entry-form_name.
-      IF sy-subrc <> 0.
-        SELECT SINGLE name FROM fpcontext
-          INTO @DATA(lv_fp_exists)
-          WHERE name = @ls_entry-form_name.
-        IF sy-subrc <> 0.
-          MESSAGE |Form { ls_entry-form_name } does not exist as a Smart Form or Adobe Form.| TYPE 'W'.
-        ENDIF.
-      ENDIF.
-    ENDIF.
-
-    " 4. Validate Class existence in Repository (SEOCLASS)
-    SELECT SINGLE clsname FROM seoclass
-      INTO @DATA(lv_class_exists)
-      WHERE clsname = @ls_entry-class_name.
-    IF sy-subrc <> 0.
-      MESSAGE |Class { ls_entry-class_name } does not exist in the repository.| TYPE 'W'.
-    ELSE.
-      " 5. Validate Method existence in Class Components (SEOCOMPO)
-      IF ls_entry-method_name IS NOT INITIAL.
-        SELECT SINGLE cmpname FROM seocompo
-          INTO @DATA(lv_method_exists)
-          WHERE clsname = @ls_entry-class_name
-            AND cmpname = @ls_entry-method_name.
-        IF sy-subrc <> 0.
-          " Also check if it implements interface method (e.g. /CTDI/IF_REPAIR_PRINT_PROVIDER~PRINT)
-          DATA(lv_interface_method) = |/CTDI/IF_REPAIR_PRINT_PROVIDER~{ ls_entry-method_name }|.
-          SELECT SINGLE cmpname FROM seocompo
-            INTO @lv_method_exists
-            WHERE clsname = @ls_entry-class_name
-              AND cmpname = @lv_interface_method.
-          IF sy-subrc <> 0.
-            MESSAGE |Method { ls_entry-method_name } does not exist in class { ls_entry-class_name }.| TYPE 'W'.
-          ENDIF.
-        ENDIF.
-      ENDIF.
-    ENDIF.
+    TRY.
+        " Delegate all class, form, and method validations to engine class
+        /ctdi/cl_repair_print_engine=>validate_entry( ls_entry ).
+      CATCH /ctdi/cx_print_error INTO DATA(lx_err).
+        " Issue warning message in SM30
+        MESSAGE lx_err->message TYPE 'W'.
+    ENDTRY.
   ENDLOOP.
-
-ENDFORM.
-
-*&---------------------------------------------------------------------*
-*& Form CHECK_GENERATION_ALLOWED
-*&---------------------------------------------------------------------*
-*& Checks if the user is authorized to create classes (S_DEVELOP) and
-*& if the current system/client repository is modifiable.
-*&---------------------------------------------------------------------*
-FORM check_generation_allowed CHANGING cv_allowed TYPE abap_bool.
-  cv_allowed = abap_false.
-
-  " 1. Check user development authorization (CLAS / Create)
-  AUTHORITY-CHECK OBJECT 'S_DEVELOP'
-    ID 'DEVCLASS' FIELD '*'
-    ID 'OBJTYPE'  FIELD 'CLAS'
-    ID 'OBJNAME'  FIELD '*'
-    ID 'P_GROUP'  FIELD '*'
-    ID 'ACTVT'    FIELD '01'. " Create
-  IF sy-subrc <> 0.
-    RETURN.
-  ENDIF.
-
-  " 2. Check if the current system repository is modifiable
-  DATA: lv_system_edit TYPE c.
-
-  CALL FUNCTION 'TR_SYS_PARAMS'
-    IMPORTING
-      sys_edit      = lv_system_edit  " 'W' = Modifiable, 'R' = Read-only
-    EXCEPTIONS
-      no_systemname = 1
-      no_systemtype = 2
-      others        = 3.
-
-  IF sy-subrc = 0 AND lv_system_edit = 'W'.
-    cv_allowed = abap_true.
-  ENDIF.
 ENDFORM.
