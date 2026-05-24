@@ -22,7 +22,10 @@ CLASS zcl_contract_print_sample IMPLEMENTATION.
           ls_outputparams TYPE sfpoutputparams,
           ls_docparams    TYPE sfpdocparams,
           ls_header       TYPE vbak,
-          lt_items        TYPE TABLE OF vbap.
+          lt_items        TYPE TABLE OF vbap,
+          ls_customer     TYPE kna1,
+          ls_shipto       TYPE kna1,
+          lv_kunnr_we     TYPE kunnr.
 
     " 1. Fetch Contract Header and Item Data from VBAK and VBAP
     SELECT SINGLE * FROM vbak INTO @ls_header WHERE vbeln = @iv_contract_id.
@@ -32,6 +35,19 @@ CLASS zcl_contract_print_sample IMPLEMENTATION.
     ENDIF.
 
     SELECT * FROM vbap INTO TABLE @lt_items WHERE vbeln = @iv_contract_id.
+
+    " 1.1 Fetch Sold-to Customer master data (KNA1) using VBAK-KUNNR
+    IF ls_header-kunnr IS NOT INITIAL.
+      SELECT SINGLE * FROM kna1 INTO @ls_customer WHERE kunnr = @ls_header-kunnr.
+    ENDIF.
+
+    " 1.2 Fetch Ship-to Customer from Partner table (VBPA) where Role = 'WE' (Ship-to)
+    SELECT SINGLE kunnr FROM vbpa INTO @lv_kunnr_we
+      WHERE vbeln = @iv_contract_id
+        AND parvw = 'WE'.
+    IF sy-subrc = 0 AND lv_kunnr_we IS NOT INITIAL.
+      SELECT SINGLE * FROM kna1 INTO @ls_shipto WHERE kunnr = @lv_kunnr_we.
+    ENDIF.
 
     " 2. Initialize Output Parameters (Standard SAP Interactive/Adobe Forms logic)
     ls_outputparams-connection = 'ADS'.       " Adobe Document Services default connection
@@ -73,9 +89,11 @@ CLASS zcl_contract_print_sample IMPLEMENTATION.
     CALL FUNCTION lv_fm_name
       EXPORTING
         /1bcdwb/docparams = ls_docparams
-        " Note: Here you pass the variables expected by your specific Adobe Form interface:
-        " is_header         = ls_header
-        " it_items          = lt_items
+        " Pass header, items, and additional customer/ship-to partner data to the form
+        is_header         = ls_header
+        it_items          = lt_items
+        is_customer       = ls_customer
+        is_shipto         = ls_shipto
       EXCEPTIONS
         usage_error       = 1
         system_error      = 2
