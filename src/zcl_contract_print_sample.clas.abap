@@ -8,9 +8,25 @@ CLASS zcl_contract_print_sample DEFINITION
 
     ALIASES print
       FOR zif_contract_print_provider~print.
+    ALIASES read_data
+      FOR zif_contract_print_provider~read_data.
 
   PROTECTED SECTION.
   PRIVATE SECTION.
+    TYPES: BEGIN OF ty_project_info,
+             vbeln       TYPE vbeln_va,
+             project_id  TYPE ps_posid,
+             description TYPE ps_post1,
+             cust_ref    TYPE bstnk,
+           END OF ty_project_info.
+
+    DATA: ms_header   TYPE vbak,
+          mt_items    TYPE TABLE OF vbap,
+          ms_customer TYPE kna1,
+          ms_shipto   TYPE kna1,
+          ms_project  TYPE ty_project_info,
+          ms_usr01    TYPE usr01.
+
     METHODS download_pdf
       IMPORTING
         !iv_contract_id TYPE vbeln_va
@@ -23,36 +39,21 @@ ENDCLASS.
 
 CLASS zcl_contract_print_sample IMPLEMENTATION.
 
-  METHOD zif_contract_print_provider~print.
-    TYPES: BEGIN OF ty_project_info,
-             vbeln       TYPE vbeln_va,
-             project_id  TYPE ps_posid,
-             description TYPE ps_post1,
-             cust_ref    TYPE bstnk,
-           END OF ty_project_info.
-
-    DATA: lv_fm_name      TYPE rs38l_fnam,
-          ls_outputparams TYPE sfpoutputparams,
-          ls_docparams    TYPE sfpdocparams,
-          ls_header       TYPE vbak,
-          lt_items        TYPE TABLE OF vbap,
-          ls_customer     TYPE kna1,
-          ls_shipto       TYPE kna1,
-          lv_kunnr_we     TYPE kunnr,
-          ls_project      TYPE ty_project_info.
+  METHOD zif_contract_print_provider~read_data.
+    DATA: lv_kunnr_we TYPE kunnr.
 
     " 1. Fetch Contract Header and Item Data from VBAK and VBAP
-    SELECT SINGLE * FROM vbak INTO @ls_header WHERE vbeln = @iv_contract_id.
+    SELECT SINGLE * FROM vbak INTO @ms_header WHERE vbeln = @iv_contract_id.
     IF sy-subrc <> 0.
       " Exit if contract not found
       RETURN.
     ENDIF.
 
-    SELECT * FROM vbap INTO TABLE @lt_items WHERE vbeln = @iv_contract_id.
+    SELECT * FROM vbap INTO TABLE @mt_items WHERE vbeln = @iv_contract_id.
 
     " 1.1 Fetch Sold-to Customer master data (KNA1) using VBAK-KUNNR
-    IF ls_header-kunnr IS NOT INITIAL.
-      SELECT SINGLE * FROM kna1 INTO @ls_customer WHERE kunnr = @ls_header-kunnr.
+    IF ms_header-kunnr IS NOT INITIAL.
+      SELECT SINGLE * FROM kna1 INTO @ms_customer WHERE kunnr = @ms_header-kunnr.
     ENDIF.
 
     " 1.2 Fetch Ship-to Customer from Partner table (VBPA) where Role = 'WE' (Ship-to)
@@ -60,15 +61,15 @@ CLASS zcl_contract_print_sample IMPLEMENTATION.
       WHERE vbeln = @iv_contract_id
         AND parvw = 'WE'.
     IF sy-subrc = 0 AND lv_kunnr_we IS NOT INITIAL.
-      SELECT SINGLE * FROM kna1 INTO @ls_shipto WHERE kunnr = @lv_kunnr_we.
+      SELECT SINGLE * FROM kna1 INTO @ms_shipto WHERE kunnr = @lv_kunnr_we.
     ENDIF.
 
     " 1.3 Fetch Customer Project / WBS Element details linked to the contract items
-    ls_project-vbeln    = iv_contract_id.
-    ls_project-cust_ref = ls_header-bstnk. " Customer Purchase Order / Reference (often contains project/contract name)
+    ms_project-vbeln    = iv_contract_id.
+    ms_project-cust_ref = ms_header-bstnk. " Customer Purchase Order / Reference (often contains project/contract name)
 
-    LOOP AT lt_items INTO DATA(ls_item) WHERE ps_psp_eln IS NOT INITIAL.
-      SELECT SINGLE posid, post1 FROM prps INTO ( @ls_project-project_id, @ls_project-description )
+    LOOP AT mt_items INTO DATA(ls_item) WHERE ps_psp_eln IS NOT INITIAL.
+      SELECT SINGLE posid, post1 FROM prps INTO ( @ms_project-project_id, @ms_project-description )
         WHERE pspnr = @ls_item-ps_psp_eln.
       IF sy-subrc = 0.
         EXIT. " Use the first WBS element found for sample description
@@ -76,15 +77,25 @@ CLASS zcl_contract_print_sample IMPLEMENTATION.
     ENDLOOP.
 
     " Fallback: If no WBS project is explicitly linked to the items, check standard VBAK fields
-    IF ls_project-project_id IS INITIAL.
+    IF ms_project-project_id IS INITIAL.
       " If VBAK-BSTNK has a project name (like 'Deutsche Telekom 5G Base Station Repair')
       " we can treat that as the project description fallback
-      ls_project-description = ls_header-bstnk.
+      ms_project-description = ms_header-bstnk.
     ENDIF.
 
     " 1.4 Fetch User Print Defaults from USR01
-    DATA: ls_usr01 TYPE usr01.
-    SELECT SINGLE * FROM usr01 INTO @ls_usr01 WHERE bname = @sy-uname.
+    SELECT SINGLE * FROM usr01 INTO @ms_usr01 WHERE bname = @sy-uname.
+  ENDMETHOD.
+
+  METHOD zif_contract_print_provider~print.
+    DATA: lv_fm_name      TYPE rs38l_fnam,
+          ls_outputparams TYPE sfpoutputparams,
+          ls_docparams    TYPE sfpdocparams.
+
+    " Ensure header data is read
+    IF ms_header IS INITIAL.
+      RETURN.
+    ENDIF.
 
     IF iv_form_type = 'S'. " Smart Forms
       DATA: lv_ssf_fm_name        TYPE rs38l_fnam,
@@ -110,10 +121,10 @@ CLASS zcl_contract_print_sample IMPLEMENTATION.
       ENDIF.
 
       " Apply user printing defaults if configured
-      IF ls_usr01-spld IS NOT INITIAL.
-        ls_output_options-tddest   = ls_usr01-spld.
-        ls_output_options-tdimmed  = ls_usr01-splg.
-        ls_output_options-tddel    = ls_usr01-spda.
+      IF ms_usr01-spld IS NOT INITIAL.
+        ls_output_options-tddest   = ms_usr01-spld.
+        ls_output_options-tdimmed  = ms_usr01-splg.
+        ls_output_options-tddel    = ms_usr01-spda.
       ENDIF.
 
       " If Save as PDF is selected, retrieve OTF data instead of sending directly to spool
@@ -127,14 +138,14 @@ CLASS zcl_contract_print_sample IMPLEMENTATION.
         EXPORTING
           control_parameters = ls_control_parameters
           output_options     = ls_output_options
-          is_header          = ls_header
-          is_customer        = ls_customer
-          is_shipto          = ls_shipto
-          is_project         = ls_project
+          is_header          = ms_header
+          is_customer        = ms_customer
+          is_shipto          = ms_shipto
+          is_project         = ms_project
         IMPORTING
           job_output_info    = ls_output_data
         TABLES
-          it_items           = lt_items
+          it_items           = mt_items
         EXCEPTIONS
           formatting_error   = 1
           internal_error     = 2
@@ -178,10 +189,10 @@ CLASS zcl_contract_print_sample IMPLEMENTATION.
       ls_outputparams-preview    = abap_true.    " Enable print preview
 
       " Apply user printing defaults if configured
-      IF ls_usr01-spld IS NOT INITIAL.
-        ls_outputparams-dest   = ls_usr01-spld.
-        ls_outputparams-reqimm = ls_usr01-splg.
-        ls_outputparams-reqdel = ls_usr01-spda.
+      IF ms_usr01-spld IS NOT INITIAL.
+        ls_outputparams-dest   = ms_usr01-spld.
+        ls_outputparams-reqimm = ms_usr01-splg.
+        ls_outputparams-reqdel = ms_usr01-spda.
       ENDIF.
 
       " If Save as PDF is selected, instruct ADS to return PDF data
@@ -225,11 +236,11 @@ CLASS zcl_contract_print_sample IMPLEMENTATION.
         EXPORTING
           /1bcdwb/docparams = ls_docparams
           " Pass header, items, customer, ship-to partner, and project details to the form
-          is_header         = ls_header
-          it_items          = lt_items
-          is_customer       = ls_customer
-          is_shipto         = ls_shipto
-          is_project        = ls_project
+          is_header         = ms_header
+          it_items          = mt_items
+          is_customer       = ms_customer
+          is_shipto         = ms_shipto
+          is_project        = ms_project
         EXCEPTIONS
           usage_error       = 1
           system_error      = 2

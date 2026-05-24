@@ -1,6 +1,12 @@
 INTERFACE zif_contract_print_provider
   PUBLIC.
 
+  METHODS read_data
+    IMPORTING
+      !iv_contract_id TYPE vbeln_va
+    RAISING
+      cx_static_check.
+
   METHODS print
     IMPORTING
       !iv_contract_id TYPE vbeln_va

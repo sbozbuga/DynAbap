@@ -74,6 +74,8 @@ CLASS zcl_contract_print_engine IMPLEMENTATION.
         lo_provider ?= lo_instance.
 
         " Execute method type-safely via the interface
+        lo_provider->read_data( iv_contract_id = iv_contract_id ).
+
         lo_provider->print(
           iv_contract_id = iv_contract_id
           iv_form_name   = ls_config-form_name
@@ -82,6 +84,7 @@ CLASS zcl_contract_print_engine IMPLEMENTATION.
 
       CATCH cx_sy_move_cast_error.
         " If class does not implement the interface, fallback to fully dynamic method execution
+        " NOTE: For legacy classes, we assume the single method defined in customizing handles both
         TRY.
             CALL METHOD lo_instance->(ls_config-method_name)
               EXPORTING
