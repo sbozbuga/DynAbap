@@ -30,6 +30,34 @@ All ABAP objects are structured in an **abapGit** compatible format under the `s
 
 ---
 
+## Operational Workflow: Adding a New Project & Form
+
+When a new business project category is introduced requiring a new Adobe Form or Smart Form layout, follow these 4 operational steps to integrate it:
+
+### 1. Define the Print Layout
+Create the form layout in SAP:
+* For **Adobe PDF-Based Forms**: Use Transaction **`SFP`** to design the Interface and Form.
+* For **Smart Forms**: Use Transaction **`SMARTFORMS`** to build the layout.
+
+### 2. Implement the Custom Print Logic (Optional)
+If the standard contract, customer, and project parameters supplied by `ZCL_CONTRACT_PRINT_SAMPLE` are sufficient, you can skip this step.
+If additional custom business logic or specific database selects are required:
+1. Create a new ABAP Class implementing the standard interface [ZIF_CONTRACT_PRINT_PROVIDER](file:///home/sb/GitRepos/DynAbap/src/zif_contract_print_provider.intf.abap).
+2. Code your data fetching and layout parameter bindings inside the `PRINT` method.
+
+### 3. Register the Customizing Entry
+Link the new contract type to your new form and print class using Transaction **`SM30`** (table **`ZSD_CONTR_FORM`**):
+* **Sales Doc Type**: The Contract Type associated with the new project (e.g. `WV`, `ZREP`).
+* **Form Name**: The name of the SFP Form or Smart Form created in Step 1.
+* **Form Type**: `'A'` for Adobe Form, or `'S'` for Smart Form.
+* **Class Name**: The class name created in Step 2 (or default `ZCL_CONTRACT_PRINT_SAMPLE`).
+* **Method Name**: `PRINT`.
+
+### 4. Wire Output Triggering (NACE)
+Go to Transaction **`NACE`** and map the print output routine for your Output Type to the wrapper program [ZSD_CONTRACT_PRINT_PROGRAM](file:///home/sb/GitRepos/DynAbap/src/zsd_contract_print_program.prog.abap) with form routine **`ENTRY`**.
+
+---
+
 ## Quick Configuration Steps
 
 1. **Import the package** into your SAP system using [abapGit](https://abapgit.org/).
