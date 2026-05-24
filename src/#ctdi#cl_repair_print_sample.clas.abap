@@ -241,7 +241,11 @@ CLASS /ctdi/cl_repair_print_sample IMPLEMENTATION.
           no_function_module = 2
           others             = 3.
       IF sy-subrc <> 0.
-        RAISE EXCEPTION TYPE cx_sy_dyn_call_illegal_value.
+        RAISE EXCEPTION TYPE /ctdi/cx_form_error
+          EXPORTING
+            repair_id = iv_repair_id
+            message   = |Smart Form function module name resolution failed for: { iv_form_name }|
+            subrc     = sy-subrc.
       ENDIF.
 
       " Apply user printing defaults if configured
@@ -277,7 +281,11 @@ CLASS /ctdi/cl_repair_print_sample IMPLEMENTATION.
           user_canceled      = 4
           others             = 5.
       IF sy-subrc <> 0.
-        RAISE EXCEPTION TYPE cx_sy_dyn_call_illegal_value.
+        RAISE EXCEPTION TYPE /ctdi/cx_form_error
+          EXPORTING
+            repair_id = iv_repair_id
+            message   = |Smart Form dynamic execution failed for function module: { lv_ssf_fm_name }|
+            subrc     = sy-subrc.
       ENDIF.
 
       " If Save as PDF, convert OTF to PDF and trigger local download
@@ -301,7 +309,11 @@ CLASS /ctdi/cl_repair_print_sample IMPLEMENTATION.
           download_pdf( iv_repair_id = iv_repair_id
                         iv_pdf_data    = lv_pdf_xstring ).
         ELSE.
-          RAISE EXCEPTION TYPE cx_sy_dyn_call_illegal_value.
+          RAISE EXCEPTION TYPE /ctdi/cx_form_error
+            EXPORTING
+              repair_id = iv_repair_id
+              message   = 'CONVERT_OTF failed to convert OTF stream to PDF'
+              subrc     = sy-subrc.
         ENDIF.
       ENDIF.
 
@@ -335,7 +347,11 @@ CLASS /ctdi/cl_repair_print_sample IMPLEMENTATION.
           internal_error  = 4
           others          = 5.
       IF sy-subrc <> 0.
-        RAISE EXCEPTION TYPE cx_sy_dyn_call_illegal_value.
+        RAISE EXCEPTION TYPE /ctdi/cx_form_error
+          EXPORTING
+            repair_id = iv_repair_id
+            message   = 'FP_JOB_OPEN failed to open Adobe Forms job'
+            subrc     = sy-subrc.
       ENDIF.
 
       " 3. Retrieve the dynamic PDF/Adobe function module name generated for the form
@@ -385,8 +401,18 @@ CLASS /ctdi/cl_repair_print_sample IMPLEMENTATION.
           internal_error = 3
           others         = 4.
 
-      IF lv_subrc <> 0 OR sy-subrc <> 0.
-        RAISE EXCEPTION TYPE cx_sy_dyn_call_illegal_value.
+      IF lv_subrc <> 0.
+        RAISE EXCEPTION TYPE /ctdi/cx_form_error
+          EXPORTING
+            repair_id = iv_repair_id
+            message   = 'Adobe Form dynamic generated function module failed'
+            subrc     = lv_subrc.
+      ELIF sy-subrc <> 0.
+        RAISE EXCEPTION TYPE /ctdi/cx_form_error
+          EXPORTING
+            repair_id = iv_repair_id
+            message   = 'FP_JOB_CLOSE failed to close Adobe Forms job'
+            subrc     = sy-subrc.
       ENDIF.
 
       " If Save as PDF, trigger local download of the retrieved PDF xstring

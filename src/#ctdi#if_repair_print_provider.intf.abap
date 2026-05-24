@@ -5,7 +5,7 @@ INTERFACE /ctdi/if_repair_print_provider
     IMPORTING
       !iv_repair_id TYPE vbeln_va
     RAISING
-      cx_static_check.
+      /ctdi/cx_print_error.
 
   METHODS print
     IMPORTING
@@ -13,6 +13,6 @@ INTERFACE /ctdi/if_repair_print_provider
       !iv_form_name   TYPE fpname
       !iv_save_as_pdf TYPE abap_bool DEFAULT abap_false
     RAISING
-      cx_static_check.
+      /ctdi/cx_print_error.
 
 ENDINTERFACE.

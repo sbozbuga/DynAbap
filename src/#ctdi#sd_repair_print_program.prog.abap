@@ -29,8 +29,10 @@ START-OF-SELECTION.
     CATCH /ctdi/cx_no_config_found.
       " Fall back to legacy printing logic
       PERFORM print_old USING p_vbeln p_pdf.
-    CATCH cx_root.
-      MESSAGE 'Error executing dynamic repair print.' TYPE 'E'.
+    CATCH /ctdi/cx_print_error INTO DATA(lx_direct_print_err).
+      MESSAGE |Print failed: { lx_direct_print_err->message }| TYPE 'E'.
+    CATCH cx_root INTO DATA(lx_direct_root).
+      MESSAGE |Error executing dynamic repair print: { lx_direct_root->get_text( ) }| TYPE 'E'.
   ENDTRY.
 
 *&---------------------------------------------------------------------*
@@ -67,6 +69,10 @@ FORM entry USING ent_retco TYPE sysubrc
     CATCH /ctdi/cx_no_config_found.
       " Fall back to legacy printing logic
       PERFORM print_old USING lv_repair_id abap_false.
+    CATCH /ctdi/cx_print_error INTO DATA(lx_print_err).
+      " Output determination logs error
+      MESSAGE |Dynamic repair print failed: { lx_print_err->message }| TYPE 'E'.
+      ent_retco = 4.
     CATCH cx_root.
       " Set return code to 4 to signal output execution failed
       ent_retco = 4.

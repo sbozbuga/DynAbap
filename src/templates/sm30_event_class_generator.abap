@@ -37,9 +37,9 @@ FORM on_new_entry.
     ENDIF.
   ENDIF.
 
-  " Auto-generate a class name from the Sales Document Type (AUART) if not provided
+  " Auto-generate a class name from the Contract VBELN if not provided
   IF ls_entry-class_name IS INITIAL.
-    ls_entry-class_name = |/CTDI/CL_REPAIR_PRINT_{ ls_entry-auart }|.
+    ls_entry-class_name = |/CTDI/CL_REPAIR_PRINT_{ ls_entry-vbeln }|.
   ENDIF.
 
   " Verify the auto-generated class does not already exist
@@ -61,7 +61,7 @@ FORM on_new_entry.
 
   ls_class-clsname    = ls_entry-class_name.
   ls_class-langu      = sy-langu.
-  ls_class-descript   = |Print Provider for Sales Doc Type { ls_entry-auart }|.
+  ls_class-descript   = |Print Provider for Contract { ls_entry-vbeln }|.
   ls_class-state      = '1'. " Active
   ls_class-clsccincl  = 'X'.
   ls_class-fixpt      = 'X'.
@@ -112,7 +112,7 @@ FORM on_before_save.
   LOOP AT total INTO ls_entry.
     " Validate class name is not empty
     IF ls_entry-class_name IS INITIAL.
-      MESSAGE |Class name is required for Sales Doc Type { ls_entry-auart }.| TYPE 'E'.
+      MESSAGE |Class name is required for Contract { ls_entry-vbeln }.| TYPE 'E'.
       RETURN.
     ENDIF.
 

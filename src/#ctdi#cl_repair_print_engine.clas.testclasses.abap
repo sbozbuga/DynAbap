@@ -127,7 +127,7 @@ CLASS lcl_test IMPLEMENTATION.
     APPEND ls_vbak TO lt_vbak.
     go_db_environment->insert_test_data( lt_vbak ).
 
-    " Test that calling a non-configured or missing AUART repair raises a /ctdi/cx_no_config_found exception
+    " Test that calling a non-configured or missing VBELN contract/repair raises a /ctdi/cx_no_config_found exception
     TRY.
         cut->print( iv_repair_id = '0000000100' ).
         cl_abap_unit_assert=>fail( msg = 'Should have raised exception for missing configuration' ).
@@ -150,7 +150,7 @@ CLASS lcl_test IMPLEMENTATION.
     " 2. Insert Mock Customizing entry with empty class/method configuration
     DATA: lt_config TYPE TABLE OF /ctdi/sd_repair_form,
           ls_config TYPE /ctdi/sd_repair_form.
-    ls_config-auart = 'ZREP'.
+    ls_config-vbeln = '0000000100'.
     APPEND ls_config TO lt_config.
     go_db_environment->insert_test_data( lt_config ).
 
@@ -176,7 +176,7 @@ CLASS lcl_test IMPLEMENTATION.
     " 2. Insert Mock Customizing configuration
     DATA: lt_config TYPE TABLE OF /ctdi/sd_repair_form,
           ls_config TYPE /ctdi/sd_repair_form.
-    ls_config-auart       = 'ZREP'.
+    ls_config-vbeln       = '0000000100'.
     ls_config-class_name  = 'LCL_MOCK_PRINT_PROVIDER'.
     ls_config-method_name = 'PRINT'.
     ls_config-form_name   = 'TEST_ADOBE_FORM'.
@@ -228,7 +228,7 @@ CLASS lcl_test IMPLEMENTATION.
     " 2. Insert Mock Customizing configuration (points to legacy class with no interface)
     DATA: lt_config TYPE TABLE OF /ctdi/sd_repair_form,
           ls_config TYPE /ctdi/sd_repair_form.
-    ls_config-auart       = 'ZREP'.
+    ls_config-vbeln       = '0000000100'.
     ls_config-class_name  = 'LCL_MOCK_LEGACY_PRINT'.
     ls_config-method_name = 'MY_LEGACY_PRINT'.
     ls_config-form_name   = 'TEST_SMART_FORM'.
@@ -276,7 +276,7 @@ CLASS lcl_test IMPLEMENTATION.
     " 2. Insert Mock Customizing configuration
     DATA: lt_config TYPE TABLE OF /ctdi/sd_repair_form,
           ls_config TYPE /ctdi/sd_repair_form.
-    ls_config-auart       = 'ZREP'.
+    ls_config-vbeln       = '0000000100'.
     ls_config-class_name  = 'LCL_MOCK_PRINT_PROVIDER'.
     ls_config-method_name = 'PRINT'.
     ls_config-form_name   = 'FIRST_FORM'.
@@ -300,7 +300,7 @@ CLASS lcl_test IMPLEMENTATION.
 
         DATA: lt_config_new TYPE TABLE OF /ctdi/sd_repair_form,
               ls_config_new TYPE /ctdi/sd_repair_form.
-        ls_config_new-auart       = 'ZREP'.
+        ls_config_new-vbeln       = '0000000100'.
         ls_config_new-class_name  = 'LCL_MOCK_PRINT_PROVIDER'.
         ls_config_new-method_name = 'PRINT'.
         ls_config_new-form_name   = 'CHANGED_FORM'.
@@ -348,7 +348,7 @@ CLASS lcl_test IMPLEMENTATION.
     " 4. Insert Mock Customizing configuration
     DATA: lt_config TYPE TABLE OF /ctdi/sd_repair_form,
           ls_config TYPE /ctdi/sd_repair_form.
-    ls_config-auart       = 'ZREP'.
+    ls_config-vbeln       = '0000000200'.
     ls_config-class_name  = 'LCL_MOCK_PRINT_PROVIDER'.
     ls_config-method_name = 'PRINT'.
     ls_config-form_name   = 'TEST_PM_FORM'.
