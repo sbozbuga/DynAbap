@@ -259,19 +259,19 @@ CLASS /ctdi/cl_repair_print_engine IMPLEMENTATION.
                     refclsname = '/CTDI/IF_REPAIR_PRINT_PROVIDER' )
       TO lt_intfs.
 
-    CALL FUNCTION 'SEO_CLASS_CREATE_COMPLETE'
-      EXPORTING
-        devclass   = '$TMP'     " Assign to $TMP initially
-        overwrite  = abap_false
-      CHANGING
-        class      = ls_class
-        intkey     = lt_intfs
-      EXCEPTIONS
-        others     = 1.
-
-    IF sy-subrc = 0.
-      cs_entry-method_name = 'PRINT'.
-    ENDIF.
+    TRY.
+        cl_oo_class=>create_class(
+          EXPORTING
+            vseoclass = ls_class
+            devclass  = '$TMP'
+          CHANGING
+            intkey    = lt_intfs ).
+        cs_entry-method_name = 'PRINT'.
+      CATCH cx_oo_class_creation_failed.
+        " Generation failed silently, will be warned during save validation
+      CATCH cx_root.
+        " Catch any other static or dynamic generation exceptions
+    ENDTRY.
   ENDMETHOD.
 
   METHOD validate_entry.
@@ -341,25 +341,28 @@ CLASS /ctdi/cl_repair_print_engine IMPLEMENTATION.
                           refclsname = '/CTDI/IF_REPAIR_PRINT_PROVIDER' )
             TO lt_intfs.
 
-          CALL FUNCTION 'SEO_CLASS_CREATE_COMPLETE'
-            EXPORTING
-              devclass   = '$TMP'     " Assign to $TMP initially
-              overwrite  = abap_false
-            CHANGING
-              class      = ls_class
-              intkey     = lt_intfs
-            EXCEPTIONS
-              others     = 1.
-
-          IF sy-subrc = 0.
-            MESSAGE |Class { is_entry-class_name } generated successfully.| TYPE 'S'.
-            RETURN. " Class now successfully generated, bypass error check
-          ELSE.
-            RAISE EXCEPTION TYPE /ctdi/cx_print_error
-              EXPORTING
-                repair_id = is_entry-vbeln
-                message   = |Failed to generate missing class: { is_entry-class_name }|.
-          ENDIF.
+          TRY.
+              cl_oo_class=>create_class(
+                EXPORTING
+                  vseoclass = ls_class
+                  devclass  = '$TMP'
+                CHANGING
+                  intkey    = lt_intfs ).
+              MESSAGE |Class { is_entry-class_name } generated successfully.| TYPE 'S'.
+              RETURN. " Class now successfully generated, bypass error check
+            CATCH cx_oo_class_creation_failed INTO DATA(lx_creation_err).
+              RAISE EXCEPTION TYPE /ctdi/cx_print_error
+                EXPORTING
+                  repair_id = is_entry-vbeln
+                  message   = |Failed to generate class: { lx_creation_err->get_text( ) }|
+                  previous  = lx_creation_err.
+            CATCH cx_root INTO DATA(lx_root_err).
+              RAISE EXCEPTION TYPE /ctdi/cx_print_error
+                EXPORTING
+                  repair_id = is_entry-vbeln
+                  message   = |Failed to generate missing class: { is_entry-class_name }|
+                  previous  = lx_root_err.
+          ENDTRY.
         ENDIF.
       ENDIF.
 
