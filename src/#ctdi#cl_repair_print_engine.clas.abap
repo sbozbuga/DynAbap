@@ -24,15 +24,46 @@ ENDCLASS.
 CLASS /ctdi/cl_repair_print_engine IMPLEMENTATION.
 
   METHOD print.
-    DATA: lv_auart    TYPE auart,
-          ls_config   TYPE /ctdi/sd_repair_form,
-          lo_instance TYPE REF TO object,
-          lo_provider TYPE REF TO /ctdi/if_repair_print_provider.
+    DATA: lv_auart       TYPE auart,
+          ls_config      TYPE /ctdi/sd_repair_form,
+          lo_instance    TYPE REF TO object,
+          lo_provider    TYPE REF TO /ctdi/if_repair_print_provider,
+          lv_aufnr       TYPE aufnr,
+          lv_contract_id TYPE vbeln_va,
+          lv_kdauf       TYPE kdauf.
 
-    " 1. Retrieve repair type from standard Sales Document Header (VBAK)
-    SELECT SINGLE auart FROM vbak INTO @lv_auart WHERE vbeln = @iv_repair_id.
-    IF sy-subrc <> 0.
-      " Raise a generic error if repair doesn't exist
+    " 1. Format input ID and check if it exists in PM/CS Service Orders (AUFK)
+    lv_aufnr = |{ iv_repair_id ALPHA = IN }|.
+    SELECT SINGLE auart FROM aufk INTO @DATA(lv_order_type) WHERE aufnr = @lv_aufnr.
+    IF sy-subrc = 0.
+      " It is a PM/CS Service Order from IW42:
+      " Try resolving direct Contract Number from AFIH
+      SELECT SINGLE kunum FROM afih INTO @lv_contract_id WHERE aufnr = @lv_aufnr.
+      
+      IF lv_contract_id IS INITIAL.
+        " Try resolving indirect Contract Number via Sales Order reference in AUFK
+        SELECT SINGLE kdauf FROM aufk INTO @lv_kdauf WHERE aufnr = @lv_aufnr.
+        IF sy-subrc = 0 AND lv_kdauf IS NOT INITIAL.
+          SELECT SINGLE vgbel FROM vbap INTO @lv_contract_id 
+            WHERE vbeln = @lv_kdauf 
+              AND vgbel IS NOT INITIAL.
+          IF lv_contract_id IS INITIAL.
+            lv_contract_id = lv_kdauf.
+          ENDIF.
+        ENDIF.
+      ENDIF.
+
+      " Query custom customizing mapping via the resolved Contract ID
+      IF lv_contract_id IS NOT INITIAL.
+        SELECT SINGLE auart FROM vbak INTO @lv_auart WHERE vbeln = @lv_contract_id.
+      ENDIF.
+    ELSE.
+      " It is a standard Sales Document (VBELN):
+      SELECT SINGLE auart FROM vbak INTO @lv_auart WHERE vbeln = @iv_repair_id.
+    ENDIF.
+
+    IF lv_auart IS INITIAL.
+      " Raise a generic error if the Sales Document / Contract doesn't exist
       RAISE EXCEPTION TYPE cx_sy_dyn_call_illegal_value.
     ENDIF.
 

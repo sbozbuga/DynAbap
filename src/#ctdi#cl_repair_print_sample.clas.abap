@@ -43,77 +43,154 @@ CLASS /ctdi/cl_repair_print_sample IMPLEMENTATION.
     DATA: lv_kunnr_we    TYPE kunnr,
           lv_contract_id TYPE vbeln_va,
           ls_contract_h  TYPE vbak,
-          lt_contract_i  TYPE TABLE OF vbap.
+          lt_contract_i  TYPE TABLE OF vbap,
+          lv_aufnr       TYPE aufnr,
+          ls_aufk        TYPE aufk,
+          lv_kdauf       TYPE kdauf.
 
-    " 1. Fetch Repair Header and Item Data from VBAK and VBAP
-    SELECT SINGLE * FROM vbak INTO @ms_header WHERE vbeln = @iv_repair_id.
-    IF sy-subrc <> 0.
-      " Exit if repair not found
-      RETURN.
-    ENDIF.
+    " 1. Format input ID and check if it is a PM/CS Service Order in AUFK
+    lv_aufnr = |{ iv_repair_id ALPHA = IN }|.
+    SELECT SINGLE * FROM aufk INTO @ls_aufk WHERE aufnr = @lv_aufnr.
+    IF sy-subrc = 0.
+      " It is a PM/CS Service Order:
+      " Try resolving direct Contract Number from AFIH
+      SELECT SINGLE kunum FROM afih INTO @lv_contract_id WHERE aufnr = @lv_aufnr.
 
-    SELECT * FROM vbap INTO TABLE @mt_items WHERE vbeln = @iv_repair_id.
-
-    " 1.1 Fetch Sold-to Customer master data (KNA1) using VBAK-KUNNR
-    IF ms_header-kunnr IS NOT INITIAL.
-      SELECT SINGLE * FROM kna1 INTO @ms_customer WHERE kunnr = @ms_header-kunnr.
-    ENDIF.
-
-    " 1.2 Fetch Ship-to Customer from Partner table (VBPA) where Role = 'WE' (Ship-to)
-    SELECT SINGLE kunnr FROM vbpa INTO @lv_kunnr_we
-      WHERE vbeln = @iv_repair_id
-        AND parvw = 'WE'.
-    IF sy-subrc = 0 AND lv_kunnr_we IS NOT INITIAL.
-      SELECT SINGLE * FROM kna1 INTO @ms_shipto WHERE kunnr = @lv_kunnr_we.
-    ENDIF.
-
-    " 1.3 Fetch Customer Project details
-    " Check if any item in the Repair Order references a Sales Contract (VGBEL where contract vbtyp = 'G')
-    LOOP AT mt_items INTO DATA(ls_item) WHERE vgbel IS NOT INITIAL.
-      SELECT SINGLE vbeln FROM vbak INTO @lv_contract_id 
-        WHERE vbeln = @ls_item-vgbel 
-          AND vbtyp = 'G'. " 'G' = Contract
-      IF sy-subrc = 0.
-        EXIT.
-      ENDIF.
-    ENDLOOP.
-
-    IF lv_contract_id IS NOT INITIAL.
-      " Customer is using contract (Vbeln) as a key for identifying Repair projects:
-      " Query WBS elements and customer references linked to the Contract
-      SELECT SINGLE * FROM vbak INTO @ls_contract_h WHERE vbeln = @lv_contract_id.
-      SELECT * FROM vbap INTO TABLE @lt_contract_i WHERE vbeln = @lv_contract_id.
-
-      ms_project-vbeln    = lv_contract_id. " Use contract Vbeln as key
-      ms_project-cust_ref = ls_contract_h-bstnk.
-
-      LOOP AT lt_contract_i INTO DATA(ls_contract_item) WHERE ps_psp_eln IS NOT INITIAL.
-        SELECT SINGLE posid, post1 FROM prps INTO ( @ms_project-project_id, @ms_project-description )
-          WHERE pspnr = @ls_contract_item-ps_psp_eln.
-        IF sy-subrc = 0.
-          EXIT.
+      IF lv_contract_id IS INITIAL AND ls_aufk-kdauf IS NOT INITIAL.
+        " Try resolving indirect Contract Number via Sales Order reference
+        SELECT SINGLE vgbel FROM vbap INTO @lv_contract_id 
+          WHERE vbeln = @ls_aufk-kdauf 
+            AND vgbel IS NOT INITIAL.
+        IF lv_contract_id IS INITIAL.
+          lv_contract_id = ls_aufk-kdauf.
         ENDIF.
-      ENDLOOP.
-
-      IF ms_project-project_id IS INITIAL.
-        ms_project-description = ls_contract_h-bstnk.
       ENDIF.
 
-    ELSE.
-      " Fallback: Use the Repair Order details directly
-      ms_project-vbeln    = iv_repair_id.
+      " Populate fake VBAK ms_header attributes to keep sample print form compatible
+      IF lv_contract_id IS NOT INITIAL.
+        SELECT SINGLE * FROM vbak INTO @ls_contract_h WHERE vbeln = @lv_contract_id.
+        SELECT * FROM vbap INTO TABLE @lt_contract_i WHERE vbeln = @lv_contract_id.
+        ms_header-vbeln = lv_contract_id.
+        ms_header-kunnr = ls_contract_h-kunnr.
+        ms_header-bstnk = ls_contract_h-bstnk.
+      ELSE.
+        ms_header-vbeln = iv_repair_id.
+        ms_header-kunnr = ls_aufk-kunnr.
+      ENDIF.
+
+      " Mock mt_items if needed, or select from contract items
+      mt_items = lt_contract_i.
+
+      " 1.1 Fetch Sold-to Customer master data (KNA1) using ms_header-kunnr
+      IF ms_header-kunnr IS NOT INITIAL.
+        SELECT SINGLE * FROM kna1 INTO @ms_customer WHERE kunnr = @ms_header-kunnr.
+      ENDIF.
+
+      " 1.2 Fetch Ship-to Customer from Partner table (VBPA) where Role = 'WE' (Ship-to)
+      IF lv_contract_id IS NOT INITIAL.
+        SELECT SINGLE kunnr FROM vbpa INTO @lv_kunnr_we
+          WHERE vbeln = @lv_contract_id
+            AND parvw = 'WE'.
+        IF sy-subrc = 0 AND lv_kunnr_we IS NOT INITIAL.
+          SELECT SINGLE * FROM kna1 INTO @ms_shipto WHERE kunnr = @lv_kunnr_we.
+        ENDIF.
+      ENDIF.
+
+      " 1.3 Fetch Customer Project details
+      ms_project-vbeln    = COND #( WHEN lv_contract_id IS NOT INITIAL THEN lv_contract_id ELSE iv_repair_id ).
       ms_project-cust_ref = ms_header-bstnk.
 
-      LOOP AT mt_items INTO ls_item WHERE ps_psp_eln IS NOT INITIAL.
+      " Check WBS Element directly maintained on the Service Order header (AUFK-PSPEL)
+      IF ls_aufk-pspel IS NOT INITIAL.
         SELECT SINGLE posid, post1 FROM prps INTO ( @ms_project-project_id, @ms_project-description )
-          WHERE pspnr = @ls_item-ps_psp_eln.
-        IF sy-subrc = 0.
-          EXIT.
-        ENDIF.
-      ENDLOOP.
+          WHERE pspnr = @ls_aufk-pspel.
+      ENDIF.
+
+      " Fallback to Contract items if WBS was not directly maintained on the order
+      IF ms_project-project_id IS INITIAL AND lv_contract_id IS NOT INITIAL.
+        LOOP AT lt_contract_i INTO DATA(ls_contract_item) WHERE ps_psp_eln IS NOT INITIAL.
+          SELECT SINGLE posid, post1 FROM prps INTO ( @ms_project-project_id, @ms_project-description )
+            WHERE pspnr = @ls_contract_item-ps_psp_eln.
+          IF sy-subrc = 0.
+            EXIT.
+          ENDIF.
+        ENDLOOP.
+      ENDIF.
 
       IF ms_project-project_id IS INITIAL.
         ms_project-description = ms_header-bstnk.
+      ENDIF.
+
+    ELSE.
+      " It is a standard Sales Document (VBELN) - Run standard retrieval logic:
+      SELECT SINGLE * FROM vbak INTO @ms_header WHERE vbeln = @iv_repair_id.
+      IF sy-subrc <> 0.
+        RETURN.
+      ENDIF.
+
+      SELECT * FROM vbap INTO TABLE @mt_items WHERE vbeln = @iv_repair_id.
+
+      " 1.1 Fetch Sold-to Customer master data (KNA1) using VBAK-KUNNR
+      IF ms_header-kunnr IS NOT INITIAL.
+        SELECT SINGLE * FROM kna1 INTO @ms_customer WHERE kunnr = @ms_header-kunnr.
+      ENDIF.
+
+      " 1.2 Fetch Ship-to Customer from Partner table (VBPA) where Role = 'WE' (Ship-to)
+      SELECT SINGLE kunnr FROM vbpa INTO @lv_kunnr_we
+        WHERE vbeln = @iv_repair_id
+          AND parvw = 'WE'.
+      IF sy-subrc = 0 AND lv_kunnr_we IS NOT INITIAL.
+        SELECT SINGLE * FROM kna1 INTO @ms_shipto WHERE kunnr = @lv_kunnr_we.
+      ENDIF.
+
+      " 1.3 Fetch Customer Project details
+      " Check if any item in the Repair Order references a Sales Contract (VGBEL where contract vbtyp = 'G')
+      LOOP AT mt_items INTO ls_item WHERE vgbel IS NOT INITIAL.
+        SELECT SINGLE vbeln FROM vbak INTO @lv_contract_id 
+          WHERE vbeln = @ls_item-vgbel 
+            AND vbtyp = 'G'. " 'G' = Contract
+        IF sy-subrc = 0.
+          EXIT.
+        ENDIF.
+      ENDLOOP.
+
+      IF lv_contract_id IS NOT INITIAL.
+        " Customer is using contract (Vbeln) as a key for identifying Repair projects:
+        " Query WBS elements and customer references linked to the Contract
+        SELECT SINGLE * FROM vbak INTO @ls_contract_h WHERE vbeln = @lv_contract_id.
+        SELECT * FROM vbap INTO TABLE @lt_contract_i WHERE vbeln = @lv_contract_id.
+
+        ms_project-vbeln    = lv_contract_id. " Use contract Vbeln as key
+        ms_project-cust_ref = ls_contract_h-bstnk.
+
+        LOOP AT lt_contract_i INTO DATA(ls_contract_item) WHERE ps_psp_eln IS NOT INITIAL.
+          SELECT SINGLE posid, post1 FROM prps INTO ( @ms_project-project_id, @ms_project-description )
+            WHERE pspnr = @ls_contract_item-ps_psp_eln.
+          IF sy-subrc = 0.
+            EXIT.
+          ENDIF.
+        ENDLOOP.
+
+        IF ms_project-project_id IS INITIAL.
+          ms_project-description = ls_contract_h-bstnk.
+        ENDIF.
+
+      ELSE.
+        " Fallback: Use the Repair Order details directly
+        ms_project-vbeln    = iv_repair_id.
+        ms_project-cust_ref = ms_header-bstnk.
+
+        LOOP AT mt_items INTO ls_item WHERE ps_psp_eln IS NOT INITIAL.
+          SELECT SINGLE posid, post1 FROM prps INTO ( @ms_project-project_id, @ms_project-description )
+            WHERE pspnr = @ls_item-ps_psp_eln.
+          IF sy-subrc = 0.
+            EXIT.
+          ENDIF.
+        ENDLOOP.
+
+        IF ms_project-project_id IS INITIAL.
+          ms_project-description = ms_header-bstnk.
+        ENDIF.
       ENDIF.
     ENDIF.
 

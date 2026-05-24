@@ -75,6 +75,7 @@ CLASS lcl_test DEFINITION FOR TESTING
     METHODS: test_successful_interface_print FOR TESTING.
     METHODS: test_legacy_dynamic_print FOR TESTING.
     METHODS: test_hashed_buffer FOR TESTING.
+    METHODS: test_service_order_print FOR TESTING.
 ENDCLASS.
 
 
@@ -84,6 +85,8 @@ CLASS lcl_test IMPLEMENTATION.
     DATA(lt_tables) = VALUE if_osql_test_environment=>ty_t_double_tables(
       ( 'VBAK' )
       ( '/CTDI/SD_REPAIR_FORM' )
+      ( 'AUFK' )
+      ( 'AFIH' )
     ).
     go_db_environment = cl_osql_test_environment=>create( lt_tables ).
   ENDMETHOD.
@@ -311,6 +314,65 @@ CLASS lcl_test IMPLEMENTATION.
           act = lcl_mock_print_provider=>gv_form_name
           exp = 'FIRST_FORM'
           msg = 'Hashed buffer cache was bypassed - engine queried DB again instead of reading buffer!' ).
+
+      CATCH cx_root INTO DATA(lx_err).
+        cl_abap_unit_assert=>fail( msg = lx_err->get_text( ) ).
+    ENDTRY.
+  ENDMETHOD.
+
+  METHOD test_service_order_print.
+    " 1. Insert Mock AUFK Record (Service Order)
+    DATA: lt_aufk TYPE TABLE OF aufk,
+          ls_aufk TYPE aufk.
+    ls_aufk-aufnr = '000012345678'.
+    ls_aufk-auart = 'SM01'. " Service Order Type
+    APPEND ls_aufk TO lt_aufk.
+    go_db_environment->insert_test_data( lt_aufk ).
+
+    " 2. Insert Mock AFIH Record (Contract Link)
+    DATA: lt_afih TYPE TABLE OF afih,
+          ls_afih TYPE afih.
+    ls_afih-aufnr = '000012345678'.
+    ls_afih-kunum = '0000000200'. " Service Contract Vbeln
+    APPEND ls_afih TO lt_afih.
+    go_db_environment->insert_test_data( lt_afih ).
+
+    " 3. Insert Mock VBAK Record (Sales Contract Header)
+    DATA: lt_vbak TYPE TABLE OF vbak,
+          ls_vbak TYPE vbak.
+    ls_vbak-vbeln = '0000000200'.
+    ls_vbak-auart = 'ZREP'. " Sales Document Type mapped in Customizing
+    APPEND ls_vbak TO lt_vbak.
+    go_db_environment->insert_test_data( lt_vbak ).
+
+    " 4. Insert Mock Customizing configuration
+    DATA: lt_config TYPE TABLE OF /ctdi/sd_repair_form,
+          ls_config TYPE /ctdi/sd_repair_form.
+    ls_config-auart       = 'ZREP'.
+    ls_config-class_name  = 'LCL_MOCK_PRINT_PROVIDER'.
+    ls_config-method_name = 'PRINT'.
+    ls_config-form_name   = 'TEST_PM_FORM'.
+    APPEND ls_config TO lt_config.
+    go_db_environment->insert_test_data( lt_config ).
+
+    TRY.
+        cut->print(
+          iv_repair_id   = '000012345678'
+          iv_save_as_pdf = abap_true ).
+
+        cl_abap_unit_assert=>assert_true(
+          act = lcl_mock_print_provider=>gv_print_called
+          msg = 'print should have been called for Service Order trigger' ).
+
+        cl_abap_unit_assert=>assert_equals(
+          act = lcl_mock_print_provider=>gv_repair_id
+          exp = '000012345678'
+          msg = 'Incorrect original Service Order ID passed to print' ).
+
+        cl_abap_unit_assert=>assert_equals(
+          act = lcl_mock_print_provider=>gv_form_name
+          exp = 'TEST_PM_FORM'
+          msg = 'Incorrect form name resolved and passed to print' ).
 
       CATCH cx_root INTO DATA(lx_err).
         cl_abap_unit_assert=>fail( msg = lx_err->get_text( ) ).
