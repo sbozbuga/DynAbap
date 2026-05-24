@@ -40,7 +40,10 @@ ENDCLASS.
 CLASS /ctdi/cl_repair_print_sample IMPLEMENTATION.
 
   METHOD /ctdi/if_repair_print_provider~read_data.
-    DATA: lv_kunnr_we TYPE kunnr.
+    DATA: lv_kunnr_we    TYPE kunnr,
+          lv_contract_id TYPE vbeln_va,
+          ls_contract_h  TYPE vbak,
+          lt_contract_i  TYPE TABLE OF vbap.
 
     " 1. Fetch Repair Header and Item Data from VBAK and VBAP
     SELECT SINGLE * FROM vbak INTO @ms_header WHERE vbeln = @iv_repair_id.
@@ -64,23 +67,54 @@ CLASS /ctdi/cl_repair_print_sample IMPLEMENTATION.
       SELECT SINGLE * FROM kna1 INTO @ms_shipto WHERE kunnr = @lv_kunnr_we.
     ENDIF.
 
-    " 1.3 Fetch Customer Project / WBS Element details linked to the repair items
-    ms_project-vbeln    = iv_repair_id.
-    ms_project-cust_ref = ms_header-bstnk. " Customer Purchase Order / Reference (often contains project/repair name)
-
-    LOOP AT mt_items INTO DATA(ls_item) WHERE ps_psp_eln IS NOT INITIAL.
-      SELECT SINGLE posid, post1 FROM prps INTO ( @ms_project-project_id, @ms_project-description )
-        WHERE pspnr = @ls_item-ps_psp_eln.
+    " 1.3 Fetch Customer Project details
+    " Check if any item in the Repair Order references a Sales Contract (VGBEL where contract vbtyp = 'G')
+    LOOP AT mt_items INTO DATA(ls_item) WHERE vgbel IS NOT INITIAL.
+      SELECT SINGLE vbeln FROM vbak INTO @lv_contract_id 
+        WHERE vbeln = @ls_item-vgbel 
+          AND vbtyp = 'G'. " 'G' = Contract
       IF sy-subrc = 0.
-        EXIT. " Use the first WBS element found for sample description
+        EXIT.
       ENDIF.
     ENDLOOP.
 
-    " Fallback: If no WBS project is explicitly linked to the items, check standard VBAK fields
-    IF ms_project-project_id IS INITIAL.
-      " If VBAK-BSTNK has a project name (like 'Deutsche Telekom 5G Base Station Repair')
-      " we can treat that as the project description fallback
-      ms_project-description = ms_header-bstnk.
+    IF lv_contract_id IS NOT INITIAL.
+      " Customer is using contract (Vbeln) as a key for identifying Repair projects:
+      " Query WBS elements and customer references linked to the Contract
+      SELECT SINGLE * FROM vbak INTO @ls_contract_h WHERE vbeln = @lv_contract_id.
+      SELECT * FROM vbap INTO TABLE @lt_contract_i WHERE vbeln = @lv_contract_id.
+
+      ms_project-vbeln    = lv_contract_id. " Use contract Vbeln as key
+      ms_project-cust_ref = ls_contract_h-bstnk.
+
+      LOOP AT lt_contract_i INTO DATA(ls_contract_item) WHERE ps_psp_eln IS NOT INITIAL.
+        SELECT SINGLE posid, post1 FROM prps INTO ( @ms_project-project_id, @ms_project-description )
+          WHERE pspnr = @ls_contract_item-ps_psp_eln.
+        IF sy-subrc = 0.
+          EXIT.
+        ENDIF.
+      ENDLOOP.
+
+      IF ms_project-project_id IS INITIAL.
+        ms_project-description = ls_contract_h-bstnk.
+      ENDIF.
+
+    ELSE.
+      " Fallback: Use the Repair Order details directly
+      ms_project-vbeln    = iv_repair_id.
+      ms_project-cust_ref = ms_header-bstnk.
+
+      LOOP AT mt_items INTO ls_item WHERE ps_psp_eln IS NOT INITIAL.
+        SELECT SINGLE posid, post1 FROM prps INTO ( @ms_project-project_id, @ms_project-description )
+          WHERE pspnr = @ls_item-ps_psp_eln.
+        IF sy-subrc = 0.
+          EXIT.
+        ENDIF.
+      ENDLOOP.
+
+      IF ms_project-project_id IS INITIAL.
+        ms_project-description = ms_header-bstnk.
+      ENDIF.
     ENDIF.
 
     " 1.4 Fetch User Print Defaults from USR01
