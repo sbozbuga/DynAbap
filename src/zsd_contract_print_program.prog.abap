@@ -26,6 +26,9 @@ START-OF-SELECTION.
       CREATE OBJECT lo_direct_engine.
       lo_direct_engine->print( iv_contract_id = p_vbeln
                                iv_save_as_pdf = p_pdf ).
+    CATCH zcx_no_config_found.
+      " Fall back to legacy printing logic
+      PERFORM print_old USING p_vbeln p_pdf.
     CATCH cx_root.
       MESSAGE 'Error executing dynamic contract print.' TYPE 'E'.
   ENDTRY.
@@ -61,9 +64,26 @@ FORM entry USING ent_retco TYPE sysubrc
       " Call the dynamic printing method (Output Determination always defaults to Spool/Print)
       lo_engine->print( iv_contract_id = lv_contract_id ).
 
+    CATCH zcx_no_config_found.
+      " Fall back to legacy printing logic
+      PERFORM print_old USING lv_contract_id abap_false.
     CATCH cx_root.
       " Set return code to 4 to signal output execution failed
       ent_retco = 4.
   ENDTRY.
+
+ENDFORM.
+
+*&---------------------------------------------------------------------*
+*& Form print_old
+*&---------------------------------------------------------------------*
+*& Old/legacy contract printing routine (fallback logic)
+*&---------------------------------------------------------------------*
+FORM print_old USING iv_contract_id TYPE vbeln_va
+                     iv_save_as_pdf TYPE abap_bool.
+
+  " Place your legacy contract printing routines here.
+  " This triggers when no custom mapping exists for the Sales Contract AUART in ZSD_CONTR_FORM.
+  MESSAGE |Executing legacy printing routine (print_old) for contract { iv_contract_id }| TYPE 'I'.
 
 ENDFORM.

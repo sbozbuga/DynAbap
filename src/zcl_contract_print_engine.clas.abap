@@ -9,6 +9,7 @@ CLASS zcl_contract_print_engine DEFINITION
         !iv_contract_id TYPE vbeln_va
         !iv_save_as_pdf TYPE abap_bool DEFAULT abap_false
       RAISING
+        zcx_no_config_found
         cx_static_check.
 
   PROTECTED SECTION.
@@ -37,8 +38,8 @@ CLASS zcl_contract_print_engine IMPLEMENTATION.
       WHERE auart = @lv_auart.
 
     IF sy-subrc <> 0.
-      " No customizing found for this Sales Contract Type
-      RAISE EXCEPTION TYPE cx_sy_dyn_call_illegal_value.
+      " No customizing found for this Sales Contract Type - Fallback to print_old exception
+      RAISE EXCEPTION TYPE zcx_no_config_found.
     ENDIF.
 
     " Validate that class and method names are configured
