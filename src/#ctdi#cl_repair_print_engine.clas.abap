@@ -15,6 +15,9 @@ CLASS /ctdi/cl_repair_print_engine DEFINITION
         !iv_save_as_pdf TYPE abap_bool DEFAULT abap_false
         !iv_skz TYPE char10 OPTIONAL
         !iv_akz TYPE char10 OPTIONAL
+        !is_repair TYPE /ctdi/repair OPTIONAL
+        !it_repair_error TYPE any table OPTIONAL
+        !it_comment_lines TYPE any table OPTIONAL
       RAISING
         /ctdi/cx_no_config_found
         cx_static_check.
@@ -62,6 +65,9 @@ CLASS /ctdi/cl_repair_print_engine DEFINITION
         !iv_repair_id TYPE vbeln_va
         !is_config TYPE /ctdi/rep_forms
         !iv_save_as_pdf TYPE abap_bool DEFAULT abap_false
+        !is_repair TYPE /ctdi/repair OPTIONAL
+        !it_repair_error TYPE any table OPTIONAL
+        !it_comment_lines TYPE any table OPTIONAL
       RAISING
         cx_static_check.
 
@@ -98,9 +104,12 @@ CLASS /ctdi/cl_repair_print_engine IMPLEMENTATION.
     DATA(ls_config) = get_config( iv_contract_id = lv_contract_id
                                    iv_skz = lv_skz
                                    iv_akz = lv_akz ).
-    execute_provider( iv_repair_id   = iv_repair_id
-                      is_config      = ls_config
-                      iv_save_as_pdf = iv_save_as_pdf ).
+    execute_provider( iv_repair_id     = iv_repair_id
+                      is_config        = ls_config
+                      iv_save_as_pdf   = iv_save_as_pdf
+                      is_repair        = is_repair
+                      it_repair_error  = it_repair_error
+                      it_comment_lines = it_comment_lines ).
   ENDMETHOD.
 
   METHOD resolve_contract.
@@ -305,18 +314,38 @@ CLASS /ctdi/cl_repair_print_engine IMPLEMENTATION.
 
         " Execute the provider in one step via the interface
         lo_provider->execute(
-          iv_repair_id   = iv_repair_id
-          iv_form_name   = is_config-form_name
-          iv_save_as_pdf = iv_save_as_pdf ).
+          iv_repair_id     = iv_repair_id
+          iv_form_name     = is_config-form_name
+          iv_save_as_pdf   = iv_save_as_pdf
+          is_repair        = is_repair
+          it_repair_error  = it_repair_error
+          it_comment_lines = it_comment_lines ).
 
       CATCH cx_sy_move_cast_error.
         " If class does not implement the interface, fallback to fully dynamic method execution
         TRY.
             CALL METHOD lo_instance->(is_config-method_name)
               EXPORTING
-                iv_repair_id = iv_repair_id
-                iv_form_name   = is_config-form_name
-                iv_save_as_pdf = iv_save_as_pdf.
+                iv_repair_id     = iv_repair_id
+                iv_form_name     = is_config-form_name
+                iv_save_as_pdf   = iv_save_as_pdf
+                is_repair        = is_repair
+                it_repair_error  = it_repair_error
+                it_comment_lines = it_comment_lines.
+          CATCH cx_sy_dyn_call_parameter_error.
+            TRY.
+                CALL METHOD lo_instance->(is_config-method_name)
+                  EXPORTING
+                    iv_repair_id   = iv_repair_id
+                    iv_form_name   = is_config-form_name
+                    iv_save_as_pdf = iv_save_as_pdf.
+              CATCH cx_sy_dyn_call_error INTO DATA(lx_dyn_call_inner).
+                RAISE EXCEPTION TYPE /ctdi/cx_print_error
+                  EXPORTING
+                    repair_id = iv_repair_id
+                    message   = |Dynamic method call failed: { is_config-method_name }|
+                    previous  = lx_dyn_call_inner.
+            ENDTRY.
           CATCH cx_sy_dyn_call_error INTO DATA(lx_dyn_call).
             RAISE EXCEPTION TYPE /ctdi/cx_print_error
               EXPORTING

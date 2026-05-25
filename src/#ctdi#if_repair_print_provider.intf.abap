@@ -18,6 +18,9 @@ INTERFACE /ctdi/if_repair_print_provider
       !iv_repair_id TYPE vbeln_va
       !iv_form_name TYPE fpname
       !iv_save_as_pdf TYPE abap_bool DEFAULT abap_false
+      !is_repair TYPE /ctdi/repair OPTIONAL
+      !it_repair_error TYPE any table OPTIONAL
+      !it_comment_lines TYPE any table OPTIONAL
     RAISING
       /ctdi/cx_print_error.
 
@@ -30,6 +33,9 @@ INTERFACE /ctdi/if_repair_print_provider
       !iv_repair_id TYPE vbeln_va
       !iv_form_name   TYPE fpname
       !iv_save_as_pdf TYPE abap_bool DEFAULT abap_false
+      !is_repair TYPE /ctdi/repair OPTIONAL
+      !it_repair_error TYPE any table OPTIONAL
+      !it_comment_lines TYPE any table OPTIONAL
     RAISING
       /ctdi/cx_print_error.
 

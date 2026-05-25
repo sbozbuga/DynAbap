@@ -7,7 +7,10 @@ CLASS lcl_mock_print_provider DEFINITION CREATE PUBLIC FOR TESTING.
                 gv_print_called     TYPE abap_bool,
                 gv_repair_id        TYPE vbeln_va,
                 gv_form_name        TYPE fpname,
-                gv_save_as_pdf      TYPE abap_bool.
+                gv_save_as_pdf      TYPE abap_bool,
+                gs_repair           TYPE /ctdi/repair,
+                gt_repair_error     TYPE TABLE OF /ctdi/repair_error,
+                gt_comment_lines    TYPE TABLE OF tline.
 
     CLASS-METHODS: clear.
 ENDCLASS.
@@ -22,6 +25,9 @@ CLASS lcl_mock_print_provider IMPLEMENTATION.
     gv_repair_id      = iv_repair_id.
     gv_form_name      = iv_form_name.
     gv_save_as_pdf    = iv_save_as_pdf.
+    gs_repair         = is_repair.
+    gt_repair_error   = it_repair_error.
+    gt_comment_lines  = it_comment_lines.
   ENDMETHOD.
 
   METHOD /ctdi/if_repair_print_provider~print.
@@ -29,10 +35,13 @@ CLASS lcl_mock_print_provider IMPLEMENTATION.
     gv_repair_id   = iv_repair_id.
     gv_form_name   = iv_form_name.
     gv_save_as_pdf = iv_save_as_pdf.
+    gs_repair      = is_repair.
+    gt_repair_error = it_repair_error.
+    gt_comment_lines = it_comment_lines.
   ENDMETHOD.
 
   METHOD clear.
-    CLEAR: gv_execute_called, gv_read_data_called, gv_print_called, gv_repair_id, gv_form_name, gv_save_as_pdf.
+    CLEAR: gv_execute_called, gv_read_data_called, gv_print_called, gv_repair_id, gv_form_name, gv_save_as_pdf, gs_repair, gt_repair_error, gt_comment_lines.
   ENDMETHOD.
 ENDCLASS.
 
@@ -85,6 +94,7 @@ CLASS lcl_test DEFINITION FOR TESTING
     METHODS: test_hashed_buffer FOR TESTING.
     METHODS: test_service_order_print FOR TESTING.    
     METHODS test_z_namespace_class_name FOR TESTING.
+    METHODS test_interface_print_with_custom FOR TESTING.
 ENDCLASS.
 
 
@@ -393,6 +403,66 @@ CLASS lcl_test IMPLEMENTATION.
 
     TRY.
         /ctdi/cl_repair_print_engine=>validate_entry( ls_entry ).
+      CATCH cx_root INTO DATA(lx_err).
+        cl_abap_unit_assert=>fail( msg = lx_err->get_text( ) ).
+    ENDTRY.
+  ENDMETHOD.
+
+  METHOD test_interface_print_with_custom.
+    " 1. Insert Mock VBAK Record
+    DATA: lt_vbak TYPE TABLE OF vbak,
+          ls_vbak TYPE vbak.
+    ls_vbak-vbeln = '0000000100'.
+    ls_vbak-auart = 'ZREP'.
+    APPEND ls_vbak TO lt_vbak.
+    go_db_environment->insert_test_data( lt_vbak ).
+
+    " 2. Insert Mock Customizing configuration
+    DATA: lt_config TYPE TABLE OF /ctdi/rep_forms,
+          ls_config TYPE /ctdi/rep_forms.
+    ls_config-vbeln       = '0000000100'.
+    ls_config-class_name  = 'LCL_MOCK_PRINT_PROVIDER'.
+    ls_config-method_name = 'PRINT'.
+    ls_config-form_name   = 'TEST_ADOBE_FORM'.
+    APPEND ls_config TO lt_config.
+    go_db_environment->insert_test_data( lt_config ).
+
+    " 3. Prepare mock custom parameters
+    DATA: ls_repair        TYPE /ctdi/repair,
+          lt_repair_error  TYPE TABLE OF /ctdi/repair_error,
+          lt_comment_lines TYPE TABLE OF tline.
+
+    ls_repair-vbeln = '0000000100'.
+    APPEND VALUE #( vbeln = '0000000100' ) TO lt_repair_error.
+    APPEND VALUE #( tdline = 'Comment line' ) TO lt_comment_lines.
+
+    TRY.
+        cut->execute(
+          iv_repair_id     = '0000000100'
+          iv_save_as_pdf   = abap_true
+          is_repair        = ls_repair
+          it_repair_error  = lt_repair_error
+          it_comment_lines = lt_comment_lines ).
+
+        cl_abap_unit_assert=>assert_true(
+          act = lcl_mock_print_provider=>gv_execute_called
+          msg = 'execute should have been called' ).
+
+        cl_abap_unit_assert=>assert_equals(
+          act = lcl_mock_print_provider=>gs_repair-vbeln
+          exp = '0000000100'
+          msg = 'Incorrect repair struct passed' ).
+
+        cl_abap_unit_assert=>assert_equals(
+          act = lines( lcl_mock_print_provider=>gt_repair_error )
+          exp = 1
+          msg = 'Incorrect error table passed' ).
+
+        cl_abap_unit_assert=>assert_equals(
+          act = lines( lcl_mock_print_provider=>gt_comment_lines )
+          exp = 1
+          msg = 'Incorrect comment table passed' ).
+
       CATCH cx_root INTO DATA(lx_err).
         cl_abap_unit_assert=>fail( msg = lx_err->get_text( ) ).
     ENDTRY.

@@ -207,9 +207,12 @@ CLASS /ctdi/cl_repair_print_sample IMPLEMENTATION.
   METHOD /ctdi/if_repair_print_provider~execute.
     me->/ctdi/if_repair_print_provider~read_data( iv_repair_id = iv_repair_id ).
     me->/ctdi/if_repair_print_provider~print(
-      iv_repair_id   = iv_repair_id
-      iv_form_name   = iv_form_name
-      iv_save_as_pdf = iv_save_as_pdf ).
+      iv_repair_id     = iv_repair_id
+      iv_form_name     = iv_form_name
+      iv_save_as_pdf   = iv_save_as_pdf
+      is_repair        = is_repair
+      it_repair_error  = it_repair_error
+      it_comment_lines = it_comment_lines ).
   ENDMETHOD.
 
   METHOD /ctdi/if_repair_print_provider~print.
@@ -274,24 +277,48 @@ CLASS /ctdi/cl_repair_print_sample IMPLEMENTATION.
       ENDIF.
 
       " Call the Smart Form FM dynamically
-      CALL FUNCTION lv_ssf_fm_name
-        EXPORTING
-          control_parameters = ls_control_parameters
-          output_options     = ls_output_options
-          is_header          = ms_header
-          is_customer        = ms_customer
-          is_shipto          = ms_shipto
-          is_project         = ms_project
-        IMPORTING
-          job_output_info    = ls_output_data
-        TABLES
-          it_items           = mt_items
-        EXCEPTIONS
-          formatting_error   = 1
-          internal_error     = 2
-          send_error         = 3
-          user_canceled      = 4
-          OTHERS             = 5.
+      IF iv_form_name = '/CELLAG/ALCAREP'.
+        CALL FUNCTION lv_ssf_fm_name
+          EXPORTING
+            control_parameters = ls_control_parameters
+            output_options     = ls_output_options
+            is_header          = ms_header
+            is_customer        = ms_customer
+            is_shipto          = ms_shipto
+            is_project         = ms_project
+            /ctdi/repair       = is_repair
+          IMPORTING
+            job_output_info    = ls_output_data
+          TABLES
+            it_items           = mt_items
+            /ctdi/repair_error = it_repair_error
+            gt_comment_lines   = it_comment_lines
+          EXCEPTIONS
+            formatting_error   = 1
+            internal_error     = 2
+            send_error         = 3
+            user_canceled      = 4
+            OTHERS             = 5.
+      ELSE.
+        CALL FUNCTION lv_ssf_fm_name
+          EXPORTING
+            control_parameters = ls_control_parameters
+            output_options     = ls_output_options
+            is_header          = ms_header
+            is_customer        = ms_customer
+            is_shipto          = ms_shipto
+            is_project         = ms_project
+          IMPORTING
+            job_output_info    = ls_output_data
+          TABLES
+            it_items           = mt_items
+          EXCEPTIONS
+            formatting_error   = 1
+            internal_error     = 2
+            send_error         = 3
+            user_canceled      = 4
+            OTHERS             = 5.
+      ENDIF.
       IF sy-subrc <> 0.
         RAISE EXCEPTION TYPE /ctdi/cx_form_error
           EXPORTING
@@ -392,20 +419,40 @@ CLASS /ctdi/cl_repair_print_sample IMPLEMENTATION.
       ls_docparams-langu   = sy-langu.
       ls_docparams-country = 'US'.
 
-      CALL FUNCTION lv_fm_name
-        EXPORTING
-          /1bcdwb/docparams = ls_docparams
-          " Pass header, items, customer, ship-to partner, and project details to the form
-          is_header         = ms_header
-          it_items          = mt_items
-          is_customer       = ms_customer
-          is_shipto         = ms_shipto
-          is_project        = ms_project
-        EXCEPTIONS
-          usage_error       = 1
-          system_error      = 2
-          internal_error    = 3
-          OTHERS            = 4.
+      IF iv_form_name = '/CELLAG/ALCAREP'.
+        CALL FUNCTION lv_fm_name
+          EXPORTING
+            /1bcdwb/docparams     = ls_docparams
+            " Pass header, items, customer, ship-to partner, and project details to the form
+            is_header             = ms_header
+            it_items              = mt_items
+            is_customer           = ms_customer
+            is_shipto             = ms_shipto
+            is_project            = ms_project
+            /ctdi/repair          = is_repair
+            /ctdi/repair_error    = it_repair_error
+            gt_comment_lines      = it_comment_lines
+          EXCEPTIONS
+            usage_error           = 1
+            system_error          = 2
+            internal_error        = 3
+            OTHERS                = 4.
+      ELSE.
+        CALL FUNCTION lv_fm_name
+          EXPORTING
+            /1bcdwb/docparams = ls_docparams
+            " Pass header, items, customer, ship-to partner, and project details to the form
+            is_header         = ms_header
+            it_items          = mt_items
+            is_customer       = ms_customer
+            is_shipto         = ms_shipto
+            is_project        = ms_project
+          EXCEPTIONS
+            usage_error       = 1
+            system_error      = 2
+            internal_error    = 3
+            OTHERS            = 4.
+      ENDIF.
 
       DATA(lv_subrc) = sy-subrc.
 
