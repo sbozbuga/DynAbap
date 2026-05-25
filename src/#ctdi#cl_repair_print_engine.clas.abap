@@ -73,23 +73,41 @@ CLASS /ctdi/cl_repair_print_engine IMPLEMENTATION.
           lv_skz TYPE char10,
           lv_akz TYPE char10.
 
+    /ctdi/cl_repair_log=>log_info( |Start execution of Dynamic Print Engine for Repair ID { iv_repair_id }| ).
+
     lv_skz = iv_skz.
     lv_akz = iv_akz.
 
-    resolve_contract( EXPORTING iv_repair_id = iv_repair_id
-                      IMPORTING ev_contract_id = lv_contract_id
-                                ev_skz = lv_skz
-                                ev_akz = lv_akz ).
+    TRY.
+        resolve_contract( EXPORTING iv_repair_id = iv_repair_id
+                          IMPORTING ev_contract_id = lv_contract_id
+                                    ev_skz = lv_skz
+                                    ev_akz = lv_akz ).
 
-    DATA(ls_config) = get_config( iv_contract_id = lv_contract_id
-                                   iv_skz = lv_skz
-                                   iv_akz = lv_akz ).
-    execute_provider( EXPORTING iv_repair_id     = iv_repair_id
-                                is_config        = ls_config
-                                iv_save_as_pdf   = iv_save_as_pdf
-                      CHANGING  cs_repair        = cs_repair
-                                ct_repair_error  = ct_repair_error
-                                ct_comment_lines = ct_comment_lines ).
+        /ctdi/cl_repair_log=>log_info( |Resolved contract ID: { lv_contract_id }, SKZ: { lv_skz }, AKZ: { lv_akz }| ).
+
+        DATA(ls_config) = get_config( iv_contract_id = lv_contract_id
+                                       iv_skz = lv_skz
+                                       iv_akz = lv_akz ).
+
+        /ctdi/cl_repair_log=>log_info( |Resolved Configuration - Class: { ls_config-class_name }, Method: { ls_config-method_name }, Form: { ls_config-form_name }| ).
+
+        execute_provider( EXPORTING iv_repair_id     = iv_repair_id
+                                    is_config        = ls_config
+                                    iv_save_as_pdf   = iv_save_as_pdf
+                          CHANGING  cs_repair        = cs_repair
+                                    ct_repair_error  = ct_repair_error
+                                    ct_comment_lines = ct_comment_lines ).
+
+        /ctdi/cl_repair_log=>log_info( |Execution completed successfully for Repair ID { iv_repair_id }| ).
+
+      CATCH /ctdi/cx_no_config_found INTO DATA(lx_no_config).
+        /ctdi/cl_repair_log=>log_warning( |No active print configuration found for contract { lv_contract_id }| ).
+        RAISE EXCEPTION lx_no_config.
+      CATCH cx_static_check INTO DATA(lx_static).
+        /ctdi/cl_repair_log=>log_exception( lx_static ).
+        RAISE EXCEPTION lx_static.
+    ENDTRY.
   ENDMETHOD.
 
   METHOD resolve_contract.
