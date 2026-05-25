@@ -60,7 +60,7 @@ CLASS /ctdi/cl_repair_print_sample IMPLEMENTATION.
 
       IF lv_contract_id IS INITIAL AND ls_aufk-kdauf IS NOT INITIAL.
         " Try resolving indirect Contract Number via Sales Order reference
-        SELECT SINGLE vgbel FROM vbap INTO @lv_contract_id 
+        SELECT SINGLE vgbel FROM vbap INTO @lv_contract_id
           WHERE vbeln = @ls_aufk-kdauf 
             AND vgbel IS NOT INITIAL.
         IF lv_contract_id IS INITIAL.
@@ -148,7 +148,7 @@ CLASS /ctdi/cl_repair_print_sample IMPLEMENTATION.
       " 1.3 Fetch Customer Project details
       " Check if any item in the Repair Order references a Sales Contract (VGBEL where contract vbtyp = 'G')
       LOOP AT mt_items INTO ls_item WHERE vgbel IS NOT INITIAL.
-        SELECT SINGLE vbeln FROM vbak INTO @lv_contract_id 
+        SELECT SINGLE vbeln FROM vbak INTO @lv_contract_id
           WHERE vbeln = @ls_item-vgbel 
             AND vbtyp = 'G'. " 'G' = Contract
         IF sy-subrc = 0.
@@ -212,7 +212,7 @@ CLASS /ctdi/cl_repair_print_sample IMPLEMENTATION.
     ENDIF.
 
     " Dynamically detect the form type (Smart Form vs Adobe PDF Form)
-    SELECT SINGLE formname FROM stxfadm 
+    SELECT SINGLE formname FROM stxfadm
       INTO @DATA(lv_ssf_name) 
       WHERE formname = @iv_form_name.
     IF sy-subrc = 0.
@@ -239,7 +239,7 @@ CLASS /ctdi/cl_repair_print_sample IMPLEMENTATION.
         EXCEPTIONS
           no_form            = 1
           no_function_module = 2
-          others             = 3.
+          OTHERS             = 3.
       IF sy-subrc <> 0.
         RAISE EXCEPTION TYPE /ctdi/cx_form_error
           EXPORTING
@@ -279,7 +279,7 @@ CLASS /ctdi/cl_repair_print_sample IMPLEMENTATION.
           internal_error     = 2
           send_error         = 3
           user_canceled      = 4
-          others             = 5.
+          OTHERS             = 5.
       IF sy-subrc <> 0.
         RAISE EXCEPTION TYPE /ctdi/cx_form_error
           EXPORTING
@@ -304,10 +304,18 @@ CLASS /ctdi/cl_repair_print_sample IMPLEMENTATION.
             err_max_linewidth     = 1
             err_bad_keydate       = 2
             err_empty_otf         = 3
-            others                = 4.
+            OTHERS                = 4.
         IF sy-subrc = 0.
-          download_pdf( iv_repair_id = iv_repair_id
-                        iv_pdf_data    = lv_pdf_xstring ).
+          TRY.
+              download_pdf(
+                iv_repair_id = iv_repair_id
+                iv_pdf_data  = lv_pdf_xstring ).
+            CATCH cx_static_check INTO DATA(lx_error).
+              RAISE EXCEPTION TYPE /ctdi/cx_form_error
+                EXPORTING
+                  repair_id = iv_repair_id
+                  message   = lx_error->get_text( ).
+          ENDTRY.
         ELSE.
           RAISE EXCEPTION TYPE /ctdi/cx_form_error
             EXPORTING
@@ -345,7 +353,7 @@ CLASS /ctdi/cl_repair_print_sample IMPLEMENTATION.
           usage_error     = 2
           system_error    = 3
           internal_error  = 4
-          others          = 5.
+          OTHERS          = 5.
       IF sy-subrc <> 0.
         RAISE EXCEPTION TYPE /ctdi/cx_form_error
           EXPORTING
@@ -385,7 +393,7 @@ CLASS /ctdi/cl_repair_print_sample IMPLEMENTATION.
           usage_error       = 1
           system_error      = 2
           internal_error    = 3
-          others            = 4.
+          OTHERS            = 4.
 
       DATA(lv_subrc) = sy-subrc.
 
@@ -399,7 +407,7 @@ CLASS /ctdi/cl_repair_print_sample IMPLEMENTATION.
           usage_error    = 1
           system_error   = 2
           internal_error = 3
-          others         = 4.
+          OTHERS         = 4.
 
       IF lv_subrc <> 0.
         RAISE EXCEPTION TYPE /ctdi/cx_form_error
@@ -407,7 +415,7 @@ CLASS /ctdi/cl_repair_print_sample IMPLEMENTATION.
             repair_id = iv_repair_id
             message   = 'Adobe Form dynamic generated function module failed'
             subrc     = lv_subrc.
-      ELIF sy-subrc <> 0.
+        ELIF sy-subrc <> 0.
         RAISE EXCEPTION TYPE /ctdi/cx_form_error
           EXPORTING
             repair_id = iv_repair_id
@@ -456,7 +464,7 @@ CLASS /ctdi/cl_repair_print_sample IMPLEMENTATION.
         fullpath             = lv_path
         user_action          = lv_action
       EXCEPTIONS
-        others               = 1 ).
+        OTHERS               = 1 ).
 
     IF lv_action = cl_gui_frontend_services=>action_ok AND lv_path IS NOT INITIAL.
       cl_gui_frontend_services=>gui_download(
@@ -485,7 +493,7 @@ CLASS /ctdi/cl_repair_print_sample IMPLEMENTATION.
           file_not_found            = 16
           dataprovider_exception    = 17
           control_flush_error       = 18
-          others                    = 19 ).
+          OTHERS                    = 19 ).
     ENDIF.
   ENDMETHOD.
 
