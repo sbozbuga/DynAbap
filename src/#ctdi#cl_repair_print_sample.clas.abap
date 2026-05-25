@@ -124,15 +124,10 @@ CLASS /ctdi/cl_repair_print_sample IMPLEMENTATION.
           EXPORTING
             control_parameters = ls_control_parameters
             output_options     = ls_output_options
-            is_header          = ls_header
-            is_customer        = ls_customer
-            is_shipto          = ls_shipto
-            is_project         = ls_project
             is_repair          = cs_repair
           IMPORTING
             job_output_info    = ls_output_data
           TABLES
-            it_items           = lt_items
             it_repair_error    = ct_repair_error
             it_comment_lines   = ct_comment_lines
           EXCEPTIONS
@@ -146,14 +141,12 @@ CLASS /ctdi/cl_repair_print_sample IMPLEMENTATION.
           EXPORTING
             control_parameters = ls_control_parameters
             output_options     = ls_output_options
-            is_header          = ls_header
-            is_customer        = ls_customer
-            is_shipto          = ls_shipto
-            is_project         = ls_project
+            is_repair          = cs_repair
           IMPORTING
             job_output_info    = ls_output_data
           TABLES
-            it_items           = lt_items
+            it_repair_error    = ct_repair_error
+            it_comment_lines   = ct_comment_lines
           EXCEPTIONS
             formatting_error   = 1
             internal_error     = 2
@@ -265,12 +258,6 @@ CLASS /ctdi/cl_repair_print_sample IMPLEMENTATION.
         CALL FUNCTION lv_fm_name
           EXPORTING
             /1bcdwb/docparams     = ls_docparams
-            " Pass header, items, customer, ship-to partner, and project details to the form
-            is_header             = ls_header
-            it_items              = lt_items
-            is_customer           = ls_customer
-            is_shipto             = ls_shipto
-            is_project            = ls_project
             is_repair             = cs_repair
             it_repair_error       = ct_repair_error
             it_comment_lines      = ct_comment_lines
@@ -283,12 +270,7 @@ CLASS /ctdi/cl_repair_print_sample IMPLEMENTATION.
         CALL FUNCTION lv_fm_name
           EXPORTING
             /1bcdwb/docparams = ls_docparams
-            " Pass header, items, customer, ship-to partner, and project details to the form
-            is_header         = ls_header
-            it_items          = lt_items
-            is_customer       = ls_customer
-            is_shipto         = ls_shipto
-            is_project        = ls_project
+            is_repair         = cs_repair
           EXCEPTIONS
             usage_error       = 1
             system_error      = 2
