@@ -37,6 +37,13 @@ CLASS /ctdi/cl_repair_print_sample DEFINITION
         !iv_pdf_data    TYPE xstring
       RAISING
         cx_static_check.
+
+    METHODS resolve_repair_result
+      IMPORTING
+        !iv_repair_id TYPE vbeln_va
+        !iv_contract_id TYPE vbeln_va
+      CHANGING
+        !cs_repair TYPE /ctdi/repair.
 ENDCLASS.
 
 
@@ -106,25 +113,30 @@ CLASS /ctdi/cl_repair_print_sample IMPLEMENTATION.
       ms_project-vbeln    = COND #( WHEN lv_contract_id IS NOT INITIAL THEN lv_contract_id ELSE iv_repair_id ).
       ms_project-cust_ref = ms_header-bstnk.
 
-      " Check WBS Element directly maintained on the Service Order header (AUFK-PSPEL)
-      IF ls_aufk-pspel IS NOT INITIAL.
-        SELECT SINGLE posid, post1 FROM prps INTO ( @ms_project-project_id, @ms_project-description )
-          WHERE pspnr = @ls_aufk-pspel.
-      ENDIF.
-
-      " Fallback to Contract items if WBS was not directly maintained on the order
-      IF ms_project-project_id IS INITIAL AND lv_contract_id IS NOT INITIAL.
-        LOOP AT lt_contract_i INTO ls_contract_item WHERE ps_psp_eln IS NOT INITIAL.
+      SELECT SINGLE project_name FROM /ctdi/rep_project
+        INTO @ms_project-description
+        WHERE vbeln = @ms_project-vbeln.
+      IF sy-subrc <> 0.
+        " Check WBS Element directly maintained on the Service Order header (AUFK-PSPEL)
+        IF ls_aufk-pspel IS NOT INITIAL.
           SELECT SINGLE posid, post1 FROM prps INTO ( @ms_project-project_id, @ms_project-description )
-            WHERE pspnr = @ls_contract_item-ps_psp_eln.
-          IF sy-subrc = 0.
-            EXIT.
-          ENDIF.
-        ENDLOOP.
-      ENDIF.
+            WHERE pspnr = @ls_aufk-pspel.
+        ENDIF.
 
-      IF ms_project-project_id IS INITIAL.
-        ms_project-description = ms_header-bstnk.
+        " Fallback to Contract items if WBS was not directly maintained on the order
+        IF ms_project-project_id IS INITIAL AND lv_contract_id IS NOT INITIAL.
+          LOOP AT lt_contract_i INTO ls_contract_item WHERE ps_psp_eln IS NOT INITIAL.
+            SELECT SINGLE posid, post1 FROM prps INTO ( @ms_project-project_id, @ms_project-description )
+              WHERE pspnr = @ls_contract_item-ps_psp_eln.
+            IF sy-subrc = 0.
+              EXIT.
+            ENDIF.
+          ENDLOOP.
+        ENDIF.
+
+        IF ms_project-project_id IS INITIAL.
+          ms_project-description = ms_header-bstnk.
+        ENDIF.
       ENDIF.
 
     ELSE.
@@ -169,16 +181,21 @@ CLASS /ctdi/cl_repair_print_sample IMPLEMENTATION.
         ms_project-vbeln    = lv_contract_id. " Use contract Vbeln as key
         ms_project-cust_ref = ls_contract_h-bstnk.
 
-        LOOP AT lt_contract_i INTO ls_contract_item WHERE ps_psp_eln IS NOT INITIAL.
-          SELECT SINGLE posid, post1 FROM prps INTO ( @ms_project-project_id, @ms_project-description )
-            WHERE pspnr = @ls_contract_item-ps_psp_eln.
-          IF sy-subrc = 0.
-            EXIT.
-          ENDIF.
-        ENDLOOP.
+        SELECT SINGLE project_name FROM /ctdi/rep_project
+          INTO @ms_project-description
+          WHERE vbeln = @lv_contract_id.
+        IF sy-subrc <> 0.
+          LOOP AT lt_contract_i INTO ls_contract_item WHERE ps_psp_eln IS NOT INITIAL.
+            SELECT SINGLE posid, post1 FROM prps INTO ( @ms_project-project_id, @ms_project-description )
+              WHERE pspnr = @ls_contract_item-ps_psp_eln.
+            IF sy-subrc = 0.
+              EXIT.
+            ENDIF.
+          ENDLOOP.
 
-        IF ms_project-project_id IS INITIAL.
-          ms_project-description = ls_contract_h-bstnk.
+          IF ms_project-project_id IS INITIAL.
+            ms_project-description = ls_contract_h-bstnk.
+          ENDIF.
         ENDIF.
 
       ELSE.
@@ -186,16 +203,21 @@ CLASS /ctdi/cl_repair_print_sample IMPLEMENTATION.
         ms_project-vbeln    = iv_repair_id.
         ms_project-cust_ref = ms_header-bstnk.
 
-        LOOP AT mt_items INTO ls_item WHERE ps_psp_eln IS NOT INITIAL.
-          SELECT SINGLE posid, post1 FROM prps INTO ( @ms_project-project_id, @ms_project-description )
-            WHERE pspnr = @ls_item-ps_psp_eln.
-          IF sy-subrc = 0.
-            EXIT.
-          ENDIF.
-        ENDLOOP.
+        SELECT SINGLE project_name FROM /ctdi/rep_project
+          INTO @ms_project-description
+          WHERE vbeln = @iv_repair_id.
+        IF sy-subrc <> 0.
+          LOOP AT mt_items INTO ls_item WHERE ps_psp_eln IS NOT INITIAL.
+            SELECT SINGLE posid, post1 FROM prps INTO ( @ms_project-project_id, @ms_project-description )
+              WHERE pspnr = @ls_item-ps_psp_eln.
+            IF sy-subrc = 0.
+              EXIT.
+            ENDIF.
+          ENDLOOP.
 
-        IF ms_project-project_id IS INITIAL.
-          ms_project-description = ms_header-bstnk.
+          IF ms_project-project_id IS INITIAL.
+            ms_project-description = ms_header-bstnk.
+          ENDIF.
         ENDIF.
       ENDIF.
     ENDIF.
@@ -219,12 +241,19 @@ CLASS /ctdi/cl_repair_print_sample IMPLEMENTATION.
     DATA: lv_fm_name      TYPE rs38l_fnam,
           ls_outputparams TYPE sfpoutputparams,
           ls_docparams    TYPE sfpdocparams,
-          lv_form_type    TYPE char1.
+          lv_form_type    TYPE char1,
+          ls_repair       TYPE /ctdi/repair.
 
     " Ensure header data is read
     IF ms_header IS INITIAL.
       RETURN.
     ENDIF.
+
+    ls_repair = is_repair.
+    me->resolve_repair_result(
+      EXPORTING iv_repair_id   = iv_repair_id
+                iv_contract_id = ms_header-vbeln
+      CHANGING  cs_repair      = ls_repair ).
 
     " Dynamically detect the form type (Smart Form vs Adobe PDF Form)
     SELECT SINGLE formname FROM stxfadm
@@ -286,7 +315,7 @@ CLASS /ctdi/cl_repair_print_sample IMPLEMENTATION.
             is_customer        = ms_customer
             is_shipto          = ms_shipto
             is_project         = ms_project
-            /ctdi/repair       = is_repair
+            /ctdi/repair       = ls_repair
           IMPORTING
             job_output_info    = ls_output_data
           TABLES
@@ -429,7 +458,7 @@ CLASS /ctdi/cl_repair_print_sample IMPLEMENTATION.
             is_customer           = ms_customer
             is_shipto             = ms_shipto
             is_project            = ms_project
-            /ctdi/repair          = is_repair
+            /ctdi/repair          = ls_repair
             /ctdi/repair_error    = it_repair_error
             gt_comment_lines      = it_comment_lines
           EXCEPTIONS
@@ -553,6 +582,109 @@ CLASS /ctdi/cl_repair_print_sample IMPLEMENTATION.
           dataprovider_exception    = 17
           control_flush_error       = 18
           OTHERS                    = 19 ).
+    ENDIF.
+  ENDMETHOD.
+
+  METHOD resolve_repair_result.
+    DATA: lv_aufnr TYPE aufnr,
+          lv_skz   TYPE char10,
+          lv_akz   TYPE char10,
+          lv_tausch TYPE char1,
+          lv_res_text TYPE char40.
+
+    IF cs_repair-repair_result_txt IS NOT INITIAL.
+      RETURN.
+    ENDIF.
+
+    " 1. Determine Swap Case (Tauschfall) and SKZ
+    IF cs_repair-old_serial_no IS NOT INITIAL AND cs_repair-old_serial_no <> cs_repair-new_serial_no.
+      lv_tausch = 'X'.
+      lv_skz    = 'RE'.
+    ELSE.
+      lv_tausch = ' '.
+      lv_aufnr  = |{ iv_repair_id ALPHA = IN }|.
+      SELECT SINGLE bemot FROM afru INTO @lv_skz
+        WHERE aufnr = @lv_aufnr
+          AND vornr = '9010'
+          AND stokz = ' '
+          AND stzhl = '00000000'.
+    ENDIF.
+
+    " 2. Determine AKZ
+    lv_aufnr  = |{ iv_repair_id ALPHA = IN }|.
+    SELECT SINGLE qmcod FROM qmel INTO @lv_akz
+      WHERE aufnr = @lv_aufnr
+        AND qmart = 'Z2'.
+
+    " 3. Query /ctdi/rep_result using 11 Access Sequences
+    " Access Sequence 1: Kontrakt + SKZ + AKZ + Tauschflag
+    IF lv_res_text IS INITIAL AND iv_contract_id IS NOT INITIAL AND lv_skz IS NOT INITIAL AND lv_akz IS NOT INITIAL AND lv_tausch IS NOT INITIAL.
+      SELECT SINGLE result_text FROM /ctdi/rep_result INTO @lv_res_text
+        WHERE vbeln = @iv_contract_id AND skz = @lv_skz AND akz = @lv_akz AND tausch = @lv_tausch.
+    ENDIF.
+
+    " Access Sequence 2: Kontrakt + SKZ + AKZ
+    IF lv_res_text IS INITIAL AND iv_contract_id IS NOT INITIAL AND lv_skz IS NOT INITIAL AND lv_akz IS NOT INITIAL.
+      SELECT SINGLE result_text FROM /ctdi/rep_result INTO @lv_res_text
+        WHERE vbeln = @iv_contract_id AND skz = @lv_skz AND akz = @lv_akz AND tausch = ' '.
+    ENDIF.
+
+    " Access Sequence 3: Kontrakt + SKZ + Tauschflag
+    IF lv_res_text IS INITIAL AND iv_contract_id IS NOT INITIAL AND lv_skz IS NOT INITIAL AND lv_tausch IS NOT INITIAL.
+      SELECT SINGLE result_text FROM /ctdi/rep_result INTO @lv_res_text
+        WHERE vbeln = @iv_contract_id AND skz = @lv_skz AND akz = ' ' AND tausch = @lv_tausch.
+    ENDIF.
+
+    " Access Sequence 4: Kontrakt + SKZ
+    IF lv_res_text IS INITIAL AND iv_contract_id IS NOT INITIAL AND lv_skz IS NOT INITIAL.
+      SELECT SINGLE result_text FROM /ctdi/rep_result INTO @lv_res_text
+        WHERE vbeln = @iv_contract_id AND skz = @lv_skz AND akz = ' ' AND tausch = ' '.
+    ENDIF.
+
+    " Access Sequence 5: Kontrakt + AKZ
+    IF lv_res_text IS INITIAL AND iv_contract_id IS NOT INITIAL AND lv_akz IS NOT INITIAL.
+      SELECT SINGLE result_text FROM /ctdi/rep_result INTO @lv_res_text
+        WHERE vbeln = @iv_contract_id AND skz = ' ' AND akz = @lv_akz AND tausch = ' '.
+    ENDIF.
+
+    " Access Sequence 6: Kontrakt
+    IF lv_res_text IS INITIAL AND iv_contract_id IS NOT INITIAL.
+      SELECT SINGLE result_text FROM /ctdi/rep_result INTO @lv_res_text
+        WHERE vbeln = @iv_contract_id AND skz = ' ' AND akz = ' ' AND tausch = ' '.
+    ENDIF.
+
+    " Access Sequence 7: (Kontrakt = leer) + SKZ + AKZ + Tauschflag
+    IF lv_res_text IS INITIAL AND lv_skz IS NOT INITIAL AND lv_akz IS NOT INITIAL AND lv_tausch IS NOT INITIAL.
+      SELECT SINGLE result_text FROM /ctdi/rep_result INTO @lv_res_text
+        WHERE vbeln = ' ' AND skz = @lv_skz AND akz = @lv_akz AND tausch = @lv_tausch.
+    ENDIF.
+
+    " Access Sequence 8: (Kontrakt = leer) + SKZ + AKZ
+    IF lv_res_text IS INITIAL AND lv_skz IS NOT INITIAL AND lv_akz IS NOT INITIAL.
+      SELECT SINGLE result_text FROM /ctdi/rep_result INTO @lv_res_text
+        WHERE vbeln = ' ' AND skz = @lv_skz AND akz = @lv_akz AND tausch = ' '.
+    ENDIF.
+
+    " Access Sequence 9: (Kontrakt = leer) + SKZ + Tauschflag
+    IF lv_res_text IS INITIAL AND lv_skz IS NOT INITIAL AND lv_tausch IS NOT INITIAL.
+      SELECT SINGLE result_text FROM /ctdi/rep_result INTO @lv_res_text
+        WHERE vbeln = ' ' AND skz = @lv_skz AND akz = ' ' AND tausch = @lv_tausch.
+    ENDIF.
+
+    " Access Sequence 10: (Kontrakt = leer) + SKZ
+    IF lv_res_text IS INITIAL AND lv_skz IS NOT INITIAL.
+      SELECT SINGLE result_text FROM /ctdi/rep_result INTO @lv_res_text
+        WHERE vbeln = ' ' AND skz = @lv_skz AND akz = ' ' AND tausch = ' '.
+    ENDIF.
+
+    " Access Sequence 11: (Kontrakt = leer) + AKZ
+    IF lv_res_text IS INITIAL AND lv_akz IS NOT INITIAL.
+      SELECT SINGLE result_text FROM /ctdi/rep_result INTO @lv_res_text
+        WHERE vbeln = ' ' AND skz = ' ' AND akz = @lv_akz AND tausch = ' '.
+    ENDIF.
+
+    IF lv_res_text IS NOT INITIAL.
+      cs_repair-repair_result_txt = lv_res_text.
     ENDIF.
   ENDMETHOD.
 
