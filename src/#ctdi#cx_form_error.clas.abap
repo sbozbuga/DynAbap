@@ -11,7 +11,7 @@ CLASS /ctdi/cx_form_error DEFINITION
       IMPORTING
         !textid    LIKE textid OPTIONAL
         !previous  LIKE previous OPTIONAL
-        !repair_id TYPE vbeln_va OPTIONAL
+        !repair_id TYPE aufnr OPTIONAL
         !message   TYPE string OPTIONAL
         !subrc     TYPE sysubrc OPTIONAL.
 

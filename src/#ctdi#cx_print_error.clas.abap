@@ -4,14 +4,14 @@ CLASS /ctdi/cx_print_error DEFINITION
   CREATE PUBLIC .
 
   PUBLIC SECTION.
-    DATA: repair_id TYPE vbeln_va,
+    DATA: repair_id TYPE aufnr,
           message   TYPE string.
 
     METHODS constructor
       IMPORTING
         !textid    LIKE textid OPTIONAL
         !previous  LIKE previous OPTIONAL
-        !repair_id TYPE vbeln_va OPTIONAL
+        !repair_id TYPE aufnr OPTIONAL
         !message   TYPE string OPTIONAL.
 
   PROTECTED SECTION.

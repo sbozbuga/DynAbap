@@ -9,7 +9,7 @@ CLASS /ctdi/cx_repair_not_found DEFINITION
       IMPORTING
         !textid    LIKE textid OPTIONAL
         !previous  LIKE previous OPTIONAL
-        !repair_id TYPE vbeln_va OPTIONAL
+        !repair_id TYPE aufnr OPTIONAL
         !message   TYPE string OPTIONAL.
 
   PROTECTED SECTION.
