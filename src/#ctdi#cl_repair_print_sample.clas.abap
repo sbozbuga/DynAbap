@@ -106,7 +106,9 @@ CLASS /ctdi/cl_repair_print_sample IMPLEMENTATION.
           no_function_module = 2
           OTHERS             = 3.
       IF sy-subrc <> 0.
-        DATA(lv_err_msg) = |Smart Form function module name resolution failed for: { iv_form_name }, subrc = { sy-subrc }|.
+        DATA(lv_err_msg) = |{ 'Smart Form function module name resolution failed for: &1, subrc = &2'(001) }|.
+        REPLACE '&1' IN lv_err_msg WITH iv_form_name.
+        REPLACE '&2' IN lv_err_msg WITH |{ sy-subrc }|.
         /ctdi/cl_repair_log=>log_error( lv_err_msg ).
         RAISE EXCEPTION TYPE /ctdi/cx_form_error
           EXPORTING
@@ -167,7 +169,9 @@ CLASS /ctdi/cl_repair_print_sample IMPLEMENTATION.
             OTHERS             = 5.
       ENDIF.
       IF sy-subrc <> 0.
-        lv_err_msg = |Smart Form dynamic execution failed for function module: { lv_ssf_fm_name }, subrc = { sy-subrc }|.
+        lv_err_msg = |{ 'Smart Form dynamic execution failed for function module: &1, subrc = &2'(002) }|.
+        REPLACE '&1' IN lv_err_msg WITH lv_ssf_fm_name.
+        REPLACE '&2' IN lv_err_msg WITH |{ sy-subrc }|.
         /ctdi/cl_repair_log=>log_error( lv_err_msg ).
         RAISE EXCEPTION TYPE /ctdi/cx_form_error
           EXPORTING
@@ -211,15 +215,16 @@ CLASS /ctdi/cl_repair_print_sample IMPLEMENTATION.
                 message   = lx_error->get_text( ).
         ENDTRY.
       ELSE.
-        lv_err_msg = |CONVERT_OTF failed to convert OTF stream to PDF, subrc = { sy-subrc }|.
+        lv_err_msg = |{ 'CONVERT_OTF failed to convert OTF stream to PDF, subrc = &1'(003) }|.
+        REPLACE '&1' IN lv_err_msg WITH |{ sy-subrc }|.
         /ctdi/cl_repair_log=>log_error( lv_err_msg ).
         RAISE EXCEPTION TYPE /ctdi/cx_form_error
           EXPORTING
             repair_id = iv_repair_id
             message   = lv_err_msg
             subrc     = sy-subrc.
-        ENDIF.
       ENDIF.
+    ENDIF.
 
     ELSE. " Adobe Forms (default)
 
@@ -253,7 +258,8 @@ CLASS /ctdi/cl_repair_print_sample IMPLEMENTATION.
           internal_error  = 4
           OTHERS          = 5.
       IF sy-subrc <> 0.
-        lv_err_msg = |FP_JOB_OPEN failed to open Adobe Forms job, subrc = { sy-subrc }|.
+        lv_err_msg = |{ 'FP_JOB_OPEN failed to open Adobe Forms job, subrc = &1'(004) }|.
+        REPLACE '&1' IN lv_err_msg WITH |{ sy-subrc }|.
         /ctdi/cl_repair_log=>log_error( lv_err_msg ).
         RAISE EXCEPTION TYPE /ctdi/cx_form_error
           EXPORTING
@@ -324,7 +330,8 @@ CLASS /ctdi/cl_repair_print_sample IMPLEMENTATION.
           OTHERS         = 4.
 
       IF lv_subrc <> 0.
-        lv_err_msg = |Adobe Form dynamic generated function module failed, subrc = { lv_subrc }|.
+        lv_err_msg = |{ 'Adobe Form dynamic generated function module failed, subrc = &1'(005) }|.
+        REPLACE '&1' IN lv_err_msg WITH |{ lv_subrc }|.
         /ctdi/cl_repair_log=>log_error( lv_err_msg ).
         RAISE EXCEPTION TYPE /ctdi/cx_form_error
           EXPORTING
@@ -332,7 +339,8 @@ CLASS /ctdi/cl_repair_print_sample IMPLEMENTATION.
             message   = lv_err_msg
             subrc     = lv_subrc.
       ELIF sy-subrc <> 0.
-        lv_err_msg = |FP_JOB_CLOSE failed to close Adobe Forms job, subrc = { sy-subrc }|.
+        lv_err_msg = |{ 'FP_JOB_CLOSE failed to close Adobe Forms job, subrc = &1'(006) }|.
+        REPLACE '&1' IN lv_err_msg WITH |{ sy-subrc }|.
         /ctdi/cl_repair_log=>log_error( lv_err_msg ).
         RAISE EXCEPTION TYPE /ctdi/cx_form_error
           EXPORTING

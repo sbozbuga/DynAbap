@@ -233,7 +233,7 @@ CLASS /ctdi/cl_repair_print_engine IMPLEMENTATION.
       RAISE EXCEPTION TYPE /ctdi/cx_print_error
         EXPORTING
           repair_id = iv_repair_id
-          message   = 'Class name or method name not configured'.
+          message   = |{ 'Class name or method name not configured'(001) }|.
     ENDIF.
 
     DATA(lv_class_name) = /ctdi/cl_repair_cust_engine=>resolve_class_name( is_config-class_name ).
@@ -245,10 +245,12 @@ CLASS /ctdi/cl_repair_print_engine IMPLEMENTATION.
 
       CATCH cx_sy_create_object_error INTO DATA(lx_create).
         " Handle instantiation errors (e.g. class doesn't exist or constructor error)
+        DATA(lv_inst_err) = |{ 'Failed to instantiate class: &1'(002) }|.
+        REPLACE '&1' IN lv_inst_err WITH is_config-class_name.
         RAISE EXCEPTION TYPE /ctdi/cx_print_error
           EXPORTING
             repair_id = iv_repair_id
-            message   = |Failed to instantiate class: { is_config-class_name }|
+            message   = lv_inst_err
             previous  = lx_create.
     ENDTRY.
 
@@ -286,17 +288,21 @@ CLASS /ctdi/cl_repair_print_engine IMPLEMENTATION.
                     iv_form_name   = is_config-form_name
                     iv_save_as_pdf = iv_save_as_pdf.
               CATCH cx_sy_dyn_call_error INTO DATA(lx_dyn_call_inner).
+                DATA(lv_method_err_inner) = |{ 'Dynamic method call failed: &1'(003) }|.
+                REPLACE '&1' IN lv_method_err_inner WITH is_config-method_name.
                 RAISE EXCEPTION TYPE /ctdi/cx_print_error
                   EXPORTING
                     repair_id = iv_repair_id
-                    message   = |Dynamic method call failed: { is_config-method_name }|
+                    message   = lv_method_err_inner
                     previous  = lx_dyn_call_inner.
             ENDTRY.
           CATCH cx_sy_dyn_call_error INTO DATA(lx_dyn_call).
+            DATA(lv_method_err) = |{ 'Dynamic method call failed: &1'(003) }|.
+            REPLACE '&1' IN lv_method_err WITH is_config-method_name.
             RAISE EXCEPTION TYPE /ctdi/cx_print_error
               EXPORTING
                 repair_id = iv_repair_id
-                message   = |Dynamic method call failed: { is_config-method_name }|
+                message   = lv_method_err
                 previous  = lx_dyn_call.
         ENDTRY.
 
@@ -305,7 +311,7 @@ CLASS /ctdi/cl_repair_print_engine IMPLEMENTATION.
         RAISE EXCEPTION TYPE /ctdi/cx_print_error
           EXPORTING
             repair_id = iv_repair_id
-            message   = 'Error occurred during print provider execution'
+            message   = |{ 'Error occurred during print provider execution'(004) }|
             previous  = lx_root.
     ENDTRY.
   ENDMETHOD.

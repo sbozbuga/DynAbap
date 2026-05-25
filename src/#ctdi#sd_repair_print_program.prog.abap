@@ -11,7 +11,7 @@ TABLES: nast, tnapr.
 *&---------------------------------------------------------------------*
 *& Selection Screen Definition (For Standalone Executable Mode)
 *&---------------------------------------------------------------------*
-SELECTION-SCREEN BEGIN OF BLOCK b1 WITH FRAME TITLE TEXT-002.
+SELECTION-SCREEN BEGIN OF BLOCK b1 WITH FRAME TITLE 'Selection Criteria'(002).
   PARAMETERS: p_aufnr TYPE aufk-aufnr.
   PARAMETERS: p_sernr TYPE equi-sernr.
   PARAMETERS: p_pdf   TYPE abap_bool.
@@ -41,9 +41,13 @@ START-OF-SELECTION.
       " Fall back to legacy printing logic
       PERFORM print_old USING p_aufnr p_pdf.
     CATCH /ctdi/cx_print_error INTO DATA(lx_direct_print_err).
-      MESSAGE |Print failed: { lx_direct_print_err->message }| TYPE 'E'.
+      DATA(lv_direct_err) = |{ 'Print failed: &1'(003) }|.
+      REPLACE '&1' IN lv_direct_err WITH lx_direct_print_err->message.
+      MESSAGE lv_direct_err TYPE 'E'.
     CATCH cx_root INTO DATA(lx_direct_root).
-      MESSAGE |Error executing dynamic repair print: { lx_direct_root->get_text( ) }| TYPE 'E'.
+      DATA(lv_direct_root_err) = |{ 'Error executing dynamic repair print: &1'(004) }|.
+      REPLACE '&1' IN lv_direct_root_err WITH lx_direct_root->get_text( ).
+      MESSAGE lv_direct_root_err TYPE 'E'.
     ENDTRY.
 
 *&---------------------------------------------------------------------*
@@ -91,7 +95,9 @@ FORM entry USING ent_retco TYPE sysubrc
       PERFORM print_old USING lv_repair_id abap_false.
     CATCH /ctdi/cx_print_error INTO DATA(lx_print_err).
       " Output determination logs error
-      MESSAGE |Dynamic repair print failed: { lx_print_err->message }| TYPE 'E'.
+      DATA(lv_entry_err) = |{ 'Dynamic repair print failed: &1'(005) }|.
+      REPLACE '&1' IN lv_entry_err WITH lx_print_err->message.
+      MESSAGE lv_entry_err TYPE 'E'.
       ent_retco = 4.
     CATCH cx_root.
       " Set return code to 4 to signal output execution failed
@@ -110,6 +116,8 @@ FORM print_old USING iv_repair_id TYPE vbeln_va
 
   " Place your legacy repair printing routines here.
   " This triggers when no custom mapping exists for the Sales Repair AUART in /CTDI/REP_FORMS.
-  MESSAGE |Executing legacy printing routine (print_old) for repair { iv_repair_id }| TYPE 'I'.
+  DATA(lv_legacy_msg) = |{ 'Executing legacy printing routine (print_old) for repair &1'(006) }|.
+  REPLACE '&1' IN lv_legacy_msg WITH iv_repair_id.
+  MESSAGE lv_legacy_msg TYPE 'I'.
 
 ENDFORM.

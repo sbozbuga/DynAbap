@@ -16,6 +16,36 @@
      <ENTRY>Output Determination Entry for Repair Print</ENTRY>
      <LENGTH>45</LENGTH>
     </item>
+    <item>
+     <ID>I</ID>
+     <KEY>002</KEY>
+     <ENTRY>Selection Criteria</ENTRY>
+     <LENGTH>25</LENGTH>
+    </item>
+    <item>
+     <ID>I</ID>
+     <KEY>003</KEY>
+     <ENTRY>Print failed: &amp;1</ENTRY>
+     <LENGTH>50</LENGTH>
+    </item>
+    <item>
+     <ID>I</ID>
+     <KEY>004</KEY>
+     <ENTRY>Error executing dynamic repair print: &amp;1</ENTRY>
+     <LENGTH>80</LENGTH>
+    </item>
+    <item>
+     <ID>I</ID>
+     <KEY>005</KEY>
+     <ENTRY>Dynamic repair print failed: &amp;1</ENTRY>
+     <LENGTH>60</LENGTH>
+    </item>
+    <item>
+     <ID>I</ID>
+     <KEY>006</KEY>
+     <ENTRY>Executing legacy printing routine (print_old) for repair &amp;1</ENTRY>
+     <LENGTH>100</LENGTH>
+    </item>
    </TPOOL>
   </asx:values>
  </asx:abap>
