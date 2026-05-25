@@ -402,7 +402,7 @@ CLASS lcl_test IMPLEMENTATION.
     ls_entry-method_name = 'EXECUTE'.
 
     TRY.
-        /ctdi/cl_repair_print_engine=>validate_entry( ls_entry ).
+        /ctdi/cl_repair_cust_engine=>validate_entry( ls_entry ).
       CATCH cx_root INTO DATA(lx_err).
         cl_abap_unit_assert=>fail( msg = lx_err->get_text( ) ).
     ENDTRY.
