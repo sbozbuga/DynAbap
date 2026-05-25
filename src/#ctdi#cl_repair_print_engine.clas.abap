@@ -42,8 +42,10 @@ CLASS /ctdi/cl_repair_print_engine DEFINITION
     METHODS resolve_contract
       IMPORTING
         !iv_repair_id TYPE vbeln_va
-      RETURNING
-        VALUE(rv_contract_id) TYPE vbeln_va.
+      EXPORTING
+        !ev_contract_id TYPE vbeln_va
+        !ev_skz TYPE char10
+        !ev_akz TYPE char10.
 
     METHODS get_config
       IMPORTING
@@ -81,10 +83,21 @@ ENDCLASS.
 CLASS /ctdi/cl_repair_print_engine IMPLEMENTATION.
 
   METHOD execute.
-    DATA(lv_contract_id) = resolve_contract( iv_repair_id ).
+    DATA: lv_contract_id TYPE vbeln_va,
+          lv_skz TYPE char10,
+          lv_akz TYPE char10.
+
+    lv_skz = iv_skz.
+    lv_akz = iv_akz.
+
+    resolve_contract( EXPORTING iv_repair_id = iv_repair_id
+                      IMPORTING ev_contract_id = lv_contract_id
+                                ev_skz = lv_skz
+                                ev_akz = lv_akz ).
+
     DATA(ls_config) = get_config( iv_contract_id = lv_contract_id
-                                   iv_skz = iv_skz
-                                   iv_akz = iv_akz ).
+                                   iv_skz = lv_skz
+                                   iv_akz = lv_akz ).
     execute_provider( iv_repair_id   = iv_repair_id
                       is_config      = ls_config
                       iv_save_as_pdf = iv_save_as_pdf ).
@@ -92,31 +105,54 @@ CLASS /ctdi/cl_repair_print_engine IMPLEMENTATION.
 
   METHOD resolve_contract.
     DATA: lv_aufnr TYPE aufnr,
-          lv_kdauf TYPE kdauf.
+          lv_kdauf TYPE kdauf,
+          lv_stokz TYPE afru-stokz,
+          lv_stzhl TYPE afru-stzhl,
+          ls_afru TYPE afru,
+          lt_afru TYPE TABLE OF afru.
+
+    CLEAR: ev_contract_id, ev_skz, ev_akz.
 
     " Format input ID and check if it exists in PM/CS Service Orders (AUFK)
     lv_aufnr = |{ iv_repair_id ALPHA = IN }|.
     SELECT SINGLE aufnr FROM aufk INTO @DATA(lv_dummy) WHERE aufnr = @lv_aufnr.
     IF sy-subrc = 0.
+      SELECT bemot stokz stzhl FROM afru
+        INTO TABLE @lt_afru
+        WHERE aufnr = @lv_aufnr
+          AND vornr = '9010'.
+
+      LOOP AT lt_afru INTO ls_afru.
+        IF ls_afru-stokz = ' ' AND ls_afru-stzhl = '00000000'.
+          ev_skz = ls_afru-bemot.
+          EXIT.
+        ENDIF.
+      ENDLOOP.
+
+      SELECT SINGLE qmcod FROM qmel
+        INTO @ev_akz
+        WHERE aufnr = @lv_aufnr
+          AND qmart = 'Z2'.
+
       " It is a PM/CS Service Order from IW42:
       " Try resolving direct Contract Number from AFIH
-      SELECT SINGLE kunum FROM afih INTO @rv_contract_id WHERE aufnr = @lv_aufnr.
-      
-      IF rv_contract_id IS INITIAL.
+      SELECT SINGLE kunum FROM afih INTO @ev_contract_id WHERE aufnr = @lv_aufnr.
+
+      IF ev_contract_id IS INITIAL.
         " Try resolving indirect Contract Number via Sales Order reference in AUFK
         SELECT SINGLE kdauf FROM aufk INTO @lv_kdauf WHERE aufnr = @lv_aufnr.
         IF sy-subrc = 0 AND lv_kdauf IS NOT INITIAL.
-          SELECT SINGLE vgbel FROM vbap INTO @rv_contract_id
-            WHERE vbeln = @lv_kdauf 
+          SELECT SINGLE vgbel FROM vbap INTO @ev_contract_id
+            WHERE vbeln = @lv_kdauf
               AND vgbel IS NOT INITIAL.
-          IF rv_contract_id IS INITIAL.
-            rv_contract_id = lv_kdauf.
+          IF ev_contract_id IS INITIAL.
+            ev_contract_id = lv_kdauf.
           ENDIF.
         ENDIF.
       ENDIF.
     ELSE.
       " It is a standard Sales Document (VBELN):
-      rv_contract_id = iv_repair_id.
+      ev_contract_id = iv_repair_id.
     ENDIF.
   ENDMETHOD.
 
