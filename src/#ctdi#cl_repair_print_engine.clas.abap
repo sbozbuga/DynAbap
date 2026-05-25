@@ -13,8 +13,8 @@ CLASS /ctdi/cl_repair_print_engine DEFINITION
       IMPORTING
         !iv_repair_id TYPE aufnr
         !iv_save_as_pdf TYPE abap_bool DEFAULT abap_false
-        !iv_skz TYPE char10 OPTIONAL
-        !iv_akz TYPE char10 OPTIONAL
+        !iv_skz TYPE bemot OPTIONAL
+        !iv_akz TYPE char4 OPTIONAL
       CHANGING
         !cs_repair TYPE /ctdi/repair OPTIONAL
         !ct_repair_error TYPE any table OPTIONAL
@@ -36,14 +36,14 @@ CLASS /ctdi/cl_repair_print_engine DEFINITION
         !iv_repair_id TYPE aufnr
       EXPORTING
         !ev_contract_id TYPE vbeln_va
-        !ev_skz TYPE char10
-        !ev_akz TYPE char10.
+        !ev_skz TYPE bemot
+        !ev_akz TYPE char4.
 
     METHODS get_config
       IMPORTING
         !iv_contract_id TYPE vbeln_va
-        !iv_skz TYPE char10 OPTIONAL
-        !iv_akz TYPE char10 OPTIONAL
+        !iv_skz TYPE bemot OPTIONAL
+        !iv_akz TYPE char4 OPTIONAL
       RETURNING
         VALUE(rs_config) TYPE /ctdi/rep_forms
       RAISING
@@ -69,8 +69,8 @@ CLASS /CTDI/CL_REPAIR_PRINT_ENGINE IMPLEMENTATION.
 
   METHOD execute.
     DATA: lv_contract_id TYPE vbeln_va,
-          lv_skz TYPE char10,
-          lv_akz TYPE char10.
+          lv_skz TYPE bemot,
+          lv_akz TYPE char4.
 
     /ctdi/cl_repair_log=>log_info( |Start execution of Dynamic Print Engine for Repair ID { iv_repair_id }| ).
 
@@ -206,8 +206,8 @@ CLASS /CTDI/CL_REPAIR_PRINT_ENGINE IMPLEMENTATION.
   METHOD get_config.
     TYPES: BEGIN OF ty_query_step,
              vbeln TYPE vbeln_va,
-             skz   TYPE char10,
-             akz   TYPE char10,
+             skz   TYPE bemot,
+             akz   TYPE char4,
            END OF ty_query_step.
     DATA: lt_steps TYPE TABLE OF ty_query_step.
 
