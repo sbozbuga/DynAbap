@@ -83,7 +83,9 @@ CLASS lcl_test DEFINITION FOR TESTING
     METHODS: test_successful_interface_print FOR TESTING.
     METHODS: test_legacy_dynamic_print FOR TESTING.
     METHODS: test_hashed_buffer FOR TESTING.
-    METHODS: test_service_order_print FOR TESTING.    METHODS test_z_namespace_class_name FOR TESTING.ENDCLASS.
+    METHODS: test_service_order_print FOR TESTING.    
+    METHODS test_z_namespace_class_name FOR TESTING.
+ENDCLASS.
 
 
 CLASS lcl_test IMPLEMENTATION.

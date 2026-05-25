@@ -4,6 +4,9 @@ CLASS /ctdi/cl_repair_print_engine DEFINITION
   CREATE PUBLIC .
 
   PUBLIC SECTION.
+    " Executes the print engine for a given repair/contract.
+    " IMPORTING iv_repair_id    = Repair or Sales document number (VBELN)
+    "           iv_save_as_pdf  = Flag to save output as PDF
     METHODS execute
       IMPORTING
         !iv_repair_id TYPE vbeln_va
@@ -95,7 +98,7 @@ CLASS /ctdi/cl_repair_print_engine IMPLEMENTATION.
         " Try resolving indirect Contract Number via Sales Order reference in AUFK
         SELECT SINGLE kdauf FROM aufk INTO @lv_kdauf WHERE aufnr = @lv_aufnr.
         IF sy-subrc = 0 AND lv_kdauf IS NOT INITIAL.
-          SELECT SINGLE vgbel FROM vbap INTO @rv_contract_id 
+          SELECT SINGLE vgbel FROM vbap INTO @rv_contract_id
             WHERE vbeln = @lv_kdauf 
               AND vgbel IS NOT INITIAL.
           IF rv_contract_id IS INITIAL.
@@ -216,7 +219,7 @@ CLASS /ctdi/cl_repair_print_engine IMPLEMENTATION.
       EXCEPTIONS
         no_systemname = 1
         no_systemtype = 2
-        others        = 3.
+        OTHERS        = 3.
 
     IF sy-subrc = 0 AND lv_system_edit = 'W'.
       rv_allowed = abap_true.
@@ -374,7 +377,7 @@ CLASS /ctdi/cl_repair_print_engine IMPLEMENTATION.
             answer                = lv_answer
           EXCEPTIONS
             text_not_found        = 1
-            others                = 2.
+            OTHERS                = 2.
 
         IF sy-subrc = 0 AND lv_answer = '1'.
           " User clicked Yes: Programmatically generate class
