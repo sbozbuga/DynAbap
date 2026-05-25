@@ -245,16 +245,26 @@ CLASS /CTDI/CL_REPAIR_PRINT_ENGINE IMPLEMENTATION.
         APPEND VALUE #( vbeln = '' skz = '' akz = iv_akz ) TO lt_steps.
       ENDIF.
 
-      " Query sequentially
-      LOOP AT lt_steps INTO DATA(ls_step).
-        SELECT SINGLE * FROM /ctdi/rep_forms INTO CORRESPONDING FIELDS OF @rs_config
-          WHERE vbeln = @ls_step-vbeln
-            AND skz   = @ls_step-skz
-            AND akz   = @ls_step-akz.
-        IF sy-subrc = 0.
-          EXIT.
-        ENDIF.
-      ENDLOOP.
+      IF lt_steps IS NOT INITIAL.
+        " Fetch all potential active customizing records in a single database select
+        SELECT * FROM /ctdi/rep_forms
+          INTO TABLE @DATA(lt_forms)
+          FOR ALL ENTRIES IN @lt_steps
+          WHERE vbeln = @lt_steps-vbeln
+            AND skz   = @lt_steps-skz
+            AND akz   = @lt_steps-akz.
+
+        " Retrieve the highest priority match according to the Access Sequence
+        LOOP AT lt_steps INTO DATA(ls_step).
+          READ TABLE lt_forms INTO rs_config WITH KEY
+            vbeln = ls_step-vbeln
+            skz   = ls_step-skz
+            akz   = ls_step-akz.
+          IF sy-subrc = 0.
+            EXIT.
+          ENDIF.
+        ENDLOOP.
+      ENDIF.
 
       IF rs_config IS INITIAL.
         RAISE EXCEPTION TYPE /ctdi/cx_no_config_found.
