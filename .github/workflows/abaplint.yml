@@ -1,0 +1,17 @@
+name: ABAP Lint
+
+on:
+  push:
+    branches: [ main, master ]
+  pull_request:
+
+jobs:
+  abaplint:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v3
+
+      - name: Run abaplint
+        uses: abaplint/actions-abaplint@v2
