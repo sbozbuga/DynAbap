@@ -5,7 +5,7 @@ CLASS lcl_mock_print_provider DEFINITION CREATE PUBLIC FOR TESTING.
     CLASS-DATA: gv_execute_called TYPE abap_bool,
                 gv_read_data_called TYPE abap_bool,
                 gv_print_called     TYPE abap_bool,
-                gv_repair_id        TYPE vbeln_va,
+                gv_repair_id        TYPE aufnr,
                 gv_form_name        TYPE fpname,
                 gv_save_as_pdf      TYPE abap_bool,
                 gs_repair           TYPE /ctdi/repair,
@@ -50,12 +50,12 @@ CLASS lcl_mock_legacy_print DEFINITION CREATE PUBLIC FOR TESTING.
   PUBLIC SECTION.
     METHODS my_legacy_print
       IMPORTING
-        !iv_repair_id TYPE vbeln_va
+        !iv_repair_id TYPE aufnr
         !iv_form_name   TYPE fpname
         !iv_save_as_pdf TYPE abap_bool DEFAULT abap_false.
 
     CLASS-DATA: gv_print_called TYPE abap_bool,
-                gv_repair_id    TYPE vbeln_va,
+                gv_repair_id    TYPE aufnr,
                 gv_form_name    TYPE fpname,
                 gv_save_as_pdf  TYPE abap_bool.
 
