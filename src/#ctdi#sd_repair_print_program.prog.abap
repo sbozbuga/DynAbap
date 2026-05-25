@@ -89,7 +89,7 @@ FORM print_old USING iv_repair_id TYPE vbeln_va
                      iv_save_as_pdf TYPE abap_bool.
 
   " Place your legacy repair printing routines here.
-  " This triggers when no custom mapping exists for the Sales Repair AUART in /CTDI/SD_REPAIR_FORM.
+  " This triggers when no custom mapping exists for the Sales Repair AUART in /CTDI/REP_FORMS.
   MESSAGE |Executing legacy printing routine (print_old) for repair { iv_repair_id }| TYPE 'I'.
 
 ENDFORM.

@@ -7,7 +7,7 @@
 *&
 *& Setup Instructions:
 *& 1. Go to Transaction SE54
-*& 2. Enter table /CTDI/SD_REPAIR_FORM
+*& 2. Enter table /CTDI/REP_FORMS
 *& 3. Click "Generated Objects" -> "Events"
 *& 4. Add Event '05' (Creating a new entry) with Form routine ON_NEW_ENTRY
 *& 5. Add Event '01' (Before saving) with Form routine ON_BEFORE_SAVE
@@ -21,7 +21,7 @@
 *& Delegates class generation and default initialization to engine class.
 *&---------------------------------------------------------------------*
 FORM on_new_entry.
-  DATA: ls_entry TYPE /ctdi/sd_repair_form.
+  DATA: ls_entry TYPE /ctdi/rep_forms.
 
   " Read the new entry from the maintenance view work area structure
   ls_entry = <vim_total_struc>.
@@ -40,7 +40,7 @@ ENDFORM.
 *& Delegates form, class, and method existence validation to engine.
 *&---------------------------------------------------------------------*
 FORM on_before_save.
-  DATA: ls_entry TYPE /ctdi/sd_repair_form.
+  DATA: ls_entry TYPE /ctdi/rep_forms.
 
   LOOP AT total INTO ls_entry.
     " Validate and default method name to EXECUTE for the single-entry provider flow

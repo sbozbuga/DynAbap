@@ -93,7 +93,7 @@ CLASS lcl_test IMPLEMENTATION.
   METHOD class_setup.
     DATA(lt_tables) = VALUE if_osql_test_environment=>ty_t_double_tables(
       ( 'VBAK' )
-      ( '/CTDI/SD_REPAIR_FORM' )
+      ( '/CTDI/REP_FORMS' )
       ( 'AUFK' )
       ( 'AFIH' )
     ).
@@ -157,8 +157,8 @@ CLASS lcl_test IMPLEMENTATION.
     go_db_environment->insert_test_data( lt_vbak ).
 
     " 2. Insert Mock Customizing entry with empty class/method configuration
-    DATA: lt_config TYPE TABLE OF /ctdi/sd_repair_form,
-          ls_config TYPE /ctdi/sd_repair_form.
+    DATA: lt_config TYPE TABLE OF /ctdi/rep_forms,
+          ls_config TYPE /ctdi/rep_forms.
     ls_config-vbeln = '0000000100'.
     APPEND ls_config TO lt_config.
     go_db_environment->insert_test_data( lt_config ).
@@ -183,8 +183,8 @@ CLASS lcl_test IMPLEMENTATION.
     go_db_environment->insert_test_data( lt_vbak ).
 
     " 2. Insert Mock Customizing configuration
-    DATA: lt_config TYPE TABLE OF /ctdi/sd_repair_form,
-          ls_config TYPE /ctdi/sd_repair_form.
+    DATA: lt_config TYPE TABLE OF /ctdi/rep_forms,
+          ls_config TYPE /ctdi/rep_forms.
     ls_config-vbeln       = '0000000100'.
     ls_config-class_name  = 'LCL_MOCK_PRINT_PROVIDER'.
     ls_config-method_name = 'PRINT'.
@@ -231,8 +231,8 @@ CLASS lcl_test IMPLEMENTATION.
     go_db_environment->insert_test_data( lt_vbak ).
 
     " 2. Insert Mock Customizing configuration (points to legacy class with no interface)
-    DATA: lt_config TYPE TABLE OF /ctdi/sd_repair_form,
-          ls_config TYPE /ctdi/sd_repair_form.
+    DATA: lt_config TYPE TABLE OF /ctdi/rep_forms,
+          ls_config TYPE /ctdi/rep_forms.
     ls_config-vbeln       = '0000000100'.
     ls_config-class_name  = 'LCL_MOCK_LEGACY_PRINT'.
     ls_config-method_name = 'MY_LEGACY_PRINT'.
@@ -279,8 +279,8 @@ CLASS lcl_test IMPLEMENTATION.
     go_db_environment->insert_test_data( lt_vbak ).
 
     " 2. Insert Mock Customizing configuration
-    DATA: lt_config TYPE TABLE OF /ctdi/sd_repair_form,
-          ls_config TYPE /ctdi/sd_repair_form.
+    DATA: lt_config TYPE TABLE OF /ctdi/rep_forms,
+          ls_config TYPE /ctdi/rep_forms.
     ls_config-vbeln       = '0000000100'.
     ls_config-class_name  = 'LCL_MOCK_PRINT_PROVIDER'.
     ls_config-method_name = 'PRINT'.
@@ -303,8 +303,8 @@ CLASS lcl_test IMPLEMENTATION.
         go_db_environment->clear_doubles( ).
         go_db_environment->insert_test_data( lt_vbak ).
 
-        DATA: lt_config_new TYPE TABLE OF /ctdi/sd_repair_form,
-              ls_config_new TYPE /ctdi/sd_repair_form.
+        DATA: lt_config_new TYPE TABLE OF /ctdi/rep_forms,
+              ls_config_new TYPE /ctdi/rep_forms.
         ls_config_new-vbeln       = '0000000100'.
         ls_config_new-class_name  = 'LCL_MOCK_PRINT_PROVIDER'.
         ls_config_new-method_name = 'PRINT'.
@@ -351,8 +351,8 @@ CLASS lcl_test IMPLEMENTATION.
     go_db_environment->insert_test_data( lt_vbak ).
 
     " 4. Insert Mock Customizing configuration
-    DATA: lt_config TYPE TABLE OF /ctdi/sd_repair_form,
-          ls_config TYPE /ctdi/sd_repair_form.
+    DATA: lt_config TYPE TABLE OF /ctdi/rep_forms,
+          ls_config TYPE /ctdi/rep_forms.
     ls_config-vbeln       = '0000000200'.
     ls_config-class_name  = 'LCL_MOCK_PRINT_PROVIDER'.
     ls_config-method_name = 'PRINT'.
@@ -385,7 +385,7 @@ CLASS lcl_test IMPLEMENTATION.
   ENDMETHOD.
 
   METHOD test_z_namespace_class_name.
-    DATA: ls_entry TYPE /ctdi/sd_repair_form.
+    DATA: ls_entry TYPE /ctdi/rep_forms.
 
     ls_entry-vbeln       = '0000000200'.
     ls_entry-class_name  = 'ZCL_REPAIR_PRINT_ENGINE'.

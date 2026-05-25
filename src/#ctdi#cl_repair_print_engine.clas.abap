@@ -7,21 +7,25 @@ CLASS /ctdi/cl_repair_print_engine DEFINITION
     " Executes the print engine for a given repair/contract.
     " IMPORTING iv_repair_id    = Repair or Sales document number (VBELN)
     "           iv_save_as_pdf  = Flag to save output as PDF
+    "           iv_skz          = Optional SKZ selector
+    "           iv_akz          = Optional AKZ selector
     METHODS execute
       IMPORTING
         !iv_repair_id TYPE vbeln_va
         !iv_save_as_pdf TYPE abap_bool DEFAULT abap_false
+        !iv_skz TYPE char10 OPTIONAL
+        !iv_akz TYPE char10 OPTIONAL
       RAISING
         /ctdi/cx_no_config_found
         cx_static_check.
 
     CLASS-METHODS on_new_entry
       CHANGING
-        !cs_entry TYPE /ctdi/sd_repair_form.
+        !cs_entry TYPE /ctdi/rep_forms.
 
     CLASS-METHODS validate_entry
       IMPORTING
-        !is_entry TYPE /ctdi/sd_repair_form
+        !is_entry TYPE /ctdi/rep_forms
       RAISING
         /ctdi/cx_print_error.
 
@@ -31,7 +35,7 @@ CLASS /ctdi/cl_repair_print_engine DEFINITION
 
   PROTECTED SECTION.
   PRIVATE SECTION.
-    TYPES: tt_config_buffer TYPE HASHED TABLE OF /ctdi/sd_repair_form WITH UNIQUE KEY vbeln.
+    TYPES: tt_config_buffer TYPE HASHED TABLE OF /ctdi/rep_forms WITH UNIQUE KEY vbeln skz akz.
 
     DATA: mt_config_buffer TYPE tt_config_buffer.
 
@@ -44,15 +48,17 @@ CLASS /ctdi/cl_repair_print_engine DEFINITION
     METHODS get_config
       IMPORTING
         !iv_contract_id TYPE vbeln_va
+        !iv_skz TYPE char10 OPTIONAL
+        !iv_akz TYPE char10 OPTIONAL
       RETURNING
-        VALUE(rs_config) TYPE /ctdi/sd_repair_form
+        VALUE(rs_config) TYPE /ctdi/rep_forms
       RAISING
         /ctdi/cx_no_config_found.
 
     METHODS execute_provider
       IMPORTING
         !iv_repair_id TYPE vbeln_va
-        !is_config TYPE /ctdi/sd_repair_form
+        !is_config TYPE /ctdi/rep_forms
         !iv_save_as_pdf TYPE abap_bool DEFAULT abap_false
       RAISING
         cx_static_check.
@@ -76,7 +82,9 @@ CLASS /ctdi/cl_repair_print_engine IMPLEMENTATION.
 
   METHOD execute.
     DATA(lv_contract_id) = resolve_contract( iv_repair_id ).
-    DATA(ls_config) = get_config( lv_contract_id ).
+    DATA(ls_config) = get_config( iv_contract_id = lv_contract_id
+                                   iv_skz = iv_skz
+                                   iv_akz = iv_akz ).
     execute_provider( iv_repair_id   = iv_repair_id
                       is_config      = ls_config
                       iv_save_as_pdf = iv_save_as_pdf ).
@@ -113,20 +121,115 @@ CLASS /ctdi/cl_repair_print_engine IMPLEMENTATION.
   ENDMETHOD.
 
   METHOD get_config.
-    " Fetch Customizing configuration for the repair contract (Check buffer first)
-    rs_config = VALUE #( mt_config_buffer[ vbeln = iv_contract_id ] OPTIONAL ).
-    IF rs_config IS INITIAL.
-      SELECT SINGLE *
-        FROM /ctdi/sd_repair_form
-        INTO CORRESPONDING FIELDS OF @rs_config
-        WHERE vbeln = @iv_contract_id.
+    DATA ls_candidate TYPE /ctdi/rep_forms.
 
-      IF sy-subrc <> 0.
-        " No customizing found for this Sales Repair Contract - Fallback to print_old exception
+    CLEAR rs_config.
+
+    " Fetch Customizing configuration for the repair contract / optional selectors
+    READ TABLE mt_config_buffer WITH TABLE KEY
+      vbeln = iv_contract_id
+      skz = iv_skz
+      akz = iv_akz
+      INTO rs_config.
+
+    IF sy-subrc <> 0.
+      IF iv_contract_id IS NOT INITIAL.
+        IF iv_skz IS NOT INITIAL AND iv_akz IS NOT INITIAL.
+          CLEAR ls_candidate.
+          SELECT SINGLE *
+            FROM /ctdi/rep_forms
+            INTO CORRESPONDING FIELDS OF @ls_candidate
+            WHERE vbeln = @iv_contract_id
+              AND skz = @iv_skz
+              AND akz = @iv_akz.
+          IF sy-subrc = 0.
+            rs_config = ls_candidate.
+          ENDIF.
+        ENDIF.
+
+        IF rs_config IS INITIAL AND iv_skz IS NOT INITIAL.
+          CLEAR ls_candidate.
+          SELECT SINGLE *
+            FROM /ctdi/rep_forms
+            INTO CORRESPONDING FIELDS OF @ls_candidate
+            WHERE vbeln = @iv_contract_id
+              AND skz = @iv_skz
+              AND akz = ''.
+          IF sy-subrc = 0.
+            rs_config = ls_candidate.
+          ENDIF.
+        ENDIF.
+
+        IF rs_config IS INITIAL AND iv_akz IS NOT INITIAL.
+          CLEAR ls_candidate.
+          SELECT SINGLE *
+            FROM /ctdi/rep_forms
+            INTO CORRESPONDING FIELDS OF @ls_candidate
+            WHERE vbeln = @iv_contract_id
+              AND skz = ''
+              AND akz = @iv_akz.
+          IF sy-subrc = 0.
+            rs_config = ls_candidate.
+          ENDIF.
+        ENDIF.
+
+        IF rs_config IS INITIAL.
+          CLEAR ls_candidate.
+          SELECT SINGLE *
+            FROM /ctdi/rep_forms
+            INTO CORRESPONDING FIELDS OF @ls_candidate
+            WHERE vbeln = @iv_contract_id
+              AND skz = ''
+              AND akz = ''.
+          IF sy-subrc = 0.
+            rs_config = ls_candidate.
+          ENDIF.
+        ENDIF.
+      ELSE.
+        IF iv_skz IS NOT INITIAL AND iv_akz IS NOT INITIAL.
+          CLEAR ls_candidate.
+          SELECT SINGLE *
+            FROM /ctdi/rep_forms
+            INTO CORRESPONDING FIELDS OF @ls_candidate
+            WHERE vbeln = ''
+              AND skz = @iv_skz
+              AND akz = @iv_akz.
+          IF sy-subrc = 0.
+            rs_config = ls_candidate.
+          ENDIF.
+        ENDIF.
+
+        IF rs_config IS INITIAL AND iv_skz IS NOT INITIAL.
+          CLEAR ls_candidate.
+          SELECT SINGLE *
+            FROM /ctdi/rep_forms
+            INTO CORRESPONDING FIELDS OF @ls_candidate
+            WHERE vbeln = ''
+              AND skz = @iv_skz
+              AND akz = ''.
+          IF sy-subrc = 0.
+            rs_config = ls_candidate.
+          ENDIF.
+        ENDIF.
+
+        IF rs_config IS INITIAL AND iv_akz IS NOT INITIAL.
+          CLEAR ls_candidate.
+          SELECT SINGLE *
+            FROM /ctdi/rep_forms
+            INTO CORRESPONDING FIELDS OF @ls_candidate
+            WHERE vbeln = ''
+              AND skz = ''
+              AND akz = @iv_akz.
+          IF sy-subrc = 0.
+            rs_config = ls_candidate.
+          ENDIF.
+        ENDIF.
+      ENDIF.
+
+      IF rs_config IS INITIAL.
         RAISE EXCEPTION TYPE /ctdi/cx_no_config_found.
       ENDIF.
 
-      " Insert into hashed buffer
       INSERT rs_config INTO TABLE mt_config_buffer.
     ENDIF.
   ENDMETHOD.

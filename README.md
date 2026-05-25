@@ -25,7 +25,7 @@ By decoupling form execution logic from hardcoded standard print programs, this 
 
 All ABAP objects are structured in an **abapGit** compatible format under the `src/` directory:
 
-* **Customizing Table**: [#ctdi#sd_repair_form.tabl.xml](file:///home/sb/GitRepos/DynAbap/src/#ctdi#sd_repair_form.tabl.xml)
+* **Customizing Table**: [#ctdi#rep_forms.tabl.xml](file:///home/sb/GitRepos/DynAbap/src/#ctdi#rep_forms.tabl.xml)
 * **Print Provider Interface**: [#ctdi#if_repair_print_provider.intf.abap](file:///home/sb/GitRepos/DynAbap/src/#ctdi#if_repair_print_provider.intf.abap)
 * **Dynamic Engine Class**: [#ctdi#cl_repair_print_engine.clas.abap](file:///home/sb/GitRepos/DynAbap/src/#ctdi#cl_repair_print_engine.clas.abap)
 * **Sample Print Class**: [#ctdi#cl_repair_print_sample.clas.abap](file:///home/sb/GitRepos/DynAbap/src/#ctdi#cl_repair_print_sample.clas.abap)
@@ -50,7 +50,7 @@ Create the form layout in SAP:
 * For **Smart Forms**: Use Transaction **`SMARTFORMS`** to build the layout.
 
 ### 2. Register the Customizing Entry in DEV
-Link the specific Contract VBELN to your form and print class using Transaction **`SM30`** (table **`/CTDI/SD_REPAIR_FORM`**):
+Link the specific Contract VBELN to your form and print class using Transaction **`SM30`** (table **`/CTDI/REP_FORMS`**):
 * **Contract/Repair Number**: The contract `VBELN` associated with the repair project.
 * **Form Name**: The name of the SFP Form or Smart Form created in Step 1.
 * **Class Name**: Leave blank. The SM30 auto-generation event will automatically generate a new SE24 class implementing `/CTDI/IF_REPAIR_PRINT_PROVIDER` (named `/CTDI/CL_REPAIR_PRINT_{vbeln}`).
@@ -70,7 +70,7 @@ Go to Transaction **`NACE`** and map the print output routine for your Output Ty
 
 1. **Import the package** into your SAP system using [abapGit](https://abapgit.org/).
 2. **Activate** all imported objects.
-3. Configure your contract mapping via Transaction `SM30` for table `/CTDI/SD_REPAIR_FORM`.
+3. Configure your contract mapping via Transaction `SM30` for table `/CTDI/REP_FORMS`.
 4. Attach the event template [sm30_event_class_generator.abap](file:///home/sb/GitRepos/DynAbap/src/templates/sm30_event_class_generator.abap) to table events:
    - **Event 05 (Creating a new entry):** Attach `on_new_entry`.
    - **Event 01 (Before saving):** Attach `on_before_save`.
