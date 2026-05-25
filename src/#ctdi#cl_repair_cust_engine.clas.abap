@@ -173,10 +173,12 @@ CLASS /ctdi/cl_repair_cust_engine IMPLEMENTATION.
   METHOD validate_entry.
     " 1. Class name is required
     IF is_entry-class_name IS INITIAL.
+      DATA(lv_msg) = |{ 'Class name is required for Contract &1'(006) }|.
+      REPLACE '&1' IN lv_msg WITH is_entry-vbeln.
       RAISE EXCEPTION TYPE /ctdi/cx_print_error
         EXPORTING
           repair_id = is_entry-vbeln
-          message   = |Class name is required for Contract { is_entry-vbeln }|.
+          message   = lv_msg.
     ENDIF.
 
     " 2. Validate Form Name existence in Smart Forms (STXFADM) or Adobe Forms (FPCONTEXT)
@@ -189,10 +191,12 @@ CLASS /ctdi/cl_repair_cust_engine IMPLEMENTATION.
           INTO @DATA(lv_fp_exists)
           WHERE name = @is_entry-form_name.
         IF sy-subrc <> 0.
+          DATA(lv_form_err) = |{ 'Form &1 does not exist as a Smart Form or Adobe Form'(007) }|.
+          REPLACE '&1' IN lv_form_err WITH is_entry-form_name.
           RAISE EXCEPTION TYPE /ctdi/cx_print_error
             EXPORTING
               repair_id = is_entry-vbeln
-              message   = |Form { is_entry-form_name } does not exist as a Smart Form or Adobe Form|.
+              message   = lv_form_err.
         ENDIF.
       ENDIF.
     ENDIF.
@@ -208,12 +212,15 @@ CLASS /ctdi/cl_repair_cust_engine IMPLEMENTATION.
       IF check_generation_allowed( ) = abap_true.
         DATA: lv_answer TYPE c.
 
+        DATA(lv_question) = |{ 'Class &1 does not exist. Do you want to generate it now?'(002) }|.
+        REPLACE '&1' IN lv_question WITH is_entry-class_name.
+
         CALL FUNCTION 'POPUP_TO_CONFIRM'
           EXPORTING
-            titlebar              = 'Generate Missing Print Provider Class?'
-            text_question         = |Class { is_entry-class_name } does not exist. Do you want to generate it now?|
-            text_button_1         = 'Yes'
-            text_button_2         = 'No'
+            titlebar              = 'Generate Missing Print Provider Class?'(001)
+            text_question         = lv_question
+            text_button_1         = 'Yes'(003)
+            text_button_2         = 'No'(004)
             display_cancel_button = abap_false
           IMPORTING
             answer                = lv_answer
@@ -246,7 +253,9 @@ CLASS /ctdi/cl_repair_cust_engine IMPLEMENTATION.
                   devclass  = '$TMP'
                 CHANGING
                   intkey    = lt_intfs ).
-              MESSAGE |Class { is_entry-class_name } generated successfully.| TYPE 'S'.
+              DATA(lv_success) = |{ 'Class &1 generated successfully.'(005) }|.
+              REPLACE '&1' IN lv_success WITH is_entry-class_name.
+              MESSAGE lv_success TYPE 'S'.
               RETURN. " Class now successfully generated, bypass error check
             CATCH cx_oo_class_creation_failed INTO DATA(lx_creation_err).
               RAISE EXCEPTION TYPE /ctdi/cx_print_error
@@ -265,10 +274,12 @@ CLASS /ctdi/cl_repair_cust_engine IMPLEMENTATION.
       ENDIF.
 
       " Raise validation error if generation is skipped or not permitted (e.g. locked client)
+      DATA(lv_class_err) = |{ 'Class &1 does not exist in the repository'(008) }|.
+      REPLACE '&1' IN lv_class_err WITH is_entry-class_name.
       RAISE EXCEPTION TYPE /ctdi/cx_print_error
         EXPORTING
           repair_id = is_entry-vbeln
-          message   = |Class { is_entry-class_name } does not exist in the repository|.
+          message   = lv_class_err.
     ELSE.
       " 4. Validate Method existence in Class Components (SEOCOMPO)
       IF is_entry-method_name IS NOT INITIAL.
@@ -284,10 +295,13 @@ CLASS /ctdi/cl_repair_cust_engine IMPLEMENTATION.
             WHERE clsname = @lv_class_name
               AND cmpname = @lv_interface_method.
           IF sy-subrc <> 0.
+            DATA(lv_method_err) = |{ 'Method &1 does not exist in class &2'(009) }|.
+            REPLACE '&1' IN lv_method_err WITH is_entry-method_name.
+            REPLACE '&2' IN lv_method_err WITH is_entry-class_name.
             RAISE EXCEPTION TYPE /ctdi/cx_print_error
               EXPORTING
                 repair_id = is_entry-vbeln
-                message   = |Method { is_entry-method_name } does not exist in class { is_entry-class_name }|.
+                message   = lv_method_err.
           ENDIF.
         ENDIF.
       ENDIF.

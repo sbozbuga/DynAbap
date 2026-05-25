@@ -63,10 +63,16 @@ CLASS /ctdi/cl_repair_print_sample IMPLEMENTATION.
 
     DATA: ls_usr01    TYPE usr01.
 
+    /ctdi/cl_repair_log=>log_info( |Print Provider execution started for Form: { iv_form_name }| ).
+
     " Ensure passed repair header is valid
     IF cs_repair IS INITIAL.
+      /ctdi/cl_repair_log=>log_warning( |Passed repair header data is empty - Print execution bypassed for Repair ID { iv_repair_id }| ).
       RETURN.
     ENDIF.
+
+    " Fetch User Print Defaults from USR01
+    SELECT SINGLE * FROM usr01 INTO @ls_usr01 WHERE bname = @sy-uname.
 
     " Dynamically detect the form type (Smart Form vs Adobe PDF Form)
     SELECT SINGLE formname FROM stxfadm
@@ -77,6 +83,8 @@ CLASS /ctdi/cl_repair_print_sample IMPLEMENTATION.
     ELSE.
       lv_form_type = 'A'. " Adobe Form (Default)
     ENDIF.
+
+    /ctdi/cl_repair_log=>log_info( |Form technology resolved: { COND #( WHEN lv_form_type = 'S' THEN 'Smart Form' ELSE 'Adobe Form' ) }| ).
 
     IF lv_form_type = 'S'. " Smart Forms
       DATA: lv_ssf_fm_name        TYPE rs38l_fnam,
@@ -98,10 +106,12 @@ CLASS /ctdi/cl_repair_print_sample IMPLEMENTATION.
           no_function_module = 2
           OTHERS             = 3.
       IF sy-subrc <> 0.
+        DATA(lv_err_msg) = |Smart Form function module name resolution failed for: { iv_form_name }, subrc = { sy-subrc }|.
+        /ctdi/cl_repair_log=>log_error( lv_err_msg ).
         RAISE EXCEPTION TYPE /ctdi/cx_form_error
           EXPORTING
             repair_id = iv_repair_id
-            message   = |Smart Form function module name resolution failed for: { iv_form_name }|
+            message   = lv_err_msg
             subrc     = sy-subrc.
       ENDIF.
 
@@ -117,6 +127,8 @@ CLASS /ctdi/cl_repair_print_sample IMPLEMENTATION.
         ls_control_parameters-getotf    = abap_true.
         ls_control_parameters-no_dialog = abap_true.
       ENDIF.
+
+      /ctdi/cl_repair_log=>log_info( |Calling Smart Form function module: { lv_ssf_fm_name }| ).
 
       " Call the Smart Form FM dynamically
       IF iv_form_name = '/CELLAG/ALCAREP'.
@@ -155,16 +167,22 @@ CLASS /ctdi/cl_repair_print_sample IMPLEMENTATION.
             OTHERS             = 5.
       ENDIF.
       IF sy-subrc <> 0.
+        lv_err_msg = |Smart Form dynamic execution failed for function module: { lv_ssf_fm_name }, subrc = { sy-subrc }|.
+        /ctdi/cl_repair_log=>log_error( lv_err_msg ).
         RAISE EXCEPTION TYPE /ctdi/cx_form_error
           EXPORTING
             repair_id = iv_repair_id
-            message   = |Smart Form dynamic execution failed for function module: { lv_ssf_fm_name }|
+            message   = lv_err_msg
             subrc     = sy-subrc.
       ENDIF.
+
+      /ctdi/cl_repair_log=>log_info( |Smart Form executed successfully.| ).
 
       " If Save as PDF, convert OTF to PDF and trigger local download
       IF iv_save_as_pdf = abap_true.
         lt_otf = ls_output_data-otfdata.
+
+        /ctdi/cl_repair_log=>log_info( 'Converting Smart Form OTF to PDF stream...' ).
 
         CALL FUNCTION 'CONVERT_OTF'
           EXPORTING
@@ -179,23 +197,27 @@ CLASS /ctdi/cl_repair_print_sample IMPLEMENTATION.
             err_bad_keydate       = 2
             err_empty_otf         = 3
             OTHERS                = 4.
-        IF sy-subrc = 0.
-          TRY.
-              download_pdf(
-                iv_repair_id = iv_repair_id
-                iv_pdf_data  = lv_pdf_xstring ).
-            CATCH cx_static_check INTO DATA(lx_error).
-              RAISE EXCEPTION TYPE /ctdi/cx_form_error
-                EXPORTING
-                  repair_id = iv_repair_id
-                  message   = lx_error->get_text( ).
-          ENDTRY.
-        ELSE.
-          RAISE EXCEPTION TYPE /ctdi/cx_form_error
-            EXPORTING
-              repair_id = iv_repair_id
-              message   = 'CONVERT_OTF failed to convert OTF stream to PDF'
-              subrc     = sy-subrc.
+      IF sy-subrc = 0.
+        /ctdi/cl_repair_log=>log_info( |OTF-to-PDF Conversion successful. Binary size: { xstrlen( lv_pdf_xstring ) } bytes.| ).
+        TRY.
+            download_pdf(
+              iv_repair_id = iv_repair_id
+              iv_pdf_data  = lv_pdf_xstring ).
+          CATCH cx_static_check INTO DATA(lx_error).
+            /ctdi/cl_repair_log=>log_exception( lx_error ).
+            RAISE EXCEPTION TYPE /ctdi/cx_form_error
+              EXPORTING
+                repair_id = iv_repair_id
+                message   = lx_error->get_text( ).
+        ENDTRY.
+      ELSE.
+        lv_err_msg = |CONVERT_OTF failed to convert OTF stream to PDF, subrc = { sy-subrc }|.
+        /ctdi/cl_repair_log=>log_error( lv_err_msg ).
+        RAISE EXCEPTION TYPE /ctdi/cx_form_error
+          EXPORTING
+            repair_id = iv_repair_id
+            message   = lv_err_msg
+            subrc     = sy-subrc.
         ENDIF.
       ENDIF.
 
@@ -218,6 +240,8 @@ CLASS /ctdi/cl_repair_print_sample IMPLEMENTATION.
         ls_outputparams-getpdf   = abap_true.
       ENDIF.
 
+      /ctdi/cl_repair_log=>log_info( 'Opening Adobe Forms connection (FP_JOB_OPEN)...' ).
+
       " Open the printing job
       CALL FUNCTION 'FP_JOB_OPEN'
         CHANGING
@@ -229,10 +253,12 @@ CLASS /ctdi/cl_repair_print_sample IMPLEMENTATION.
           internal_error  = 4
           OTHERS          = 5.
       IF sy-subrc <> 0.
+        lv_err_msg = |FP_JOB_OPEN failed to open Adobe Forms job, subrc = { sy-subrc }|.
+        /ctdi/cl_repair_log=>log_error( lv_err_msg ).
         RAISE EXCEPTION TYPE /ctdi/cx_form_error
           EXPORTING
             repair_id = iv_repair_id
-            message   = 'FP_JOB_OPEN failed to open Adobe Forms job'
+            message   = lv_err_msg
             subrc     = sy-subrc.
       ENDIF.
 
@@ -243,11 +269,14 @@ CLASS /ctdi/cl_repair_print_sample IMPLEMENTATION.
               i_name     = iv_form_name
             IMPORTING
               e_funcname = lv_fm_name.
-        CATCH cx_root.
+        CATCH cx_root INTO DATA(lx_fm_err).
+          /ctdi/cl_repair_log=>log_exception( lx_fm_err ).
           " Ensure job is closed in case of error
           CALL FUNCTION 'FP_JOB_CLOSE'.
           RETURN.
       ENDTRY.
+
+      /ctdi/cl_repair_log=>log_info( |Resolved Adobe Form Function Module: { lv_fm_name }. Calling form now...| ).
 
       " 4. Call the Adobe Form generated function module dynamically
       " Docparams controls language and country configurations
@@ -280,6 +309,8 @@ CLASS /ctdi/cl_repair_print_sample IMPLEMENTATION.
 
       DATA(lv_subrc) = sy-subrc.
 
+      /ctdi/cl_repair_log=>log_info( |Adobe Form function call finished. Closing printing job (FP_JOB_CLOSE)...| ).
+
       " 5. Close the printing job
       DATA: ls_joboutput TYPE sfpjoboutput.
 
@@ -293,23 +324,30 @@ CLASS /ctdi/cl_repair_print_sample IMPLEMENTATION.
           OTHERS         = 4.
 
       IF lv_subrc <> 0.
+        lv_err_msg = |Adobe Form dynamic generated function module failed, subrc = { lv_subrc }|.
+        /ctdi/cl_repair_log=>log_error( lv_err_msg ).
         RAISE EXCEPTION TYPE /ctdi/cx_form_error
           EXPORTING
             repair_id = iv_repair_id
-            message   = 'Adobe Form dynamic generated function module failed'
+            message   = lv_err_msg
             subrc     = lv_subrc.
-        ELIF sy-subrc <> 0.
+      ELIF sy-subrc <> 0.
+        lv_err_msg = |FP_JOB_CLOSE failed to close Adobe Forms job, subrc = { sy-subrc }|.
+        /ctdi/cl_repair_log=>log_error( lv_err_msg ).
         RAISE EXCEPTION TYPE /ctdi/cx_form_error
           EXPORTING
             repair_id = iv_repair_id
-            message   = 'FP_JOB_CLOSE failed to close Adobe Forms job'
+            message   = lv_err_msg
             subrc     = sy-subrc.
       ENDIF.
 
+      /ctdi/cl_repair_log=>log_info( |Adobe Form execution completed successfully.| ).
+
       " If Save as PDF, trigger local download of the retrieved PDF xstring
       IF iv_save_as_pdf = abap_true AND ls_joboutput-pdf IS NOT INITIAL.
+        /ctdi/cl_repair_log=>log_info( |Downloading resolved PDF stream. Size: { xstrlen( ls_joboutput-pdf ) } bytes.| ).
         download_pdf( iv_repair_id = iv_repair_id
-                      iv_pdf_data    = ls_joboutput-pdf ).
+                      iv_pdf_data  = ls_joboutput-pdf ).
       ENDIF.
 
     ENDIF.
