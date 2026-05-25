@@ -166,7 +166,12 @@ CLASS /ctdi/cl_repair_print_engine IMPLEMENTATION.
   ENDMETHOD.
 
   METHOD get_config.
-    DATA ls_candidate TYPE /ctdi/rep_forms.
+    TYPES: BEGIN OF ty_query_step,
+             vbeln TYPE vbeln_va,
+             skz   TYPE char10,
+             akz   TYPE char10,
+           END OF ty_query_step.
+    DATA: lt_steps TYPE TABLE OF ty_query_step.
 
     CLEAR rs_config.
 
@@ -178,98 +183,40 @@ CLASS /ctdi/cl_repair_print_engine IMPLEMENTATION.
       INTO rs_config.
 
     IF sy-subrc <> 0.
+      " Populate candidates based on the 7 Access Sequences
       IF iv_contract_id IS NOT INITIAL.
         IF iv_skz IS NOT INITIAL AND iv_akz IS NOT INITIAL.
-          CLEAR ls_candidate.
-          SELECT SINGLE *
-            FROM /ctdi/rep_forms
-            INTO CORRESPONDING FIELDS OF @ls_candidate
-            WHERE vbeln = @iv_contract_id
-              AND skz = @iv_skz
-              AND akz = @iv_akz.
-          IF sy-subrc = 0.
-            rs_config = ls_candidate.
-          ENDIF.
+          APPEND VALUE #( vbeln = iv_contract_id skz = iv_skz akz = iv_akz ) TO lt_steps.
         ENDIF.
-
-        IF rs_config IS INITIAL AND iv_skz IS NOT INITIAL.
-          CLEAR ls_candidate.
-          SELECT SINGLE *
-            FROM /ctdi/rep_forms
-            INTO CORRESPONDING FIELDS OF @ls_candidate
-            WHERE vbeln = @iv_contract_id
-              AND skz = @iv_skz
-              AND akz = ''.
-          IF sy-subrc = 0.
-            rs_config = ls_candidate.
-          ENDIF.
+        IF iv_skz IS NOT INITIAL.
+          APPEND VALUE #( vbeln = iv_contract_id skz = iv_skz akz = '' ) TO lt_steps.
         ENDIF.
-
-        IF rs_config IS INITIAL AND iv_akz IS NOT INITIAL.
-          CLEAR ls_candidate.
-          SELECT SINGLE *
-            FROM /ctdi/rep_forms
-            INTO CORRESPONDING FIELDS OF @ls_candidate
-            WHERE vbeln = @iv_contract_id
-              AND skz = ''
-              AND akz = @iv_akz.
-          IF sy-subrc = 0.
-            rs_config = ls_candidate.
-          ENDIF.
+        IF iv_akz IS NOT INITIAL.
+          APPEND VALUE #( vbeln = iv_contract_id skz = '' akz = iv_akz ) TO lt_steps.
         ENDIF.
-
-        IF rs_config IS INITIAL.
-          CLEAR ls_candidate.
-          SELECT SINGLE *
-            FROM /ctdi/rep_forms
-            INTO CORRESPONDING FIELDS OF @ls_candidate
-            WHERE vbeln = @iv_contract_id
-              AND skz = ''
-              AND akz = ''.
-          IF sy-subrc = 0.
-            rs_config = ls_candidate.
-          ENDIF.
-        ENDIF.
-      ELSE.
-        IF iv_skz IS NOT INITIAL AND iv_akz IS NOT INITIAL.
-          CLEAR ls_candidate.
-          SELECT SINGLE *
-            FROM /ctdi/rep_forms
-            INTO CORRESPONDING FIELDS OF @ls_candidate
-            WHERE vbeln = ''
-              AND skz = @iv_skz
-              AND akz = @iv_akz.
-          IF sy-subrc = 0.
-            rs_config = ls_candidate.
-          ENDIF.
-        ENDIF.
-
-        IF rs_config IS INITIAL AND iv_skz IS NOT INITIAL.
-          CLEAR ls_candidate.
-          SELECT SINGLE *
-            FROM /ctdi/rep_forms
-            INTO CORRESPONDING FIELDS OF @ls_candidate
-            WHERE vbeln = ''
-              AND skz = @iv_skz
-              AND akz = ''.
-          IF sy-subrc = 0.
-            rs_config = ls_candidate.
-          ENDIF.
-        ENDIF.
-
-        IF rs_config IS INITIAL AND iv_akz IS NOT INITIAL.
-          CLEAR ls_candidate.
-          SELECT SINGLE *
-            FROM /ctdi/rep_forms
-            INTO CORRESPONDING FIELDS OF @ls_candidate
-            WHERE vbeln = ''
-              AND skz = ''
-              AND akz = @iv_akz.
-          IF sy-subrc = 0.
-            rs_config = ls_candidate.
-          ENDIF.
-        ENDIF.
+        APPEND VALUE #( vbeln = iv_contract_id skz = '' akz = '' ) TO lt_steps.
       ENDIF.
+
+      IF iv_skz IS NOT INITIAL AND iv_akz IS NOT INITIAL.
+        APPEND VALUE #( vbeln = '' skz = iv_skz akz = iv_akz ) TO lt_steps.
+      ENDIF.
+      IF iv_skz IS NOT INITIAL.
+        APPEND VALUE #( vbeln = '' skz = iv_skz akz = '' ) TO lt_steps.
+      ENDIF.
+      IF iv_akz IS NOT INITIAL.
+        APPEND VALUE #( vbeln = '' skz = '' akz = iv_akz ) TO lt_steps.
+      ENDIF.
+
+      " Query sequentially
+      LOOP AT lt_steps INTO DATA(ls_step).
+        SELECT SINGLE * FROM /ctdi/rep_forms INTO CORRESPONDING FIELDS OF @rs_config
+          WHERE vbeln = @ls_step-vbeln
+            AND skz   = @ls_step-skz
+            AND akz   = @ls_step-akz.
+        IF sy-subrc = 0.
+          EXIT.
+        ENDIF.
+      ENDLOOP.
 
       IF rs_config IS INITIAL.
         RAISE EXCEPTION TYPE /ctdi/cx_no_config_found.

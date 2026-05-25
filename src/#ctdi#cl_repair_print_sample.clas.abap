@@ -586,18 +586,25 @@ CLASS /ctdi/cl_repair_print_sample IMPLEMENTATION.
   ENDMETHOD.
 
   METHOD resolve_repair_result.
-    DATA: lv_aufnr TYPE aufnr,
-          lv_skz   TYPE char10,
-          lv_akz   TYPE char10,
-          lv_tausch TYPE char1,
-          lv_res_text TYPE char40.
+    TYPES: BEGIN OF ty_result_step,
+             vbeln  TYPE vbeln_va,
+             skz    TYPE char10,
+             akz    TYPE char10,
+             tausch TYPE char1,
+           END OF ty_result_step.
+    DATA: lt_result_steps TYPE TABLE OF ty_result_step,
+          lv_aufnr        TYPE aufnr,
+          lv_skz          TYPE char10,
+          lv_akz          TYPE char10,
+          lv_tausch       TYPE char1,
+          lv_res_text     TYPE char40.
 
     IF cs_repair-repair_result_txt IS NOT INITIAL.
       RETURN.
     ENDIF.
 
     " 1. Determine Swap Case (Tauschfall) and SKZ
-    IF cs_repair-old_serial_no IS NOT INITIAL AND cs_repair-old_serial_no <> cs_repair-new_serial_no.
+    IF cs_repair-old_serial_no IS NOT INITIAL AND ( cs_repair-old_serial_no <> cs_repair-new_serial_no ).
       lv_tausch = 'X'.
       lv_skz    = 'RE'.
     ELSE.
@@ -616,72 +623,65 @@ CLASS /ctdi/cl_repair_print_sample IMPLEMENTATION.
       WHERE aufnr = @lv_aufnr
         AND qmart = 'Z2'.
 
-    " 3. Query /ctdi/rep_result using 11 Access Sequences
-    " Access Sequence 1: Kontrakt + SKZ + AKZ + Tauschflag
-    IF lv_res_text IS INITIAL AND iv_contract_id IS NOT INITIAL AND lv_skz IS NOT INITIAL AND lv_akz IS NOT INITIAL AND lv_tausch IS NOT INITIAL.
-      SELECT SINGLE result_text FROM /ctdi/rep_result INTO @lv_res_text
-        WHERE vbeln = @iv_contract_id AND skz = @lv_skz AND akz = @lv_akz AND tausch = @lv_tausch.
+    " Populate candidates based on the 11 Access Sequences
+    IF iv_contract_id IS NOT INITIAL.
+      " 1. Kontrakt + SKZ + AKZ + Tauschflag
+      IF lv_skz IS NOT INITIAL AND lv_akz IS NOT INITIAL AND lv_tausch IS NOT INITIAL.
+        APPEND VALUE #( vbeln = iv_contract_id skz = lv_skz akz = lv_akz tausch = lv_tausch ) TO lt_result_steps.
+      ENDIF.
+      " 2. Kontrakt + SKZ + AKZ
+      IF lv_skz IS NOT INITIAL AND lv_akz IS NOT INITIAL.
+        APPEND VALUE #( vbeln = iv_contract_id skz = lv_skz akz = lv_akz tausch = ' ' ) TO lt_result_steps.
+      ENDIF.
+      " 3. Kontrakt + SKZ + Tauschflag
+      IF lv_skz IS NOT INITIAL AND lv_tausch IS NOT INITIAL.
+        APPEND VALUE #( vbeln = iv_contract_id skz = lv_skz akz = ' ' tausch = lv_tausch ) TO lt_result_steps.
+      ENDIF.
+      " 4. Kontrakt + SKZ
+      IF lv_skz IS NOT INITIAL.
+        APPEND VALUE #( vbeln = iv_contract_id skz = lv_skz akz = ' ' tausch = ' ' ) TO lt_result_steps.
+      ENDIF.
+      " 5. Kontrakt + AKZ
+      IF lv_akz IS NOT INITIAL.
+        APPEND VALUE #( vbeln = iv_contract_id skz = ' ' akz = lv_akz tausch = ' ' ) TO lt_result_steps.
+      ENDIF.
+      " 6. Kontrakt
+      APPEND VALUE #( vbeln = iv_contract_id skz = ' ' akz = ' ' tausch = ' ' ) TO lt_result_steps.
     ENDIF.
 
-    " Access Sequence 2: Kontrakt + SKZ + AKZ
-    IF lv_res_text IS INITIAL AND iv_contract_id IS NOT INITIAL AND lv_skz IS NOT INITIAL AND lv_akz IS NOT INITIAL.
-      SELECT SINGLE result_text FROM /ctdi/rep_result INTO @lv_res_text
-        WHERE vbeln = @iv_contract_id AND skz = @lv_skz AND akz = @lv_akz AND tausch = ' '.
+    " If Contract is empty (leer):
+    " 7. (Kontrakt = leer) + SKZ + AKZ + Tauschflag
+    IF lv_skz IS NOT INITIAL AND lv_akz IS NOT INITIAL AND lv_tausch IS NOT INITIAL.
+      APPEND VALUE #( vbeln = ' ' skz = lv_skz akz = lv_akz tausch = lv_tausch ) TO lt_result_steps.
+    ENDIF.
+    " 8. (Kontrakt = leer) + SKZ + AKZ
+    IF lv_skz IS NOT INITIAL AND lv_akz IS NOT INITIAL.
+      APPEND VALUE #( vbeln = ' ' skz = lv_skz akz = lv_akz tausch = ' ' ) TO lt_result_steps.
+    ENDIF.
+    " 9. (Kontrakt = leer) + SKZ + Tauschflag
+    IF lv_skz IS NOT INITIAL AND lv_tausch IS NOT INITIAL.
+      APPEND VALUE #( vbeln = ' ' skz = lv_skz akz = ' ' tausch = lv_tausch ) TO lt_result_steps.
+    ENDIF.
+    " 10. (Kontrakt = leer) + SKZ
+    IF lv_skz IS NOT INITIAL.
+      APPEND VALUE #( vbeln = ' ' skz = lv_skz akz = ' ' tausch = ' ' ) TO lt_result_steps.
+    ENDIF.
+    " 11. (Kontrakt = leer) + AKZ
+    IF lv_akz IS NOT INITIAL.
+      APPEND VALUE #( vbeln = ' ' skz = ' ' akz = lv_akz tausch = ' ' ) TO lt_result_steps.
     ENDIF.
 
-    " Access Sequence 3: Kontrakt + SKZ + Tauschflag
-    IF lv_res_text IS INITIAL AND iv_contract_id IS NOT INITIAL AND lv_skz IS NOT INITIAL AND lv_tausch IS NOT INITIAL.
+    " Query sequentially
+    LOOP AT lt_result_steps INTO DATA(ls_result_step).
       SELECT SINGLE result_text FROM /ctdi/rep_result INTO @lv_res_text
-        WHERE vbeln = @iv_contract_id AND skz = @lv_skz AND akz = ' ' AND tausch = @lv_tausch.
-    ENDIF.
-
-    " Access Sequence 4: Kontrakt + SKZ
-    IF lv_res_text IS INITIAL AND iv_contract_id IS NOT INITIAL AND lv_skz IS NOT INITIAL.
-      SELECT SINGLE result_text FROM /ctdi/rep_result INTO @lv_res_text
-        WHERE vbeln = @iv_contract_id AND skz = @lv_skz AND akz = ' ' AND tausch = ' '.
-    ENDIF.
-
-    " Access Sequence 5: Kontrakt + AKZ
-    IF lv_res_text IS INITIAL AND iv_contract_id IS NOT INITIAL AND lv_akz IS NOT INITIAL.
-      SELECT SINGLE result_text FROM /ctdi/rep_result INTO @lv_res_text
-        WHERE vbeln = @iv_contract_id AND skz = ' ' AND akz = @lv_akz AND tausch = ' '.
-    ENDIF.
-
-    " Access Sequence 6: Kontrakt
-    IF lv_res_text IS INITIAL AND iv_contract_id IS NOT INITIAL.
-      SELECT SINGLE result_text FROM /ctdi/rep_result INTO @lv_res_text
-        WHERE vbeln = @iv_contract_id AND skz = ' ' AND akz = ' ' AND tausch = ' '.
-    ENDIF.
-
-    " Access Sequence 7: (Kontrakt = leer) + SKZ + AKZ + Tauschflag
-    IF lv_res_text IS INITIAL AND lv_skz IS NOT INITIAL AND lv_akz IS NOT INITIAL AND lv_tausch IS NOT INITIAL.
-      SELECT SINGLE result_text FROM /ctdi/rep_result INTO @lv_res_text
-        WHERE vbeln = ' ' AND skz = @lv_skz AND akz = @lv_akz AND tausch = @lv_tausch.
-    ENDIF.
-
-    " Access Sequence 8: (Kontrakt = leer) + SKZ + AKZ
-    IF lv_res_text IS INITIAL AND lv_skz IS NOT INITIAL AND lv_akz IS NOT INITIAL.
-      SELECT SINGLE result_text FROM /ctdi/rep_result INTO @lv_res_text
-        WHERE vbeln = ' ' AND skz = @lv_skz AND akz = @lv_akz AND tausch = ' '.
-    ENDIF.
-
-    " Access Sequence 9: (Kontrakt = leer) + SKZ + Tauschflag
-    IF lv_res_text IS INITIAL AND lv_skz IS NOT INITIAL AND lv_tausch IS NOT INITIAL.
-      SELECT SINGLE result_text FROM /ctdi/rep_result INTO @lv_res_text
-        WHERE vbeln = ' ' AND skz = @lv_skz AND akz = ' ' AND tausch = @lv_tausch.
-    ENDIF.
-
-    " Access Sequence 10: (Kontrakt = leer) + SKZ
-    IF lv_res_text IS INITIAL AND lv_skz IS NOT INITIAL.
-      SELECT SINGLE result_text FROM /ctdi/rep_result INTO @lv_res_text
-        WHERE vbeln = ' ' AND skz = @lv_skz AND akz = ' ' AND tausch = ' '.
-    ENDIF.
-
-    " Access Sequence 11: (Kontrakt = leer) + AKZ
-    IF lv_res_text IS INITIAL AND lv_akz IS NOT INITIAL.
-      SELECT SINGLE result_text FROM /ctdi/rep_result INTO @lv_res_text
-        WHERE vbeln = ' ' AND skz = ' ' AND akz = @lv_akz AND tausch = ' '.
-    ENDIF.
+        WHERE vbeln  = @ls_result_step-vbeln
+          AND skz    = @ls_result_step-skz
+          AND akz    = @ls_result_step-akz
+          AND tausch = @ls_result_step-tausch.
+      IF sy-subrc = 0.
+        EXIT.
+      ENDIF.
+    ENDLOOP.
 
     IF lv_res_text IS NOT INITIAL.
       cs_repair-repair_result_txt = lv_res_text.
