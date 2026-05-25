@@ -53,6 +53,18 @@ CLASS /ctdi/cl_repair_print_engine DEFINITION
         !iv_save_as_pdf TYPE abap_bool DEFAULT abap_false
       RAISING
         cx_static_check.
+
+    METHODS normalize_class_name
+      IMPORTING
+        !iv_class_name TYPE string
+      RETURNING
+        VALUE(rv_class_name) TYPE string.
+
+    METHODS resolve_class_name
+      IMPORTING
+        !iv_class_name TYPE string
+      RETURNING
+        VALUE(rv_class_name) TYPE string.
 ENDCLASS.
 
 
@@ -128,10 +140,12 @@ CLASS /ctdi/cl_repair_print_engine IMPLEMENTATION.
           message   = 'Class name or method name not configured'.
     ENDIF.
 
+    DATA(lv_class_name) = resolve_class_name( is_config-class_name ).
+
     " Instantiate configured printer class
     TRY.
         " Dynamically instantiate the class
-        CREATE OBJECT lo_instance TYPE (is_config-class_name).
+        CREATE OBJECT lo_instance TYPE (lv_class_name).
 
       CATCH cx_sy_create_object_error INTO DATA(lx_create).
         " Handle instantiation errors (e.g. class doesn't exist or constructor error)
@@ -206,6 +220,45 @@ CLASS /ctdi/cl_repair_print_engine IMPLEMENTATION.
 
     IF sy-subrc = 0 AND lv_system_edit = 'W'.
       rv_allowed = abap_true.
+    ENDIF.
+  ENDMETHOD.
+
+  METHOD normalize_class_name.
+    rv_class_name = iv_class_name.
+
+    IF rv_class_name IS INITIAL.
+      RETURN.
+    ENDIF.
+
+    IF rv_class_name(1) = 'Z' AND rv_class_name CP 'Z*'.
+      rv_class_name = |/CTDI/{ rv_class_name+1 }|.
+    ENDIF.
+  ENDMETHOD.
+
+  METHOD resolve_class_name.
+    rv_class_name = iv_class_name.
+
+    IF rv_class_name IS INITIAL.
+      RETURN.
+    ENDIF.
+
+    SELECT SINGLE clsname FROM seoclass
+      INTO @DATA(lv_exists)
+      WHERE clsname = @rv_class_name.
+    IF sy-subrc = 0.
+      RETURN.
+    ENDIF.
+
+    DATA(lv_normalized) = normalize_class_name( iv_class_name ).
+    IF lv_normalized = rv_class_name.
+      RETURN.
+    ENDIF.
+
+    SELECT SINGLE clsname FROM seoclass
+      INTO @lv_exists
+      WHERE clsname = @lv_normalized.
+    IF sy-subrc = 0.
+      rv_class_name = lv_normalized.
     ENDIF.
   ENDMETHOD.
 
@@ -300,9 +353,11 @@ CLASS /ctdi/cl_repair_print_engine IMPLEMENTATION.
     ENDIF.
 
     " 3. Validate Class existence in Repository (SEOCLASS)
+    DATA(lv_class_name) = resolve_class_name( is_entry-class_name ).
+
     SELECT SINGLE clsname FROM seoclass
       INTO @DATA(lv_class_exists)
-      WHERE clsname = @is_entry-class_name.
+      WHERE clsname = @lv_class_name.
     IF sy-subrc <> 0.
       " Class does not exist! Offer to generate it on-the-fly if system modifiability and authorizations permit
       IF check_generation_allowed( ) = abap_true.
@@ -374,14 +429,14 @@ CLASS /ctdi/cl_repair_print_engine IMPLEMENTATION.
       IF is_entry-method_name IS NOT INITIAL.
         SELECT SINGLE cmpname FROM seocompo
           INTO @DATA(lv_method_exists)
-          WHERE clsname = @is_entry-class_name
+          WHERE clsname = @lv_class_name
             AND cmpname = @is_entry-method_name.
         IF sy-subrc <> 0.
           " Also check if it implements interface method (e.g. /CTDI/IF_REPAIR_PRINT_PROVIDER~PRINT)
           DATA(lv_interface_method) = |/CTDI/IF_REPAIR_PRINT_PROVIDER~{ is_entry-method_name }|.
           SELECT SINGLE cmpname FROM seocompo
             INTO @lv_method_exists
-            WHERE clsname = @is_entry-class_name
+            WHERE clsname = @lv_class_name
               AND cmpname = @lv_interface_method.
           IF sy-subrc <> 0.
             RAISE EXCEPTION TYPE /ctdi/cx_print_error

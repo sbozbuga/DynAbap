@@ -83,8 +83,7 @@ CLASS lcl_test DEFINITION FOR TESTING
     METHODS: test_successful_interface_print FOR TESTING.
     METHODS: test_legacy_dynamic_print FOR TESTING.
     METHODS: test_hashed_buffer FOR TESTING.
-    METHODS: test_service_order_print FOR TESTING.
-ENDCLASS.
+    METHODS: test_service_order_print FOR TESTING.    METHODS test_z_namespace_class_name FOR TESTING.ENDCLASS.
 
 
 CLASS lcl_test IMPLEMENTATION.
@@ -378,6 +377,20 @@ CLASS lcl_test IMPLEMENTATION.
           exp = 'TEST_PM_FORM'
           msg = 'Incorrect form name resolved and passed to print' ).
 
+      CATCH cx_root INTO DATA(lx_err).
+        cl_abap_unit_assert=>fail( msg = lx_err->get_text( ) ).
+    ENDTRY.
+  ENDMETHOD.
+
+  METHOD test_z_namespace_class_name.
+    DATA: ls_entry TYPE /ctdi/sd_repair_form.
+
+    ls_entry-vbeln       = '0000000200'.
+    ls_entry-class_name  = 'ZCL_REPAIR_PRINT_ENGINE'.
+    ls_entry-method_name = 'EXECUTE'.
+
+    TRY.
+        /ctdi/cl_repair_print_engine=>validate_entry( ls_entry ).
       CATCH cx_root INTO DATA(lx_err).
         cl_abap_unit_assert=>fail( msg = lx_err->get_text( ) ).
     ENDTRY.
