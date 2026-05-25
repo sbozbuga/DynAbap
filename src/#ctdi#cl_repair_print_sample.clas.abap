@@ -225,6 +225,7 @@ CLASS /CTDI/CL_REPAIR_PRINT_SAMPLE IMPLEMENTATION.
     ENDIF.
 
     ELSE. " Adobe Forms (default)
+      DATA: ls_formoutput TYPE fpformoutput.
 
       " 2. Initialize Output Parameters (Standard SAP Interactive/Adobe Forms logic)
       ls_outputparams-connection = 'ADS'.       " Adobe Document Services default connection
@@ -294,6 +295,8 @@ CLASS /CTDI/CL_REPAIR_PRINT_SAMPLE IMPLEMENTATION.
             is_repair             = cs_repair
             it_repair_error       = ct_repair_error
             it_comment_lines      = ct_comment_lines
+          IMPORTING
+            /1bcdwb/formoutput    = ls_formoutput
           EXCEPTIONS
             usage_error           = 1
             system_error          = 2
@@ -304,6 +307,8 @@ CLASS /CTDI/CL_REPAIR_PRINT_SAMPLE IMPLEMENTATION.
           EXPORTING
             /1bcdwb/docparams = ls_docparams
             is_repair         = cs_repair
+          IMPORTING
+            /1bcdwb/formoutput    = ls_formoutput
           EXCEPTIONS
             usage_error       = 1
             system_error      = 2
@@ -349,12 +354,12 @@ CLASS /CTDI/CL_REPAIR_PRINT_SAMPLE IMPLEMENTATION.
 
       /ctdi/cl_repair_log=>log_info( |Adobe Form execution completed successfully.| ).
 
-*      " If Save as PDF, trigger local download of the retrieved PDF xstring
-*      IF iv_save_as_pdf = abap_true." AND ls_joboutput-pdf IS NOT INITIAL.
-*        /ctdi/cl_repair_log=>log_info( |Downloading resolved PDF stream. Size: { xstrlen( ls_joboutput-pdf ) } bytes.| ).
-*        download_pdf( iv_repair_id = iv_repair_id
-*                      iv_pdf_data  = ls_joboutput-pdf ).
-*      ENDIF.
+      " If Save as PDF, trigger local download of the retrieved PDF xstring
+      IF iv_save_as_pdf = abap_true AND ls_formoutput-pdf IS NOT INITIAL.
+        /ctdi/cl_repair_log=>log_info( |Downloading resolved PDF stream. Size: { xstrlen( ls_formoutput-pdf ) } bytes.| ).
+        download_pdf( iv_repair_id = iv_repair_id
+                      iv_pdf_data  = ls_formoutput-pdf ).
+      ENDIF.
 
     ENDIF.
 
