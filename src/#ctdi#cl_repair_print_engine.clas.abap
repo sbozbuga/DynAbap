@@ -33,7 +33,7 @@ CLASS /ctdi/cl_repair_print_engine DEFINITION
 
     METHODS resolve_contract
       IMPORTING
-        !iv_repair_id TYPE vbeln_va
+        !iv_repair_id TYPE aufnr
       EXPORTING
         !ev_contract_id TYPE vbeln_va
         !ev_skz TYPE char10
@@ -60,13 +60,12 @@ CLASS /ctdi/cl_repair_print_engine DEFINITION
         !ct_comment_lines TYPE any table OPTIONAL
       RAISING
         cx_static_check.
-
-
 ENDCLASS.
 
 
 
-CLASS /ctdi/cl_repair_print_engine IMPLEMENTATION.
+CLASS /CTDI/CL_REPAIR_PRINT_ENGINE IMPLEMENTATION.
+
 
   METHOD execute.
     DATA: lv_contract_id TYPE vbeln_va,
@@ -110,119 +109,6 @@ CLASS /ctdi/cl_repair_print_engine IMPLEMENTATION.
     ENDTRY.
   ENDMETHOD.
 
-  METHOD resolve_contract.
-    DATA: lv_aufnr TYPE aufnr,
-          lv_kdauf TYPE kdauf,
-          lv_stokz TYPE afru-stokz,
-          lv_stzhl TYPE afru-stzhl,
-          ls_afru TYPE afru,
-          lt_afru TYPE TABLE OF afru.
-
-    CLEAR: ev_contract_id, ev_skz, ev_akz.
-
-    " Format input ID and check if it exists in PM/CS Service Orders (AUFK)
-    lv_aufnr = |{ iv_repair_id ALPHA = IN }|.
-    SELECT SINGLE aufnr FROM aufk INTO @DATA(lv_dummy) WHERE aufnr = @lv_aufnr.
-    IF sy-subrc = 0.
-      SELECT bemot stokz stzhl FROM afru
-        INTO TABLE @lt_afru
-        WHERE aufnr = @lv_aufnr
-          AND vornr = '9010'.
-
-      LOOP AT lt_afru INTO ls_afru.
-        IF ls_afru-stokz = ' ' AND ls_afru-stzhl = '00000000'.
-          ev_skz = ls_afru-bemot.
-          EXIT.
-        ENDIF.
-      ENDLOOP.
-
-      SELECT SINGLE qmcod FROM qmel
-        INTO @ev_akz
-        WHERE aufnr = @lv_aufnr
-          AND qmart = 'Z2'.
-
-      " It is a PM/CS Service Order from IW42:
-      " Try resolving direct Contract Number from AFIH
-      SELECT SINGLE kunum FROM afih INTO @ev_contract_id WHERE aufnr = @lv_aufnr.
-
-      IF ev_contract_id IS INITIAL.
-        " Try resolving indirect Contract Number via Sales Order reference in AUFK
-        SELECT SINGLE kdauf FROM aufk INTO @lv_kdauf WHERE aufnr = @lv_aufnr.
-        IF sy-subrc = 0 AND lv_kdauf IS NOT INITIAL.
-          SELECT SINGLE vgbel FROM vbap INTO @ev_contract_id
-            WHERE vbeln = @lv_kdauf
-              AND vgbel IS NOT INITIAL.
-          IF ev_contract_id IS INITIAL.
-            ev_contract_id = lv_kdauf.
-          ENDIF.
-        ENDIF.
-      ENDIF.
-    ELSE.
-      " It is a standard Sales Document (VBELN):
-      ev_contract_id = iv_repair_id.
-    ENDIF.
-  ENDMETHOD.
-
-  METHOD get_config.
-    TYPES: BEGIN OF ty_query_step,
-             vbeln TYPE vbeln_va,
-             skz   TYPE char10,
-             akz   TYPE char10,
-           END OF ty_query_step.
-    DATA: lt_steps TYPE TABLE OF ty_query_step.
-
-    CLEAR rs_config.
-
-    " Fetch Customizing configuration for the repair contract / optional selectors
-    READ TABLE mt_config_buffer WITH TABLE KEY
-      vbeln = iv_contract_id
-      skz = iv_skz
-      akz = iv_akz
-      INTO rs_config.
-
-    IF sy-subrc <> 0.
-      " Populate candidates based on the 7 Access Sequences
-      IF iv_contract_id IS NOT INITIAL.
-        IF iv_skz IS NOT INITIAL AND iv_akz IS NOT INITIAL.
-          APPEND VALUE #( vbeln = iv_contract_id skz = iv_skz akz = iv_akz ) TO lt_steps.
-        ENDIF.
-        IF iv_skz IS NOT INITIAL.
-          APPEND VALUE #( vbeln = iv_contract_id skz = iv_skz akz = '' ) TO lt_steps.
-        ENDIF.
-        IF iv_akz IS NOT INITIAL.
-          APPEND VALUE #( vbeln = iv_contract_id skz = '' akz = iv_akz ) TO lt_steps.
-        ENDIF.
-        APPEND VALUE #( vbeln = iv_contract_id skz = '' akz = '' ) TO lt_steps.
-      ENDIF.
-
-      IF iv_skz IS NOT INITIAL AND iv_akz IS NOT INITIAL.
-        APPEND VALUE #( vbeln = '' skz = iv_skz akz = iv_akz ) TO lt_steps.
-      ENDIF.
-      IF iv_skz IS NOT INITIAL.
-        APPEND VALUE #( vbeln = '' skz = iv_skz akz = '' ) TO lt_steps.
-      ENDIF.
-      IF iv_akz IS NOT INITIAL.
-        APPEND VALUE #( vbeln = '' skz = '' akz = iv_akz ) TO lt_steps.
-      ENDIF.
-
-      " Query sequentially
-      LOOP AT lt_steps INTO DATA(ls_step).
-        SELECT SINGLE * FROM /ctdi/rep_forms INTO CORRESPONDING FIELDS OF @rs_config
-          WHERE vbeln = @ls_step-vbeln
-            AND skz   = @ls_step-skz
-            AND akz   = @ls_step-akz.
-        IF sy-subrc = 0.
-          EXIT.
-        ENDIF.
-      ENDLOOP.
-
-      IF rs_config IS INITIAL.
-        RAISE EXCEPTION TYPE /ctdi/cx_no_config_found.
-      ENDIF.
-
-      INSERT rs_config INTO TABLE mt_config_buffer.
-    ENDIF.
-  ENDMETHOD.
 
   METHOD execute_provider.
     DATA: lo_instance TYPE REF TO object,
@@ -317,5 +203,118 @@ CLASS /ctdi/cl_repair_print_engine IMPLEMENTATION.
   ENDMETHOD.
 
 
+  METHOD get_config.
+    TYPES: BEGIN OF ty_query_step,
+             vbeln TYPE vbeln_va,
+             skz   TYPE char10,
+             akz   TYPE char10,
+           END OF ty_query_step.
+    DATA: lt_steps TYPE TABLE OF ty_query_step.
 
+    CLEAR rs_config.
+
+    " Fetch Customizing configuration for the repair contract / optional selectors
+    READ TABLE mt_config_buffer WITH TABLE KEY
+      vbeln = iv_contract_id
+      skz = iv_skz
+      akz = iv_akz
+      INTO rs_config.
+
+    IF sy-subrc <> 0.
+      " Populate candidates based on the 7 Access Sequences
+      IF iv_contract_id IS NOT INITIAL.
+        IF iv_skz IS NOT INITIAL AND iv_akz IS NOT INITIAL.
+          APPEND VALUE #( vbeln = iv_contract_id skz = iv_skz akz = iv_akz ) TO lt_steps.
+        ENDIF.
+        IF iv_skz IS NOT INITIAL.
+          APPEND VALUE #( vbeln = iv_contract_id skz = iv_skz akz = '' ) TO lt_steps.
+        ENDIF.
+        IF iv_akz IS NOT INITIAL.
+          APPEND VALUE #( vbeln = iv_contract_id skz = '' akz = iv_akz ) TO lt_steps.
+        ENDIF.
+        APPEND VALUE #( vbeln = iv_contract_id skz = '' akz = '' ) TO lt_steps.
+      ENDIF.
+
+      IF iv_skz IS NOT INITIAL AND iv_akz IS NOT INITIAL.
+        APPEND VALUE #( vbeln = '' skz = iv_skz akz = iv_akz ) TO lt_steps.
+      ENDIF.
+      IF iv_skz IS NOT INITIAL.
+        APPEND VALUE #( vbeln = '' skz = iv_skz akz = '' ) TO lt_steps.
+      ENDIF.
+      IF iv_akz IS NOT INITIAL.
+        APPEND VALUE #( vbeln = '' skz = '' akz = iv_akz ) TO lt_steps.
+      ENDIF.
+
+      " Query sequentially
+      LOOP AT lt_steps INTO DATA(ls_step).
+        SELECT SINGLE * FROM /ctdi/rep_forms INTO CORRESPONDING FIELDS OF @rs_config
+          WHERE vbeln = @ls_step-vbeln
+            AND skz   = @ls_step-skz
+            AND akz   = @ls_step-akz.
+        IF sy-subrc = 0.
+          EXIT.
+        ENDIF.
+      ENDLOOP.
+
+      IF rs_config IS INITIAL.
+        RAISE EXCEPTION TYPE /ctdi/cx_no_config_found.
+      ENDIF.
+
+      INSERT rs_config INTO TABLE mt_config_buffer.
+    ENDIF.
+  ENDMETHOD.
+
+
+  METHOD resolve_contract.
+    DATA: lv_aufnr TYPE aufnr,
+          lv_kdauf TYPE kdauf,
+          lv_stokz TYPE afru-stokz,
+          lv_stzhl TYPE afru-stzhl,
+          ls_afru TYPE afru,
+          lt_afru TYPE TABLE OF afru.
+
+    CLEAR: ev_contract_id, ev_skz, ev_akz.
+
+    " Format input ID and check if it exists in PM/CS Service Orders (AUFK)
+    lv_aufnr = |{ iv_repair_id ALPHA = IN }|.
+    SELECT SINGLE aufnr FROM aufk INTO @DATA(lv_dummy) WHERE aufnr = @lv_aufnr.
+    IF sy-subrc = 0.
+      SELECT bemot stokz stzhl FROM afru
+        INTO CORRESPONDING FIELDS OF TABLE lt_afru
+        WHERE aufnr = lv_aufnr
+          AND vornr = '9010'.
+
+      LOOP AT lt_afru INTO ls_afru.
+        IF ls_afru-stokz = ' ' AND ls_afru-stzhl = '00000000'.
+          ev_skz = ls_afru-bemot.
+          EXIT.
+        ENDIF.
+      ENDLOOP.
+
+      SELECT SINGLE qmcod FROM qmel
+        INTO @ev_akz
+        WHERE aufnr = @lv_aufnr
+          AND qmart = 'Z2'.
+
+      " It is a PM/CS Service Order from IW42:
+      " Try resolving direct Contract Number from AFIH
+      SELECT SINGLE kunum FROM afih INTO @ev_contract_id WHERE aufnr = @lv_aufnr.
+
+      IF ev_contract_id IS INITIAL.
+        " Try resolving indirect Contract Number via Sales Order reference in AUFK
+        SELECT SINGLE kdauf FROM aufk INTO @lv_kdauf WHERE aufnr = @lv_aufnr.
+        IF sy-subrc = 0 AND lv_kdauf IS NOT INITIAL.
+          SELECT SINGLE vgbel FROM vbap INTO @ev_contract_id
+            WHERE vbeln = @lv_kdauf
+              AND vgbel IS NOT null.
+          IF ev_contract_id IS INITIAL.
+            ev_contract_id = lv_kdauf.
+          ENDIF.
+        ENDIF.
+      ENDIF.
+    ELSE.
+      " It is a standard Sales Document (VBELN):
+      ev_contract_id = iv_repair_id.
+    ENDIF.
+  ENDMETHOD.
 ENDCLASS.

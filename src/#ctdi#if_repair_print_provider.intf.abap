@@ -1,48 +1,46 @@
-INTERFACE /ctdi/if_repair_print_provider
-  PUBLIC.
+interface /CTDI/IF_REPAIR_PRINT_PROVIDER
+  public .
+
 
   "! Reads repair data for the given repair ID
   "! @parameter iv_repair_id | Repair document ID
-  METHODS read_data
-    IMPORTING
-      !iv_repair_id TYPE aufnr
-    CHANGING
-      !cs_repair TYPE /ctdi/repair OPTIONAL
-      !ct_repair_error TYPE any table OPTIONAL
-      !ct_comment_lines TYPE any table OPTIONAL
-    RAISING
-      /ctdi/cx_print_error.
-
+  methods READ_DATA
+    importing
+      !IV_REPAIR_ID type AUFNR
+    changing
+      !CS_REPAIR type /CTDI/REPAIR optional
+      !CT_REPAIR_ERROR type ANY TABLE optional
+      !CT_COMMENT_LINES type ANY TABLE optional
+    raising
+      /CTDI/CX_PRINT_ERROR .
   "! Executes the full read-and-print flow for one repair ID.
   "! @parameter iv_repair_id | Repair document ID
   "! @parameter iv_form_name | Form name used for printing
   "! @parameter iv_save_as_pdf | Flag to save output as PDF
-  METHODS execute
-    IMPORTING
-      !iv_repair_id TYPE aufnr
-      !iv_form_name TYPE fpname
-      !iv_save_as_pdf TYPE abap_bool DEFAULT abap_false
-    CHANGING
-      !cs_repair TYPE /ctdi/repair OPTIONAL
-      !ct_repair_error TYPE any table OPTIONAL
-      !ct_comment_lines TYPE any table OPTIONAL
-    RAISING
-      /ctdi/cx_print_error.
-
+  methods EXECUTE
+    importing
+      !IV_REPAIR_ID type AUFNR
+      !IV_FORM_NAME type FPNAME
+      !IV_SAVE_AS_PDF type ABAP_BOOL default ABAP_FALSE
+    changing
+      !CS_REPAIR type /CTDI/REPAIR optional
+      !CT_REPAIR_ERROR type ANY TABLE optional
+      !CT_COMMENT_LINES type ANY TABLE optional
+    raising
+      /CTDI/CX_PRINT_ERROR .
   "! Prints repair document for the given repair ID.
   "! @parameter iv_repair_id | Repair document ID
   "! @parameter iv_form_name | Form name used for printing
   "! @parameter iv_save_as_pdf | Flag to save output as PDF
-  METHODS print
-    IMPORTING
-      !iv_repair_id TYPE aufnr
-      !iv_form_name   TYPE fpname
-      !iv_save_as_pdf TYPE abap_bool DEFAULT abap_false
-    CHANGING
-      !cs_repair TYPE /ctdi/repair OPTIONAL
-      !ct_repair_error TYPE any table OPTIONAL
-      !ct_comment_lines TYPE any table OPTIONAL
-    RAISING
-      /ctdi/cx_print_error.
-
-ENDINTERFACE.
+  methods PRINT
+    importing
+      !IV_REPAIR_ID type AUFNR
+      !IV_FORM_NAME type FPNAME
+      !IV_SAVE_AS_PDF type ABAP_BOOL default ABAP_FALSE
+    changing
+      !CS_REPAIR type /CTDI/REPAIR optional
+      !CT_REPAIR_ERROR type STANDARD TABLE optional
+      !CT_COMMENT_LINES type STANDARD TABLE optional
+    raising
+      /CTDI/CX_PRINT_ERROR .
+endinterface.

@@ -34,11 +34,8 @@ ENDCLASS.
 
 
 
-CLASS /ctdi/cl_repair_print_sample IMPLEMENTATION.
+CLASS /CTDI/CL_REPAIR_PRINT_SAMPLE IMPLEMENTATION.
 
-  METHOD /ctdi/if_repair_print_provider~read_data.
-    " Stateless implementation: data is retrieved directly during print execution
-  ENDMETHOD.
 
   METHOD /ctdi/if_repair_print_provider~execute.
     me->/ctdi/if_repair_print_provider~read_data(
@@ -54,6 +51,7 @@ CLASS /ctdi/cl_repair_print_sample IMPLEMENTATION.
                 ct_repair_error  = ct_repair_error
                 ct_comment_lines = ct_comment_lines ).
   ENDMETHOD.
+
 
   METHOD /ctdi/if_repair_print_provider~print.
     DATA: lv_fm_name      TYPE rs38l_fnam,
@@ -76,7 +74,7 @@ CLASS /ctdi/cl_repair_print_sample IMPLEMENTATION.
 
     " Dynamically detect the form type (Smart Form vs Adobe PDF Form)
     SELECT SINGLE formname FROM stxfadm
-      INTO @DATA(lv_ssf_name) 
+      INTO @DATA(lv_ssf_name)
       WHERE formname = @iv_form_name.
     IF sy-subrc = 0.
       lv_form_type = 'S'. " Smart Form
@@ -121,7 +119,7 @@ CLASS /ctdi/cl_repair_print_sample IMPLEMENTATION.
       IF ls_usr01-spld IS NOT INITIAL.
         ls_output_options-tddest   = ls_usr01-spld.
         ls_output_options-tdimmed  = ls_usr01-splg.
-        ls_output_options-tddel    = ls_usr01-spda.
+*        ls_output_options-tddel    = ls_usr01-spda.
       ENDIF.
 
       " If Save as PDF is selected, retrieve OTF data instead of sending directly to spool
@@ -338,7 +336,7 @@ CLASS /ctdi/cl_repair_print_sample IMPLEMENTATION.
             repair_id = iv_repair_id
             message   = lv_err_msg
             subrc     = lv_subrc.
-      ELIF sy-subrc <> 0.
+      ElseIF sy-subrc <> 0.
         lv_err_msg = |{ 'FP_JOB_CLOSE failed to close Adobe Forms job, subrc = &1'(006) }|.
         REPLACE '&1' IN lv_err_msg WITH |{ sy-subrc }|.
         /ctdi/cl_repair_log=>log_error( lv_err_msg ).
@@ -351,15 +349,20 @@ CLASS /ctdi/cl_repair_print_sample IMPLEMENTATION.
 
       /ctdi/cl_repair_log=>log_info( |Adobe Form execution completed successfully.| ).
 
-      " If Save as PDF, trigger local download of the retrieved PDF xstring
-      IF iv_save_as_pdf = abap_true AND ls_joboutput-pdf IS NOT INITIAL.
-        /ctdi/cl_repair_log=>log_info( |Downloading resolved PDF stream. Size: { xstrlen( ls_joboutput-pdf ) } bytes.| ).
-        download_pdf( iv_repair_id = iv_repair_id
-                      iv_pdf_data  = ls_joboutput-pdf ).
-      ENDIF.
+*      " If Save as PDF, trigger local download of the retrieved PDF xstring
+*      IF iv_save_as_pdf = abap_true." AND ls_joboutput-pdf IS NOT INITIAL.
+*        /ctdi/cl_repair_log=>log_info( |Downloading resolved PDF stream. Size: { xstrlen( ls_joboutput-pdf ) } bytes.| ).
+*        download_pdf( iv_repair_id = iv_repair_id
+*                      iv_pdf_data  = ls_joboutput-pdf ).
+*      ENDIF.
 
     ENDIF.
 
+  ENDMETHOD.
+
+
+  METHOD /ctdi/if_repair_print_provider~read_data.
+    " Stateless implementation: data is retrieved directly during print execution
   ENDMETHOD.
 
 
@@ -414,7 +417,7 @@ CLASS /ctdi/cl_repair_print_sample IMPLEMENTATION.
           separator_not_allowed     = 8
           filesize_not_allowed      = 9
           header_too_long           = 10
-          dp_error                  = 11
+*          dp_error                  = 11
           access_denied             = 12
           dp_out_of_memory          = 13
           disk_full                 = 14

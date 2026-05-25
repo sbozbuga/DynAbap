@@ -11,10 +11,10 @@ TABLES: nast, tnapr.
 *&---------------------------------------------------------------------*
 *& Selection Screen Definition (For Standalone Executable Mode)
 *&---------------------------------------------------------------------*
-SELECTION-SCREEN BEGIN OF BLOCK b1 WITH FRAME TITLE 'Selection Criteria'(002).
-  PARAMETERS: p_aufnr TYPE aufk-aufnr.
-  PARAMETERS: p_sernr TYPE equi-sernr.
-  PARAMETERS: p_pdf   TYPE abap_bool.
+SELECTION-SCREEN BEGIN OF BLOCK b1 WITH FRAME TITLE TEXT-002.
+PARAMETERS: p_aufnr TYPE aufk-aufnr.
+PARAMETERS: p_sernr TYPE equi-sernr.
+PARAMETERS: p_pdf   TYPE abap_bool.
 SELECTION-SCREEN END OF BLOCK b1.
 
 *&---------------------------------------------------------------------*
@@ -28,7 +28,7 @@ START-OF-SELECTION.
 
   TRY.
       " Optional: populate standard repair data here if needed by your print class/forms
-      ls_repair-vbeln = p_aufnr.
+*      ls_repair-vbeln = p_aufnr.
       ls_repair-sernr = p_sernr.
 
       CREATE OBJECT lo_direct_engine.
@@ -48,7 +48,7 @@ START-OF-SELECTION.
       DATA(lv_direct_root_err) = |{ 'Error executing dynamic repair print: &1'(004) }|.
       REPLACE '&1' IN lv_direct_root_err WITH lx_direct_root->get_text( ).
       MESSAGE lv_direct_root_err TYPE 'E'.
-    ENDTRY.
+  ENDTRY.
 
 *&---------------------------------------------------------------------*
 *& Form ENTRY
@@ -58,7 +58,7 @@ START-OF-SELECTION.
 FORM entry USING ent_retco TYPE sysubrc
                  ent_screen TYPE c.
 
-  DATA: lv_repair_id     TYPE vbeln_va,
+  DATA: lv_repair_id     TYPE aufnr,
         lo_engine        TYPE REF TO /ctdi/cl_repair_print_engine,
         ls_repair        TYPE /ctdi/repair,
         lt_repair_error  TYPE TABLE OF /ctdi/repair_error,
@@ -79,7 +79,7 @@ FORM entry USING ent_retco TYPE sysubrc
 
   TRY.
       " Optional: populate standard repair data here if needed by your print class/forms
-      ls_repair-vbeln = lv_repair_id.
+*      ls_repair-vbeln = lv_repair_id.
 
       " Instantiate the dynamic mapping and printing engine
       CREATE OBJECT lo_engine.
@@ -111,7 +111,7 @@ ENDFORM.
 *&---------------------------------------------------------------------*
 *& Old/legacy repair printing routine (fallback logic)
 *&---------------------------------------------------------------------*
-FORM print_old USING iv_repair_id TYPE vbeln_va
+FORM print_old USING iv_repair_id TYPE aufnr
                      iv_save_as_pdf TYPE abap_bool.
 
   " Place your legacy repair printing routines here.
