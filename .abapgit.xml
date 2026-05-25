@@ -9,6 +9,11 @@
     <IGNORE>
      <item>/src/templates/*</item>
     </IGNORE>
+    <I18N_PARAMS>
+     <TRANSLATION_LANGS>
+      <item>E</item>
+     </TRANSLATION_LANGS>
+    </I18N_PARAMS>
    </DATA>
   </asx:values>
  </asx:abap>

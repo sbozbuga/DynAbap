@@ -11,45 +11,49 @@
     <FIXPT>X</FIXPT>
     <UNICODE>X</UNICODE>
    </VSEOCLASS>
-   <TPOOL>
-    <language>E</language>
-    <item>
-     <ID>I</ID>
-     <KEY>001</KEY>
-     <ENTRY>Smart Form function module name resolution failed for: &amp;1, subrc = &amp;2</ENTRY>
-     <LENGTH>80</LENGTH>
-    </item>
-    <item>
-     <ID>I</ID>
-     <KEY>002</KEY>
-     <ENTRY>Smart Form dynamic execution failed for function module: &amp;1, subrc = &amp;2</ENTRY>
-     <LENGTH>80</LENGTH>
-    </item>
-    <item>
-     <ID>I</ID>
-     <KEY>003</KEY>
-     <ENTRY>CONVERT_OTF failed to convert OTF stream to PDF, subrc = &amp;1</ENTRY>
-     <LENGTH>70</LENGTH>
-    </item>
-    <item>
-     <ID>I</ID>
-     <KEY>004</KEY>
-     <ENTRY>FP_JOB_OPEN failed to open Adobe Forms job, subrc = &amp;1</ENTRY>
-     <LENGTH>60</LENGTH>
-    </item>
-    <item>
-     <ID>I</ID>
-     <KEY>005</KEY>
-     <ENTRY>Adobe Form dynamic generated function module failed, subrc = &amp;1</ENTRY>
-     <LENGTH>70</LENGTH>
-    </item>
-    <item>
-     <ID>I</ID>
-     <KEY>006</KEY>
-     <ENTRY>FP_JOB_CLOSE failed to close Adobe Forms job, subrc = &amp;1</ENTRY>
-     <LENGTH>60</LENGTH>
-    </item>
-   </TPOOL>
+   <I18N_TPOOLS>
+    <I18N_TPOOL>
+     <LANGUAGE>E</LANGUAGE>
+     <TEXTPOOL>
+      <item>
+       <ID>I</ID>
+       <KEY>001</KEY>
+       <ENTRY>Smart Form function module name resolution failed for: &amp;1, subrc = &amp;2</ENTRY>
+       <LENGTH>80</LENGTH>
+      </item>
+      <item>
+       <ID>I</ID>
+       <KEY>002</KEY>
+       <ENTRY>Smart Form dynamic execution failed for function module: &amp;1, subrc = &amp;2</ENTRY>
+       <LENGTH>80</LENGTH>
+      </item>
+      <item>
+       <ID>I</ID>
+       <KEY>003</KEY>
+       <ENTRY>CONVERT_OTF failed to convert OTF stream to PDF, subrc = &amp;1</ENTRY>
+       <LENGTH>70</LENGTH>
+      </item>
+      <item>
+       <ID>I</ID>
+       <KEY>004</KEY>
+       <ENTRY>FP_JOB_OPEN failed to open Adobe Forms job, subrc = &amp;1</ENTRY>
+       <LENGTH>60</LENGTH>
+      </item>
+      <item>
+       <ID>I</ID>
+       <KEY>005</KEY>
+       <ENTRY>Adobe Form dynamic generated function module failed, subrc = &amp;1</ENTRY>
+       <LENGTH>70</LENGTH>
+      </item>
+      <item>
+       <ID>I</ID>
+       <KEY>006</KEY>
+       <ENTRY>FP_JOB_CLOSE failed to close Adobe Forms job, subrc = &amp;1</ENTRY>
+       <LENGTH>60</LENGTH>
+      </item>
+     </TEXTPOOL>
+    </I18N_TPOOL>
+   </I18N_TPOOLS>
   </asx:values>
  </asx:abap>
 </abapGit>
