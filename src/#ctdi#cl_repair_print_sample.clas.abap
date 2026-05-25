@@ -24,26 +24,12 @@ CLASS /ctdi/cl_repair_print_sample DEFINITION
              cust_ref    TYPE bstnk,
            END OF ty_project_info.
 
-    DATA: ms_header   TYPE vbak,
-          mt_items    TYPE TABLE OF vbap,
-          ms_customer TYPE kna1,
-          ms_shipto   TYPE kna1,
-          ms_project  TYPE ty_project_info,
-          ms_usr01    TYPE usr01.
-
     METHODS download_pdf
       IMPORTING
         !iv_repair_id TYPE aufnr
         !iv_pdf_data    TYPE xstring
       RAISING
         cx_static_check.
-
-    METHODS resolve_repair_result
-      IMPORTING
-        !iv_repair_id TYPE aufnr
-        !iv_contract_id TYPE vbeln_va
-      CHANGING
-        !cs_repair TYPE /ctdi/repair.
 ENDCLASS.
 
 
@@ -51,179 +37,7 @@ ENDCLASS.
 CLASS /ctdi/cl_repair_print_sample IMPLEMENTATION.
 
   METHOD /ctdi/if_repair_print_provider~read_data.
-    DATA: lv_kunnr_we      TYPE kunnr,
-          lv_contract_id   TYPE vbeln_va,
-          ls_contract_h    TYPE vbak,
-          lt_contract_i    TYPE TABLE OF vbap,
-          lv_aufnr         TYPE aufnr,
-          ls_aufk          TYPE aufk,
-          lv_kdauf         TYPE kdauf,
-          ls_item          TYPE vbap,
-          ls_contract_item TYPE vbap.
-
-    " 1. Format input ID and check if it is a PM/CS Service Order in AUFK
-    lv_aufnr = |{ iv_repair_id ALPHA = IN }|.
-    SELECT SINGLE * FROM aufk INTO @ls_aufk WHERE aufnr = @lv_aufnr.
-    IF sy-subrc = 0.
-      " It is a PM/CS Service Order:
-      " Try resolving direct Contract Number from AFIH
-      SELECT SINGLE kunum FROM afih INTO @lv_contract_id WHERE aufnr = @lv_aufnr.
-
-      IF lv_contract_id IS INITIAL AND ls_aufk-kdauf IS NOT INITIAL.
-        " Try resolving indirect Contract Number via Sales Order reference
-        SELECT SINGLE vgbel FROM vbap INTO @lv_contract_id
-          WHERE vbeln = @ls_aufk-kdauf 
-            AND vgbel IS NOT INITIAL.
-        IF lv_contract_id IS INITIAL.
-          lv_contract_id = ls_aufk-kdauf.
-        ENDIF.
-      ENDIF.
-
-      " Populate fake VBAK ms_header attributes to keep sample print form compatible
-      IF lv_contract_id IS NOT INITIAL.
-        SELECT SINGLE * FROM vbak INTO @ls_contract_h WHERE vbeln = @lv_contract_id.
-        SELECT * FROM vbap INTO TABLE @lt_contract_i WHERE vbeln = @lv_contract_id.
-        ms_header-vbeln = lv_contract_id.
-        ms_header-kunnr = ls_contract_h-kunnr.
-        ms_header-bstnk = ls_contract_h-bstnk.
-      ELSE.
-        ms_header-vbeln = iv_repair_id.
-        ms_header-kunnr = ls_aufk-kunnr.
-      ENDIF.
-
-      " Mock mt_items if needed, or select from contract items
-      mt_items = lt_contract_i.
-
-      " 1.1 Fetch Sold-to Customer master data (KNA1) using ms_header-kunnr
-      IF ms_header-kunnr IS NOT INITIAL.
-        SELECT SINGLE * FROM kna1 INTO @ms_customer WHERE kunnr = @ms_header-kunnr.
-      ENDIF.
-
-      " 1.2 Fetch Ship-to Customer from Partner table (VBPA) where Role = 'WE' (Ship-to)
-      IF lv_contract_id IS NOT INITIAL.
-        SELECT SINGLE kunnr FROM vbpa INTO @lv_kunnr_we
-          WHERE vbeln = @lv_contract_id
-            AND parvw = 'WE'.
-        IF sy-subrc = 0 AND lv_kunnr_we IS NOT INITIAL.
-          SELECT SINGLE * FROM kna1 INTO @ms_shipto WHERE kunnr = @lv_kunnr_we.
-        ENDIF.
-      ENDIF.
-
-      " 1.3 Fetch Customer Project details
-      ms_project-vbeln    = COND #( WHEN lv_contract_id IS NOT INITIAL THEN lv_contract_id ELSE iv_repair_id ).
-      ms_project-cust_ref = ms_header-bstnk.
-
-      SELECT SINGLE project_name FROM /ctdi/rep_project
-        INTO @ms_project-description
-        WHERE vbeln = @ms_project-vbeln.
-      IF sy-subrc <> 0.
-        " Check WBS Element directly maintained on the Service Order header (AUFK-PSPEL)
-        IF ls_aufk-pspel IS NOT INITIAL.
-          SELECT SINGLE posid, post1 FROM prps INTO ( @ms_project-project_id, @ms_project-description )
-            WHERE pspnr = @ls_aufk-pspel.
-        ENDIF.
-
-        " Fallback to Contract items if WBS was not directly maintained on the order
-        IF ms_project-project_id IS INITIAL AND lv_contract_id IS NOT INITIAL.
-          LOOP AT lt_contract_i INTO ls_contract_item WHERE ps_psp_eln IS NOT INITIAL.
-            SELECT SINGLE posid, post1 FROM prps INTO ( @ms_project-project_id, @ms_project-description )
-              WHERE pspnr = @ls_contract_item-ps_psp_eln.
-            IF sy-subrc = 0.
-              EXIT.
-            ENDIF.
-          ENDLOOP.
-        ENDIF.
-
-        IF ms_project-project_id IS INITIAL.
-          ms_project-description = ms_header-bstnk.
-        ENDIF.
-      ENDIF.
-
-    ELSE.
-      " It is a standard Sales Document (VBELN) - Run standard retrieval logic:
-      SELECT SINGLE * FROM vbak INTO @ms_header WHERE vbeln = @iv_repair_id.
-      IF sy-subrc <> 0.
-        RETURN.
-      ENDIF.
-
-      SELECT * FROM vbap INTO TABLE @mt_items WHERE vbeln = @iv_repair_id.
-
-      " 1.1 Fetch Sold-to Customer master data (KNA1) using VBAK-KUNNR
-      IF ms_header-kunnr IS NOT INITIAL.
-        SELECT SINGLE * FROM kna1 INTO @ms_customer WHERE kunnr = @ms_header-kunnr.
-      ENDIF.
-
-      " 1.2 Fetch Ship-to Customer from Partner table (VBPA) where Role = 'WE' (Ship-to)
-      SELECT SINGLE kunnr FROM vbpa INTO @lv_kunnr_we
-        WHERE vbeln = @iv_repair_id
-          AND parvw = 'WE'.
-      IF sy-subrc = 0 AND lv_kunnr_we IS NOT INITIAL.
-        SELECT SINGLE * FROM kna1 INTO @ms_shipto WHERE kunnr = @lv_kunnr_we.
-      ENDIF.
-
-      " 1.3 Fetch Customer Project details
-      " Check if any item in the Repair Order references a Sales Contract (VGBEL where contract vbtyp = 'G')
-      LOOP AT mt_items INTO ls_item WHERE vgbel IS NOT INITIAL.
-        SELECT SINGLE vbeln FROM vbak INTO @lv_contract_id
-          WHERE vbeln = @ls_item-vgbel 
-            AND vbtyp = 'G'. " 'G' = Contract
-        IF sy-subrc = 0.
-          EXIT.
-        ENDIF.
-      ENDLOOP.
-
-      IF lv_contract_id IS NOT INITIAL.
-        " Customer is using contract (Vbeln) as a key for identifying Repair projects:
-        " Query WBS elements and customer references linked to the Contract
-        SELECT SINGLE * FROM vbak INTO @ls_contract_h WHERE vbeln = @lv_contract_id.
-        SELECT * FROM vbap INTO TABLE @lt_contract_i WHERE vbeln = @lv_contract_id.
-
-        ms_project-vbeln    = lv_contract_id. " Use contract Vbeln as key
-        ms_project-cust_ref = ls_contract_h-bstnk.
-
-        SELECT SINGLE project_name FROM /ctdi/rep_project
-          INTO @ms_project-description
-          WHERE vbeln = @lv_contract_id.
-        IF sy-subrc <> 0.
-          LOOP AT lt_contract_i INTO ls_contract_item WHERE ps_psp_eln IS NOT INITIAL.
-            SELECT SINGLE posid, post1 FROM prps INTO ( @ms_project-project_id, @ms_project-description )
-              WHERE pspnr = @ls_contract_item-ps_psp_eln.
-            IF sy-subrc = 0.
-              EXIT.
-            ENDIF.
-          ENDLOOP.
-
-          IF ms_project-project_id IS INITIAL.
-            ms_project-description = ls_contract_h-bstnk.
-          ENDIF.
-        ENDIF.
-
-      ELSE.
-        " Fallback: Use the Repair Order details directly
-        ms_project-vbeln    = iv_repair_id.
-        ms_project-cust_ref = ms_header-bstnk.
-
-        SELECT SINGLE project_name FROM /ctdi/rep_project
-          INTO @ms_project-description
-          WHERE vbeln = @iv_repair_id.
-        IF sy-subrc <> 0.
-          LOOP AT mt_items INTO ls_item WHERE ps_psp_eln IS NOT INITIAL.
-            SELECT SINGLE posid, post1 FROM prps INTO ( @ms_project-project_id, @ms_project-description )
-              WHERE pspnr = @ls_item-ps_psp_eln.
-            IF sy-subrc = 0.
-              EXIT.
-            ENDIF.
-          ENDLOOP.
-
-          IF ms_project-project_id IS INITIAL.
-            ms_project-description = ms_header-bstnk.
-          ENDIF.
-        ENDIF.
-      ENDIF.
-    ENDIF.
-
-    " 1.4 Fetch User Print Defaults from USR01
-    SELECT SINGLE * FROM usr01 INTO @ms_usr01 WHERE bname = @sy-uname.
+    " Stateless implementation: data is retrieved directly during print execution
   ENDMETHOD.
 
   METHOD /ctdi/if_repair_print_provider~execute.
@@ -247,15 +61,12 @@ CLASS /ctdi/cl_repair_print_sample IMPLEMENTATION.
           ls_docparams    TYPE sfpdocparams,
           lv_form_type    TYPE char1.
 
-    " Ensure header data is read
-    IF ms_header IS INITIAL.
+    DATA: ls_usr01    TYPE usr01.
+
+    " Ensure passed repair header is valid
+    IF cs_repair IS INITIAL.
       RETURN.
     ENDIF.
-
-    me->resolve_repair_result(
-      EXPORTING iv_repair_id   = iv_repair_id
-                iv_contract_id = ms_header-vbeln
-      CHANGING  cs_repair      = cs_repair ).
 
     " Dynamically detect the form type (Smart Form vs Adobe PDF Form)
     SELECT SINGLE formname FROM stxfadm
@@ -295,10 +106,10 @@ CLASS /ctdi/cl_repair_print_sample IMPLEMENTATION.
       ENDIF.
 
       " Apply user printing defaults if configured
-      IF ms_usr01-spld IS NOT INITIAL.
-        ls_output_options-tddest   = ms_usr01-spld.
-        ls_output_options-tdimmed  = ms_usr01-splg.
-        ls_output_options-tddel    = ms_usr01-spda.
+      IF ls_usr01-spld IS NOT INITIAL.
+        ls_output_options-tddest   = ls_usr01-spld.
+        ls_output_options-tdimmed  = ls_usr01-splg.
+        ls_output_options-tddel    = ls_usr01-spda.
       ENDIF.
 
       " If Save as PDF is selected, retrieve OTF data instead of sending directly to spool
@@ -313,17 +124,17 @@ CLASS /ctdi/cl_repair_print_sample IMPLEMENTATION.
           EXPORTING
             control_parameters = ls_control_parameters
             output_options     = ls_output_options
-            is_header          = ms_header
-            is_customer        = ms_customer
-            is_shipto          = ms_shipto
-            is_project         = ms_project
-            /ctdi/repair       = cs_repair
+            is_header          = ls_header
+            is_customer        = ls_customer
+            is_shipto          = ls_shipto
+            is_project         = ls_project
+            is_repair          = cs_repair
           IMPORTING
             job_output_info    = ls_output_data
           TABLES
-            it_items           = mt_items
-            /ctdi/repair_error = ct_repair_error
-            gt_comment_lines   = ct_comment_lines
+            it_items           = lt_items
+            it_repair_error    = ct_repair_error
+            it_comment_lines   = ct_comment_lines
           EXCEPTIONS
             formatting_error   = 1
             internal_error     = 2
@@ -335,14 +146,14 @@ CLASS /ctdi/cl_repair_print_sample IMPLEMENTATION.
           EXPORTING
             control_parameters = ls_control_parameters
             output_options     = ls_output_options
-            is_header          = ms_header
-            is_customer        = ms_customer
-            is_shipto          = ms_shipto
-            is_project         = ms_project
+            is_header          = ls_header
+            is_customer        = ls_customer
+            is_shipto          = ls_shipto
+            is_project         = ls_project
           IMPORTING
             job_output_info    = ls_output_data
           TABLES
-            it_items           = mt_items
+            it_items           = lt_items
           EXCEPTIONS
             formatting_error   = 1
             internal_error     = 2
@@ -403,10 +214,10 @@ CLASS /ctdi/cl_repair_print_sample IMPLEMENTATION.
       ls_outputparams-preview    = abap_true.    " Enable print preview
 
       " Apply user printing defaults if configured
-      IF ms_usr01-spld IS NOT INITIAL.
-        ls_outputparams-dest   = ms_usr01-spld.
-        ls_outputparams-reqimm = ms_usr01-splg.
-        ls_outputparams-reqdel = ms_usr01-spda.
+      IF ls_usr01-spld IS NOT INITIAL.
+        ls_outputparams-dest   = ls_usr01-spld.
+        ls_outputparams-reqimm = ls_usr01-splg.
+        ls_outputparams-reqdel = ls_usr01-spda.
       ENDIF.
 
       " If Save as PDF is selected, instruct ADS to return PDF data
@@ -455,14 +266,14 @@ CLASS /ctdi/cl_repair_print_sample IMPLEMENTATION.
           EXPORTING
             /1bcdwb/docparams     = ls_docparams
             " Pass header, items, customer, ship-to partner, and project details to the form
-            is_header             = ms_header
-            it_items              = mt_items
-            is_customer           = ms_customer
-            is_shipto             = ms_shipto
-            is_project            = ms_project
-            /ctdi/repair          = cs_repair
-            /ctdi/repair_error    = ct_repair_error
-            gt_comment_lines      = ct_comment_lines
+            is_header             = ls_header
+            it_items              = lt_items
+            is_customer           = ls_customer
+            is_shipto             = ls_shipto
+            is_project            = ls_project
+            is_repair             = cs_repair
+            it_repair_error       = ct_repair_error
+            it_comment_lines      = ct_comment_lines
           EXCEPTIONS
             usage_error           = 1
             system_error          = 2
@@ -473,11 +284,11 @@ CLASS /ctdi/cl_repair_print_sample IMPLEMENTATION.
           EXPORTING
             /1bcdwb/docparams = ls_docparams
             " Pass header, items, customer, ship-to partner, and project details to the form
-            is_header         = ms_header
-            it_items          = mt_items
-            is_customer       = ms_customer
-            is_shipto         = ms_shipto
-            is_project        = ms_project
+            is_header         = ls_header
+            it_items          = lt_items
+            is_customer       = ls_customer
+            is_shipto         = ls_shipto
+            is_project        = ls_project
           EXCEPTIONS
             usage_error       = 1
             system_error      = 2
@@ -586,108 +397,4 @@ CLASS /ctdi/cl_repair_print_sample IMPLEMENTATION.
           OTHERS                    = 19 ).
     ENDIF.
   ENDMETHOD.
-
-  METHOD resolve_repair_result.
-    TYPES: BEGIN OF ty_result_step,
-             vbeln  TYPE vbeln_va,
-             skz    TYPE char10,
-             akz    TYPE char10,
-             tausch TYPE char1,
-           END OF ty_result_step.
-    DATA: lt_result_steps TYPE TABLE OF ty_result_step,
-          lv_aufnr        TYPE aufnr,
-          lv_skz          TYPE char10,
-          lv_akz          TYPE char10,
-          lv_tausch       TYPE char1,
-          lv_res_text     TYPE char40.
-
-    IF cs_repair-repair_result_txt IS NOT INITIAL.
-      RETURN.
-    ENDIF.
-
-    " 1. Determine Swap Case (Tauschfall) and SKZ
-    IF cs_repair-old_serial_no IS NOT INITIAL AND ( cs_repair-old_serial_no <> cs_repair-new_serial_no ).
-      lv_tausch = 'X'.
-      lv_skz    = 'RE'.
-    ELSE.
-      lv_tausch = ' '.
-      lv_aufnr  = |{ iv_repair_id ALPHA = IN }|.
-      SELECT SINGLE bemot FROM afru INTO @lv_skz
-        WHERE aufnr = @lv_aufnr
-          AND vornr = '9010'
-          AND stokz = ' '
-          AND stzhl = '00000000'.
-    ENDIF.
-
-    " 2. Determine AKZ
-    lv_aufnr  = |{ iv_repair_id ALPHA = IN }|.
-    SELECT SINGLE qmcod FROM qmel INTO @lv_akz
-      WHERE aufnr = @lv_aufnr
-        AND qmart = 'Z2'.
-
-    " Populate candidates based on the 11 Access Sequences
-    IF iv_contract_id IS NOT INITIAL.
-      " 1. Kontrakt + SKZ + AKZ + Tauschflag
-      IF lv_skz IS NOT INITIAL AND lv_akz IS NOT INITIAL AND lv_tausch IS NOT INITIAL.
-        APPEND VALUE #( vbeln = iv_contract_id skz = lv_skz akz = lv_akz tausch = lv_tausch ) TO lt_result_steps.
-      ENDIF.
-      " 2. Kontrakt + SKZ + AKZ
-      IF lv_skz IS NOT INITIAL AND lv_akz IS NOT INITIAL.
-        APPEND VALUE #( vbeln = iv_contract_id skz = lv_skz akz = lv_akz tausch = ' ' ) TO lt_result_steps.
-      ENDIF.
-      " 3. Kontrakt + SKZ + Tauschflag
-      IF lv_skz IS NOT INITIAL AND lv_tausch IS NOT INITIAL.
-        APPEND VALUE #( vbeln = iv_contract_id skz = lv_skz akz = ' ' tausch = lv_tausch ) TO lt_result_steps.
-      ENDIF.
-      " 4. Kontrakt + SKZ
-      IF lv_skz IS NOT INITIAL.
-        APPEND VALUE #( vbeln = iv_contract_id skz = lv_skz akz = ' ' tausch = ' ' ) TO lt_result_steps.
-      ENDIF.
-      " 5. Kontrakt + AKZ
-      IF lv_akz IS NOT INITIAL.
-        APPEND VALUE #( vbeln = iv_contract_id skz = ' ' akz = lv_akz tausch = ' ' ) TO lt_result_steps.
-      ENDIF.
-      " 6. Kontrakt
-      APPEND VALUE #( vbeln = iv_contract_id skz = ' ' akz = ' ' tausch = ' ' ) TO lt_result_steps.
-    ENDIF.
-
-    " If Contract is empty (leer):
-    " 7. (Kontrakt = leer) + SKZ + AKZ + Tauschflag
-    IF lv_skz IS NOT INITIAL AND lv_akz IS NOT INITIAL AND lv_tausch IS NOT INITIAL.
-      APPEND VALUE #( vbeln = ' ' skz = lv_skz akz = lv_akz tausch = lv_tausch ) TO lt_result_steps.
-    ENDIF.
-    " 8. (Kontrakt = leer) + SKZ + AKZ
-    IF lv_skz IS NOT INITIAL AND lv_akz IS NOT INITIAL.
-      APPEND VALUE #( vbeln = ' ' skz = lv_skz akz = lv_akz tausch = ' ' ) TO lt_result_steps.
-    ENDIF.
-    " 9. (Kontrakt = leer) + SKZ + Tauschflag
-    IF lv_skz IS NOT INITIAL AND lv_tausch IS NOT INITIAL.
-      APPEND VALUE #( vbeln = ' ' skz = lv_skz akz = ' ' tausch = lv_tausch ) TO lt_result_steps.
-    ENDIF.
-    " 10. (Kontrakt = leer) + SKZ
-    IF lv_skz IS NOT INITIAL.
-      APPEND VALUE #( vbeln = ' ' skz = lv_skz akz = ' ' tausch = ' ' ) TO lt_result_steps.
-    ENDIF.
-    " 11. (Kontrakt = leer) + AKZ
-    IF lv_akz IS NOT INITIAL.
-      APPEND VALUE #( vbeln = ' ' skz = ' ' akz = lv_akz tausch = ' ' ) TO lt_result_steps.
-    ENDIF.
-
-    " Query sequentially
-    LOOP AT lt_result_steps INTO DATA(ls_result_step).
-      SELECT SINGLE result_text FROM /ctdi/rep_result INTO @lv_res_text
-        WHERE vbeln  = @ls_result_step-vbeln
-          AND skz    = @ls_result_step-skz
-          AND akz    = @ls_result_step-akz
-          AND tausch = @ls_result_step-tausch.
-      IF sy-subrc = 0.
-        EXIT.
-      ENDIF.
-    ENDLOOP.
-
-    IF lv_res_text IS NOT INITIAL.
-      cs_repair-repair_result_txt = lv_res_text.
-    ENDIF.
-  ENDMETHOD.
-
 ENDCLASS.
