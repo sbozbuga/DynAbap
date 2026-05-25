@@ -3,6 +3,10 @@ CLASS /ctdi/cl_repair_print_sample DEFINITION
   FINAL
   CREATE PUBLIC .
 
+  "* Naming convention:
+  "*   ms_ = structure (single record)
+  "*   mt_ = internal table (multiple records)
+
   PUBLIC SECTION.
     INTERFACES /ctdi/if_repair_print_provider.
 
