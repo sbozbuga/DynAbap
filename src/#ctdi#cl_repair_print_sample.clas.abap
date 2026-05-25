@@ -357,8 +357,16 @@ CLASS /CTDI/CL_REPAIR_PRINT_SAMPLE IMPLEMENTATION.
       " If Save as PDF, trigger local download of the retrieved PDF xstring
       IF iv_save_as_pdf = abap_true AND ls_formoutput-pdf IS NOT INITIAL.
         /ctdi/cl_repair_log=>log_info( |Downloading resolved PDF stream. Size: { xstrlen( ls_formoutput-pdf ) } bytes.| ).
-        download_pdf( iv_repair_id = iv_repair_id
-                      iv_pdf_data  = ls_formoutput-pdf ).
+        TRY.
+            download_pdf( iv_repair_id = iv_repair_id
+                          iv_pdf_data  = ls_formoutput-pdf ).
+          CATCH cx_static_check INTO DATA(lx_pdf_err).
+            /ctdi/cl_repair_log=>log_exception( lx_pdf_err ).
+            RAISE EXCEPTION TYPE /ctdi/cx_form_error
+              EXPORTING
+                repair_id = iv_repair_id
+                message   = lx_pdf_err->get_text( ).
+        ENDTRY.
       ENDIF.
 
     ENDIF.
