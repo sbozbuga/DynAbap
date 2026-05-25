@@ -200,6 +200,14 @@ CLASS /ctdi/cl_repair_print_sample IMPLEMENTATION.
     SELECT SINGLE * FROM usr01 INTO @ms_usr01 WHERE bname = @sy-uname.
   ENDMETHOD.
 
+  METHOD /ctdi/if_repair_print_provider~execute.
+    me->/ctdi/if_repair_print_provider~read_data( iv_repair_id = iv_repair_id ).
+    me->/ctdi/if_repair_print_provider~print(
+      iv_repair_id   = iv_repair_id
+      iv_form_name   = iv_form_name
+      iv_save_as_pdf = iv_save_as_pdf ).
+  ENDMETHOD.
+
   METHOD /ctdi/if_repair_print_provider~print.
     DATA: lv_fm_name      TYPE rs38l_fnam,
           ls_outputparams TYPE sfpoutputparams,

@@ -43,9 +43,9 @@ FORM on_before_save.
   DATA: ls_entry TYPE /ctdi/sd_repair_form.
 
   LOOP AT total INTO ls_entry.
-    " Validate and default method name to PRINT if empty
+    " Validate and default method name to EXECUTE for the single-entry provider flow
     IF ls_entry-method_name IS INITIAL.
-      ls_entry-method_name = 'PRINT'.
+      ls_entry-method_name = 'EXECUTE'.
       MODIFY total FROM ls_entry.
     ENDIF.
 

@@ -1,8 +1,9 @@
 CLASS lcl_mock_print_provider DEFINITION CREATE PUBLIC FOR TESTING.
   PUBLIC SECTION.
     INTERFACES /ctdi/if_repair_print_provider.
-    
-    CLASS-DATA: gv_read_data_called TYPE abap_bool,
+
+    CLASS-DATA: gv_execute_called TYPE abap_bool,
+                gv_read_data_called TYPE abap_bool,
                 gv_print_called     TYPE abap_bool,
                 gv_repair_id        TYPE vbeln_va,
                 gv_form_name        TYPE fpname,
@@ -16,6 +17,13 @@ CLASS lcl_mock_print_provider IMPLEMENTATION.
     gv_read_data_called = abap_true.
   ENDMETHOD.
 
+  METHOD /ctdi/if_repair_print_provider~execute.
+    gv_execute_called = abap_true.
+    gv_repair_id      = iv_repair_id.
+    gv_form_name      = iv_form_name.
+    gv_save_as_pdf    = iv_save_as_pdf.
+  ENDMETHOD.
+
   METHOD /ctdi/if_repair_print_provider~print.
     gv_print_called = abap_true.
     gv_repair_id   = iv_repair_id.
@@ -24,7 +32,7 @@ CLASS lcl_mock_print_provider IMPLEMENTATION.
   ENDMETHOD.
 
   METHOD clear.
-    CLEAR: gv_read_data_called, gv_print_called, gv_repair_id, gv_form_name, gv_save_as_pdf.
+    CLEAR: gv_execute_called, gv_read_data_called, gv_print_called, gv_repair_id, gv_form_name, gv_save_as_pdf.
   ENDMETHOD.
 ENDCLASS.
 
@@ -189,27 +197,23 @@ CLASS lcl_test IMPLEMENTATION.
           iv_save_as_pdf = abap_true ).
 
         cl_abap_unit_assert=>assert_true(
-          act = lcl_mock_print_provider=>gv_read_data_called
-          msg = 'read_data should have been called' ).
-
-        cl_abap_unit_assert=>assert_true(
-          act = lcl_mock_print_provider=>gv_print_called
-          msg = 'print should have been called' ).
+          act = lcl_mock_print_provider=>gv_execute_called
+          msg = 'execute should have been called' ).
 
         cl_abap_unit_assert=>assert_equals(
           act = lcl_mock_print_provider=>gv_repair_id
           exp = '0000000100'
-          msg = 'Incorrect repair ID passed to print' ).
+          msg = 'Incorrect repair ID passed to execute' ).
 
         cl_abap_unit_assert=>assert_equals(
           act = lcl_mock_print_provider=>gv_form_name
           exp = 'TEST_ADOBE_FORM'
-          msg = 'Incorrect form name passed to print' ).
+          msg = 'Incorrect form name passed to execute' ).
 
         cl_abap_unit_assert=>assert_equals(
           act = lcl_mock_print_provider=>gv_save_as_pdf
           exp = abap_true
-          msg = 'Incorrect save as PDF flag passed to print' ).
+          msg = 'Incorrect save as PDF flag passed to execute' ).
 
       CATCH cx_root INTO DATA(lx_err).
         cl_abap_unit_assert=>fail( msg = lx_err->get_text( ) ).

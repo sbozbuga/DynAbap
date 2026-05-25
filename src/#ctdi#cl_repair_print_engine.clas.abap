@@ -147,11 +147,9 @@ CLASS /ctdi/cl_repair_print_engine IMPLEMENTATION.
         " Try to dynamically cast the instance to the standard print provider interface
         lo_provider ?= lo_instance.
 
-        " Execute method type-safely via the interface
-        lo_provider->read_data( iv_repair_id = iv_repair_id ).
-
-        lo_provider->print(
-          iv_repair_id = iv_repair_id
+        " Execute the provider in one step via the interface
+        lo_provider->execute(
+          iv_repair_id   = iv_repair_id
           iv_form_name   = is_config-form_name
           iv_save_as_pdf = iv_save_as_pdf ).
 
@@ -237,7 +235,7 @@ CLASS /ctdi/cl_repair_print_engine IMPLEMENTATION.
       INTO lv_exists
       WHERE clsname = @cs_entry-class_name.
     IF sy-subrc = 0.
-      cs_entry-method_name = 'PRINT'.
+      cs_entry-method_name = 'EXECUTE'.
       RETURN.
     ENDIF.
 
@@ -266,7 +264,7 @@ CLASS /ctdi/cl_repair_print_engine IMPLEMENTATION.
             devclass  = '$TMP'
           CHANGING
             intkey    = lt_intfs ).
-        cs_entry-method_name = 'PRINT'.
+        cs_entry-method_name = 'EXECUTE'.
       CATCH cx_oo_class_creation_failed.
         " Generation failed silently, will be warned during save validation
       CATCH cx_root.
