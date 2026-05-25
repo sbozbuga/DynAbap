@@ -33,14 +33,14 @@ CLASS /ctdi/cl_repair_print_sample DEFINITION
 
     METHODS download_pdf
       IMPORTING
-        !iv_repair_id TYPE vbeln_va
+        !iv_repair_id TYPE aufnr
         !iv_pdf_data    TYPE xstring
       RAISING
         cx_static_check.
 
     METHODS resolve_repair_result
       IMPORTING
-        !iv_repair_id TYPE vbeln_va
+        !iv_repair_id TYPE aufnr
         !iv_contract_id TYPE vbeln_va
       CHANGING
         !cs_repair TYPE /ctdi/repair.

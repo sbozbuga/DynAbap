@@ -11,7 +11,7 @@ CLASS /ctdi/cl_repair_print_engine DEFINITION
     "           iv_akz          = Optional AKZ selector
     METHODS execute
       IMPORTING
-        !iv_repair_id TYPE vbeln_va
+        !iv_repair_id TYPE aufnr
         !iv_save_as_pdf TYPE abap_bool DEFAULT abap_false
         !iv_skz TYPE char10 OPTIONAL
         !iv_akz TYPE char10 OPTIONAL
@@ -63,7 +63,7 @@ CLASS /ctdi/cl_repair_print_engine DEFINITION
 
     METHODS execute_provider
       IMPORTING
-        !iv_repair_id TYPE vbeln_va
+        !iv_repair_id TYPE aufnr
         !is_config TYPE /ctdi/rep_forms
         !iv_save_as_pdf TYPE abap_bool DEFAULT abap_false
       CHANGING

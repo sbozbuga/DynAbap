@@ -5,7 +5,7 @@ INTERFACE /ctdi/if_repair_print_provider
   "! @parameter iv_repair_id | Repair document ID
   METHODS read_data
     IMPORTING
-      !iv_repair_id TYPE vbeln_va
+      !iv_repair_id TYPE aufnr
     CHANGING
       !cs_repair TYPE /ctdi/repair OPTIONAL
       !ct_repair_error TYPE any table OPTIONAL
@@ -19,7 +19,7 @@ INTERFACE /ctdi/if_repair_print_provider
   "! @parameter iv_save_as_pdf | Flag to save output as PDF
   METHODS execute
     IMPORTING
-      !iv_repair_id TYPE vbeln_va
+      !iv_repair_id TYPE aufnr
       !iv_form_name TYPE fpname
       !iv_save_as_pdf TYPE abap_bool DEFAULT abap_false
     CHANGING
@@ -35,7 +35,7 @@ INTERFACE /ctdi/if_repair_print_provider
   "! @parameter iv_save_as_pdf | Flag to save output as PDF
   METHODS print
     IMPORTING
-      !iv_repair_id TYPE vbeln_va
+      !iv_repair_id TYPE aufnr
       !iv_form_name   TYPE fpname
       !iv_save_as_pdf TYPE abap_bool DEFAULT abap_false
     CHANGING
