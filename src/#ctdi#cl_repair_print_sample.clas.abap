@@ -227,33 +227,35 @@ CLASS /ctdi/cl_repair_print_sample IMPLEMENTATION.
   ENDMETHOD.
 
   METHOD /ctdi/if_repair_print_provider~execute.
-    me->/ctdi/if_repair_print_provider~read_data( iv_repair_id = iv_repair_id ).
+    me->/ctdi/if_repair_print_provider~read_data(
+      EXPORTING iv_repair_id     = iv_repair_id
+      CHANGING  cs_repair        = cs_repair
+                ct_repair_error  = ct_repair_error
+                ct_comment_lines = ct_comment_lines ).
     me->/ctdi/if_repair_print_provider~print(
-      iv_repair_id     = iv_repair_id
-      iv_form_name     = iv_form_name
-      iv_save_as_pdf   = iv_save_as_pdf
-      is_repair        = is_repair
-      it_repair_error  = it_repair_error
-      it_comment_lines = it_comment_lines ).
+      EXPORTING iv_repair_id     = iv_repair_id
+                iv_form_name     = iv_form_name
+                iv_save_as_pdf   = iv_save_as_pdf
+      CHANGING  cs_repair        = cs_repair
+                ct_repair_error  = ct_repair_error
+                ct_comment_lines = ct_comment_lines ).
   ENDMETHOD.
 
   METHOD /ctdi/if_repair_print_provider~print.
     DATA: lv_fm_name      TYPE rs38l_fnam,
           ls_outputparams TYPE sfpoutputparams,
           ls_docparams    TYPE sfpdocparams,
-          lv_form_type    TYPE char1,
-          ls_repair       TYPE /ctdi/repair.
+          lv_form_type    TYPE char1.
 
     " Ensure header data is read
     IF ms_header IS INITIAL.
       RETURN.
     ENDIF.
 
-    ls_repair = is_repair.
     me->resolve_repair_result(
       EXPORTING iv_repair_id   = iv_repair_id
                 iv_contract_id = ms_header-vbeln
-      CHANGING  cs_repair      = ls_repair ).
+      CHANGING  cs_repair      = cs_repair ).
 
     " Dynamically detect the form type (Smart Form vs Adobe PDF Form)
     SELECT SINGLE formname FROM stxfadm
@@ -315,13 +317,13 @@ CLASS /ctdi/cl_repair_print_sample IMPLEMENTATION.
             is_customer        = ms_customer
             is_shipto          = ms_shipto
             is_project         = ms_project
-            /ctdi/repair       = ls_repair
+            /ctdi/repair       = cs_repair
           IMPORTING
             job_output_info    = ls_output_data
           TABLES
             it_items           = mt_items
-            /ctdi/repair_error = it_repair_error
-            gt_comment_lines   = it_comment_lines
+            /ctdi/repair_error = ct_repair_error
+            gt_comment_lines   = ct_comment_lines
           EXCEPTIONS
             formatting_error   = 1
             internal_error     = 2
@@ -458,9 +460,9 @@ CLASS /ctdi/cl_repair_print_sample IMPLEMENTATION.
             is_customer           = ms_customer
             is_shipto             = ms_shipto
             is_project            = ms_project
-            /ctdi/repair          = ls_repair
-            /ctdi/repair_error    = it_repair_error
-            gt_comment_lines      = it_comment_lines
+            /ctdi/repair          = cs_repair
+            /ctdi/repair_error    = ct_repair_error
+            gt_comment_lines      = ct_comment_lines
           EXCEPTIONS
             usage_error           = 1
             system_error          = 2

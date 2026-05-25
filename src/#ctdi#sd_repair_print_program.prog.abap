@@ -32,11 +32,11 @@ START-OF-SELECTION.
       ls_repair-sernr = p_sernr.
 
       CREATE OBJECT lo_direct_engine.
-      lo_direct_engine->execute( iv_repair_id     = p_aufnr
-                                 iv_save_as_pdf   = p_pdf
-                                 is_repair        = ls_repair
-                                 it_repair_error  = lt_repair_error
-                                 it_comment_lines = lt_comment_lines ).
+      lo_direct_engine->execute( EXPORTING iv_repair_id     = p_aufnr
+                                           iv_save_as_pdf   = p_pdf
+                                 CHANGING  cs_repair        = ls_repair
+                                           ct_repair_error  = lt_repair_error
+                                           ct_comment_lines = lt_comment_lines ).
     CATCH /ctdi/cx_no_config_found.
       " Fall back to legacy printing logic
       PERFORM print_old USING p_aufnr p_pdf.
@@ -81,10 +81,10 @@ FORM entry USING ent_retco TYPE sysubrc
       CREATE OBJECT lo_engine.
 
       " Call the dynamic printing method (Output Determination always defaults to Spool/Print)
-      lo_engine->execute( iv_repair_id     = lv_repair_id
-                          is_repair        = ls_repair
-                          it_repair_error  = lt_repair_error
-                          it_comment_lines = lt_comment_lines ).
+      lo_engine->execute( EXPORTING iv_repair_id     = lv_repair_id
+                          CHANGING  cs_repair        = ls_repair
+                                    ct_repair_error  = lt_repair_error
+                                    ct_comment_lines = lt_comment_lines ).
 
     CATCH /ctdi/cx_no_config_found.
       " Fall back to legacy printing logic

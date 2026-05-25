@@ -25,9 +25,9 @@ CLASS lcl_mock_print_provider IMPLEMENTATION.
     gv_repair_id      = iv_repair_id.
     gv_form_name      = iv_form_name.
     gv_save_as_pdf    = iv_save_as_pdf.
-    gs_repair         = is_repair.
-    gt_repair_error   = it_repair_error.
-    gt_comment_lines  = it_comment_lines.
+    gs_repair         = cs_repair.
+    gt_repair_error   = ct_repair_error.
+    gt_comment_lines  = ct_comment_lines.
   ENDMETHOD.
 
   METHOD /ctdi/if_repair_print_provider~print.
@@ -35,9 +35,9 @@ CLASS lcl_mock_print_provider IMPLEMENTATION.
     gv_repair_id   = iv_repair_id.
     gv_form_name   = iv_form_name.
     gv_save_as_pdf = iv_save_as_pdf.
-    gs_repair      = is_repair.
-    gt_repair_error = it_repair_error.
-    gt_comment_lines = it_comment_lines.
+    gs_repair      = cs_repair.
+    gt_repair_error = ct_repair_error.
+    gt_comment_lines = ct_comment_lines.
   ENDMETHOD.
 
   METHOD clear.
