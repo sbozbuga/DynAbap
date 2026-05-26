@@ -26,3 +26,4 @@ node_modules/
 
 abap-mcp-server/*.*
 vsp.exe
+dist/
