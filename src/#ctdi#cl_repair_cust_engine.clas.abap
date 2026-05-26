@@ -110,8 +110,8 @@ CLASS /CTDI/CL_REPAIR_CUST_ENGINE IMPLEMENTATION.
     ENDIF.
 
     " 5. Generate the SE24 class with interface /CTDI/IF_REPAIR_PRINT_PROVIDER
-    DATA: ls_class TYPE vseoclass,
-          lt_intfs TYPE seor_implementing_keys.
+    DATA: ls_class      TYPE vseoclass,
+          lt_intfs      TYPE seo_implementings.
 
     ls_class-clsname    = cs_entry-class_name.
     ls_class-langu      = sy-langu.
@@ -127,19 +127,19 @@ CLASS /CTDI/CL_REPAIR_CUST_ENGINE IMPLEMENTATION.
                     refclsname = '/CTDI/IF_REPAIR_PRINT_PROVIDER' )
       TO lt_intfs.
 
-*    TRY.
-*        cl_oo_class=>GET_INSTANCE(
-*          EXPORTING
-*            vseoclass = ls_class
-*            devclass  = '$TMP'
-*          CHANGING
-*            intkey    = lt_intfs ).
-*        cs_entry-method_name = 'EXECUTE'.
-*      CATCH cx_oo_class_creation_failed.
-*        " Generation failed silently, will be warned during save validation
-*      CATCH cx_root.
-*        " Catch any other static or dynamic generation exceptions
-*    ENDTRY.
+    CALL FUNCTION 'SEO_CLASS_CREATE_COMPLETE'
+      EXPORTING
+        devclass      = '$TMP'
+        overwrite     = abap_true
+        version       = '1' " Active
+      CHANGING
+        class         = ls_class
+        implementings = lt_intfs
+      EXCEPTIONS
+        OTHERS        = 1.
+    IF sy-subrc = 0.
+      cs_entry-method_name = 'EXECUTE'.
+    ENDIF.
 
   ENDMETHOD.
 
@@ -232,8 +232,8 @@ CLASS /CTDI/CL_REPAIR_CUST_ENGINE IMPLEMENTATION.
 
         IF sy-subrc = 0 AND lv_answer = '1'.
           " User clicked Yes: Programmatically generate class
-          DATA: ls_class TYPE vseoclass,
-                lt_intfs TYPE seor_implementing_keys.
+          DATA: ls_class      TYPE vseoclass,
+                lt_intfs      TYPE seo_implementings.
 
           ls_class-clsname    = is_entry-class_name.
           ls_class-langu      = sy-langu.
@@ -248,30 +248,34 @@ CLASS /CTDI/CL_REPAIR_CUST_ENGINE IMPLEMENTATION.
                           refclsname = '/CTDI/IF_REPAIR_PRINT_PROVIDER' )
             TO lt_intfs.
 
-*          TRY.
-*              cl_oo_class=>create_class(
-*                EXPORTING
-*                  vseoclass = ls_class
-*                  devclass  = '$TMP'
-*                CHANGING
-*                  intkey    = lt_intfs ).
-*              DATA(lv_success) = |{ 'Class &1 generated successfully.'(005) }|.
-*              REPLACE '&1' IN lv_success WITH is_entry-class_name.
-*              MESSAGE lv_success TYPE 'S'.
-*              RETURN. " Class now successfully generated, bypass error check
-*            CATCH cx_oo_class_creation_failed INTO DATA(lx_creation_err).
-*              RAISE EXCEPTION TYPE /ctdi/cx_print_error
-*                EXPORTING
-*                  repair_id = is_entry-vbeln
-*                  message   = |Failed to generate class: { lx_creation_err->get_text( ) }|
-*                  previous  = lx_creation_err.
-*            CATCH cx_root INTO DATA(lx_root_err).
-*              RAISE EXCEPTION TYPE /ctdi/cx_print_error
-*                EXPORTING
-*                  repair_id = is_entry-vbeln
-*                  message   = |Failed to generate missing class: { is_entry-class_name }|
-*                  previous  = lx_root_err.
-*          ENDTRY.
+          CALL FUNCTION 'SEO_CLASS_CREATE_COMPLETE'
+            EXPORTING
+              devclass        = '$TMP'
+              overwrite       = abap_true
+              version         = '1' " Active
+            CHANGING
+              class           = ls_class
+              implementings   = lt_intfs
+            EXCEPTIONS
+              existing        = 1
+              is_interface    = 2
+              not_created     = 3
+              db_error        = 4
+              component_error = 5
+              OTHERS          = 6.
+
+          IF sy-subrc = 0.
+            DATA(lv_success) = |{ 'Class &1 generated successfully.'(005) }|.
+            REPLACE '&1' IN lv_success WITH is_entry-class_name.
+            MESSAGE lv_success TYPE 'S'.
+            RETURN. " Class now successfully generated, bypass error check
+          ELSE.
+            DATA(lv_subrc) = sy-subrc.
+            RAISE EXCEPTION TYPE /ctdi/cx_print_error
+              EXPORTING
+                repair_id = is_entry-vbeln
+                message   = |Failed to generate class (SUBRC: { lv_subrc }).|.
+          ENDIF.
         ENDIF.
       ENDIF.
 
