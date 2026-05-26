@@ -23,3 +23,5 @@ node_modules/
 # Temp files
 *.tmp
 *.log
+
+abap-mcp-server/
