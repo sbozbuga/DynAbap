@@ -209,11 +209,11 @@ CLASS /CTDI/CL_REPAIR_CUST_ENGINE IMPLEMENTATION.
           DATA: lt_fields TYPE TABLE OF sval,
                 ls_field  TYPE sval,
                 lv_returncode TYPE c,
-                lv_package TYPE devclass VALUE '$TMP'.
+                lv_package TYPE devclass VALUE '/CTDI/WORKSHOP'.
 
           ls_field-tabname   = 'TDEVC'.
           ls_field-fieldname = 'DEVCLASS'.
-          ls_field-value     = '$TMP'.
+          ls_field-value     = '/CTDI/WORKSHOP'.
           APPEND ls_field TO lt_fields.
 
           CALL FUNCTION 'POPUP_TO_GET_VALUES'
