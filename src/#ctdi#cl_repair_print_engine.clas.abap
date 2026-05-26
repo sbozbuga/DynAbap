@@ -69,23 +69,10 @@ ENDCLASS.
 CLASS /CTDI/CL_REPAIR_PRINT_ENGINE IMPLEMENTATION.
 
 
-* <SIGNATURE>---------------------------------------------------------------------------------------+
-* | Instance Public Method /CTDI/CL_REPAIR_PRINT_ENGINE->EXECUTE
-* +-------------------------------------------------------------------------------------------------+
-* | [--->] IV_REPAIR_ID                   TYPE        AUFNR
-* | [--->] IV_SAVE_AS_PDF                 TYPE        ABAP_BOOL (default =ABAP_FALSE)
-* | [--->] IV_SKZ                         TYPE        BEMOT(optional)
-* | [--->] IV_AKZ                         TYPE        CHAR4(optional)
-* | [<-->] CS_REPAIR                      TYPE        /CTDI/REPAIR(optional)
-* | [<-->] CT_REPAIR_ERROR                TYPE        ANY TABLE(optional)
-* | [<-->] CT_COMMENT_LINES               TYPE        ANY TABLE(optional)
-* | [!CX!] /CTDI/CX_NO_CONFIG_FOUND
-* | [!CX!] CX_STATIC_CHECK
-* +--------------------------------------------------------------------------------------</SIGNATURE>
   METHOD execute.
     DATA: lv_contract_id TYPE vbeln_va,
-          lv_skz TYPE bemot,
-          lv_akz TYPE char4.
+          lv_skz         TYPE bemot,
+          lv_akz         TYPE char4.
 
     /ctdi/cl_repair_log=>log_info( |Start execution of Dynamic Print Engine for Repair ID { iv_repair_id }| ).
 
@@ -118,6 +105,9 @@ CLASS /CTDI/CL_REPAIR_PRINT_ENGINE IMPLEMENTATION.
       CATCH /ctdi/cx_no_config_found INTO DATA(lx_no_config).
         /ctdi/cl_repair_log=>log_warning( |No active print configuration found for contract { lv_contract_id }| ).
         RAISE EXCEPTION lx_no_config.
+      CATCH /ctdi/cx_repair_not_found INTO DATA(lx_no_contract).
+        /ctdi/cl_repair_log=>log_exception( lx_no_contract ).
+        RAISE EXCEPTION lx_no_contract.
       CATCH cx_static_check INTO DATA(lx_static).
         /ctdi/cl_repair_log=>log_exception( lx_static ).
         RAISE EXCEPTION lx_static.
@@ -125,17 +115,6 @@ CLASS /CTDI/CL_REPAIR_PRINT_ENGINE IMPLEMENTATION.
   ENDMETHOD.
 
 
-* <SIGNATURE>---------------------------------------------------------------------------------------+
-* | Instance Private Method /CTDI/CL_REPAIR_PRINT_ENGINE->EXECUTE_PROVIDER
-* +-------------------------------------------------------------------------------------------------+
-* | [--->] IV_REPAIR_ID                   TYPE        AUFNR
-* | [--->] IS_CONFIG                      TYPE        /CTDI/REP_FORMS
-* | [--->] IV_SAVE_AS_PDF                 TYPE        ABAP_BOOL (default =ABAP_FALSE)
-* | [<-->] CS_REPAIR                      TYPE        /CTDI/REPAIR(optional)
-* | [<-->] CT_REPAIR_ERROR                TYPE        ANY TABLE(optional)
-* | [<-->] CT_COMMENT_LINES               TYPE        ANY TABLE(optional)
-* | [!CX!] CX_STATIC_CHECK
-* +--------------------------------------------------------------------------------------</SIGNATURE>
   METHOD execute_provider.
     DATA: lo_instance TYPE REF TO object,
           lo_provider TYPE REF TO /ctdi/if_repair_print_provider.
@@ -229,15 +208,6 @@ CLASS /CTDI/CL_REPAIR_PRINT_ENGINE IMPLEMENTATION.
   ENDMETHOD.
 
 
-* <SIGNATURE>---------------------------------------------------------------------------------------+
-* | Instance Private Method /CTDI/CL_REPAIR_PRINT_ENGINE->GET_CONFIG
-* +-------------------------------------------------------------------------------------------------+
-* | [--->] IV_CONTRACT_ID                 TYPE        VBELN_VA
-* | [--->] IV_SKZ                         TYPE        BEMOT(optional)
-* | [--->] IV_AKZ                         TYPE        CHAR4(optional)
-* | [<-()] RS_CONFIG                      TYPE        /CTDI/REP_FORMS
-* | [!CX!] /CTDI/CX_NO_CONFIG_FOUND
-* +--------------------------------------------------------------------------------------</SIGNATURE>
   METHOD get_config.
     TYPES: BEGIN OF ty_query_step,
              vbeln TYPE vbeln_va,
@@ -310,15 +280,6 @@ CLASS /CTDI/CL_REPAIR_PRINT_ENGINE IMPLEMENTATION.
   ENDMETHOD.
 
 
-* <SIGNATURE>---------------------------------------------------------------------------------------+
-* | Instance Private Method /CTDI/CL_REPAIR_PRINT_ENGINE->RESOLVE_CONTRACT
-* +-------------------------------------------------------------------------------------------------+
-* | [--->] IV_REPAIR_ID                   TYPE        AUFNR
-* | [<---] EV_CONTRACT_ID                 TYPE        VBELN_VA
-* | [<---] EV_SKZ                         TYPE        BEMOT
-* | [<---] EV_AKZ                         TYPE        CHAR4
-* | [EXC!] /CTDI/CX_REPAIR_NOT_FOUND
-* +--------------------------------------------------------------------------------------</SIGNATURE>
   METHOD resolve_contract.
     DATA(lv_aufnr) = |{ iv_repair_id ALPHA = IN }|.
 

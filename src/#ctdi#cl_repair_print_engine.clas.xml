@@ -11,6 +11,14 @@
     <FIXPT>X</FIXPT>
     <UNICODE>X</UNICODE>
    </VSEOCLASS>
+   <DESCRIPTIONS_SUB>
+    <SEOSUBCOTX>
+     <CMPNAME>RESOLVE_CONTRACT</CMPNAME>
+     <SCONAME>/CTDI/CX_REPAIR_NOT_FOUND</SCONAME>
+     <LANGU>E</LANGU>
+     <DESCRIPT>no contract found</DESCRIPT>
+    </SEOSUBCOTX>
+   </DESCRIPTIONS_SUB>
   </asx:values>
  </asx:abap>
 </abapGit>

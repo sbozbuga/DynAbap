@@ -37,6 +37,13 @@
      <BASTAB>X</BASTAB>
      <FLAG>X</FLAG>
     </TVDIR>
+    <TVIMF>
+     <TVIMF>
+      <TABNAME>/CTDI/REP_FORMS</TABNAME>
+      <EVENT>05</EVENT>
+      <FORMNAME>CHECK_ENTRY</FORMNAME>
+     </TVIMF>
+    </TVIMF>
    </TOBJ>
   </asx:values>
  </asx:abap>
