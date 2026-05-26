@@ -17,7 +17,7 @@ CLASS /ctdi/cl_repair_print_engine DEFINITION
         !iv_akz TYPE char4 OPTIONAL
       CHANGING
         !cs_repair TYPE /ctdi/repair OPTIONAL
-        !ct_repair_error TYPE any table OPTIONAL
+        !ct_device_defects TYPE any table OPTIONAL
         !ct_comment_lines TYPE any table OPTIONAL
       RAISING
         /ctdi/cx_no_config_found
@@ -57,7 +57,7 @@ private section.
       !IV_SAVE_AS_PDF type ABAP_BOOL default ABAP_FALSE
     changing
       !CS_REPAIR type /CTDI/REPAIR optional
-      !CT_REPAIR_ERROR type ANY TABLE optional
+      !CT_DEVICE_DEFECTS type ANY TABLE optional
       !CT_COMMENT_LINES type ANY TABLE optional
     raising
       CX_STATIC_CHECK .
@@ -98,7 +98,7 @@ CLASS /CTDI/CL_REPAIR_PRINT_ENGINE IMPLEMENTATION.
                                     is_config        = ls_config
                                     iv_save_as_pdf   = iv_save_as_pdf
                           CHANGING  cs_repair        = cs_repair
-                                    ct_repair_error  = ct_repair_error
+                                    ct_device_defects  = ct_device_defects
                                     ct_comment_lines = ct_comment_lines ).
 
         /ctdi/cl_repair_log=>log_info( |Execution completed successfully for Repair ID { iv_repair_id }| ).
@@ -165,7 +165,7 @@ CLASS /CTDI/CL_REPAIR_PRINT_ENGINE IMPLEMENTATION.
                     iv_form_name     = is_config-form_name
                     iv_save_as_pdf   = iv_save_as_pdf
           CHANGING  cs_repair        = cs_repair
-                    ct_repair_error  = ct_repair_error
+                    ct_device_defects  = ct_device_defects
                     ct_comment_lines = ct_comment_lines ).
 
       CATCH cx_sy_move_cast_error INTO DATA(lx_cast_error).

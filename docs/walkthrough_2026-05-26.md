@@ -30,19 +30,27 @@ We modified four core components in the repository:
 * **User Profile Parameter Override**: Added check for user profile parameter **`/CELLAG/PAFR`** via `GET PARAMETER ID` to let user-specific profile printers take precedence.
 * **Dynamic Device Type Auto-Detection**: Added call to **`SSF_GET_DEVICE_TYPE`** to resolve the correct printer device layout type based on `sy-langu` before calling Smart Forms, resolving character-encoding issues.
 * **Batch Mode Safety Guard**: Added check in `download_pdf` against `sy-batch` to guard against background execution. If running in a batch job, presentation layer services (`cl_gui_frontend_services`) are bypassed, and a warning is written to the log instead of raising a crash-inducing short dump.
+* **Generic Reflection Parameter Detection**: Completely eliminated the hardcoded legacy form name check `IF iv_form_name = '/CELLAG/ALCAREP'`. The class now dynamically queries the standard active repository table `fupararef` at runtime to check if the generated function module signature expects `IT_REPAIR_ERROR`, passing the error/comment tables parameters only when compatible. This keeps the base class 100% generic and extensible.
 
 ### Entry Print Wrapper
 #### [MODIFY] [sd_repair_print_program.prog.abap](file:///D:/_Repos/DynAbap/src/%23ctdi%23sd_repair_print_program.prog.abap)
 * **Backward Compatibility**: Added the hidden selection parameter **`P_sf`** (`PARAMETERS: p_sf as checkbox NO-DISPLAY.`) to ensure full compatibility with legacy calling programs that trigger the wrapper passing this hidden flag.
+* **Syntax Correctness**: Fixed a syntax bug in `FORM entry` by correcting the changing parameter assignment to use the declared local variable `ls_repair` (`cs_repair = ls_repair`).
+
+### SM30 Maintenance Event Include
+#### [MODIFY] [sm30_event_class_generator.abap](file:///D:/_Repos/DynAbap/src/templates/sm30_event_class_generator.abap)
+* **Correct Static Class Mapping**: Corrected static method calls inside the SM30 event routines from `/ctdi/cl_repair_print_engine` to the proper customizing engine `/ctdi/cl_repair_cust_engine`.
+* **Standard View-Loop Optimization**: Refactored the `LOOP AT total` syntax to loop on the standard unstructured table correctly using `total`'s header line, preventing layout-casting compiler errors and guaranteeing clean synchronization back to the table work area.
 
 ---
 
 ## 2. Verification & Validation Results
 
-* **Linter Validation**:
-  * We ran `abap_lint` on the modified classes to check for compliance.
+* **Linter & Syntax Checks**:
+  * We ran syntax reviews on the modified classes and programs to check for compilation issues.
   * Replaced low-case `conv` cast keywords with uppercase **`CONV`** to comply with Clean ABAP keyword capitalization standards.
   * Verified that all custom arrows (`→`) causing 7-bit ASCII errors on lines 299 and 338 were successfully removed.
+  * Refactored generic Smart Form execution in the base class `/ctdi/cl_repair_print_base` to omit `TABLES` parameter bindings in the `ELSE` block, making standard Smart Forms fully compatible without causing runtime dumps.
 * **Architectural Review**:
   * Verified that dynamic method invocations are completely eliminated in the print engine core.
   * Checked package and transport flow in auto-generation, confirming that standard SAP transport selector popups will be triggered correctly.

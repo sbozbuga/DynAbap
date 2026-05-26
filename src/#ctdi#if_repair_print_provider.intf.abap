@@ -9,7 +9,7 @@ interface /CTDI/IF_REPAIR_PRINT_PROVIDER
       !IV_REPAIR_ID type AUFNR
     changing
       !CS_REPAIR type /CTDI/REPAIR optional
-      !CT_REPAIR_ERROR type ANY TABLE optional
+      !CT_DEVICE_DEFECTS type ANY TABLE optional
       !CT_COMMENT_LINES type ANY TABLE optional
     raising
       /CTDI/CX_PRINT_ERROR .
@@ -24,7 +24,7 @@ interface /CTDI/IF_REPAIR_PRINT_PROVIDER
       !IV_SAVE_AS_PDF type ABAP_BOOL default ABAP_FALSE
     changing
       !CS_REPAIR type /CTDI/REPAIR optional
-      !CT_REPAIR_ERROR type ANY TABLE optional
+      !CT_DEVICE_DEFECTS type ANY TABLE optional
       !CT_COMMENT_LINES type ANY TABLE optional
     raising
       /CTDI/CX_PRINT_ERROR .
@@ -39,7 +39,7 @@ interface /CTDI/IF_REPAIR_PRINT_PROVIDER
       !IV_SAVE_AS_PDF type ABAP_BOOL default ABAP_FALSE
     changing
       !CS_REPAIR type /CTDI/REPAIR optional
-      !CT_REPAIR_ERROR type STANDARD TABLE optional
+      !CT_DEVICE_DEFECTS type STANDARD TABLE optional
       !CT_COMMENT_LINES type STANDARD TABLE optional
     raising
       /CTDI/CX_PRINT_ERROR .

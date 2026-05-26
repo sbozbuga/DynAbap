@@ -24,7 +24,7 @@ SELECTION-SCREEN END OF BLOCK b1.
 START-OF-SELECTION.
   DATA: lo_direct_engine TYPE REF TO /ctdi/cl_repair_print_engine,
         ls_repair        TYPE /ctdi/repair,
-        lt_repair_error  TYPE TABLE OF /ctdi/repair_error,
+        lt_device_defects TYPE TABLE OF /ctdi/repair_error,
         lt_comment_lines TYPE TABLE OF tline.
 
   TRY.
@@ -36,7 +36,7 @@ START-OF-SELECTION.
       lo_direct_engine->execute( EXPORTING iv_repair_id     = p_aufnr
                                            iv_save_as_pdf   = p_pdf
                                  CHANGING  cs_repair        = ls_repair
-                                           ct_repair_error  = lt_repair_error
+                                           ct_device_defects  = lt_device_defects
                                            ct_comment_lines = lt_comment_lines ).
     CATCH /ctdi/cx_no_config_found.
       " Fall back to legacy printing logic
@@ -62,7 +62,7 @@ FORM entry USING ent_retco TYPE sysubrc
   DATA: lv_repair_id     TYPE aufnr,
         lr_engine        TYPE REF TO /ctdi/cl_repair_print_engine,
         ls_repair        TYPE /ctdi/repair,
-        lt_repair_error  TYPE TABLE OF /ctdi/repair_error,
+        lt_device_defects TYPE TABLE OF /ctdi/repair_error,
         lt_comment_lines TYPE TABLE OF tline.
 
   " Clear return code
@@ -87,8 +87,8 @@ FORM entry USING ent_retco TYPE sysubrc
 
       " Call the dynamic printing method (Output Determination always defaults to Spool/Print)
       lr_engine->execute( EXPORTING iv_repair_id     = lv_repair_id
-                          CHANGING  cs_repair        = cs_repair
-                                    ct_repair_error  = lt_repair_error
+                          CHANGING  cs_repair        = ls_repair
+                                    ct_device_defects  = lt_device_defects
                                     ct_comment_lines = lt_comment_lines ).
 
     CATCH /ctdi/cx_no_config_found.

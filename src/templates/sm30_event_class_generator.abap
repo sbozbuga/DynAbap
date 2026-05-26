@@ -26,8 +26,8 @@ FORM on_new_entry.
   " Read the new entry from the maintenance view work area structure
   ls_entry = <vim_total_struc>.
 
-  " Delegate auto-generation to print engine static method
-  /ctdi/cl_repair_print_engine=>on_new_entry( CHANGING cs_entry = ls_entry ).
+  " Delegate auto-generation to customizing engine static method
+  /ctdi/cl_repair_cust_engine=>on_new_entry( CHANGING cs_entry = ls_entry ).
 
   " Update the maintenance view work area structure
   <vim_total_struc> = ls_entry.
@@ -42,17 +42,23 @@ ENDFORM.
 FORM on_before_save.
   DATA: ls_entry TYPE /ctdi/rep_forms.
 
-  LOOP AT total INTO ls_entry.
+  LOOP AT total.
+    " Copy current record from total header line
+    ls_entry = total.
+
     " Unconditionally enforce standard method name EXECUTE for obligatory interface usage
     ls_entry-method_name = 'EXECUTE'.
-    MODIFY total FROM ls_entry.
 
     TRY.
-        " Delegate all class, form, and method validations to engine class
-        /ctdi/cl_repair_print_engine=>validate_entry( ls_entry ).
+        " Delegate all class, form, and method validations to customizing engine class
+        /ctdi/cl_repair_cust_engine=>validate_entry( ls_entry ).
       CATCH /ctdi/cx_print_error INTO DATA(lx_err).
         " Issue warning message in SM30
         MESSAGE lx_err->message TYPE 'W'.
     ENDTRY.
+
+    " Copy updated entry back to total and update structure
+    total = ls_entry.
+    MODIFY total.
   ENDLOOP.
 ENDFORM.

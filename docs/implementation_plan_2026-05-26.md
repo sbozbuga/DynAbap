@@ -142,7 +142,7 @@ For **Adobe Forms (Type `A`)**:
                     iv_form_name     = is_config-form_name
                     iv_save_as_pdf   = iv_save_as_pdf
           CHANGING  cs_repair        = cs_repair
-                    ct_repair_error  = ct_repair_error
+                    ct_device_defects  = ct_device_defects
                     ct_comment_lines = ct_comment_lines ).
 
       CATCH cx_sy_move_cast_error INTO DATA(lx_cast_error).

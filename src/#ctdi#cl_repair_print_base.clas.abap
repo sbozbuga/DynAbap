@@ -41,14 +41,14 @@ CLASS /CTDI/CL_REPAIR_PRINT_BASE IMPLEMENTATION.
     me->/ctdi/if_repair_print_provider~read_data(
       EXPORTING iv_repair_id     = iv_repair_id
       CHANGING  cs_repair        = cs_repair
-                ct_repair_error  = ct_repair_error
+                ct_device_defects  = ct_device_defects
                 ct_comment_lines = ct_comment_lines ).
     me->/ctdi/if_repair_print_provider~print(
       EXPORTING iv_repair_id     = iv_repair_id
                 iv_form_name     = iv_form_name
                 iv_save_as_pdf   = iv_save_as_pdf
       CHANGING  cs_repair        = cs_repair
-                ct_repair_error  = ct_repair_error
+                ct_device_defects  = ct_device_defects
                 ct_comment_lines = ct_comment_lines ).
   ENDMETHOD.
 
@@ -162,7 +162,13 @@ CLASS /CTDI/CL_REPAIR_PRINT_BASE IMPLEMENTATION.
       /ctdi/cl_repair_log=>log_info( |Calling Smart Form function module: { lv_ssf_fm_name }| ).
 
       " Call the Smart Form FM dynamically
-      IF iv_form_name = '/CELLAG/ALCAREP'.
+      " Check if the generated Smart Form function module signature accepts error tables
+      SELECT SINGLE paramname FROM fupararef
+        INTO @DATA(lv_ssf_has_errors)
+        WHERE funcname = @lv_ssf_fm_name
+          AND paramname = 'IT_REPAIR_ERROR'.
+
+      IF sy-subrc = 0.
         CALL FUNCTION lv_ssf_fm_name
           EXPORTING
             control_parameters = ls_control_parameters
@@ -171,7 +177,7 @@ CLASS /CTDI/CL_REPAIR_PRINT_BASE IMPLEMENTATION.
           IMPORTING
             job_output_info    = ls_output_data
           TABLES
-            it_repair_error    = ct_repair_error
+            it_repair_error    = ct_device_defects
             it_comment_lines   = ct_comment_lines
           EXCEPTIONS
             formatting_error   = 1
@@ -187,9 +193,6 @@ CLASS /CTDI/CL_REPAIR_PRINT_BASE IMPLEMENTATION.
             is_repair          = cs_repair
           IMPORTING
             job_output_info    = ls_output_data
-          TABLES
-            it_repair_error    = ct_repair_error
-            it_comment_lines   = ct_comment_lines
           EXCEPTIONS
             formatting_error   = 1
             internal_error     = 2
@@ -319,12 +322,18 @@ CLASS /CTDI/CL_REPAIR_PRINT_BASE IMPLEMENTATION.
       ls_docparams-langu   = sy-langu.
       ls_docparams-country = 'US'.
 
-      IF iv_form_name = '/CELLAG/ALCAREP'.
+      " Check if the generated Adobe Form function module signature accepts error tables
+      SELECT SINGLE paramname FROM fupararef
+        INTO @DATA(lv_fp_has_errors)
+        WHERE funcname = @lv_fm_name
+          AND paramname = 'IT_REPAIR_ERROR'.
+
+      IF sy-subrc = 0.
         CALL FUNCTION lv_fm_name
           EXPORTING
             /1bcdwb/docparams     = ls_docparams
             is_repair             = cs_repair
-            it_repair_error       = ct_repair_error
+            it_repair_error       = ct_device_defects
             it_comment_lines      = ct_comment_lines
           IMPORTING
             /1bcdwb/formoutput    = ls_formoutput

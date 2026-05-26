@@ -9,7 +9,7 @@ CLASS lcl_mock_print_provider DEFINITION CREATE PUBLIC FOR TESTING.
                 gv_form_name        TYPE fpname,
                 gv_save_as_pdf      TYPE abap_bool,
                 gs_repair           TYPE /ctdi/repair,
-                gt_repair_error     TYPE TABLE OF /ctdi/repair_error,
+                gt_device_defects   TYPE TABLE OF /ctdi/repair_error,
                 gt_comment_lines    TYPE TABLE OF tline.
 
     CLASS-METHODS: clear.
@@ -26,7 +26,7 @@ CLASS lcl_mock_print_provider IMPLEMENTATION.
     gv_form_name      = iv_form_name.
     gv_save_as_pdf    = iv_save_as_pdf.
     gs_repair         = cs_repair.
-    gt_repair_error   = ct_repair_error.
+    gt_device_defects = ct_device_defects.
     gt_comment_lines  = ct_comment_lines.
   ENDMETHOD.
 
@@ -36,7 +36,7 @@ CLASS lcl_mock_print_provider IMPLEMENTATION.
     gv_form_name   = iv_form_name.
     gv_save_as_pdf = iv_save_as_pdf.
     gs_repair      = cs_repair.
-    gt_repair_error = ct_repair_error.
+    gt_device_defects = ct_device_defects.
     gt_comment_lines = ct_comment_lines.
   ENDMETHOD.
 
@@ -48,7 +48,7 @@ CLASS lcl_mock_print_provider IMPLEMENTATION.
            gv_form_name,
            gv_save_as_pdf,
            gs_repair,
-           gt_repair_error,
+           gt_device_defects,
            gt_comment_lines.
   ENDMETHOD.
 ENDCLASS.
@@ -435,20 +435,20 @@ CLASS lcl_test IMPLEMENTATION.
 
     " 3. Prepare mock custom parameters
     DATA: ls_repair        TYPE /ctdi/repair,
-          lt_repair_error  TYPE TABLE OF /ctdi/repair_error,
+          lt_device_defects TYPE TABLE OF /ctdi/repair_error,
           lt_comment_lines TYPE TABLE OF tline.
 
     ls_repair-vbeln = '0000000100'.
-    APPEND VALUE #( vbeln = '0000000100' ) TO lt_repair_error.
+    APPEND VALUE #( vbeln = '0000000100' ) TO lt_device_defects.
     APPEND VALUE #( tdline = 'Comment line' ) TO lt_comment_lines.
 
     TRY.
         cut->execute(
-          iv_repair_id     = '0000000100'
-          iv_save_as_pdf   = abap_true
-          is_repair        = ls_repair
-          it_repair_error  = lt_repair_error
-          it_comment_lines = lt_comment_lines ).
+          EXPORTING iv_repair_id      = '0000000100'
+                    iv_save_as_pdf    = abap_true
+          CHANGING  cs_repair         = ls_repair
+                    ct_device_defects = lt_device_defects
+                    ct_comment_lines  = lt_comment_lines ).
 
         cl_abap_unit_assert=>assert_true(
           act = lcl_mock_print_provider=>gv_execute_called
@@ -460,9 +460,9 @@ CLASS lcl_test IMPLEMENTATION.
           msg = 'Incorrect repair struct passed' ).
 
         cl_abap_unit_assert=>assert_equals(
-          act = lines( lcl_mock_print_provider=>gt_repair_error )
+          act = lines( lcl_mock_print_provider=>gt_device_defects )
           exp = 1
-          msg = 'Incorrect error table passed' ).
+          msg = 'Incorrect defects table passed' ).
 
         cl_abap_unit_assert=>assert_equals(
           act = lines( lcl_mock_print_provider=>gt_comment_lines )
