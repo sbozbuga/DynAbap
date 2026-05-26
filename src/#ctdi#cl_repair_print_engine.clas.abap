@@ -26,40 +26,42 @@ CLASS /ctdi/cl_repair_print_engine DEFINITION
 
 
   PROTECTED SECTION.
-  PRIVATE SECTION.
-    TYPES: tt_config_buffer TYPE HASHED TABLE OF /ctdi/rep_forms WITH UNIQUE KEY vbeln skz akz.
+private section.
 
-    DATA: mt_config_buffer TYPE tt_config_buffer.
+  types:
+    tt_config_buffer TYPE HASHED TABLE OF /ctdi/rep_forms WITH UNIQUE KEY vbeln skz akz .
 
-    METHODS resolve_contract
-      IMPORTING
-        !iv_repair_id TYPE aufnr
-      EXPORTING
-        !ev_contract_id TYPE vbeln_va
-        !ev_skz TYPE bemot
-        !ev_akz TYPE char4.
+  data MT_CONFIG_BUFFER type TT_CONFIG_BUFFER .
 
-    METHODS get_config
-      IMPORTING
-        !iv_contract_id TYPE vbeln_va
-        !iv_skz TYPE bemot OPTIONAL
-        !iv_akz TYPE char4 OPTIONAL
-      RETURNING
-        VALUE(rs_config) TYPE /ctdi/rep_forms
-      RAISING
-        /ctdi/cx_no_config_found.
-
-    METHODS execute_provider
-      IMPORTING
-        !iv_repair_id TYPE aufnr
-        !is_config TYPE /ctdi/rep_forms
-        !iv_save_as_pdf TYPE abap_bool DEFAULT abap_false
-      CHANGING
-        !cs_repair TYPE /ctdi/repair OPTIONAL
-        !ct_repair_error TYPE any table OPTIONAL
-        !ct_comment_lines TYPE any table OPTIONAL
-      RAISING
-        cx_static_check.
+  methods RESOLVE_CONTRACT
+    importing
+      !IV_REPAIR_ID type AUFNR
+    exporting
+      !EV_CONTRACT_ID type VBELN_VA
+      !EV_SKZ type BEMOT
+      !EV_AKZ type CHAR4
+    exceptions
+      /CTDI/CX_REPAIR_NOT_FOUND .
+  methods GET_CONFIG
+    importing
+      !IV_CONTRACT_ID type VBELN_VA
+      !IV_SKZ type BEMOT optional
+      !IV_AKZ type CHAR4 optional
+    returning
+      value(RS_CONFIG) type /CTDI/REP_FORMS
+    raising
+      /CTDI/CX_NO_CONFIG_FOUND .
+  methods EXECUTE_PROVIDER
+    importing
+      !IV_REPAIR_ID type AUFNR
+      !IS_CONFIG type /CTDI/REP_FORMS
+      !IV_SAVE_AS_PDF type ABAP_BOOL default ABAP_FALSE
+    changing
+      !CS_REPAIR type /CTDI/REPAIR optional
+      !CT_REPAIR_ERROR type ANY TABLE optional
+      !CT_COMMENT_LINES type ANY TABLE optional
+    raising
+      CX_STATIC_CHECK .
 ENDCLASS.
 
 
@@ -67,6 +69,19 @@ ENDCLASS.
 CLASS /CTDI/CL_REPAIR_PRINT_ENGINE IMPLEMENTATION.
 
 
+* <SIGNATURE>---------------------------------------------------------------------------------------+
+* | Instance Public Method /CTDI/CL_REPAIR_PRINT_ENGINE->EXECUTE
+* +-------------------------------------------------------------------------------------------------+
+* | [--->] IV_REPAIR_ID                   TYPE        AUFNR
+* | [--->] IV_SAVE_AS_PDF                 TYPE        ABAP_BOOL (default =ABAP_FALSE)
+* | [--->] IV_SKZ                         TYPE        BEMOT(optional)
+* | [--->] IV_AKZ                         TYPE        CHAR4(optional)
+* | [<-->] CS_REPAIR                      TYPE        /CTDI/REPAIR(optional)
+* | [<-->] CT_REPAIR_ERROR                TYPE        ANY TABLE(optional)
+* | [<-->] CT_COMMENT_LINES               TYPE        ANY TABLE(optional)
+* | [!CX!] /CTDI/CX_NO_CONFIG_FOUND
+* | [!CX!] CX_STATIC_CHECK
+* +--------------------------------------------------------------------------------------</SIGNATURE>
   METHOD execute.
     DATA: lv_contract_id TYPE vbeln_va,
           lv_skz TYPE bemot,
@@ -110,6 +125,17 @@ CLASS /CTDI/CL_REPAIR_PRINT_ENGINE IMPLEMENTATION.
   ENDMETHOD.
 
 
+* <SIGNATURE>---------------------------------------------------------------------------------------+
+* | Instance Private Method /CTDI/CL_REPAIR_PRINT_ENGINE->EXECUTE_PROVIDER
+* +-------------------------------------------------------------------------------------------------+
+* | [--->] IV_REPAIR_ID                   TYPE        AUFNR
+* | [--->] IS_CONFIG                      TYPE        /CTDI/REP_FORMS
+* | [--->] IV_SAVE_AS_PDF                 TYPE        ABAP_BOOL (default =ABAP_FALSE)
+* | [<-->] CS_REPAIR                      TYPE        /CTDI/REPAIR(optional)
+* | [<-->] CT_REPAIR_ERROR                TYPE        ANY TABLE(optional)
+* | [<-->] CT_COMMENT_LINES               TYPE        ANY TABLE(optional)
+* | [!CX!] CX_STATIC_CHECK
+* +--------------------------------------------------------------------------------------</SIGNATURE>
   METHOD execute_provider.
     DATA: lo_instance TYPE REF TO object,
           lo_provider TYPE REF TO /ctdi/if_repair_print_provider.
@@ -203,6 +229,15 @@ CLASS /CTDI/CL_REPAIR_PRINT_ENGINE IMPLEMENTATION.
   ENDMETHOD.
 
 
+* <SIGNATURE>---------------------------------------------------------------------------------------+
+* | Instance Private Method /CTDI/CL_REPAIR_PRINT_ENGINE->GET_CONFIG
+* +-------------------------------------------------------------------------------------------------+
+* | [--->] IV_CONTRACT_ID                 TYPE        VBELN_VA
+* | [--->] IV_SKZ                         TYPE        BEMOT(optional)
+* | [--->] IV_AKZ                         TYPE        CHAR4(optional)
+* | [<-()] RS_CONFIG                      TYPE        /CTDI/REP_FORMS
+* | [!CX!] /CTDI/CX_NO_CONFIG_FOUND
+* +--------------------------------------------------------------------------------------</SIGNATURE>
   METHOD get_config.
     TYPES: BEGIN OF ty_query_step,
              vbeln TYPE vbeln_va,
@@ -275,56 +310,63 @@ CLASS /CTDI/CL_REPAIR_PRINT_ENGINE IMPLEMENTATION.
   ENDMETHOD.
 
 
+* <SIGNATURE>---------------------------------------------------------------------------------------+
+* | Instance Private Method /CTDI/CL_REPAIR_PRINT_ENGINE->RESOLVE_CONTRACT
+* +-------------------------------------------------------------------------------------------------+
+* | [--->] IV_REPAIR_ID                   TYPE        AUFNR
+* | [<---] EV_CONTRACT_ID                 TYPE        VBELN_VA
+* | [<---] EV_SKZ                         TYPE        BEMOT
+* | [<---] EV_AKZ                         TYPE        CHAR4
+* | [EXC!] /CTDI/CX_REPAIR_NOT_FOUND
+* +--------------------------------------------------------------------------------------</SIGNATURE>
   METHOD resolve_contract.
-    DATA: lv_aufnr TYPE aufnr,
-          lv_kdauf TYPE kdauf,
-          lv_stokz TYPE afru-stokz,
-          lv_stzhl TYPE afru-stzhl,
-          ls_afru TYPE afru,
-          lt_afru TYPE TABLE OF afru.
+    DATA(lv_aufnr) = |{ iv_repair_id ALPHA = IN }|.
 
-    CLEAR: ev_contract_id, ev_skz, ev_akz.
+    CLEAR: ev_contract_id,
+           ev_skz,
+           ev_akz.
 
-    " Format input ID and check if it exists in PM/CS Service Orders (AUFK)
-    lv_aufnr = |{ iv_repair_id ALPHA = IN }|.
-    SELECT SINGLE aufnr FROM aufk INTO @DATA(lv_dummy) WHERE aufnr = @lv_aufnr.
+    " Try resolving Contract via Service Order (AUFK → VBAP)
+    SELECT SINGLE
+           v~/cellag/vbeln_vl
+      INTO ev_contract_id
+      FROM aufk AS a
+      LEFT OUTER JOIN vbap AS v
+        ON v~vbeln = a~kdauf
+       AND v~posnr = a~kdpos
+      WHERE a~aufnr = lv_aufnr.
+
     IF sy-subrc = 0.
-      SELECT bemot stokz stzhl FROM afru
-        INTO CORRESPONDING FIELDS OF TABLE lt_afru
-        WHERE aufnr = lv_aufnr
+
+      " Read AFRU confirmations for operation 9010
+*      DATA lt_afru TYPE STANDARD TABLE OF afru.
+
+      SELECT bemot,
+             stokz,
+             stzhl
+        FROM afru
+        INTO TABLE @DATA(lt_afru)
+        WHERE aufnr = @lv_aufnr
           AND vornr = '9010'.
 
-      LOOP AT lt_afru INTO ls_afru.
-        IF ls_afru-stokz = ' ' AND ls_afru-stzhl = '00000000'.
-          ev_skz = ls_afru-bemot.
+      LOOP AT lt_afru ASSIGNING FIELD-SYMBOL(<ls_afru>).
+        IF <ls_afru>-stokz = space
+           AND <ls_afru>-stzhl = '00000000'.
+          ev_skz = <ls_afru>-bemot.
           EXIT.
         ENDIF.
       ENDLOOP.
 
-      SELECT SINGLE qmcod FROM qmel
-        INTO @ev_akz
-        WHERE aufnr = @lv_aufnr
+      " Read AKZ from notification
+      SELECT SINGLE qmcod
+        INTO ev_akz
+        FROM qmel
+        WHERE aufnr = lv_aufnr
           AND qmart = 'Z2'.
 
-      " It is a PM/CS Service Order from IW42:
-      " Try resolving direct Contract Number from AFIH
-      SELECT SINGLE kunum FROM afih INTO @ev_contract_id WHERE aufnr = @lv_aufnr.
-
-      IF ev_contract_id IS INITIAL.
-        " Try resolving indirect Contract Number via Sales Order reference in AUFK
-        SELECT SINGLE kdauf FROM aufk INTO @lv_kdauf WHERE aufnr = @lv_aufnr.
-        IF sy-subrc = 0 AND lv_kdauf IS NOT INITIAL.
-          SELECT SINGLE vgbel FROM vbap INTO @ev_contract_id
-            WHERE vbeln = @lv_kdauf
-              AND vgbel IS NOT null.
-          IF ev_contract_id IS INITIAL.
-            ev_contract_id = lv_kdauf.
-          ENDIF.
-        ENDIF.
-      ENDIF.
     ELSE.
-      " It is a standard Sales Document (VBELN):
-      ev_contract_id = iv_repair_id.
+      " Not a PM/CS Service Order → treat as Sales Document
+      RAISE /ctdi/cx_repair_not_found.
     ENDIF.
   ENDMETHOD.
 ENDCLASS.
