@@ -31,7 +31,7 @@ All ABAP objects are structured in an **abapGit** compatible format under the `s
 * **Dynamic Engine Class**: [src/#ctdi#cl_repair_print_engine.clas.abap](src/%23ctdi%23cl_repair_print_engine.clas.abap)
 * **Customizing Engine Class**: [src/#ctdi#cl_repair_cust_engine.clas.abap](src/%23ctdi%23cl_repair_cust_engine.clas.abap)
 * **Dynamic Logger Class**: [src/#ctdi#cl_repair_log.clas.abap](src/%23ctdi%23cl_repair_log.clas.abap)
-* **Sample Print Class**: [src/#ctdi#cl_repair_print_sample.clas.abap](src/%23ctdi%23cl_repair_print_sample.clas.abap)
+* **Base Print Class**: [src/#ctdi#cl_repair_print_base.clas.abap](src/%23ctdi%23cl_repair_print_base.clas.abap)
 * **Output Determination Wrapper**: [src/#ctdi#sd_repair_print_program.prog.abap](src/%23ctdi%23sd_repair_print_program.prog.abap)
 * **ABAP Unit Tests**: [src/#ctdi#cl_repair_print_engine.clas.testclasses.abap](src/%23ctdi%23cl_repair_print_engine.clas.testclasses.abap)
 * **Exception Classes**: 

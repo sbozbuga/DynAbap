@@ -183,11 +183,9 @@ CLASS lcl_test IMPLEMENTATION.
 
     TRY.
         cut->execute( iv_repair_id = '0000000100' ).
-        cl_abap_unit_assert=>fail( msg = 'Should have failed due to blank class/method name' ).
-      CATCH cx_sy_dyn_call_illegal_value.
-        " Success: expected exception type successfully raised
-      CATCH cx_root.
-        cl_abap_unit_assert=>fail( msg = 'Incorrect exception raised instead of cx_sy_dyn_call_illegal_value' ).
+        " Success: should fall back to base class and complete cleanly
+      CATCH cx_root INTO DATA(lx_err).
+        cl_abap_unit_assert=>fail( msg = lx_err->get_text( ) ).
     ENDTRY.
   ENDMETHOD.
 

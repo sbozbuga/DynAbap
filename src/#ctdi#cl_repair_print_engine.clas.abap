@@ -120,15 +120,23 @@ CLASS /CTDI/CL_REPAIR_PRINT_ENGINE IMPLEMENTATION.
     DATA: lr_instance TYPE REF TO object,
           lr_provider TYPE REF TO /ctdi/if_repair_print_provider.
 
-    " Validate that class and method names are configured
-    IF is_config-class_name IS INITIAL OR is_config-method_name IS INITIAL.
+    " Resolve class name (fallback to base print class if initial)
+    DATA(lv_class_name) = COND #( WHEN is_config-class_name IS INITIAL
+                                  THEN '/CTDI/CL_REPAIR_PRINT_BASE'
+                                  ELSE /ctdi/cl_repair_cust_engine=>resolve_class_name( is_config-class_name ) ).
+
+    " Resolve method name (fallback to EXECUTE if initial)
+    DATA(lv_method_name) = COND #( WHEN is_config-method_name IS INITIAL
+                                   THEN 'EXECUTE'
+                                   ELSE is_config-method_name ).
+
+    " Validate that class name is configured
+    IF lv_class_name IS INITIAL.
       RAISE EXCEPTION TYPE /ctdi/cx_print_error
         EXPORTING
           repair_id = iv_repair_id
-          message   = |{ 'Class name or method name not configured'(001) }|.
+          message   = |{ 'Class name not configured'(001) }|.
     ENDIF.
-
-    DATA(lv_class_name) = /ctdi/cl_repair_cust_engine=>resolve_class_name( is_config-class_name ).
 
     " Instantiate configured printer class
     TRY.
@@ -138,7 +146,7 @@ CLASS /CTDI/CL_REPAIR_PRINT_ENGINE IMPLEMENTATION.
       CATCH cx_sy_create_object_error INTO DATA(lx_create).
         " Handle instantiation errors (e.g. class doesn't exist or constructor error)
         DATA(lv_inst_err) = |{ 'Failed to instantiate class: &1'(002) }|.
-        REPLACE '&1' IN lv_inst_err WITH is_config-class_name.
+        REPLACE '&1' IN lv_inst_err WITH lv_class_name.
         RAISE EXCEPTION TYPE /ctdi/cx_print_error
           EXPORTING
             repair_id = iv_repair_id
@@ -163,7 +171,7 @@ CLASS /CTDI/CL_REPAIR_PRINT_ENGINE IMPLEMENTATION.
       CATCH cx_sy_move_cast_error.
         " If class does not implement the interface, fallback to fully dynamic method execution
         TRY.
-            CALL METHOD lr_instance->(is_config-method_name)
+            CALL METHOD lr_instance->(lv_method_name)
               EXPORTING
                 iv_repair_id     = iv_repair_id
                 iv_form_name     = is_config-form_name
@@ -174,14 +182,14 @@ CLASS /CTDI/CL_REPAIR_PRINT_ENGINE IMPLEMENTATION.
                 ct_comment_lines = ct_comment_lines.
           CATCH cx_sy_dyn_call_parameter_error.
             TRY.
-                CALL METHOD lr_instance->(is_config-method_name)
+                CALL METHOD lr_instance->(lv_method_name)
                   EXPORTING
                     iv_repair_id   = iv_repair_id
                     iv_form_name   = is_config-form_name
                     iv_save_as_pdf = iv_save_as_pdf.
               CATCH cx_sy_dyn_call_error INTO DATA(lx_dyn_call_inner).
                 DATA(lv_method_err_inner) = |{ 'Dynamic method call failed: &1'(003) }|.
-                REPLACE '&1' IN lv_method_err_inner WITH is_config-method_name.
+                REPLACE '&1' IN lv_method_err_inner WITH lv_method_name.
                 RAISE EXCEPTION TYPE /ctdi/cx_print_error
                   EXPORTING
                     repair_id = iv_repair_id
@@ -190,7 +198,7 @@ CLASS /CTDI/CL_REPAIR_PRINT_ENGINE IMPLEMENTATION.
             ENDTRY.
           CATCH cx_sy_dyn_call_error INTO DATA(lx_dyn_call).
             DATA(lv_method_err) = |{ 'Dynamic method call failed: &1'(003) }|.
-            REPLACE '&1' IN lv_method_err WITH is_config-method_name.
+            REPLACE '&1' IN lv_method_err WITH lv_method_name.
             RAISE EXCEPTION TYPE /ctdi/cx_print_error
               EXPORTING
                 repair_id = iv_repair_id

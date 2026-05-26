@@ -1,4 +1,4 @@
-CLASS /ctdi/cl_repair_print_sample DEFINITION
+CLASS /ctdi/cl_repair_print_base DEFINITION
   PUBLIC
   FINAL
   CREATE PUBLIC .
@@ -34,7 +34,7 @@ ENDCLASS.
 
 
 
-CLASS /CTDI/CL_REPAIR_PRINT_SAMPLE IMPLEMENTATION.
+CLASS /CTDI/CL_REPAIR_PRINT_BASE IMPLEMENTATION.
 
 
   METHOD /ctdi/if_repair_print_provider~execute.
