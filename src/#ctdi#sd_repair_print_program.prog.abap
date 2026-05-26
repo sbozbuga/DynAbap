@@ -15,6 +15,7 @@ SELECTION-SCREEN BEGIN OF BLOCK b1 WITH FRAME TITLE TEXT-002.
 PARAMETERS: p_aufnr TYPE aufk-aufnr.
 PARAMETERS: p_sernr TYPE equi-sernr.
 PARAMETERS: p_pdf   as checkbox default ' '.
+PARAMETERS: p_sf    as checkbox NO-DISPLAY.
 SELECTION-SCREEN END OF BLOCK b1.
 
 *&---------------------------------------------------------------------*

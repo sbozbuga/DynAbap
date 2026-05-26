@@ -1,31 +1,35 @@
-class /CTDI/CL_REPAIR_CUST_ENGINE definition
-  public
-  final
-  create public .
+CLASS /CTDI/CL_REPAIR_CUST_ENGINE DEFINITION
+  PUBLIC
+  FINAL
+  CREATE PUBLIC.
 
-public section.
+  PUBLIC SECTION.
+    CLASS-METHODS on_new_entry
+      CHANGING
+        !cs_entry TYPE /ctdi/rep_forms.
 
-  class-methods ON_NEW_ENTRY
-    changing
-      !CS_ENTRY type /CTDI/REP_FORMS .
-  class-methods VALIDATE_ENTRY
-    importing
-      !IS_ENTRY type /CTDI/REP_FORMS
-    raising
-      /CTDI/CX_PRINT_ERROR .
-  class-methods CHECK_GENERATION_ALLOWED
-    returning
-      value(RV_ALLOWED) type ABAP_BOOL .
-  class-methods NORMALIZE_CLASS_NAME
-    importing
-      !IV_CLASS_NAME type SEOCLSNAME
-    returning
-      value(RV_CLASS_NAME) type SEOCLSNAME .
-  class-methods RESOLVE_CLASS_NAME
-    importing
-      !IV_CLASS_NAME type SEOCLSNAME
-    returning
-      value(RV_CLASS_NAME) type SEOCLSNAME .
+    CLASS-METHODS validate_entry
+      IMPORTING
+        !is_entry TYPE /ctdi/rep_forms
+      RAISING
+        /ctdi/cx_print_error.
+
+    CLASS-METHODS check_generation_allowed
+      RETURNING
+        VALUE(rv_allowed) TYPE abap_bool.
+
+    CLASS-METHODS normalize_class_name
+      IMPORTING
+        !iv_class_name TYPE seoclsname
+      RETURNING
+        VALUE(rv_class_name) TYPE seoclsname.
+
+    CLASS-METHODS resolve_class_name
+      IMPORTING
+        !iv_class_name TYPE seoclsname
+      RETURNING
+        VALUE(rv_class_name) TYPE seoclsname.
+
   PROTECTED SECTION.
   PRIVATE SECTION.
 ENDCLASS.
@@ -109,38 +113,8 @@ CLASS /CTDI/CL_REPAIR_CUST_ENGINE IMPLEMENTATION.
       RETURN.
     ENDIF.
 
-    " 5. Generate the SE24 class with interface /CTDI/IF_REPAIR_PRINT_PROVIDER
-    DATA: ls_class      TYPE vseoclass,
-          lt_intfs      TYPE seo_implementings.
-
-    ls_class-clsname    = cs_entry-class_name.
-    ls_class-langu      = sy-langu.
-    ls_class-descript   = |Print Provider for Contract { cs_entry-vbeln }|.
-    ls_class-state      = '1'. " Active
-    ls_class-clsccincl  = 'X'.
-    ls_class-fixpt      = 'X'.
-    ls_class-unicode    = 'X'.
-    ls_class-exposure   = '2'. " Public
-
-    " Add interface implementation
-    APPEND VALUE #( clsname    = cs_entry-class_name
-                    refclsname = '/CTDI/IF_REPAIR_PRINT_PROVIDER' )
-      TO lt_intfs.
-
-    CALL FUNCTION 'SEO_CLASS_CREATE_COMPLETE'
-      EXPORTING
-        devclass      = '$TMP'
-        overwrite     = abap_true
-        version       = '1' " Active
-      CHANGING
-        class         = ls_class
-        implementings = lt_intfs
-      EXCEPTIONS
-        OTHERS        = 1.
-    IF sy-subrc = 0.
-      cs_entry-method_name = 'EXECUTE'.
-    ENDIF.
-
+    " 5. Default the method name to EXECUTE (class generation occurs on validate_entry before saving)
+    cs_entry-method_name = 'EXECUTE'.
   ENDMETHOD.
 
 
@@ -179,7 +153,7 @@ CLASS /CTDI/CL_REPAIR_CUST_ENGINE IMPLEMENTATION.
       REPLACE '&1' IN lv_msg WITH is_entry-vbeln.
       RAISE EXCEPTION TYPE /ctdi/cx_print_error
         EXPORTING
-          repair_id =  conv aufnr( is_entry-vbeln )
+          repair_id =  CONV aufnr( is_entry-vbeln )
           message   = lv_msg.
     ENDIF.
 
@@ -197,7 +171,7 @@ CLASS /CTDI/CL_REPAIR_CUST_ENGINE IMPLEMENTATION.
           REPLACE '&1' IN lv_form_err WITH is_entry-form_name.
           RAISE EXCEPTION TYPE /ctdi/cx_print_error
             EXPORTING
-              repair_id = conv aufnr( is_entry-vbeln )
+              repair_id = CONV aufnr( is_entry-vbeln )
               message   = lv_form_err.
         ENDIF.
       ENDIF.
@@ -231,38 +205,54 @@ CLASS /CTDI/CL_REPAIR_CUST_ENGINE IMPLEMENTATION.
             OTHERS                = 2.
 
         IF sy-subrc = 0 AND lv_answer = '1'.
-          " User clicked Yes: Programmatically generate class
-          DATA: ls_class      TYPE vseoclass,
-                lt_intfs      TYPE seo_implementings.
+          " Prompt user for the target Development Package
+          DATA: lt_fields TYPE TABLE OF sval,
+                ls_field  TYPE sval,
+                lv_returncode TYPE c,
+                lv_package TYPE devclass VALUE '$TMP'.
 
-          ls_class-clsname    = is_entry-class_name.
-          ls_class-langu      = sy-langu.
-          ls_class-descript   = |Print Provider for Contract { is_entry-vbeln }|.
-          ls_class-state      = '1'. " Active
-          ls_class-clsccincl  = 'X'.
-          ls_class-fixpt      = 'X'.
-          ls_class-unicode    = 'X'.
-          ls_class-exposure   = '2'. " Public
+          ls_field-tabname   = 'TDEVC'.
+          ls_field-fieldname = 'DEVCLASS'.
+          ls_field-value     = '$TMP'.
+          APPEND ls_field TO lt_fields.
 
-          APPEND VALUE #( clsname    = is_entry-class_name
-                          refclsname = '/CTDI/IF_REPAIR_PRINT_PROVIDER' )
-            TO lt_intfs.
-
-          CALL FUNCTION 'SEO_CLASS_CREATE_COMPLETE'
+          CALL FUNCTION 'POPUP_TO_GET_VALUES'
             EXPORTING
-              devclass        = '$TMP'
-              overwrite       = abap_true
-              version         = '1' " Active
-            CHANGING
-              class           = ls_class
-              implementings   = lt_intfs
+              titlebar      = 'Enter Target Development Package'(011)
+            IMPORTING
+              returncode    = lv_returncode
+            TABLES
+              fields        = lt_fields
             EXCEPTIONS
-              existing        = 1
-              is_interface    = 2
-              not_created     = 3
-              db_error        = 4
-              component_error = 5
-              OTHERS          = 6.
+              OTHERS        = 1.
+
+          IF lv_returncode <> 'A'.
+            READ TABLE lt_fields INTO ls_field INDEX 1.
+            IF sy-subrc = 0 AND ls_field-value IS NOT INITIAL.
+              lv_package = ls_field-value.
+            ENDIF.
+          ELSE.
+            " Cancelled: abort generation with error
+            RAISE EXCEPTION TYPE /ctdi/cx_print_error
+              EXPORTING
+                repair_id = is_entry-vbeln
+                message   = 'Class generation cancelled by user.'.
+          ENDIF.
+
+          " Copy standard base class /CTDI/CL_REPAIR_PRINT_BASE to the new class name
+          CALL FUNCTION 'SEO_CLASS_COPY'
+            EXPORTING
+              clsname      = '/CTDI/CL_REPAIR_PRINT_BASE'
+              new_clsname  = is_entry-class_name
+              devclass     = lv_package
+            EXCEPTIONS
+              existing     = 1
+              is_interface = 2
+              not_created  = 3
+              db_error     = 4
+              no_source    = 5
+              no_authority = 6
+              OTHERS       = 7.
 
           IF sy-subrc = 0.
             DATA(lv_success) = |{ 'Class &1 generated successfully.'(005) }|.
@@ -284,9 +274,24 @@ CLASS /CTDI/CL_REPAIR_CUST_ENGINE IMPLEMENTATION.
       REPLACE '&1' IN lv_class_err WITH is_entry-class_name.
       RAISE EXCEPTION TYPE /ctdi/cx_print_error
         EXPORTING
-          repair_id = conv aufnr( is_entry-vbeln )
+          repair_id = CONV aufnr( is_entry-vbeln )
           message   = lv_class_err.
     ELSE.
+      " Validate Interface Implementation on Existing Classes
+      SELECT SINGLE clsname FROM seometarel
+        INTO @DATA(lv_implements)
+        WHERE clsname = @lv_class_name
+          AND refclsname = '/CTDI/IF_REPAIR_PRINT_PROVIDER'
+          AND reltype = '1'. " 1 = Interface Implementation
+      IF sy-subrc <> 0.
+        DATA(lv_interface_err) = |{ 'Class &1 does not implement interface /CTDI/IF_REPAIR_PRINT_PROVIDER'(010) }|.
+        REPLACE '&1' IN lv_interface_err WITH is_entry-class_name.
+        RAISE EXCEPTION TYPE /ctdi/cx_print_error
+          EXPORTING
+            repair_id = CONV aufnr( is_entry-vbeln )
+            message   = lv_interface_err.
+      ENDIF.
+
       " 4. Validate Method existence in Class Components (SEOCOMPO)
       IF is_entry-method_name IS NOT INITIAL.
         SELECT SINGLE cmpname FROM seocompo
@@ -306,7 +311,7 @@ CLASS /CTDI/CL_REPAIR_CUST_ENGINE IMPLEMENTATION.
             REPLACE '&2' IN lv_method_err WITH is_entry-class_name.
             RAISE EXCEPTION TYPE /ctdi/cx_print_error
               EXPORTING
-                repair_id = conv aufnr( is_entry-vbeln )
+                repair_id = CONV aufnr( is_entry-vbeln )
                 message   = lv_method_err.
           ENDIF.
         ENDIF.

@@ -154,7 +154,7 @@ CLASS /CTDI/CL_REPAIR_PRINT_ENGINE IMPLEMENTATION.
             previous  = lx_create.
     ENDTRY.
 
-    " Dynamic Casting to Interface or Fallback to Dynamic Method Call
+    " Dynamic Casting to Interface (Strict Interface Enforcement)
     TRY.
         " Try to dynamically cast the instance to the standard print provider interface
         lr_provider ?= lr_instance.
@@ -168,43 +168,15 @@ CLASS /CTDI/CL_REPAIR_PRINT_ENGINE IMPLEMENTATION.
                     ct_repair_error  = ct_repair_error
                     ct_comment_lines = ct_comment_lines ).
 
-      CATCH cx_sy_move_cast_error.
-        " If class does not implement the interface, fallback to fully dynamic method execution
-        TRY.
-            CALL METHOD lr_instance->(lv_method_name)
-              EXPORTING
-                iv_repair_id     = iv_repair_id
-                iv_form_name     = is_config-form_name
-                iv_save_as_pdf   = iv_save_as_pdf
-              CHANGING
-                cs_repair        = cs_repair
-                ct_repair_error  = ct_repair_error
-                ct_comment_lines = ct_comment_lines.
-          CATCH cx_sy_dyn_call_parameter_error.
-            TRY.
-                CALL METHOD lr_instance->(lv_method_name)
-                  EXPORTING
-                    iv_repair_id   = iv_repair_id
-                    iv_form_name   = is_config-form_name
-                    iv_save_as_pdf = iv_save_as_pdf.
-              CATCH cx_sy_dyn_call_error INTO DATA(lx_dyn_call_inner).
-                DATA(lv_method_err_inner) = |{ 'Dynamic method call failed: &1'(003) }|.
-                REPLACE '&1' IN lv_method_err_inner WITH lv_method_name.
-                RAISE EXCEPTION TYPE /ctdi/cx_print_error
-                  EXPORTING
-                    repair_id = iv_repair_id
-                    message   = lv_method_err_inner
-                    previous  = lx_dyn_call_inner.
-            ENDTRY.
-          CATCH cx_sy_dyn_call_error INTO DATA(lx_dyn_call).
-            DATA(lv_method_err) = |{ 'Dynamic method call failed: &1'(003) }|.
-            REPLACE '&1' IN lv_method_err WITH lv_method_name.
-            RAISE EXCEPTION TYPE /ctdi/cx_print_error
-              EXPORTING
-                repair_id = iv_repair_id
-                message   = lv_method_err
-                previous  = lx_dyn_call.
-        ENDTRY.
+      CATCH cx_sy_move_cast_error INTO DATA(lx_cast_error).
+        " Raise strict exception if the class lacks the interface
+        DATA(lv_cast_err_msg) = |{ 'Class &1 does not implement interface /CTDI/IF_REPAIR_PRINT_PROVIDER'(005) }|.
+        REPLACE '&1' IN lv_cast_err_msg WITH lv_class_name.
+        RAISE EXCEPTION TYPE /ctdi/cx_print_error
+          EXPORTING
+            repair_id = iv_repair_id
+            message   = lv_cast_err_msg
+            previous  = lx_cast_error.
 
       CATCH cx_root INTO DATA(lx_root).
         " Catch other static or dynamic exceptions
@@ -296,7 +268,7 @@ CLASS /CTDI/CL_REPAIR_PRINT_ENGINE IMPLEMENTATION.
            ev_skz,
            ev_akz.
 
-    " Try resolving Contract via Service Order (AUFK → VBAP)
+    " Try resolving Contract via Service Order (AUFK -> VBAP)
     SELECT SINGLE
            v~/cellag/vbeln_vl
       INTO ev_contract_id
@@ -335,7 +307,7 @@ CLASS /CTDI/CL_REPAIR_PRINT_ENGINE IMPLEMENTATION.
           AND qmart = 'Z2'.
 
     ELSE.
-      " Not a PM/CS Service Order → treat as Sales Document
+      " Not a PM/CS Service Order -> treat as Sales Document
       RAISE /ctdi/cx_repair_not_found.
     ENDIF.
   ENDMETHOD.

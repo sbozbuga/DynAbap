@@ -59,7 +59,9 @@ CLASS /CTDI/CL_REPAIR_PRINT_BASE IMPLEMENTATION.
           ls_docparams    TYPE sfpdocparams,
           lv_form_type    TYPE char1.
 
-    DATA: ls_usr01    TYPE usr01.
+    DATA: ls_user_defaults TYPE usdefaults,
+          lv_user_printer  TYPE paramval,
+          lv_printer_dest  TYPE rspopname.
 
     /ctdi/cl_repair_log=>log_info( |Print Provider execution started for Form: { iv_form_name }| ).
 
@@ -71,8 +73,22 @@ CLASS /CTDI/CL_REPAIR_PRINT_BASE IMPLEMENTATION.
       RETURN.
     ENDIF.
 
-    " Fetch User Print Defaults from USR01
-    SELECT SINGLE * FROM usr01 INTO @ls_usr01 WHERE bname = @sy-uname.
+    " 1. Retrieve User Defaults using standard SAP API
+    CALL FUNCTION 'SUSR_USER_DEFAULTS_GET'
+      EXPORTING
+        user_name     = sy-uname
+      IMPORTING
+        user_defaults = ls_user_defaults
+      EXCEPTIONS
+        OTHERS        = 1.
+
+    " 2. Check for user-specific SET/GET parameter override (/CELLAG/PAFR)
+    GET PARAMETER ID '/CELLAG/PAFR' FIELD lv_user_printer.
+
+    " 3. Determine the output printer destination
+    lv_printer_dest = COND #( WHEN lv_user_printer IS NOT INITIAL
+                              THEN lv_user_printer
+                              ELSE ls_user_defaults-spld ).
 
     " Dynamically detect the form type (Smart Form vs Adobe PDF Form)
     SELECT SINGLE formname FROM stxfadm
@@ -120,12 +136,22 @@ CLASS /CTDI/CL_REPAIR_PRINT_BASE IMPLEMENTATION.
             subrc     = sy-subrc.
       ENDIF.
 
-      " Apply user printing defaults if configured
-      IF ls_usr01-spld IS NOT INITIAL.
-        ls_output_options-tddest   = ls_usr01-spld.
-        ls_output_options-tdimmed  = ls_usr01-splg.
-*        ls_output_options-tddel    = ls_usr01-spda.
-      ENDIF.
+      " Apply printer and format options from defaults
+      ls_output_options-tddest   = lv_printer_dest.
+      ls_output_options-tdcopies = 1.
+      ls_output_options-tdimmed  = COND #( WHEN ls_user_defaults-splg IS NOT INITIAL THEN ls_user_defaults-splg ELSE abap_true ).
+      ls_output_options-tddelete = COND #( WHEN ls_user_defaults-spda IS NOT INITIAL THEN ls_user_defaults-spda ELSE abap_true ).
+      ls_output_options-tdnewid  = abap_true.
+
+      " Dynamic Device Type detection based on language
+      DATA: lv_devtype TYPE rspoptype.
+      CALL FUNCTION 'SSF_GET_DEVICE_TYPE'
+        EXPORTING
+          i_language    = sy-langu
+          i_application = 'SAPDEFAULT'
+        IMPORTING
+          e_devtype     = lv_devtype.
+      ls_output_options-tdprinter = lv_devtype.
 
       " If Save as PDF is selected, retrieve OTF data instead of sending directly to spool
       IF iv_save_as_pdf = abap_true.
@@ -239,12 +265,10 @@ CLASS /CTDI/CL_REPAIR_PRINT_BASE IMPLEMENTATION.
       ls_outputparams-nodialog   = abap_true.   " Suppress print dialog for automated printing
       ls_outputparams-preview    = abap_true.    " Enable print preview
 
-      " Apply user printing defaults if configured
-      IF ls_usr01-spld IS NOT INITIAL.
-        ls_outputparams-dest   = ls_usr01-spld.
-        ls_outputparams-reqimm = ls_usr01-splg.
-        ls_outputparams-reqdel = ls_usr01-spda.
-      ENDIF.
+      " Apply printer and format options from defaults
+      ls_outputparams-dest   = lv_printer_dest.
+      ls_outputparams-reqimm = COND #( WHEN ls_user_defaults-splg IS NOT INITIAL THEN ls_user_defaults-splg ELSE abap_true ).
+      ls_outputparams-reqdel = COND #( WHEN ls_user_defaults-spda IS NOT INITIAL THEN ls_user_defaults-spda ELSE abap_true ).
 
       " If Save as PDF is selected, instruct ADS to return PDF data
       IF iv_save_as_pdf = abap_true.
@@ -397,6 +421,12 @@ CLASS /CTDI/CL_REPAIR_PRINT_BASE IMPLEMENTATION.
           lt_data     TYPE solix_tab.
 
     IF iv_pdf_data IS INITIAL.
+      RETURN.
+    ENDIF.
+
+    " Guard against execution in background processing (Batch mode)
+    IF sy-batch IS NOT INITIAL.
+      /ctdi/cl_repair_log=>log_warning( |Presentation layer download bypassed for Repair { iv_repair_id } in batch mode.| ).
       RETURN.
     ENDIF.
 
