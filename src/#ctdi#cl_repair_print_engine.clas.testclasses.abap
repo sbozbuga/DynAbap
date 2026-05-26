@@ -41,7 +41,15 @@ CLASS lcl_mock_print_provider IMPLEMENTATION.
   ENDMETHOD.
 
   METHOD clear.
-    CLEAR: gv_execute_called, gv_read_data_called, gv_print_called, gv_repair_id, gv_form_name, gv_save_as_pdf, gs_repair, gt_repair_error, gt_comment_lines.
+    CLEAR: gv_execute_called,
+           gv_read_data_called,
+           gv_print_called,
+           gv_repair_id,
+           gv_form_name,
+           gv_save_as_pdf,
+           gs_repair,
+           gt_repair_error,
+           gt_comment_lines.
   ENDMETHOD.
 ENDCLASS.
 

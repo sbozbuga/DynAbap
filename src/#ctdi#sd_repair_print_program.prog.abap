@@ -59,7 +59,7 @@ FORM entry USING ent_retco TYPE sysubrc
                  ent_screen TYPE c.
 
   DATA: lv_repair_id     TYPE aufnr,
-        lo_engine        TYPE REF TO /ctdi/cl_repair_print_engine,
+        lr_engine        TYPE REF TO /ctdi/cl_repair_print_engine,
         ls_repair        TYPE /ctdi/repair,
         lt_repair_error  TYPE TABLE OF /ctdi/repair_error,
         lt_comment_lines TYPE TABLE OF tline.
@@ -82,11 +82,11 @@ FORM entry USING ent_retco TYPE sysubrc
 *      ls_repair-vbeln = lv_repair_id.
 
       " Instantiate the dynamic mapping and printing engine
-      CREATE OBJECT lo_engine.
+      CREATE OBJECT lr_engine.
 
       " Call the dynamic printing method (Output Determination always defaults to Spool/Print)
-      lo_engine->execute( EXPORTING iv_repair_id     = lv_repair_id
-                          CHANGING  cs_repair        = ls_repair
+      lr_engine->execute( EXPORTING iv_repair_id     = lv_repair_id
+                          CHANGING  cs_repair        = cs_repair
                                     ct_repair_error  = lt_repair_error
                                     ct_comment_lines = lt_comment_lines ).
 

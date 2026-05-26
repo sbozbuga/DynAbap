@@ -19,7 +19,7 @@ DATA:  BEGIN OF STATUS_/CTDI/REP_RESULT              .   "state vector
 DATA:  END OF STATUS_/CTDI/REP_RESULT              .
 CONTROLS: TCTRL_/CTDI/REP_RESULT
             TYPE TABLEVIEW USING SCREEN '0002'.
-*.........table declarations:.................................*
+*.........table declarations...................................*
 TABLES: */CTDI/REP_FORMS               .
 TABLES: */CTDI/REP_PROJEC              .
 TABLES: */CTDI/REP_RESULT              .

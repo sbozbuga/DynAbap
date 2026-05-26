@@ -104,16 +104,24 @@ CLASS /ctdi/cl_repair_log IMPLEMENTATION.
     lv_len = strlen( iv_text ).
 
     IF lv_len > 0.
-      ls_msg-msgv1 = COND #( WHEN lv_len > 50 THEN substring( val = iv_text off = 0 len = 50 ) ELSE substring( val = iv_text off = 0 len = lv_len ) ).
+      ls_msg-msgv1 = COND #( WHEN lv_len > 50
+                             THEN substring( val = iv_text off = 0 len = 50 )
+                             ELSE substring( val = iv_text off = 0 len = lv_len ) ).
     ENDIF.
     IF lv_len > 50.
-      ls_msg-msgv2 = COND #( WHEN lv_len > 100 THEN substring( val = iv_text off = 50 len = 50 ) ELSE substring( val = iv_text off = 50 len = lv_len - 50 ) ).
+      ls_msg-msgv2 = COND #( WHEN lv_len > 100
+                             THEN substring( val = iv_text off = 50 len = 50 )
+                             ELSE substring( val = iv_text off = 50 len = lv_len - 50 ) ).
     ENDIF.
     IF lv_len > 100.
-      ls_msg-msgv3 = COND #( WHEN lv_len > 150 THEN substring( val = iv_text off = 100 len = 50 ) ELSE substring( val = iv_text off = 100 len = lv_len - 100 ) ).
+      ls_msg-msgv3 = COND #( WHEN lv_len > 150
+                             THEN substring( val = iv_text off = 100 len = 50 )
+                             ELSE substring( val = iv_text off = 100 len = lv_len - 100 ) ).
     ENDIF.
     IF lv_len > 150.
-      ls_msg-msgv4 = COND #( WHEN lv_len > 200 THEN substring( val = iv_text off = 150 len = 50 ) ELSE substring( val = iv_text off = 150 len = lv_len - 150 ) ).
+      ls_msg-msgv4 = COND #( WHEN lv_len > 200
+                             THEN substring( val = iv_text off = 150 len = 50 )
+                             ELSE substring( val = iv_text off = 150 len = lv_len - 150 ) ).
     ENDIF.
 
     " 4. Add message to log

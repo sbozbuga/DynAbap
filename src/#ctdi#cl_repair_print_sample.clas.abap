@@ -3,7 +3,7 @@ CLASS /ctdi/cl_repair_print_sample DEFINITION
   FINAL
   CREATE PUBLIC .
 
-  "* Naming convention:
+  "* Naming convention: 
   "*   ms_ = structure (single record)
   "*   mt_ = internal table (multiple records)
 
@@ -65,7 +65,9 @@ CLASS /CTDI/CL_REPAIR_PRINT_SAMPLE IMPLEMENTATION.
 
     " Ensure passed repair header is valid
     IF cs_repair IS INITIAL.
-      /ctdi/cl_repair_log=>log_warning( |Passed repair header data is empty - Print execution bypassed for Repair ID { iv_repair_id }| ).
+      /ctdi/cl_repair_log=>log_warning(
+        |Passed repair header data is empty - | &&
+        |Print execution bypassed for Repair ID { iv_repair_id }| ).
       RETURN.
     ENDIF.
 
@@ -82,7 +84,10 @@ CLASS /CTDI/CL_REPAIR_PRINT_SAMPLE IMPLEMENTATION.
       lv_form_type = 'A'. " Adobe Form (Default)
     ENDIF.
 
-    /ctdi/cl_repair_log=>log_info( |Form technology resolved: { COND #( WHEN lv_form_type = 'S' THEN 'Smart Form' ELSE 'Adobe Form' ) }| ).
+    /ctdi/cl_repair_log=>log_info(
+      |Form technology resolved: { COND #( WHEN lv_form_type = 'S'
+                                           THEN 'Smart Form'
+                                           ELSE 'Adobe Form' ) }| ).
 
     IF lv_form_type = 'S'. " Smart Forms
       DATA: lv_ssf_fm_name        TYPE rs38l_fnam,
@@ -200,7 +205,9 @@ CLASS /CTDI/CL_REPAIR_PRINT_SAMPLE IMPLEMENTATION.
             err_empty_otf         = 3
             OTHERS                = 4.
       IF sy-subrc = 0.
-        /ctdi/cl_repair_log=>log_info( |OTF-to-PDF Conversion successful. Binary size: { xstrlen( lv_pdf_xstring ) } bytes.| ).
+        /ctdi/cl_repair_log=>log_info(
+          |OTF-to-PDF Conversion successful. | &&
+          |Binary size: { xstrlen( lv_pdf_xstring ) } bytes.| ).
         TRY.
             download_pdf(
               iv_repair_id = iv_repair_id
@@ -356,7 +363,9 @@ CLASS /CTDI/CL_REPAIR_PRINT_SAMPLE IMPLEMENTATION.
 
       " If Save as PDF, trigger local download of the retrieved PDF xstring
       IF iv_save_as_pdf = abap_true AND ls_formoutput-pdf IS NOT INITIAL.
-        /ctdi/cl_repair_log=>log_info( |Downloading resolved PDF stream. Size: { xstrlen( ls_formoutput-pdf ) } bytes.| ).
+        /ctdi/cl_repair_log=>log_info(
+          |Downloading resolved PDF stream. | &&
+          |Size: { xstrlen( ls_formoutput-pdf ) } bytes.| ).
         TRY.
             download_pdf( iv_repair_id = iv_repair_id
                           iv_pdf_data  = ls_formoutput-pdf ).

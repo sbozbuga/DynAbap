@@ -28,8 +28,7 @@ CLASS /ctdi/cl_repair_print_engine DEFINITION
   PROTECTED SECTION.
 private section.
 
-  types:
-    tt_config_buffer TYPE HASHED TABLE OF /ctdi/rep_forms WITH UNIQUE KEY vbeln skz akz .
+  TYPES tt_config_buffer TYPE HASHED TABLE OF /ctdi/rep_forms WITH UNIQUE KEY vbeln skz akz.
 
   data MT_CONFIG_BUFFER type TT_CONFIG_BUFFER .
 
@@ -91,7 +90,9 @@ CLASS /CTDI/CL_REPAIR_PRINT_ENGINE IMPLEMENTATION.
                                        iv_skz = lv_skz
                                        iv_akz = lv_akz ).
 
-        /ctdi/cl_repair_log=>log_info( |Resolved Configuration - Class: { ls_config-class_name }, Method: { ls_config-method_name }, Form: { ls_config-form_name }| ).
+        /ctdi/cl_repair_log=>log_info(
+          |Resolved Configuration - Class: { ls_config-class_name }, | &&
+          |Method: { ls_config-method_name }, Form: { ls_config-form_name }| ).
 
         execute_provider( EXPORTING iv_repair_id     = iv_repair_id
                                     is_config        = ls_config
@@ -116,8 +117,8 @@ CLASS /CTDI/CL_REPAIR_PRINT_ENGINE IMPLEMENTATION.
 
 
   METHOD execute_provider.
-    DATA: lo_instance TYPE REF TO object,
-          lo_provider TYPE REF TO /ctdi/if_repair_print_provider.
+    DATA: lr_instance TYPE REF TO object,
+          lr_provider TYPE REF TO /ctdi/if_repair_print_provider.
 
     " Validate that class and method names are configured
     IF is_config-class_name IS INITIAL OR is_config-method_name IS INITIAL.
@@ -132,7 +133,7 @@ CLASS /CTDI/CL_REPAIR_PRINT_ENGINE IMPLEMENTATION.
     " Instantiate configured printer class
     TRY.
         " Dynamically instantiate the class
-        CREATE OBJECT lo_instance TYPE (lv_class_name).
+        CREATE OBJECT lr_instance TYPE (lv_class_name).
 
       CATCH cx_sy_create_object_error INTO DATA(lx_create).
         " Handle instantiation errors (e.g. class doesn't exist or constructor error)
@@ -148,10 +149,10 @@ CLASS /CTDI/CL_REPAIR_PRINT_ENGINE IMPLEMENTATION.
     " Dynamic Casting to Interface or Fallback to Dynamic Method Call
     TRY.
         " Try to dynamically cast the instance to the standard print provider interface
-        lo_provider ?= lo_instance.
+        lr_provider ?= lr_instance.
 
         " Execute the provider in one step via the interface
-        lo_provider->execute(
+        lr_provider->execute(
           EXPORTING iv_repair_id     = iv_repair_id
                     iv_form_name     = is_config-form_name
                     iv_save_as_pdf   = iv_save_as_pdf
@@ -162,7 +163,7 @@ CLASS /CTDI/CL_REPAIR_PRINT_ENGINE IMPLEMENTATION.
       CATCH cx_sy_move_cast_error.
         " If class does not implement the interface, fallback to fully dynamic method execution
         TRY.
-            CALL METHOD lo_instance->(is_config-method_name)
+            CALL METHOD lr_instance->(is_config-method_name)
               EXPORTING
                 iv_repair_id     = iv_repair_id
                 iv_form_name     = is_config-form_name
@@ -173,7 +174,7 @@ CLASS /CTDI/CL_REPAIR_PRINT_ENGINE IMPLEMENTATION.
                 ct_comment_lines = ct_comment_lines.
           CATCH cx_sy_dyn_call_parameter_error.
             TRY.
-                CALL METHOD lo_instance->(is_config-method_name)
+                CALL METHOD lr_instance->(is_config-method_name)
                   EXPORTING
                     iv_repair_id   = iv_repair_id
                     iv_form_name   = is_config-form_name
