@@ -43,11 +43,9 @@ FORM on_before_save.
   DATA: ls_entry TYPE /ctdi/rep_forms.
 
   LOOP AT total INTO ls_entry.
-    " Validate and default method name to EXECUTE for the single-entry provider flow
-    IF ls_entry-method_name IS INITIAL.
-      ls_entry-method_name = 'EXECUTE'.
-      MODIFY total FROM ls_entry.
-    ENDIF.
+    " Unconditionally enforce standard method name EXECUTE for obligatory interface usage
+    ls_entry-method_name = 'EXECUTE'.
+    MODIFY total FROM ls_entry.
 
     TRY.
         " Delegate all class, form, and method validations to engine class

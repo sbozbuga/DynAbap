@@ -84,36 +84,10 @@ CLASS /CTDI/CL_REPAIR_CUST_ENGINE IMPLEMENTATION.
 
 
   METHOD on_new_entry.
-    " 1. Bypass generation if system is QA/PRD or user lacks S_DEVELOP
-    IF check_generation_allowed( ) = abap_false.
-      RETURN.
-    ENDIF.
-
-    " 2. Skip if class name is already provided and exists
-    IF cs_entry-class_name IS NOT INITIAL.
-      SELECT SINGLE clsname FROM seoclass
-        INTO @DATA(lv_exists)
-        WHERE clsname = @cs_entry-class_name.
-      IF sy-subrc = 0.
-        RETURN.
-      ENDIF.
-    ENDIF.
-
-    " 3. Auto-generate a class name from the Contract VBELN if not provided
+    " Default class name and method name to standard base provider class
     IF cs_entry-class_name IS INITIAL.
-      cs_entry-class_name = |/CTDI/CL_REPAIR_PRINT_{ cs_entry-vbeln }|.
+      cs_entry-class_name = '/CTDI/CL_REPAIR_PRINT_BASE'.
     ENDIF.
-
-    " 4. Verify the class does not already exist
-    SELECT SINGLE clsname FROM seoclass
-      INTO lv_exists
-      WHERE clsname = cs_entry-class_name.
-    IF sy-subrc = 0.
-      cs_entry-method_name = 'EXECUTE'.
-      RETURN.
-    ENDIF.
-
-    " 5. Default the method name to EXECUTE (class generation occurs on validate_entry before saving)
     cs_entry-method_name = 'EXECUTE'.
   ENDMETHOD.
 
