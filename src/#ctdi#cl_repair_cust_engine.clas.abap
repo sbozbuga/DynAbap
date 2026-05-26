@@ -32,6 +32,13 @@ CLASS /CTDI/CL_REPAIR_CUST_ENGINE DEFINITION
 
   PROTECTED SECTION.
   PRIVATE SECTION.
+    CLASS-METHODS validate_form_interface
+      IMPORTING
+        !iv_form_name  TYPE fpname
+        !iv_class_name TYPE seoclsname
+        !iv_vbeln      TYPE vbeln_va
+      RAISING
+        /ctdi/cx_print_error.
 ENDCLASS.
 
 
@@ -149,6 +156,11 @@ CLASS /CTDI/CL_REPAIR_CUST_ENGINE IMPLEMENTATION.
               message   = lv_form_err.
         ENDIF.
       ENDIF.
+
+      " Eagerly validate form parameter compatibility
+      validate_form_interface( iv_form_name  = is_entry-form_name
+                               iv_class_name = is_entry-class_name
+                               iv_vbeln      = is_entry-vbeln ).
     ENDIF.
 
     " 3. Validate Class existence in Repository (SEOCLASS)
@@ -291,5 +303,92 @@ CLASS /CTDI/CL_REPAIR_CUST_ENGINE IMPLEMENTATION.
         ENDIF.
       ENDIF.
     ENDIF.
+  ENDMETHOD.
+
+  METHOD validate_form_interface.
+    DATA: lv_fm_name   TYPE rs38l_fnam,
+          lv_form_type TYPE char1.
+
+    " 1. Determine form type and generated FM name
+    SELECT SINGLE formname FROM stxfadm
+      INTO @DATA(lv_ssf_name)
+      WHERE formname = @iv_form_name.
+    IF sy-subrc = 0.
+      lv_form_type = 'S'. " Smart Form
+      CALL FUNCTION 'SSF_FUNCTION_MODULE_NAME'
+        EXPORTING
+          formname           = iv_form_name
+        IMPORTING
+          fm_name            = lv_fm_name
+        EXCEPTIONS
+          no_form            = 1
+          no_function_module = 2
+          OTHERS             = 3.
+      IF sy-subrc <> 0.
+        RETURN. " Muted: will be handled at runtime print execution
+      ENDIF.
+    ELSE.
+      lv_form_type = 'A'. " Adobe Form
+      CALL FUNCTION 'FP_FUNCTION_MODULE_NAME'
+        EXPORTING
+          i_name     = iv_form_name
+        IMPORTING
+          e_funcname = lv_fm_name
+        EXCEPTIONS
+          OTHERS     = 1.
+      IF sy-subrc <> 0.
+        RETURN. " Muted: will be handled at runtime print execution
+      ENDIF.
+    ENDIF.
+
+    " 2. Fetch all mandatory parameters (OPTIONAL = space, DEFAULTVAL = space)
+    SELECT paramname
+      FROM fupararef
+      INTO TABLE @DATA(lt_mandatory_params)
+      WHERE funcname = @lv_fm_name
+        AND paramtype IN ('I', 'T', 'C')
+        AND optional = @space
+        AND defaultval = @space.
+
+    IF sy-subrc <> 0.
+      RETURN. " No mandatory parameters found
+    ENDIF.
+
+    " 3. Filter out standard/framework parameters
+    LOOP AT lt_mandatory_params INTO DATA(ls_param).
+      DATA(lv_param) = UPPER( ls_param-paramname ).
+
+      IF lv_form_type = 'S'. " Smart Form
+        IF lv_param = 'CONTROL_PARAMETERS' OR
+           lv_param = 'OUTPUT_OPTIONS'     OR
+           lv_param = 'USER_SETTINGS'      OR
+           lv_param = 'ARCHIVE_INDEX'      OR
+           lv_param = 'ARCHIVE_INDEX_TAB'  OR
+           lv_param = 'ARCHIVE_PARAMETERS' OR
+           lv_param = 'MAIL_APPL_OBJ'      OR
+           lv_param = 'MAIL_RECIPIENT'     OR
+           lv_param = 'MAIL_SENDER'        OR
+           lv_param = 'IS_REPAIR'.
+          CONTINUE.
+        ENDIF.
+      ELSE. " Adobe Form
+        IF lv_param = '/1BCDWB/DOCPARAMS' OR
+           lv_param = 'IS_REPAIR'.
+          CONTINUE.
+        ENDIF.
+      ENDIF.
+
+      " If we reach here, we found a custom mandatory parameter!
+      " If the base class is configured, it will dump because it cannot supply this parameter.
+      IF iv_class_name = '/CTDI/CL_REPAIR_PRINT_BASE'.
+        DATA(lv_err_msg) = |{ 'Form &1 requires custom mandatory parameter &2 which standard base class does not support.'(012) }|.
+        REPLACE '&1' IN lv_err_msg WITH iv_form_name.
+        REPLACE '&2' IN lv_err_msg WITH ls_param-paramname.
+        RAISE EXCEPTION TYPE /ctdi/cx_print_error
+          EXPORTING
+            repair_id = CONV aufnr( iv_vbeln )
+            message   = lv_err_msg.
+      ENDIF.
+    ENDLOOP.
   ENDMETHOD.
 ENDCLASS.
