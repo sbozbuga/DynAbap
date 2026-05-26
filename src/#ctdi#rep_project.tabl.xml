@@ -3,7 +3,7 @@
  <asx:abap xmlns:asx="http://www.sap.com/abapxml" version="1.0">
   <asx:values>
    <DD02V>
-    <TABNAME>/CTDI/REP_PROJECT</TABNAME>
+    <TABNAME>/CTDI/REP_PROJEC</TABNAME>
     <DDLANGUAGE>E</DDLANGUAGE>
     <TABCLASS>TRANSP</TABCLASS>
     <DDTEXT>Sales Repair Project Mapping</DDTEXT>
@@ -11,7 +11,7 @@
     <EXCLASS>1</EXCLASS>
    </DD02V>
    <DD09L>
-    <TABNAME>/CTDI/REP_PROJECT</TABNAME>
+    <TABNAME>/CTDI/REP_PROJEC</TABNAME>
     <AS4LOCAL>A</AS4LOCAL>
     <TABKAT>0</TABKAT>
     <TABART>APPL0</TABART>
