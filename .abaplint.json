@@ -6,6 +6,11 @@
     "ignoreSyntaxErrors": false
   },
 
+  "syntax": {
+    "version": "Standard",
+    "errorNamespace": "^(\\/[Cc][Tt][Dd][Ii]\\/|Z|Y|LCL_|TY_|LIF_)"
+  },
+
   "rules": {
     "line_length": {
       "maxLength": 120
