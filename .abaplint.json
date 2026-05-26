@@ -72,6 +72,11 @@
 
     "test_class": {
       "allowUnused": true
+    },
+    
+    "object_naming": {
+      "clas": "^(\\/[Cc][Tt][Dd][Ii]\\/)?(ZC(L|X)|(CL|CX))_",
+      "intf": "^(\\/[Cc][Tt][Dd][Ii]\\/)?(ZIF|IF)_"
     }
   },
 
