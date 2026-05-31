@@ -34,6 +34,12 @@
      <ENTRY>Unexpected error: &amp;1</ENTRY>
      <LENGTH>50</LENGTH>
     </item>
+    <item>
+     <ID>I</ID>
+     <KEY>005</KEY>
+     <ENTRY>Log Viewer</ENTRY>
+     <LENGTH>12</LENGTH>
+    </item>
    </TPOOL>
   </asx:values>
  </asx:abap>

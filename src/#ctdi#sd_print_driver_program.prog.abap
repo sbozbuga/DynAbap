@@ -80,6 +80,24 @@ FORM entry USING ent_retco TYPE sysubrc
     CATCH /ctdi/cx_print_driver_error INTO DATA(lx_driver_err).
       /ctdi/cl_print_driver_log=>log_exception( lx_driver_err ).
 
+      " Store the error in NAST message fields — visible on output screen
+      CLEAR: nast-msgid, nast-msgnr, nast-msgty,
+             nast-msgv1, nast-msgv2, nast-msgv3, nast-msgv4.
+      nast-msgty = 'E'.
+      nast-msgid = '/CTDI/PRINT'.
+      nast-msgnr = '001'.
+      nast-msgv1 = lx_driver_err->message(50).
+      DATA(lv_msg_len) = strlen( lx_driver_err->message ).
+      IF lv_msg_len > 50.
+        nast-msgv2 = lx_driver_err->message+50(50).
+      ENDIF.
+      IF lv_msg_len > 100.
+        nast-msgv3 = lx_driver_err->message+100(50).
+      ENDIF.
+      IF lv_msg_len > 150.
+        nast-msgv4 = lx_driver_err->message+150(50).
+      ENDIF.
+
       " Reset NAST to 'New' (vstat = '0') so the output is retried
       " on the next NACE scheduling run instead of remaining stuck
       " in error status.

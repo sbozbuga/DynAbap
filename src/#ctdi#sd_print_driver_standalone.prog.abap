@@ -212,31 +212,43 @@ CLASS lcl_nast_handler DEFINITION.
         !iv_nast_key TYPE nast-objky.
 
     "! Marks the NAST output as successfully processed (vstat = '2').
-    "! Call this after the print engine completes without errors.
     METHODS mark_success
       RAISING
         lcx_print_driver_error.
 
     "! Resets the NAST output status to 'New' (vstat = '0').
-    "! Call this after a transient error so the output is retried
-    "! on the next NACE scheduling run instead of remaining stuck in error.
+    "! On the next NACE scheduling run the output will be retried.
     METHODS reset_for_retry
       RAISING
         lcx_print_driver_error.
 
     "! Marks the NAST output as error (vstat = '4').
-    "! Call this for unrecoverable errors where retry is not desired.
     METHODS mark_error
+      RAISING
+        lcx_print_driver_error.
+
+    "! Stores a user-visible error message in the NAST record.
+    "! The message fields (MSGID, MSGNO, MSGTY, MSGV1-4) are displayed
+    "! directly on the output screen in NACE / VF03 / document flow,
+    "! so the user can see what went wrong at a glance.
+    "!
+    "! @parameter iv_message | Free-text error message (up to 200 chars)
+    METHODS store_error_message
+      IMPORTING
+        !iv_message TYPE string
       RAISING
         lcx_print_driver_error.
 
   PRIVATE SECTION.
     DATA mv_nast_key TYPE nast-objky.
 
-    "! Applies a new processing status to the NAST work area.
     METHODS set_status
       IMPORTING
         !iv_vstat TYPE nast-vstat
+      RAISING
+        lcx_print_driver_error.
+
+    METHODS check_key_guard
       RAISING
         lcx_print_driver_error.
 ENDCLASS.
@@ -863,8 +875,37 @@ CLASS lcl_nast_handler IMPLEMENTATION.
       |NAST protocol updated: Output { mv_nast_key } marked as error| ).
   ENDMETHOD.
 
-  METHOD set_status.
-    " Guard: NAST work area must match the key we were constructed with
+  METHOD store_error_message.
+    check_key_guard( ).
+
+    " Clear previous message fields
+    CLEAR: nast-msgid, nast-msgnr, nast-msgty,
+           nast-msgv1, nast-msgv2, nast-msgv3, nast-msgv4.
+
+    " Set message type to Error
+    nast-msgty = 'E'.
+    nast-msgid = '/CTDI/PRINT'.
+    nast-msgnr = '001'.
+
+    " Split the message text across the four 50-char variables
+    DATA(lv_len) = strlen( iv_message ).
+    IF lv_len > 0.
+      nast-msgv1 = substring( val = iv_message off = 0 len = nmin( val1 = 50 val2 = lv_len ) ).
+    ENDIF.
+    IF lv_len > 50.
+      nast-msgv2 = substring( val = iv_message off = 50 len = nmin( val1 = 50 val2 = lv_len - 50 ) ).
+    ENDIF.
+    IF lv_len > 100.
+      nast-msgv3 = substring( val = iv_message off = 100 len = nmin( val1 = 50 val2 = lv_len - 100 ) ).
+    ENDIF.
+    IF lv_len > 150.
+      nast-msgv4 = substring( val = iv_message off = 150 len = nmin( val1 = 50 val2 = lv_len - 150 ) ).
+    ENDIF.
+
+    nast-veraend = abap_true.
+  ENDMETHOD.
+
+  METHOD check_key_guard.
     IF nast-objky IS INITIAL.
       RAISE EXCEPTION TYPE lcx_print_driver_error
         EXPORTING
@@ -878,14 +919,20 @@ CLASS lcl_nast_handler IMPLEMENTATION.
           repair_id = CONV #( mv_nast_key )
           message   = |NAST key mismatch: expected { mv_nast_key }, got { nast-objky }|.
     ENDIF.
+  ENDMETHOD.
+
+  METHOD set_status.
+    check_key_guard( ).
 
     " Set the new processing status
     nast-vstat   = iv_vstat.
-    nast-veraend = abap_true.   " Mark as changed so the framework persists it
+    nast-veraend = abap_true.
 
-    " If resetting to New, also clear the error counter and message
+    " If resetting to New, also clear the attempt counter and message field
     IF iv_vstat = '0'.
-      nast-anzah_versuche = 0.   " Reset attempt counter
+      nast-anzah_versuche = 0.
+      CLEAR: nast-msgid, nast-msgnr, nast-msgty,
+             nast-msgv1, nast-msgv2, nast-msgv3, nast-msgv4.
     ENDIF.
   ENDMETHOD.
 
@@ -902,12 +949,22 @@ PARAMETERS: p_pdf   AS CHECKBOX DEFAULT ' '.        " Save as PDF
 PARAMETERS: p_sf    AS CHECKBOX NO-DISPLAY.         " Legacy compat
 SELECTION-SCREEN END OF BLOCK b1.
 
+" Log viewer mode
+SELECTION-SCREEN BEGIN OF BLOCK b2 WITH FRAME TITLE TEXT-005.
+PARAMETERS: p_log  RADIOBUTTON GROUP rad1 DEFAULT 'X'.  " Run print
+PARAMETERS: p_vlog RADIOBUTTON GROUP rad1.               " View SLG1 logs
+SELECTION-SCREEN END OF BLOCK b2.
+
 
 *&---------------------------------------------------------------------*
 *&  S T A R T - O F - S E L E C T I O N
 *&---------------------------------------------------------------------*
 START-OF-SELECTION.
-  PERFORM run_standalone.
+  IF p_vlog = abap_true.
+    PERFORM show_log.
+  ELSE.
+    PERFORM run_standalone.
+  ENDIF.
 
 
 *&---------------------------------------------------------------------*
@@ -954,7 +1011,15 @@ FORM entry USING ent_retco TYPE sysubrc
     CATCH lcx_print_driver_error INTO DATA(lx_driver_err).
       lcl_print_driver_log=>log_exception( lx_driver_err ).
 
-      " Reset NAST to 'New' so the output is retried on the next run
+      " 1. Store the error message in NAST message fields so the user
+      "    can see what happened on the output display screen.
+      TRY.
+          lo_nast->store_error_message( lx_driver_err->message ).
+        CATCH lcx_print_driver_error.
+          " Muted
+      ENDTRY.
+
+      " 2. Reset NAST to 'New' so the output is retried on the next run
       TRY.
           lo_nast->reset_for_retry( ).
         CATCH lcx_print_driver_error.
@@ -1004,4 +1069,56 @@ FORM run_standalone.
       lcl_print_driver_log=>log_exception( lx_root ).
       MESSAGE lv_msg TYPE 'E'.
   ENDTRY.
+ENDFORM.
+
+
+*&---------------------------------------------------------------------*
+*&  F O R M   S H O W _ L O G
+*&---------------------------------------------------------------------*
+*& Opens SLG1 (Application Log) directly filtered to the print driver
+*& logs for the entered Repair ID.
+*&
+*& Users can also access these logs manually via transaction SLG1 with:
+*&   Object    = /CTDI/PRINT
+*&   Subobject = DRIVER
+*&---------------------------------------------------------------------*
+FORM show_log.
+  DATA: lt_log_handles TYPE bal_t_logh,
+        ls_log_filter  TYPE bal_s_lfil,
+        lt_log_numbers TYPE bal_t_logn,
+        lv_text        TYPE string.
+
+  " Find BAL logs for this repair ID in the print driver subobject
+  ls_log_filter-object    = '/CTDI/PRINT'.
+  ls_log_filter-subobject = 'DRIVER'.
+  ls_log_filter-logon     = 'X'.  " Include user name filter
+  ls_log_filter-aluser    = sy-uname.
+
+  " Also filter by free text containing the repair ID
+  ls_log_filter-free_search = |{ p_aufnr }|.
+
+  " Read all matching log handles
+  CALL FUNCTION 'BAL_DB_SEARCH'
+    EXPORTING
+      i_s_log_filter = ls_log_filter
+    IMPORTING
+      e_t_log_handle = lt_log_handles
+    EXCEPTIONS
+      OTHERS         = 1.
+
+  IF sy-subrc <> 0 OR lt_log_handles IS INITIAL.
+    MESSAGE |No application logs found for Repair { p_aufnr } in SLG1| TYPE 'I'.
+    RETURN.
+  ENDIF.
+
+  " Display the log via SLG1 transaction call
+  CALL FUNCTION 'BAL_DSP_LOG_DISPLAY'
+    EXPORTING
+      i_t_log_handle = lt_log_handles
+    EXCEPTIONS
+      OTHERS         = 1.
+
+  IF sy-subrc <> 0.
+    MESSAGE |Failed to display application log| TYPE 'I'.
+  ENDIF.
 ENDFORM.
