@@ -191,6 +191,15 @@ CLASS lcl_print_driver_engine DEFINITION.
         lcx_print_driver_error.
 
   PRIVATE SECTION.
+    "! Resolves AUFNR (Order) -> VBELN (Contract / Sales Doc).
+    "! Checks AUFK -> KDAUF first (service order case),
+    "! then falls back to treating AUFNR as a direct VBELN.
+    METHODS resolve_contract
+      IMPORTING
+        !iv_repair_id  TYPE aufnr
+      RETURNING
+        VALUE(rv_contract_id) TYPE vbeln_va.
+
     METHODS get_config_from_db
       IMPORTING
         !iv_repair_id   TYPE aufnr
@@ -822,30 +831,82 @@ CLASS lcl_print_driver_engine IMPLEMENTATION.
       |Print driver engine completed successfully for Repair { iv_repair_id }| ).
   ENDMETHOD.
 
+  METHOD resolve_contract.
+    DATA(lv_aufnr) = |{ iv_repair_id ALPHA = IN }|.
+
+    " Try: Service Order -> Contract via AUFK-KDAUF (customer contract number)
+    SELECT SINGLE kdauf
+      FROM aufk
+      INTO rv_contract_id
+      WHERE aufnr = lv_aufnr
+        AND kdauf IS NOT INITIAL.
+
+    IF sy-subrc = 0.
+      lcl_print_driver_log=>log_info(
+        |Resolved Order { iv_repair_id } -> Contract { rv_contract_id } via AUFK| ).
+      RETURN.
+    ENDIF.
+
+    " Fallback: treat AUFNR as a direct VBELN in VBAK
+    SELECT SINGLE vbeln
+      FROM vbak
+      INTO rv_contract_id
+      WHERE vbeln = lv_aufnr.
+
+    IF sy-subrc = 0.
+      lcl_print_driver_log=>log_info(
+        |Using Repair { iv_repair_id } directly as Contract VBELN| ).
+      RETURN.
+    ENDIF.
+
+    " Last resort: pass the raw AUFNR — the SELECT on rep_forms will handle ALPHA
+    rv_contract_id = lv_aufnr.
+    lcl_print_driver_log=>log_warning(
+      |Could not resolve Contract for Order { iv_repair_id } — using as-is| ).
+  ENDMETHOD.
+
   METHOD get_config_from_db.
+    " Step 1: Resolve the Contract VBELN from the Order AUFNR
+    DATA(lv_contract) = resolve_contract( iv_repair_id ).
+
+    IF lv_contract IS INITIAL.
+      RAISE EXCEPTION TYPE lcx_print_driver_error
+        EXPORTING
+          repair_id = iv_repair_id
+          message   = |Cannot resolve contract VBELN for Order { iv_repair_id }|.
+    ENDIF.
+
+    lcl_print_driver_log=>log_info(
+      |Looking up print config for Contract { lv_contract }| ).
+
+    " Step 2: Look up the form in the customizing table by Contract VBELN
     SELECT SINGLE form_name
       FROM /ctdi/rep_forms
       INTO @DATA(lv_db_form)
-      WHERE vbeln = @iv_repair_id.
+      WHERE vbeln = @lv_contract.
 
     IF sy-subrc <> 0.
-      DATA(lv_raw) = |{ iv_repair_id ALPHA = OUT }|.
+      " Try ALPHA-normalized variants
+      DATA(lv_raw)   = |{ lv_contract ALPHA = OUT }|.
+      DATA(lv_in)    = |{ lv_contract ALPHA = IN }|.
+
       SELECT SINGLE form_name
         FROM /ctdi/rep_forms
         INTO @lv_db_form
-        WHERE vbeln = @lv_raw.
+        WHERE vbeln = @lv_raw
+           OR vbeln = @lv_in.
     ENDIF.
 
     IF sy-subrc <> 0.
       RAISE EXCEPTION TYPE lcx_print_driver_error
         EXPORTING
           repair_id = iv_repair_id
-          message   = |No print configuration found for Repair { iv_repair_id }|.
+          message   = |No print config found for Contract { lv_contract } (Repair { iv_repair_id })|.
     ENDIF.
 
     ev_form_name = lv_db_form.
     lcl_print_driver_log=>log_info(
-      |Config resolved — Form: { ev_form_name }| ).
+      |Config resolved — Contract: { lv_contract }, Form: { ev_form_name }| ).
   ENDMETHOD.
 
 ENDCLASS.

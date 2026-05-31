@@ -29,6 +29,15 @@ CLASS /ctdi/cl_print_driver_engine DEFINITION
 
   PROTECTED SECTION.
   PRIVATE SECTION.
+    "! Resolves AUFNR (Order) -> VBELN (Contract / Sales Doc).
+    "! Checks AUFK -> KDAUF first (service order case),
+    "! then falls back to treating AUFNR as a direct VBELN.
+    METHODS resolve_contract
+      IMPORTING
+        !iv_repair_id  TYPE aufnr
+      RETURNING
+        VALUE(rv_contract_id) TYPE vbeln_va.
+
     "! Looks up the print configuration from customizing table /CTDI/REP_FORMS.
     METHODS get_config_from_db
       IMPORTING
@@ -108,35 +117,81 @@ CLASS /ctdi/cl_print_driver_engine IMPLEMENTATION.
   ENDMETHOD.
 
 
+  METHOD resolve_contract.
+    DATA(lv_aufnr) = |{ iv_repair_id ALPHA = IN }|.
+
+    " Try: Service Order -> Contract via AUFK-KDAUF
+    SELECT SINGLE kdauf
+      FROM aufk
+      INTO rv_contract_id
+      WHERE aufnr = lv_aufnr
+        AND kdauf IS NOT INITIAL.
+
+    IF sy-subrc = 0.
+      /ctdi/cl_print_driver_log=>log_info(
+        |Resolved Order { iv_repair_id } -> Contract { rv_contract_id } via AUFK| ).
+      RETURN.
+    ENDIF.
+
+    " Fallback: treat AUFNR as direct VBELN
+    SELECT SINGLE vbeln
+      FROM vbak
+      INTO rv_contract_id
+      WHERE vbeln = lv_aufnr.
+
+    IF sy-subrc = 0.
+      /ctdi/cl_print_driver_log=>log_info(
+        |Using Repair { iv_repair_id } directly as Contract VBELN| ).
+      RETURN.
+    ENDIF.
+
+    rv_contract_id = lv_aufnr.
+    /ctdi/cl_print_driver_log=>log_warning(
+      |Could not resolve Contract for Order { iv_repair_id } — using as-is| ).
+  ENDMETHOD.
+
   METHOD get_config_from_db.
-    " Query the customizing table for an active record matching the repair ID.
-    " Uses the same /CTDI/REP_FORMS table as the legacy DynAbap framework.
+    " Step 1: Resolve AUFNR (Order) -> VBELN (Contract)
+    DATA(lv_contract) = resolve_contract( iv_repair_id ).
+
+    IF lv_contract IS INITIAL.
+      RAISE EXCEPTION TYPE /ctdi/cx_print_driver_error
+        EXPORTING
+          repair_id = iv_repair_id
+          message   = |Cannot resolve contract VBELN for Order { iv_repair_id }|.
+    ENDIF.
+
+    /ctdi/cl_print_driver_log=>log_info(
+      |Looking up print config for Contract { lv_contract }| ).
+
+    " Step 2: Look up config by Contract VBELN with ALPHA variants
     SELECT SINGLE form_name, class_name
       FROM /ctdi/rep_forms
       INTO @DATA(ls_config)
-      WHERE vbeln = @iv_repair_id.
+      WHERE vbeln = @lv_contract.
 
     IF sy-subrc <> 0.
-      " Try without leading zeros
-      DATA(lv_raw) = |{ iv_repair_id ALPHA = OUT }|.
+      DATA(lv_raw) = |{ lv_contract ALPHA = OUT }|.
+      DATA(lv_in)  = |{ lv_contract ALPHA = IN }|.
       SELECT SINGLE form_name, class_name
         FROM /ctdi/rep_forms
         INTO @ls_config
-        WHERE vbeln = @lv_raw.
+        WHERE vbeln = @lv_raw
+           OR vbeln = @lv_in.
     ENDIF.
 
     IF sy-subrc <> 0.
       RAISE EXCEPTION TYPE /ctdi/cx_print_driver_error
         EXPORTING
           repair_id = iv_repair_id
-          message   = |No print configuration found for Repair { iv_repair_id }|.
+          message   = |No print config found for Contract { lv_contract } (Repair { iv_repair_id })|.
     ENDIF.
 
     ev_form_name  = ls_config-form_name.
     ev_class_name = normalize_class_name( ls_config-class_name ).
 
     /ctdi/cl_print_driver_log=>log_info(
-      |Config resolved — Form: { ev_form_name }, Class: { ev_class_name }| ).
+      |Config resolved — Contract: { lv_contract }, Form: { ev_form_name }, Class: { ev_class_name }| ).
   ENDMETHOD.
 
 
