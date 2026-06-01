@@ -22,7 +22,7 @@ PARAMETERS: p_aufnr TYPE aufk-aufnr OBLIGATORY,      " Repair / Order ID
             p_form  TYPE fpname,                       " Form name (optional)
             p_class TYPE seoclsname,                   " Class name (optional)
             p_pdf   AS CHECKBOX DEFAULT ' '.           " Save as PDF
-PARAMETERS: p_sf    AS CHECKBOX NO-DISPLAY.            " Legacy compat flag
+PARAMETERS: p_sf    type abap_bool NO-DISPLAY.            " Legacy compat flag
 SELECTION-SCREEN END OF BLOCK b1.
 
 *&---------------------------------------------------------------------*
