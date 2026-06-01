@@ -839,7 +839,7 @@ CLASS lcl_print_driver_engine IMPLEMENTATION.
       FROM aufk
       INTO rv_contract_id
       WHERE aufnr = lv_aufnr
-        AND kdauf IS NOT INITIAL.
+        AND kdauf <> @space.
 
     IF sy-subrc = 0.
       lcl_print_driver_log=>log_info(
@@ -1136,10 +1136,10 @@ FORM show_log.
 
   CLEAR ls_log_filter.
 
-  ls_log_filter-object    = '/CTDI/PRINT'.
-  ls_log_filter-subobject = 'DRIVER'.
-  ls_log_filter-aluser    = sy-uname.
-  ls_log_filter-extnumber = |{ p_aufnr }|.
+  ls_log_filter-object    = VALUE #( ( sign = 'I' option = 'EQ' low = '/CTDI/PRINT' ) ).
+  ls_log_filter-subobject = VALUE #( ( sign = 'I' option = 'EQ' low = 'DRIVER' ) ).
+  ls_log_filter-aluser    = VALUE #( ( sign = 'I' option = 'EQ' low = sy-uname ) ).
+  ls_log_filter-extnumber = VALUE #( ( sign = 'I' option = 'EQ' low = |{ p_aufnr }| ) ).
 
   " Read all matching log handles
   CALL FUNCTION 'BAL_DB_SEARCH'
