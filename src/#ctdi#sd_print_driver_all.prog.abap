@@ -782,10 +782,10 @@ CLASS lcl_print_driver_base IMPLEMENTATION.
   ENDMETHOD.
 
   METHOD fm_has_parameter.
-    SELECT SINGLE paramname FROM fupararef
+    SELECT SINGLE parameter FROM fupararef
       INTO @DATA(lv_dummy)
-      WHERE funcname  = @iv_funcname
-        AND paramname = @iv_paramname.
+      WHERE funcname = @iv_funcname
+        AND parameter = @iv_paramname.
     rv_has = COND #( WHEN sy-subrc = 0 THEN abap_true ELSE abap_false ).
   ENDMETHOD.
 
@@ -939,31 +939,21 @@ CLASS lcl_nast_handler IMPLEMENTATION.
   METHOD store_error_message.
     check_key_guard( ).
 
-    " Clear previous message fields
-    CLEAR: nast-msgid, nast-msgnr, nast-msgty,
-           nast-msgv1, nast-msgv2, nast-msgv3, nast-msgv4.
-
-    " Set message type to Error
-    nast-msgty = 'E'.
-    nast-msgid = '/CTDI/PRINT'.
-    nast-msgnr = '001'.
-
-    " Split the message text across the four 50-char variables
-    DATA(lv_len) = strlen( iv_message ).
-    IF lv_len > 0.
-      nast-msgv1 = substring( val = iv_message off = 0 len = nmin( val1 = 50 val2 = lv_len ) ).
-    ENDIF.
-    IF lv_len > 50.
-      nast-msgv2 = substring( val = iv_message off = 50 len = nmin( val1 = 50 val2 = lv_len - 50 ) ).
-    ENDIF.
-    IF lv_len > 100.
-      nast-msgv3 = substring( val = iv_message off = 100 len = nmin( val1 = 50 val2 = lv_len - 100 ) ).
-    ENDIF.
-    IF lv_len > 150.
-      nast-msgv4 = substring( val = iv_message off = 150 len = nmin( val1 = 50 val2 = lv_len - 150 ) ).
-    ENDIF.
-
-    nast-veraend = abap_true.
+    " Store the error message via MESSAGE_STORE for NACE output protocol
+    MESSAGE e001(/ctdi/print)
+      WITH iv_message
+      INTO sy-msgli.
+    CALL FUNCTION 'MESSAGE_STORE'
+      EXPORTING
+        arbgb  = '/CTDI/PRINT'
+        msgnr  = '001'
+        msgty  = 'E'
+        msgv1  = sy-msgv1
+        msgv2  = sy-msgv2
+        msgv3  = sy-msgv3
+        msgv4  = sy-msgv4
+      EXCEPTIONS
+        OTHERS = 0.
   ENDMETHOD.
 
   METHOD check_key_guard.
@@ -987,13 +977,10 @@ CLASS lcl_nast_handler IMPLEMENTATION.
 
     " Set the new processing status
     nast-vstat   = iv_vstat.
-    nast-veraend = abap_true.
 
-    " If resetting to New, also clear the attempt counter and message field
+    " If resetting to New, also clear the attempt counter
     IF iv_vstat = '0'.
-      nast-anzah_versuche = 0.
-      CLEAR: nast-msgid, nast-msgnr, nast-msgty,
-             nast-msgv1, nast-msgv2, nast-msgv3, nast-msgv4.
+      nast-anzal = 0.
     ENDIF.
   ENDMETHOD.
 
@@ -1007,7 +994,7 @@ SELECTION-SCREEN BEGIN OF BLOCK b1 WITH FRAME TITLE TEXT-002.
 PARAMETERS: p_aufnr TYPE aufk-aufnr OBLIGATORY.   " Repair / Order ID
 PARAMETERS: p_form  TYPE fpname.                    " Form name (optional)
 PARAMETERS: p_pdf   AS CHECKBOX DEFAULT ' '.        " Save as PDF
-PARAMETERS: p_sf    AS CHECKBOX NO-DISPLAY.         " Legacy compat
+PARAMETERS: p_sf    TYPE abap_bool NO-DISPLAY.         " Legacy compat
 SELECTION-SCREEN END OF BLOCK b1.
 
 " Log viewer mode
