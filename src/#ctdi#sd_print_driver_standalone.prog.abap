@@ -1,5 +1,5 @@
 *&---------------------------------------------------------------------*
-*& Report /CTDI/SD_PRINT_DRIVER_STANDALONE
+*& Report /CTDI/SD_PRINT_DRIVER_ALL
 *&---------------------------------------------------------------------*
 *& SELF-CONTAINED Print Driver — All classes are LOCAL to this program.
 *&
@@ -12,7 +12,7 @@
 *& No external SE24 global classes required — everything is defined
 *& as local classes within this report for easy transport and setup.
 *&---------------------------------------------------------------------*
-REPORT /ctdi/sd_print_driver_standalone.
+REPORT /ctdi/sd_print_driver_all.
 
 " NAST / TNAPR structures — populated by SAP output determination
 TABLES: nast, tnapr.
