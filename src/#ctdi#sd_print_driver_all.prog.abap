@@ -48,8 +48,8 @@ INTERFACE lif_print_driver.
       !iv_save_as_pdf TYPE abap_bool DEFAULT abap_false
     CHANGING
       !cs_repair      TYPE any
-      !ct_errors      TYPE ANY TABLE
-      !ct_comments    TYPE ANY TABLE
+      !ct_errors      TYPE STANDARD TABLE
+      !ct_comments    TYPE STANDARD TABLE
     RAISING
       lcx_print_driver_error.
 ENDINTERFACE.
@@ -105,8 +105,8 @@ CLASS lcl_print_driver_base DEFINITION.
         !iv_repair_id   TYPE aufnr
       CHANGING
         !cs_repair      TYPE any
-        !ct_errors      TYPE ANY TABLE
-        !ct_comments    TYPE ANY TABLE
+        !ct_errors      TYPE STANDARD TABLE
+        !ct_comments    TYPE STANDARD TABLE
       RAISING
         lcx_print_driver_error.
 
@@ -117,8 +117,8 @@ CLASS lcl_print_driver_base DEFINITION.
         !iv_save_as_pdf TYPE abap_bool
       CHANGING
         !cs_repair      TYPE any
-        !ct_errors      TYPE ANY TABLE
-        !ct_comments    TYPE ANY TABLE
+        !ct_errors      TYPE STANDARD TABLE
+        !ct_comments    TYPE STANDARD TABLE
       RAISING
         lcx_print_driver_error.
 
@@ -135,8 +135,8 @@ CLASS lcl_print_driver_base DEFINITION.
         !iv_save_as_pdf TYPE abap_bool
       CHANGING
         !cs_repair      TYPE any
-        !ct_errors      TYPE ANY TABLE
-        !ct_comments    TYPE ANY TABLE
+        !ct_errors      TYPE STANDARD TABLE
+        !ct_comments    TYPE STANDARD TABLE
       RAISING
         lcx_print_driver_error.
 
@@ -147,8 +147,8 @@ CLASS lcl_print_driver_base DEFINITION.
         !iv_save_as_pdf TYPE abap_bool
       CHANGING
         !cs_repair      TYPE any
-        !ct_errors      TYPE ANY TABLE
-        !ct_comments    TYPE ANY TABLE
+        !ct_errors      TYPE STANDARD TABLE
+        !ct_comments    TYPE STANDARD TABLE
       RAISING
         lcx_print_driver_error.
 
@@ -185,14 +185,14 @@ CLASS lcl_print_driver_engine DEFINITION.
         !iv_save_as_pdf TYPE abap_bool DEFAULT abap_false
       CHANGING
         !cs_repair      TYPE any
-        !ct_errors      TYPE ANY TABLE
-        !ct_comments    TYPE ANY TABLE
+        !ct_errors      TYPE STANDARD TABLE
+        !ct_comments    TYPE STANDARD TABLE
       RAISING
         lcx_print_driver_error.
 
   PRIVATE SECTION.
-    "! Resolves AUFNR (Order) -> VBELN (Contract / Sales Doc).
-    "! Checks AUFK -> KDAUF first (service order case),
+    "! Resolves AUFNR (Order) -&gt; VBELN (Contract / Sales Doc).
+    "! Checks AUFK -&gt; KDAUF first (service order case),
     "! then falls back to treating AUFNR as a direct VBELN.
     METHODS resolve_contract
       IMPORTING
@@ -756,7 +756,7 @@ CLASS lcl_print_driver_base IMPLEMENTATION.
 
   METHOD get_user_print_defaults.
     DATA: ls_user_defaults TYPE usdefaults,
-          lv_user_printer  TYPE paramval.
+          lv_user_printer  TYPE char40.
 
     CALL FUNCTION 'SUSR_USER_DEFAULTS_GET'
       EXPORTING
