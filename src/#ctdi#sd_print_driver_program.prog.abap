@@ -73,37 +73,33 @@ FORM entry USING ent_retco TYPE sysubrc
 
       " Mark NAST as successfully processed (vstat = '2')
       nast-vstat   = '2'.
-      nast-veraend = abap_true.
       /ctdi/cl_print_driver_log=>log_info(
         |NAST protocol: Output { lv_repair_id } marked as successful| ).
 
     CATCH /ctdi/cx_print_driver_error INTO DATA(lx_driver_err).
       /ctdi/cl_print_driver_log=>log_exception( lx_driver_err ).
 
-      " Store the error in NAST message fields — visible on output screen
-      CLEAR: nast-msgid, nast-msgnr, nast-msgty,
-             nast-msgv1, nast-msgv2, nast-msgv3, nast-msgv4.
-      nast-msgty = 'E'.
-      nast-msgid = '/CTDI/PRINT'.
-      nast-msgnr = '001'.
-      nast-msgv1 = lx_driver_err->message(50).
-      DATA(lv_msg_len) = strlen( lx_driver_err->message ).
-      IF lv_msg_len > 50.
-        nast-msgv2 = lx_driver_err->message+50(50).
-      ENDIF.
-      IF lv_msg_len > 100.
-        nast-msgv3 = lx_driver_err->message+100(50).
-      ENDIF.
-      IF lv_msg_len > 150.
-        nast-msgv4 = lx_driver_err->message+150(50).
-      ENDIF.
+      " Store the error via MESSAGE for the NACE output protocol
+      MESSAGE e001(/ctdi/print)
+        WITH lx_driver_err->get_text( )
+        INTO sy-msgli.
+      CALL FUNCTION 'MESSAGE_STORE'
+        EXPORTING
+          arbgb  = '/CTDI/PRINT'
+          msgnr  = '001'
+          msgty  = 'E'
+          msgv1  = sy-msgv1
+          msgv2  = sy-msgv2
+          msgv3  = sy-msgv3
+          msgv4  = sy-msgv4
+        EXCEPTIONS
+          OTHERS = 0.
 
       " Reset NAST to 'New' (vstat = '0') so the output is retried
       " on the next NACE scheduling run instead of remaining stuck
       " in error status.
       nast-vstat         = '0'.
-      nast-veraend       = abap_true.
-      nast-anzah_versuche = 0.
+      nast-anzal         = 0.
       /ctdi/cl_print_driver_log=>log_warning(
         |NAST protocol: Output { lv_repair_id } reset to New for retry| ).
       ent_retco = 4.
