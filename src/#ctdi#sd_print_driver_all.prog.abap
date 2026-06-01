@@ -1132,18 +1132,14 @@ ENDFORM.
 *&---------------------------------------------------------------------*
 FORM show_log.
   DATA: lt_log_handles TYPE bal_t_logh,
-        ls_log_filter  TYPE bal_s_lfil,
-        lt_log_numbers TYPE bal_t_logn,
-        lv_text        TYPE string.
+        ls_log_filter  TYPE bal_s_lfil.
 
-  " Find BAL logs for this repair ID in the print driver subobject
+  CLEAR ls_log_filter.
+
   ls_log_filter-object    = '/CTDI/PRINT'.
   ls_log_filter-subobject = 'DRIVER'.
-  ls_log_filter-logon     = 'X'.  " Include user name filter
   ls_log_filter-aluser    = sy-uname.
-
-  " Also filter by free text containing the repair ID
-  ls_log_filter-free_search = |{ p_aufnr }|.
+  ls_log_filter-extnumber = |{ p_aufnr }|.
 
   " Read all matching log handles
   CALL FUNCTION 'BAL_DB_SEARCH'
