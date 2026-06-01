@@ -14,8 +14,8 @@ TABLES: nast, tnapr.
 SELECTION-SCREEN BEGIN OF BLOCK b1 WITH FRAME TITLE TEXT-002.
 PARAMETERS: p_aufnr TYPE aufk-aufnr.
 PARAMETERS: p_sernr TYPE equi-sernr.
-PARAMETERS: p_pdf   as checkbox default ' '.
-PARAMETERS: p_sf    as checkbox NO-DISPLAY.
+PARAMETERS: p_pdf   AS CHECKBOX DEFAULT abap_false.
+PARAMETERS: p_sf    TYPE abap_bool DEFAULT abap_false NO-DISPLAY.
 SELECTION-SCREEN END OF BLOCK b1.
 
 *&---------------------------------------------------------------------*
