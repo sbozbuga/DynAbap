@@ -837,8 +837,8 @@ CLASS lcl_print_driver_engine IMPLEMENTATION.
     " Try: Service Order -> Contract via AUFK-KDAUF (customer contract number)
     SELECT SINGLE kdauf
       FROM aufk
-      INTO rv_contract_id
-      WHERE aufnr = lv_aufnr
+      INTO @rv_contract_id
+      WHERE aufnr = @lv_aufnr
         AND kdauf <> @space.
 
     IF sy-subrc = 0.
@@ -850,8 +850,8 @@ CLASS lcl_print_driver_engine IMPLEMENTATION.
     " Fallback: treat AUFNR as a direct VBELN in VBAK
     SELECT SINGLE vbeln
       FROM vbak
-      INTO rv_contract_id
-      WHERE vbeln = lv_aufnr.
+      INTO @rv_contract_id
+      WHERE vbeln = @lv_aufnr.
 
     IF sy-subrc = 0.
       lcl_print_driver_log=>log_info(
