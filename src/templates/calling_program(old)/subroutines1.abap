@@ -19,7 +19,7 @@ FORM entry_sf.
   PERFORM get_repair_result USING gf_qmnum gf_qmcod.         " get repair result
   PERFORM get_comment.                              " get comment
 
-  PERFORM print_new CHANGING l_fail.
+  PERFORM print_new USING abap_false CHANGING l_fail.
   IF l_fail IS NOT INITIAL."not included in new print logic : fallback to old
     PERFORM print_sf.                                 " Fehlereport
   ENDIF.
@@ -32,6 +32,7 @@ ENDFORM.                    "entry_sf
 *       text
 *----------------------------------------------------------------------*
 FORM entry_pdf.
+  DATA l_fail VALUE abap_true.
 *PERFORM check_if_swap USING pi_equnr CHANGING pc_equnr_rlf.
   PERFORM check_sernr_swap CHANGING gf_swap_flag gf_retlief_nr. "
 *PERFORM get_retlief_from_aufnr CHANGING gf_retlief_nr gf_equnr_retlief.     " Retourenlieferung mit der LIEFNR und EQUNR
@@ -42,7 +43,10 @@ FORM entry_pdf.
   PERFORM get_repair_result USING gf_qmnum gf_qmcod.         " get repair result
   PERFORM get_comment.                              " get comment
 *------- create PDF -----------------*
-  PERFORM create_pdf.                               " create pdf and open popup window to save the document
+  PERFORM print_new USING abap_true CHANGING l_fail.
+  IF l_fail IS NOT INITIAL.
+    PERFORM create_pdf.                               " create pdf and open popup window to save the document
+  ENDIF.
 ENDFORM.                    "entry_pdf
 
 *&---------------------------------------------------------------------*
@@ -1411,3 +1415,58 @@ FORM check_sernr_swap CHANGING pc_swap_flag pc_retlief_nr.
   gf_equnr_retlief = ls_snx_tab-ral_equnr.
   pc_swap_flag     = ls_snx_tab-tausch   .
 ENDFORM.                    "check_sernr_swap
+
+
+*&---------------------------------------------------------------------*
+*&      Form  print_new
+*&---------------------------------------------------------------------*
+*       Checks if there is a customized print configuration for the
+*       given repair order. If found, triggers the print engine;
+*       otherwise, signals failure (cv_fail = abap_true) to fallback.
+*----------------------------------------------------------------------*
+FORM print_new USING    iv_save_as_pdf TYPE abap_bool
+               CHANGING cv_fail        TYPE abap_bool.
+  DATA: lx_no_config  TYPE REF TO /ctdi/cx_no_config_found,
+        lx_driver_err TYPE REF TO /ctdi/cx_print_driver_error,
+        lx_root       TYPE REF TO cx_root,
+        lo_engine     TYPE REF TO /ctdi/cl_print_driver_engine.
+
+  cv_fail = abap_true.
+
+  " Guard: Order ID must be present
+  IF p_aufnr IS INITIAL.
+    RETURN.
+  ENDIF.
+
+  TRY.
+      " Instantiate unified print engine
+      CREATE OBJECT lo_engine.
+
+      " Trigger engine execution
+      lo_engine->execute(
+        EXPORTING
+          iv_repair_id   = p_aufnr
+          iv_save_as_pdf = iv_save_as_pdf
+        CHANGING
+          cs_repair      = /cellag/alcarep
+          ct_errors      = /cellag/alcarep_error
+          ct_comments    = gt_comment_lines ).
+
+      " If it completes without cx_no_config_found, the new print was successful
+      cv_fail = abap_false.
+
+    CATCH /ctdi/cx_no_config_found INTO lx_no_config.
+      " No customizing found for the new print driver - fallback to old print
+      cv_fail = abap_true.
+
+    CATCH /ctdi/cx_print_driver_error INTO lx_driver_err.
+      " Log the engine/provider error
+      /ctdi/cl_print_driver_log=>log_exception( lx_driver_err ).
+      cv_fail = abap_true.
+
+    CATCH cx_root INTO lx_root.
+      " Log any other unexpected exception
+      /ctdi/cl_print_driver_log=>log_exception( lx_root ).
+      cv_fail = abap_true.
+  ENDTRY.
+ENDFORM.                    "print_new

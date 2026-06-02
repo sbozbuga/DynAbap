@@ -27,7 +27,7 @@ FORM on_new_entry.
   ls_entry = <vim_total_struc>.
 
   " Delegate auto-generation to customizing engine static method
-  /ctdi/cl_repair_cust_engine=>on_new_entry( CHANGING cs_entry = ls_entry ).
+  /ctdi/cl_print_cust_engine=>on_new_entry( CHANGING cs_entry = ls_entry ).
 
   " Update the maintenance view work area structure
   <vim_total_struc> = ls_entry.
@@ -51,7 +51,7 @@ FORM on_before_save.
 
     TRY.
         " Delegate all class, form, and method validations to customizing engine class
-        /ctdi/cl_repair_cust_engine=>validate_entry( ls_entry ).
+        /ctdi/cl_print_cust_engine=>validate_entry( ls_entry ).
       CATCH /ctdi/cx_print_error INTO DATA(lx_err).
         " Issue warning message in SM30
         MESSAGE lx_err->message TYPE 'W'.

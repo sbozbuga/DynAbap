@@ -12,6 +12,7 @@
     <item>/.abaplintignore</item>
     <item>/.github/*</item>
     <item>/src/templates/*</item>
+    <item>/src/#ctdi#workshop_m.fugr.*</item>
    </IGNORE>
   </DATA>
  </asx:values>

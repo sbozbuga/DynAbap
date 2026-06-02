@@ -27,3 +27,7 @@ node_modules/
 abap-mcp-server/*.*
 vsp.exe
 dist/
+
+# Exclude workshop_m function group
+src/#ctdi#workshop_m.fugr.*
+
