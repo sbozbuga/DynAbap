@@ -362,12 +362,15 @@ CLASS lcl_print_driver_log IMPLEMENTATION.
       RETURN.
     ENDIF.
 
-    APPEND lv_handle TO lt_handles.
+    INSERT lv_handle INTO TABLE lt_handles.
     CALL FUNCTION 'BAL_DB_SAVE'
       EXPORTING
         i_t_log_handle = lt_handles
       EXCEPTIONS
         OTHERS         = 1.
+    IF sy-subrc <> 0.
+      RETURN.
+    ENDIF.
   ENDMETHOD.
 
 ENDCLASS.
@@ -487,7 +490,12 @@ CLASS lcl_print_driver_base IMPLEMENTATION.
         i_language    = sy-langu
         i_application = 'SAPDEFAULT'
       IMPORTING
-        e_devtype     = lv_devtype.
+        e_devtype     = lv_devtype
+      EXCEPTIONS
+        OTHERS        = 1.
+    IF sy-subrc <> 0.
+      lv_devtype = 'SAPDEFAULT'.
+    ENDIF.
     ls_output_options-tdprinter = lv_devtype.
 
     IF iv_save_as_pdf = abap_true.
@@ -669,6 +677,9 @@ CLASS lcl_print_driver_base IMPLEMENTATION.
         system_error   = 2
         internal_error = 3
         OTHERS         = 4.
+    IF sy-subrc <> 0.
+      " Muted
+    ENDIF.
 
     IF lv_subrc <> 0.
       lv_err = |Adobe Form { iv_form_name } execution failed (subrc={ lv_subrc })|.
@@ -709,7 +720,12 @@ CLASS lcl_print_driver_base IMPLEMENTATION.
       EXPORTING
         buffer     = iv_pdf_data
       TABLES
-        binary_tab = lt_data.
+        binary_tab = lt_data
+      EXCEPTIONS
+        OTHERS     = 1.
+    IF sy-subrc <> 0.
+      RETURN.
+    ENDIF.
 
     cl_gui_frontend_services=>file_save_dialog(
       EXPORTING
@@ -940,7 +956,7 @@ CLASS lcl_nast_handler IMPLEMENTATION.
     check_key_guard( ).
 
     " Store the error message via MESSAGE_STORE for NACE output protocol
-    MESSAGE e001(/ctdi/print)
+    MESSAGE ID '/CTDI/PRINT' TYPE 'E' NUMBER '001'
       WITH iv_message
       INTO sy-msgli.
     CALL FUNCTION 'MESSAGE_STORE'
@@ -954,7 +970,10 @@ CLASS lcl_nast_handler IMPLEMENTATION.
         msgv4  = sy-msgv4
         txtnr  = '001'
       EXCEPTIONS
-        OTHERS = 0.
+        OTHERS = 1.
+    IF sy-subrc <> 0.
+      " Muted
+    ENDIF.
   ENDMETHOD.
 
   METHOD check_key_guard.

@@ -85,7 +85,7 @@ FORM entry USING ent_retco TYPE sysubrc
       /ctdi/cl_print_driver_log=>log_exception( lx_driver_err ).
 
       " Store the error via MESSAGE for the NACE output protocol
-      MESSAGE e001(/ctdi/print)
+      MESSAGE ID '/CTDI/PRINT' TYPE 'E' NUMBER '001'
         WITH lx_driver_err->get_text( )
         INTO sy-msgli.
       CALL FUNCTION 'MESSAGE_STORE'
@@ -99,7 +99,10 @@ FORM entry USING ent_retco TYPE sysubrc
           msgv4  = sy-msgv4
           txtnr  = '001'
         EXCEPTIONS
-          OTHERS = 0.
+          OTHERS = 1.
+      IF sy-subrc <> 0.
+        " Muted
+      ENDIF.
 
       " Reset NAST to 'New' (vstat = '0') so the output is retried
       " on the next NACE scheduling run instead of remaining stuck

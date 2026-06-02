@@ -131,12 +131,15 @@ CLASS /ctdi/cl_print_driver_log IMPLEMENTATION.
     ENDIF.
 
     " 5. Save log to database
-    APPEND lv_handle TO lt_handles.
+    INSERT lv_handle INTO TABLE lt_handles.
     CALL FUNCTION 'BAL_DB_SAVE'
       EXPORTING
         i_t_log_handle = lt_handles
       EXCEPTIONS
         OTHERS         = 1.
+    IF sy-subrc <> 0.
+      RETURN.
+    ENDIF.
   ENDMETHOD.
 
 ENDCLASS.

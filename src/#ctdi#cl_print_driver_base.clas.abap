@@ -228,7 +228,12 @@ CLASS /ctdi/cl_print_driver_base IMPLEMENTATION.
         i_language    = sy-langu
         i_application = 'SAPDEFAULT'
       IMPORTING
-        e_devtype     = lv_devtype.
+        e_devtype     = lv_devtype
+      EXCEPTIONS
+        OTHERS        = 1.
+    IF sy-subrc <> 0.
+      lv_devtype = 'SAPDEFAULT'.
+    ENDIF.
     ls_output_options-tdprinter = lv_devtype.
 
     " PDF mode: intercept OTF data
@@ -421,6 +426,9 @@ CLASS /ctdi/cl_print_driver_base IMPLEMENTATION.
         system_error   = 2
         internal_error = 3
         OTHERS         = 4.
+    IF sy-subrc <> 0.
+      " Muted
+    ENDIF.
 
     IF lv_subrc <> 0.
       lv_err = |Adobe Form { iv_form_name } execution failed (subrc={ lv_subrc })|.
@@ -465,7 +473,12 @@ CLASS /ctdi/cl_print_driver_base IMPLEMENTATION.
       EXPORTING
         buffer     = iv_pdf_data
       TABLES
-        binary_tab = lt_data.
+        binary_tab = lt_data
+      EXCEPTIONS
+        OTHERS     = 1.
+    IF sy-subrc <> 0.
+      RETURN.
+    ENDIF.
 
     " Show file-save dialog
     cl_gui_frontend_services=>file_save_dialog(

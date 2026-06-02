@@ -211,6 +211,9 @@ CLASS /CTDI/CL_PRINT_CUST_ENGINE IMPLEMENTATION.
               fields        = lt_fields
             EXCEPTIONS
               OTHERS        = 1.
+          IF sy-subrc <> 0.
+            lv_returncode = 'A'.
+          ENDIF.
 
           IF lv_returncode <> 'A'.
             READ TABLE lt_fields INTO ls_field INDEX 1.

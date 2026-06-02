@@ -55,13 +55,13 @@ CLASS /ctdi/cl_print_driver_template IMPLEMENTATION.
 
     " Example 2: Select error/defect records.
     " ct_errors should be filled from your process-specific defect/log table.
-    SELECT *
-      FROM /ctdi/repair_error
-      INTO TABLE @ct_errors
-      WHERE aufnr = @lv_repair_id.
-
-    /ctdi/cl_print_driver_log=>log_info(
-      |Loaded { lines( ct_errors ) } error/defect lines for Repair { iv_repair_id }| ).
+    " SELECT *
+    "   FROM /ctdi/repair_error
+    "   INTO TABLE @ct_errors
+    "   WHERE aufnr = @lv_repair_id.
+    "
+    " /ctdi/cl_print_driver_log=>log_info(
+    "   |Loaded { lines( ct_errors ) } error/defect lines for Repair { iv_repair_id }| ).
 
     " Example 3: Enriching comments or custom long texts.
     " Developers can append custom info or read standard SAP texts (READ_TEXT) here.
