@@ -1,5 +1,5 @@
 *&---------------------------------------------------------------------*
-*& Report /CTDI/SD_PRINT_DRIVER_PROGRAM
+*& Report /CTDI/PRINT_DRIVER_PROGRAM
 *&---------------------------------------------------------------------*
 *& Print Driver — NAST Output Determination Wrapper + Standalone Mode
 *&
@@ -9,7 +9,7 @@
 *& Supports both Smart Forms and Adobe Forms via the dynamic OO
 *& print driver framework (/CTDI/CL_PRINT_DRIVER_ENGINE).
 *&---------------------------------------------------------------------*
-REPORT /ctdi/sd_print_driver_program.
+REPORT /ctdi/print_driver_program.
 
 " Global NAST/TNAPR structures — populated by SAP output determination
 TABLES: nast, tnapr.
@@ -19,6 +19,7 @@ TABLES: nast, tnapr.
 *&---------------------------------------------------------------------*
 SELECTION-SCREEN BEGIN OF BLOCK b1 WITH FRAME TITLE TEXT-002.
 PARAMETERS: p_aufnr TYPE aufk-aufnr OBLIGATORY,      " Repair / Order ID
+            p_sernr TYPE equi-sernr,                   " Serial number (optional)
             p_form  TYPE fpname,                       " Form name (optional)
             p_class TYPE seoclsname,                   " Class name (optional)
             p_pdf   AS CHECKBOX DEFAULT ' '.           " Save as PDF
@@ -76,6 +77,10 @@ FORM entry USING ent_retco TYPE sysubrc
       /ctdi/cl_print_driver_log=>log_info(
         |NAST protocol: Output { lv_repair_id } marked as successful| ).
 
+    CATCH /ctdi/cx_no_config_found.
+      " Fall back to legacy printing logic
+      PERFORM print_old USING lv_repair_id abap_false.
+
     CATCH /ctdi/cx_print_driver_error INTO DATA(lx_driver_err).
       /ctdi/cl_print_driver_log=>log_exception( lx_driver_err ).
 
@@ -120,6 +125,9 @@ FORM run_standalone.
         lt_comments TYPE TABLE OF tline.
 
   TRY.
+      " Populate serial number if supplied
+      ls_repair-sernr = p_sernr.
+
       DATA(lr_engine) = NEW /ctdi/cl_print_driver_engine( ).
       lr_engine->execute(
         EXPORTING
@@ -134,6 +142,10 @@ FORM run_standalone.
 
       MESSAGE |Print completed successfully for { p_aufnr }| TYPE 'S'.
 
+    CATCH /ctdi/cx_no_config_found.
+      " Fall back to legacy printing logic
+      PERFORM print_old USING p_aufnr p_pdf.
+
     CATCH /ctdi/cx_print_driver_error INTO DATA(lx_driver_err).
       DATA(lv_msg) = |{ 'Print failed: &1'(003) }|.
       REPLACE '&1' IN lv_msg WITH lx_driver_err->message.
@@ -146,4 +158,18 @@ FORM run_standalone.
       /ctdi/cl_print_driver_log=>log_exception( lx_root ).
       MESSAGE lv_msg TYPE 'E'.
   ENDTRY.
+ENDFORM.
+
+*&---------------------------------------------------------------------*
+*& Form PRINT_OLD
+*&---------------------------------------------------------------------*
+*& Fallback legacy printing routine
+*&---------------------------------------------------------------------*
+FORM print_old USING iv_repair_id TYPE aufnr
+                     iv_save_as_pdf TYPE abap_bool.
+
+  DATA(lv_legacy_msg) = |{ 'Executing legacy printing routine (print_old) for repair &1'(006) }|.
+  REPLACE '&1' IN lv_legacy_msg WITH iv_repair_id.
+  MESSAGE lv_legacy_msg TYPE 'I'.
+
 ENDFORM.

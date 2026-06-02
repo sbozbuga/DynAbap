@@ -1,5 +1,5 @@
 *&---------------------------------------------------------------------*
-*& Report /CTDI/SD_PRINT_DRIVER_ALL
+*& Report /CTDI/PRINT_DRIVER_ALL
 *&---------------------------------------------------------------------*
 *& SELF-CONTAINED Print Driver — All classes are LOCAL to this program.
 *&
@@ -12,7 +12,7 @@
 *& No external SE24 global classes required — everything is defined
 *& as local classes within this report for easy transport and setup.
 *&---------------------------------------------------------------------*
-REPORT /ctdi/sd_print_driver_all.
+REPORT /ctdi/print_driver_all.
 
 " NAST / TNAPR structures — populated by SAP output determination
 TABLES: nast, tnapr.
@@ -191,8 +191,8 @@ CLASS lcl_print_driver_engine DEFINITION.
         lcx_print_driver_error.
 
   PRIVATE SECTION.
-    "! Resolves AUFNR (Order) -&gt; VBELN (Contract / Sales Doc).
-    "! Checks AUFK -&gt; KDAUF first (service order case),
+    "! Resolves AUFNR (Order) -> VBELN (Contract / Sales Doc).
+    "! Checks AUFK -> KDAUF first (service order case),
     "! then falls back to treating AUFNR as a direct VBELN.
     METHODS resolve_contract
       IMPORTING

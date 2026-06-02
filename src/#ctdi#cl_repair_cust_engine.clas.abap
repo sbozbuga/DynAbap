@@ -93,7 +93,7 @@ CLASS /CTDI/CL_REPAIR_CUST_ENGINE IMPLEMENTATION.
   METHOD on_new_entry.
     " Default class name and method name to standard base provider class
     IF cs_entry-class_name IS INITIAL.
-      cs_entry-class_name = '/CTDI/CL_REPAIR_PRINT_BASE'.
+      cs_entry-class_name = '/CTDI/CL_PRINT_DRIVER_BASE'.
     ENDIF.
     cs_entry-method_name = 'EXECUTE'.
   ENDMETHOD.
@@ -225,10 +225,10 @@ CLASS /CTDI/CL_REPAIR_CUST_ENGINE IMPLEMENTATION.
                 message   = 'Class generation cancelled by user.'.
           ENDIF.
 
-          " Copy standard base class /CTDI/CL_REPAIR_PRINT_BASE to the new class name
+          " Copy standard base class /CTDI/CL_PRINT_DRIVER_BASE to the new class name
           CALL FUNCTION 'SEO_CLASS_COPY'
             EXPORTING
-              clsname      = '/CTDI/CL_REPAIR_PRINT_BASE'
+              clsname      = '/CTDI/CL_PRINT_DRIVER_BASE'
               new_clsname  = is_entry-class_name
               devclass     = lv_package
             EXCEPTIONS
@@ -263,14 +263,14 @@ CLASS /CTDI/CL_REPAIR_CUST_ENGINE IMPLEMENTATION.
           repair_id = CONV aufnr( is_entry-vbeln )
           message   = lv_class_err.
     ELSE.
-      " Validate Interface Implementation on Existing Classes
+      " Validate Interface Implementation on Existing Classes (Strictly enforces /CTDI/IF_PRINT_DRIVER)
       SELECT SINGLE clsname FROM seometarel
         INTO @DATA(lv_implements)
         WHERE clsname = @lv_class_name
-          AND refclsname = '/CTDI/IF_REPAIR_PRINT_PROVIDER'
+          AND refclsname = '/CTDI/IF_PRINT_DRIVER'
           AND reltype = '1'. " 1 = Interface Implementation
       IF sy-subrc <> 0.
-        DATA(lv_interface_err) = |{ 'Class &1 does not implement interface /CTDI/IF_REPAIR_PRINT_PROVIDER'(010) }|.
+        DATA(lv_interface_err) = |{ 'Class &1 does not implement interface /CTDI/IF_PRINT_DRIVER'(010) }|.
         REPLACE '&1' IN lv_interface_err WITH is_entry-class_name.
         RAISE EXCEPTION TYPE /ctdi/cx_print_error
           EXPORTING
@@ -285,8 +285,8 @@ CLASS /CTDI/CL_REPAIR_CUST_ENGINE IMPLEMENTATION.
           WHERE clsname = @lv_class_name
             AND cmpname = @is_entry-method_name.
         IF sy-subrc <> 0.
-          " Also check if it implements interface method (e.g. /CTDI/IF_REPAIR_PRINT_PROVIDER~PRINT)
-          DATA(lv_interface_method) = |/CTDI/IF_REPAIR_PRINT_PROVIDER~{ is_entry-method_name }|.
+          " Also check if it implements interface method (e.g. /CTDI/IF_PRINT_DRIVER~EXECUTE)
+          DATA(lv_interface_method) = |/CTDI/IF_PRINT_DRIVER~{ is_entry-method_name }|.
           SELECT SINGLE cmpname FROM seocompo
             INTO @lv_method_exists
             WHERE clsname = @lv_class_name
@@ -380,7 +380,7 @@ CLASS /CTDI/CL_REPAIR_CUST_ENGINE IMPLEMENTATION.
 
       " If we reach here, we found a custom mandatory parameter!
       " If the base class is configured, it will dump because it cannot supply this parameter.
-      IF iv_class_name = '/CTDI/CL_REPAIR_PRINT_BASE'.
+      IF iv_class_name = '/CTDI/CL_PRINT_DRIVER_BASE'.
         DATA(lv_err_msg) = |{ 'Form &1 requires custom mandatory parameter &2 which standard base class does not support.'(012) }|.
         REPLACE '&1' IN lv_err_msg WITH iv_form_name.
         REPLACE '&2' IN lv_err_msg WITH ls_param-paramname.

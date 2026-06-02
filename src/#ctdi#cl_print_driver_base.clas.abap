@@ -1,6 +1,5 @@
 CLASS /ctdi/cl_print_driver_base DEFINITION
   PUBLIC
-  FINAL
   CREATE PUBLIC.
 
   PUBLIC SECTION.
@@ -132,6 +131,14 @@ CLASS /ctdi/cl_print_driver_base IMPLEMENTATION.
 
 
   METHOD render_form.
+    " Ensure passed repair header is valid
+    IF cs_repair IS INITIAL.
+      /ctdi/cl_print_driver_log=>log_warning(
+        |Passed repair header data is empty - | &&
+        |Print execution bypassed for Repair ID { iv_repair_id }| ).
+      RETURN.
+    ENDIF.
+
     DATA(lv_form_type) = detect_form_type( iv_form_name ).
 
     IF lv_form_type = 'S'.
