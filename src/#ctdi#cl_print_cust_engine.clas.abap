@@ -221,7 +221,7 @@ CLASS /CTDI/CL_PRINT_CUST_ENGINE IMPLEMENTATION.
             " Cancelled: abort generation with error
             RAISE EXCEPTION TYPE /ctdi/cx_print_error
               EXPORTING
-                repair_id = is_entry-vbeln
+                repair_id = CONV aufnr( is_entry-vbeln )
                 message   = 'Class generation cancelled by user.'.
           ENDIF.
 
@@ -249,7 +249,7 @@ CLASS /CTDI/CL_PRINT_CUST_ENGINE IMPLEMENTATION.
             DATA(lv_subrc) = sy-subrc.
             RAISE EXCEPTION TYPE /ctdi/cx_print_error
               EXPORTING
-                repair_id = is_entry-vbeln
+                repair_id = CONV aufnr( is_entry-vbeln )
                 message   = |Failed to generate class (SUBRC: { lv_subrc }).|.
           ENDIF.
         ENDIF.
