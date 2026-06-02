@@ -61,10 +61,14 @@ CLASS /CTDI/CL_PRINT_CUST_ENGINE IMPLEMENTATION.
     ENDIF.
 
     " 2. Check if the current system repository is modifiable
-    DATA: lv_system_edit TYPE c.
+    DATA: lv_system_edit TYPE c,
+          lv_system_name TYPE t000-ccname,
+          lv_system_type TYPE t000-cccategory.
 
     CALL FUNCTION 'TR_SYS_PARAMS'
       IMPORTING
+        systemname    = lv_system_name
+        systemtype    = lv_system_type
         sys_edit      = lv_system_edit  " 'W' = Modifiable, 'R' = Read-only
       EXCEPTIONS
         no_systemname = 1

@@ -1157,7 +1157,8 @@ ENDFORM.
 *&   Subobject = DRIVER
 *&---------------------------------------------------------------------*
 FORM show_log.
-  DATA: lt_log_handles TYPE bal_t_logh,
+  DATA: lt_log_headers TYPE balhdr_t,
+        lt_log_handles TYPE bal_t_logh,
         ls_log_filter  TYPE bal_s_lfil.
 
   CLEAR ls_log_filter.
@@ -1167,19 +1168,26 @@ FORM show_log.
   ls_log_filter-aluser    = VALUE #( ( sign = 'I' option = 'EQ' low = sy-uname ) ).
   ls_log_filter-extnumber = VALUE #( ( sign = 'I' option = 'EQ' low = |{ p_aufnr }| ) ).
 
-  " Read all matching log handles
+  " Read all matching log headers
   CALL FUNCTION 'BAL_DB_SEARCH'
     EXPORTING
       i_s_log_filter = ls_log_filter
     IMPORTING
-      e_t_log_handle = lt_log_handles
+      e_t_log_header = lt_log_headers
     EXCEPTIONS
-      OTHERS         = 1.
+      log_not_found       = 1
+      no_filter_criteria  = 2
+      OTHERS              = 3.
 
-  IF sy-subrc <> 0 OR lt_log_handles IS INITIAL.
+  IF sy-subrc <> 0 OR lt_log_headers IS INITIAL.
     MESSAGE |No application logs found for Repair { p_aufnr } in SLG1| TYPE 'I'.
     RETURN.
   ENDIF.
+
+  " Extract log handles from header table
+  LOOP AT lt_log_headers INTO DATA(ls_header).
+    INSERT ls_header-log_handle INTO TABLE lt_log_handles.
+  ENDLOOP.
 
   " Display the log via SLG1 transaction call
   CALL FUNCTION 'BAL_DSP_LOG_DISPLAY'
