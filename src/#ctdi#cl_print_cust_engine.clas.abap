@@ -128,7 +128,6 @@ CLASS /CTDI/CL_PRINT_CUST_ENGINE IMPLEMENTATION.
 
 
   METHOD validate_entry.
-    DATA: lv_new_clskey TYPE seoclskey.
 
     " 1. Class name is required
     IF is_entry-class_name IS INITIAL.
@@ -231,20 +230,28 @@ CLASS /CTDI/CL_PRINT_CUST_ENGINE IMPLEMENTATION.
           ENDIF.
 
           " Copy standard base class /CTDI/CL_PRINT_DRIVER_BASE to the new class name
+          DATA: ls_clskey     TYPE seoclskey,
+                ls_new_clskey TYPE seoclskey,
+                ls_new_class  TYPE vseoclass.
+
+          ls_clskey     = '/CTDI/CL_PRINT_DRIVER_BASE'.
+          ls_new_clskey = is_entry-class_name.
+
           CALL FUNCTION 'SEO_CLASS_COPY'
             EXPORTING
-              clsname      = '/CTDI/CL_PRINT_DRIVER_BASE'
-              new_clsname  = is_entry-class_name
-              devclass     = lv_package
+              clskey       = ls_clskey
+              new_clskey   = ls_new_clskey
             IMPORTING
-              new_clskey   = lv_new_clskey
+              new_class    = ls_new_class
+            CHANGING
+              devclass     = lv_package
             EXCEPTIONS
-              existing     = 1
-              is_interface = 2
-              not_created  = 3
-              db_error     = 4
-              no_source    = 5
-              no_authority = 6
+              not_existing = 1
+              deleted      = 2
+              is_interface = 3
+              not_copied   = 4
+              db_error     = 5
+              no_access    = 6
               OTHERS       = 7.
 
           IF sy-subrc = 0.

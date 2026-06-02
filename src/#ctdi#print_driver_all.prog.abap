@@ -967,14 +967,16 @@ CLASS lcl_nast_handler IMPLEMENTATION.
     CALL FUNCTION 'MESSAGE_STORE'
       EXPORTING
         arbgb  = '/CTDI/PRINT'
-        msgnr  = '001'
         msgty  = 'E'
         msgv1  = sy-msgv1
         msgv2  = sy-msgv2
         msgv3  = sy-msgv3
         msgv4  = sy-msgv4
+        txtnr  = '001'
       EXCEPTIONS
-        OTHERS = 1.
+        message_type_not_valid = 1
+        not_active             = 2
+        OTHERS                 = 3.
     IF sy-subrc <> 0.
       " Muted
     ENDIF.
