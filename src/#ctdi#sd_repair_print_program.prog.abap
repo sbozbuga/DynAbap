@@ -75,12 +75,10 @@ FORM entry USING ent_retco TYPE sysubrc
     RETURN.
   ENDIF.
 
-  " Format the Sales Document / Repair ID (enforce standard internal format)
+  " Format the Document / Repair ID (enforce standard internal format)
   lv_repair_id = |{ nast-objky ALPHA = IN }|.
 
   TRY.
-      " Optional: populate standard repair data here if needed by your print class/forms
-*      ls_repair-vbeln = lv_repair_id.
 
       " Instantiate the dynamic mapping and printing engine
       CREATE OBJECT lr_engine.
