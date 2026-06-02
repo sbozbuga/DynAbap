@@ -12,6 +12,13 @@
     <FIXPT>X</FIXPT>
     <UNICODE>X</UNICODE>
    </VSEOCLASS>
+   <DESCRIPTIONS_SUB>
+    <SEOCLASSTX>
+     <CLSNAME>/CTDI/CX_PRINT_DRIVER_ERROR</CLSNAME>
+     <LANGU>D</LANGU>
+     <DESCRIPT>Ausnahme: Druckertreiber-Basisklasse</DESCRIPT>
+    </SEOCLASSTX>
+   </DESCRIPTIONS_SUB>
   </asx:values>
  </asx:abap>
 </abapGit>

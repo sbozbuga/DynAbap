@@ -11,6 +11,13 @@
     <FIXPT>X</FIXPT>
     <UNICODE>X</UNICODE>
    </VSEOCLASS>
+   <DESCRIPTIONS_SUB>
+    <SEOCLASSTX>
+     <CLSNAME>/CTDI/CL_PRINT_DRIVER_BASE</CLSNAME>
+     <LANGU>D</LANGU>
+     <DESCRIPT>Druckertreiber: Basisklasse (Smart Forms + Adobe Forms)</DESCRIPT>
+    </SEOCLASSTX>
+   </DESCRIPTIONS_SUB>
   </asx:values>
  </asx:abap>
 </abapGit>

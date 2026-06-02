@@ -1,4 +1,4 @@
-﻿<?xml version="1.0" encoding="utf-8"?>
+<?xml version="1.0" encoding="utf-8"?>
 <abapGit version="v1.0.0" serializer="LCL_OBJECT_CLAS" serializer_version="v1.0.0">
  <asx:abap xmlns:asx="http://www.sap.com/abapxml" version="1.0">
   <asx:values>
@@ -12,6 +12,11 @@
     <UNICODE>X</UNICODE>
    </VSEOCLASS>
    <DESCRIPTIONS_SUB>
+    <SEOCLASSTX>
+     <CLSNAME>/CTDI/CL_REPAIR_CUST_ENGINE</CLSNAME>
+     <LANGU>D</LANGU>
+     <DESCRIPT>Verkaufsreparatur Customizing- und Validierungs-Engine</DESCRIPT>
+    </SEOCLASSTX>
     <SEOSUBCOTX>
      <CMPNAME>NORMALIZE_CLASS_NAME</CMPNAME>
      <SCONAME>IV_CLASS_NAME</SCONAME>
@@ -20,9 +25,21 @@
     </SEOSUBCOTX>
     <SEOSUBCOTX>
      <CMPNAME>NORMALIZE_CLASS_NAME</CMPNAME>
+     <SCONAME>IV_CLASS_NAME</SCONAME>
+     <LANGU>D</LANGU>
+     <DESCRIPT>Objekttypname</DESCRIPT>
+    </SEOSUBCOTX>
+    <SEOSUBCOTX>
+     <CMPNAME>NORMALIZE_CLASS_NAME</CMPNAME>
      <SCONAME>RV_CLASS_NAME</SCONAME>
      <LANGU>E</LANGU>
      <DESCRIPT>Object Type Name</DESCRIPT>
+    </SEOSUBCOTX>
+    <SEOSUBCOTX>
+     <CMPNAME>NORMALIZE_CLASS_NAME</CMPNAME>
+     <SCONAME>RV_CLASS_NAME</SCONAME>
+     <LANGU>D</LANGU>
+     <DESCRIPT>Objekttypname</DESCRIPT>
     </SEOSUBCOTX>
     <SEOSUBCOTX>
      <CMPNAME>RESOLVE_CLASS_NAME</CMPNAME>
@@ -32,9 +49,21 @@
     </SEOSUBCOTX>
     <SEOSUBCOTX>
      <CMPNAME>RESOLVE_CLASS_NAME</CMPNAME>
+     <SCONAME>IV_CLASS_NAME</SCONAME>
+     <LANGU>D</LANGU>
+     <DESCRIPT>Objekttypname</DESCRIPT>
+    </SEOSUBCOTX>
+    <SEOSUBCOTX>
+     <CMPNAME>RESOLVE_CLASS_NAME</CMPNAME>
      <SCONAME>RV_CLASS_NAME</SCONAME>
      <LANGU>E</LANGU>
      <DESCRIPT>Object Type Name</DESCRIPT>
+    </SEOSUBCOTX>
+    <SEOSUBCOTX>
+     <CMPNAME>RESOLVE_CLASS_NAME</CMPNAME>
+     <SCONAME>RV_CLASS_NAME</SCONAME>
+     <LANGU>D</LANGU>
+     <DESCRIPT>Objekttypname</DESCRIPT>
     </SEOSUBCOTX>
    </DESCRIPTIONS_SUB>
   </asx:values>

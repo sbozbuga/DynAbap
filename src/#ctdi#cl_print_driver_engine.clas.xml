@@ -11,6 +11,13 @@
     <FIXPT>X</FIXPT>
     <UNICODE>X</UNICODE>
    </VSEOCLASS>
+   <DESCRIPTIONS_SUB>
+    <SEOCLASSTX>
+     <CLSNAME>/CTDI/CL_PRINT_DRIVER_ENGINE</CLSNAME>
+     <LANGU>D</LANGU>
+     <DESCRIPT>Druckertreiber: Zentrale Orchestrierungs-Engine</DESCRIPT>
+    </SEOCLASSTX>
+   </DESCRIPTIONS_SUB>
   </asx:values>
  </asx:abap>
 </abapGit>

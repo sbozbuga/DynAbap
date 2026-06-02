@@ -10,6 +10,13 @@
     <STATE>1</STATE>
     <UNICODE>X</UNICODE>
    </VSEOINTERF>
+   <DESCRIPTIONS_SUB>
+    <SEOINTERFTX>
+     <CLSNAME>/CTDI/IF_PRINT_DRIVER</CLSNAME>
+     <LANGU>D</LANGU>
+     <DESCRIPT>Druckertreiber: Provider-Interface</DESCRIPT>
+    </SEOINTERFTX>
+   </DESCRIPTIONS_SUB>
   </asx:values>
  </asx:abap>
 </abapGit>

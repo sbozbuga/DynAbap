@@ -15,6 +15,18 @@
      <LENGTH>32</LENGTH>
     </item>
    </TPOOL>
+   <I18N_TPOOL>
+    <I18N_SUB>
+     <LANGUAGE>D</LANGUAGE>
+     <TEXTPOOL>
+      <item>
+       <ID>R</ID>
+       <ENTRY>Ablaufdokumentation des Druckprozesses</ENTRY>
+       <LENGTH>38</LENGTH>
+      </item>
+     </TEXTPOOL>
+    </I18N_SUB>
+   </I18N_TPOOL>
   </asx:values>
  </asx:abap>
 </abapGit>
