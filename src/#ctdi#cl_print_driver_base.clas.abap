@@ -9,7 +9,6 @@ CLASS /ctdi/cl_print_driver_base DEFINITION
       FOR /ctdi/if_print_driver~execute.
 
   PROTECTED SECTION.
-  PRIVATE SECTION.
     "! Reads repair data from the database into cs_repair.
     "! Subclasses should redefine this method to supply custom data.
     METHODS read_data
@@ -90,6 +89,8 @@ CLASS /ctdi/cl_print_driver_base DEFINITION
         !iv_paramname TYPE string
       RETURNING
         VALUE(rv_has) TYPE abap_bool.
+
+  PRIVATE SECTION.
 ENDCLASS.
 
 
