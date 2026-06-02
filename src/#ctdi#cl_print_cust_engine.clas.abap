@@ -203,7 +203,7 @@ CLASS /CTDI/CL_PRINT_CUST_ENGINE IMPLEMENTATION.
           ls_field-value     = '/CTDI/WORKSHOP'.
           APPEND ls_field TO lt_fields.
 
-          CALL FUNCTION 'POPUP_TO_GET_VALUES'
+          CALL FUNCTION 'POPUP_GET_VALUES'
             EXPORTING
               titlebar      = 'Enter Target Development Package'(011)
             IMPORTING
