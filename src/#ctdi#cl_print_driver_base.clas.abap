@@ -16,8 +16,8 @@ CLASS /ctdi/cl_print_driver_base DEFINITION
         !iv_repair_id   TYPE aufnr
       CHANGING
         !cs_repair      TYPE any
-        !ct_errors      TYPE ANY TABLE
-        !ct_comments    TYPE ANY TABLE
+        !ct_errors      TYPE STANDARD TABLE
+        !ct_comments    TYPE STANDARD TABLE
       RAISING
         /ctdi/cx_print_driver_error.
 
@@ -29,8 +29,8 @@ CLASS /ctdi/cl_print_driver_base DEFINITION
         !iv_save_as_pdf TYPE abap_bool
       CHANGING
         !cs_repair      TYPE any
-        !ct_errors      TYPE ANY TABLE
-        !ct_comments    TYPE ANY TABLE
+        !ct_errors      TYPE STANDARD TABLE
+        !ct_comments    TYPE STANDARD TABLE
       RAISING
         /ctdi/cx_print_driver_error.
 
@@ -49,8 +49,8 @@ CLASS /ctdi/cl_print_driver_base DEFINITION
         !iv_save_as_pdf TYPE abap_bool
       CHANGING
         !cs_repair      TYPE any
-        !ct_errors      TYPE ANY TABLE
-        !ct_comments    TYPE ANY TABLE
+        !ct_errors      TYPE STANDARD TABLE
+        !ct_comments    TYPE STANDARD TABLE
       RAISING
         /ctdi/cx_print_driver_error.
 
@@ -62,8 +62,8 @@ CLASS /ctdi/cl_print_driver_base DEFINITION
         !iv_save_as_pdf TYPE abap_bool
       CHANGING
         !cs_repair      TYPE any
-        !ct_errors      TYPE ANY TABLE
-        !ct_comments    TYPE ANY TABLE
+        !ct_errors      TYPE STANDARD TABLE
+        !ct_comments    TYPE STANDARD TABLE
       RAISING
         /ctdi/cx_print_driver_error.
 

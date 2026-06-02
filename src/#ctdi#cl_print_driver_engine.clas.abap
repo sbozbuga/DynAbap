@@ -27,8 +27,8 @@ CLASS /ctdi/cl_print_driver_engine DEFINITION
         !iv_akz         TYPE char4 OPTIONAL
       CHANGING
         !cs_repair      TYPE any
-        !ct_errors      TYPE ANY TABLE
-        !ct_comments    TYPE ANY TABLE
+        !ct_errors      TYPE STANDARD TABLE
+        !ct_comments    TYPE STANDARD TABLE
       RAISING
         /ctdi/cx_print_driver_error
         /ctdi/cx_no_config_found

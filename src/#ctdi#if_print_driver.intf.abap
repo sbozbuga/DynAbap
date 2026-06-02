@@ -16,8 +16,8 @@ INTERFACE /ctdi/if_print_driver PUBLIC.
       !iv_save_as_pdf TYPE abap_bool DEFAULT abap_false
     CHANGING
       !cs_repair      TYPE any
-      !ct_errors      TYPE ANY TABLE
-      !ct_comments    TYPE ANY TABLE
+      !ct_errors      TYPE STANDARD TABLE
+      !ct_comments    TYPE STANDARD TABLE
     RAISING
       /ctdi/cx_print_driver_error.
 
