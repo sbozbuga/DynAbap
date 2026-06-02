@@ -560,7 +560,7 @@ CLASS lcl_print_driver_base IMPLEMENTATION.
           lines                 = lt_pdf_lines
         EXCEPTIONS
           err_max_linewidth     = 1
-          err_bad_keydate       = 2
+          err_format            = 2
           err_empty_otf         = 3
           OTHERS                = 4.
       IF sy-subrc <> 0.
@@ -673,7 +673,7 @@ CLASS lcl_print_driver_base IMPLEMENTATION.
 
     CALL FUNCTION 'FP_JOB_CLOSE'
       IMPORTING
-        e_joboutput    = ls_joboutput
+        e_result       = ls_joboutput
       EXCEPTIONS
         usage_error    = 1
         system_error   = 2
@@ -973,7 +973,6 @@ CLASS lcl_nast_handler IMPLEMENTATION.
         msgv2  = sy-msgv2
         msgv3  = sy-msgv3
         msgv4  = sy-msgv4
-        txtnr  = '001'
       EXCEPTIONS
         OTHERS = 1.
     IF sy-subrc <> 0.

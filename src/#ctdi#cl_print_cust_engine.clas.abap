@@ -128,6 +128,8 @@ CLASS /CTDI/CL_PRINT_CUST_ENGINE IMPLEMENTATION.
 
 
   METHOD validate_entry.
+    DATA: lv_new_clskey TYPE seoclskey.
+
     " 1. Class name is required
     IF is_entry-class_name IS INITIAL.
       DATA(lv_msg) = |{ 'Class name is required for Contract &1'(006) }|.
@@ -235,7 +237,7 @@ CLASS /CTDI/CL_PRINT_CUST_ENGINE IMPLEMENTATION.
               new_clsname  = is_entry-class_name
               devclass     = lv_package
             IMPORTING
-              new_clskey   = DATA(lv_new_clskey)
+              new_clskey   = lv_new_clskey
             EXCEPTIONS
               existing     = 1
               is_interface = 2
@@ -246,7 +248,8 @@ CLASS /CTDI/CL_PRINT_CUST_ENGINE IMPLEMENTATION.
               OTHERS       = 7.
 
           IF sy-subrc = 0.
-            DATA(lv_success) = |{ 'Class &1 generated successfully.'(005) }|.
+            DATA: lv_success TYPE char200.
+            lv_success = |{ 'Class &1 generated successfully.'(005) }|.
             REPLACE '&1' IN lv_success WITH is_entry-class_name.
             MESSAGE lv_success TYPE 'S'.
             RETURN. " Class now successfully generated, bypass error check
