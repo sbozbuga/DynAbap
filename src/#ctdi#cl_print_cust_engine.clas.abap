@@ -234,6 +234,8 @@ CLASS /CTDI/CL_PRINT_CUST_ENGINE IMPLEMENTATION.
               clsname      = '/CTDI/CL_PRINT_DRIVER_BASE'
               new_clsname  = is_entry-class_name
               devclass     = lv_package
+            IMPORTING
+              new_clskey   = DATA(lv_new_clskey)
             EXCEPTIONS
               existing     = 1
               is_interface = 2

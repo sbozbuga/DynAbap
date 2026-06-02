@@ -627,7 +627,9 @@ CLASS lcl_print_driver_base IMPLEMENTATION.
           IMPORTING
             e_funcname = lv_fm_name.
       CATCH cx_fp_api INTO DATA(lx_fp).
-        CALL FUNCTION 'FP_JOB_CLOSE'.
+        CALL FUNCTION 'FP_JOB_CLOSE'
+          EXCEPTIONS
+            OTHERS = 1.
         lv_err = |Adobe Form FM resolution failed for { iv_form_name }: { lx_fp->get_text( ) }|.
         lcl_print_driver_log=>log_error( lv_err ).
         RAISE EXCEPTION TYPE lcx_print_driver_error
@@ -781,6 +783,9 @@ CLASS lcl_print_driver_base IMPLEMENTATION.
         user_defaults = ls_user_defaults
       EXCEPTIONS
         OTHERS        = 1.
+    IF sy-subrc <> 0.
+      " Fallback: proceed with defaults
+    ENDIF.
 
     GET PARAMETER ID '/CELLAG/PAFR' FIELD lv_user_printer.
 
