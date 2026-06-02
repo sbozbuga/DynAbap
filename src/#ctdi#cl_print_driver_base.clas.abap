@@ -527,7 +527,7 @@ CLASS /ctdi/cl_print_driver_base IMPLEMENTATION.
 
   METHOD get_user_print_defaults.
     DATA: ls_user_defaults TYPE usdefaults,
-          lv_user_printer  TYPE paramval.
+          lv_user_printer  TYPE char40.
 
     " 1. Fetch user defaults via standard API
     CALL FUNCTION 'SUSR_USER_DEFAULTS_GET'

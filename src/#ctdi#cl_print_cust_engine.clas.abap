@@ -358,7 +358,7 @@ CLASS /CTDI/CL_PRINT_CUST_ENGINE IMPLEMENTATION.
 
     " 3. Filter out standard/framework parameters
     LOOP AT lt_mandatory_params INTO DATA(ls_param).
-      DATA(lv_param) = UPPER( ls_param-parameter ).
+      DATA(lv_param) = to_upper( ls_param-parameter ).
 
       IF lv_form_type = 'S'. " Smart Form
         IF lv_param = 'CONTROL_PARAMETERS' OR
