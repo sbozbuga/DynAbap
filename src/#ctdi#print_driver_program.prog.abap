@@ -97,6 +97,7 @@ FORM entry USING ent_retco TYPE sysubrc
           msgv2  = sy-msgv2
           msgv3  = sy-msgv3
           msgv4  = sy-msgv4
+          txtnr  = '001'
         EXCEPTIONS
           OTHERS = 0.
 

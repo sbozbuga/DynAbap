@@ -329,20 +329,19 @@ CLASS /CTDI/CL_PRINT_CUST_ENGINE IMPLEMENTATION.
       ENDIF.
     ELSE.
       lv_form_type = 'A'. " Adobe Form
-      CALL FUNCTION 'FP_FUNCTION_MODULE_NAME'
-        EXPORTING
-          i_name     = iv_form_name
-        IMPORTING
-          e_funcname = lv_fm_name
-        EXCEPTIONS
-          OTHERS     = 1.
-      IF sy-subrc <> 0.
-        RETURN. " Muted: will be handled at runtime print execution
-      ENDIF.
+      TRY.
+          CALL FUNCTION 'FP_FUNCTION_MODULE_NAME'
+            EXPORTING
+              i_name     = iv_form_name
+            IMPORTING
+              e_funcname = lv_fm_name.
+        CATCH cx_fp_api.
+          RETURN. " Muted: will be handled at runtime print execution
+      ENDTRY.
     ENDIF.
 
     " 2. Fetch all mandatory parameters (OPTIONAL = space, DEFAULTVAL = space)
-    SELECT paramname
+    SELECT parameter
       FROM fupararef
       INTO TABLE @DATA(lt_mandatory_params)
       WHERE funcname = @lv_fm_name
@@ -356,7 +355,7 @@ CLASS /CTDI/CL_PRINT_CUST_ENGINE IMPLEMENTATION.
 
     " 3. Filter out standard/framework parameters
     LOOP AT lt_mandatory_params INTO DATA(ls_param).
-      DATA(lv_param) = UPPER( ls_param-paramname ).
+      DATA(lv_param) = UPPER( ls_param-parameter ).
 
       IF lv_form_type = 'S'. " Smart Form
         IF lv_param = 'CONTROL_PARAMETERS' OR
@@ -383,7 +382,7 @@ CLASS /CTDI/CL_PRINT_CUST_ENGINE IMPLEMENTATION.
       IF iv_class_name = '/CTDI/CL_PRINT_DRIVER_BASE'.
         DATA(lv_err_msg) = |{ 'Form &1 requires custom mandatory parameter &2 which standard base class does not support.'(012) }|.
         REPLACE '&1' IN lv_err_msg WITH iv_form_name.
-        REPLACE '&2' IN lv_err_msg WITH ls_param-paramname.
+        REPLACE '&2' IN lv_err_msg WITH ls_param-parameter.
         RAISE EXCEPTION TYPE /ctdi/cx_print_error
           EXPORTING
             repair_id = CONV aufnr( iv_vbeln )

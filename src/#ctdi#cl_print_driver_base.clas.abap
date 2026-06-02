@@ -361,21 +361,21 @@ CLASS /ctdi/cl_print_driver_base IMPLEMENTATION.
     ENDIF.
 
     " Resolve generated function module name
-    CALL FUNCTION 'FP_FUNCTION_MODULE_NAME'
-      EXPORTING
-        i_name     = iv_form_name
-      IMPORTING
-        e_funcname = lv_fm_name
-      EXCEPTIONS
-        OTHERS     = 1.
-    IF sy-subrc <> 0.
-      CALL FUNCTION 'FP_JOB_CLOSE'.
-      lv_err = |Adobe Form FM resolution failed for { iv_form_name }|.
-      /ctdi/cl_print_driver_log=>log_error( lv_err ).
-      RAISE EXCEPTION TYPE /ctdi/cx_print_driver_error
-        EXPORTING repair_id = iv_repair_id
-                  message   = lv_err.
-    ENDIF.
+    TRY.
+        CALL FUNCTION 'FP_FUNCTION_MODULE_NAME'
+          EXPORTING
+            i_name     = iv_form_name
+          IMPORTING
+            e_funcname = lv_fm_name.
+      CATCH cx_fp_api INTO DATA(lx_fp).
+        CALL FUNCTION 'FP_JOB_CLOSE'.
+        lv_err = |Adobe Form FM resolution failed for { iv_form_name }: { lx_fp->get_text( ) }|.
+        /ctdi/cl_print_driver_log=>log_error( lv_err ).
+        RAISE EXCEPTION TYPE /ctdi/cx_print_driver_error
+          EXPORTING repair_id = iv_repair_id
+                    message   = lv_err
+                    previous  = lx_fp.
+    ENDTRY.
 
     " Document parameters
     ls_docparams-langu   = sy-langu.
@@ -546,10 +546,10 @@ CLASS /ctdi/cl_print_driver_base IMPLEMENTATION.
 
 
   METHOD fm_has_parameter.
-    SELECT SINGLE paramname FROM fupararef
+    SELECT SINGLE parameter FROM fupararef
       INTO @DATA(lv_dummy)
       WHERE funcname  = @iv_funcname
-        AND paramname = @iv_paramname.
+        AND parameter = @iv_paramname.
     rv_has = COND #( WHEN sy-subrc = 0 THEN abap_true ELSE abap_false ).
   ENDMETHOD.
 

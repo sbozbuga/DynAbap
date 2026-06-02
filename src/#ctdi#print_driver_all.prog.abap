@@ -612,21 +612,21 @@ CLASS lcl_print_driver_base IMPLEMENTATION.
                   message   = lv_err.
     ENDIF.
 
-    CALL FUNCTION 'FP_FUNCTION_MODULE_NAME'
-      EXPORTING
-        i_name     = iv_form_name
-      IMPORTING
-        e_funcname = lv_fm_name
-      EXCEPTIONS
-        OTHERS     = 1.
-    IF sy-subrc <> 0.
-      CALL FUNCTION 'FP_JOB_CLOSE'.
-      lv_err = |Adobe Form FM resolution failed for { iv_form_name }|.
-      lcl_print_driver_log=>log_error( lv_err ).
-      RAISE EXCEPTION TYPE lcx_print_driver_error
-        EXPORTING repair_id = iv_repair_id
-                  message   = lv_err.
-    ENDIF.
+    TRY.
+        CALL FUNCTION 'FP_FUNCTION_MODULE_NAME'
+          EXPORTING
+            i_name     = iv_form_name
+          IMPORTING
+            e_funcname = lv_fm_name.
+      CATCH cx_fp_api INTO DATA(lx_fp).
+        CALL FUNCTION 'FP_JOB_CLOSE'.
+        lv_err = |Adobe Form FM resolution failed for { iv_form_name }: { lx_fp->get_text( ) }|.
+        lcl_print_driver_log=>log_error( lv_err ).
+        RAISE EXCEPTION TYPE lcx_print_driver_error
+          EXPORTING repair_id = iv_repair_id
+                    message   = lv_err
+                    previous  = lx_fp.
+    ENDTRY.
 
     ls_docparams-langu   = sy-langu.
     ls_docparams-country = 'US'.
@@ -952,6 +952,7 @@ CLASS lcl_nast_handler IMPLEMENTATION.
         msgv2  = sy-msgv2
         msgv3  = sy-msgv3
         msgv4  = sy-msgv4
+        txtnr  = '001'
       EXCEPTIONS
         OTHERS = 0.
   ENDMETHOD.
