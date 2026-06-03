@@ -250,7 +250,8 @@ CLASS /ctdi/cl_print_driver_engine IMPLEMENTATION.
       ev_form_name  = ls_config-form_name.
       ev_class_name = resolve_class_name( ls_config-class_name ).
       /ctdi/cl_print_driver_log=>log_info(
-        |Found print config in cache — Contract: { lv_contract }, SKZ: { lv_skz }, AKZ: { lv_akz }, Form: { ev_form_name }, Class: { ev_class_name }| ).
+        |Found print config in cache — Contract: { lv_contract }, | &&
+        |SKZ: { lv_skz }, AKZ: { lv_akz }, Form: { ev_form_name }, Class: { ev_class_name }| ).
       RETURN.
     ENDIF.
 
@@ -328,7 +329,8 @@ CLASS /ctdi/cl_print_driver_engine IMPLEMENTATION.
     ev_class_name = resolve_class_name( ls_config-class_name ).
 
     /ctdi/cl_print_driver_log=>log_info(
-      |Config resolved and cached — Contract: { lv_contract }, SKZ: { lv_skz }, AKZ: { lv_akz }, Form: { ev_form_name }, Class: { ev_class_name }| ).
+      |Config resolved and cached — Contract: { lv_contract }, | &&
+      |SKZ: { lv_skz }, AKZ: { lv_akz }, Form: { ev_form_name }, Class: { ev_class_name }| ).
   ENDMETHOD.
 
 

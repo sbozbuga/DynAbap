@@ -383,7 +383,8 @@ CLASS /CTDI/CL_PRINT_CUST_ENGINE IMPLEMENTATION.
       " If we reach here, we found a custom mandatory parameter!
       " If the base class is configured, it will dump because it cannot supply this parameter.
       IF iv_class_name = '/CTDI/CL_PRINT_DRIVER_BASE'.
-        DATA(lv_err_msg) = |{ 'Form &1 requires custom mandatory parameter &2 which standard base class does not support.'(012) }|.
+        DATA(lv_err_msg) =
+          |{ 'Form &1 requires custom mandatory parameter &2 which standard base class does not support.'(012) }|.
         REPLACE '&1' IN lv_err_msg WITH iv_form_name.
         REPLACE '&2' IN lv_err_msg WITH ls_param-parameter.
         RAISE EXCEPTION TYPE /ctdi/cx_print_error

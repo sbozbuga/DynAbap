@@ -1045,7 +1045,7 @@ FORM entry USING ent_retco TYPE sysubrc
         ls_repair    TYPE /ctdi/repair,
         lt_errors    TYPE TABLE OF /ctdi/repair_error,
         lt_comments  TYPE TABLE OF tline,
-        lo_nast      TYPE REF TO lcl_nast_handler.
+        lr_nast      TYPE REF TO lcl_nast_handler.
 
   ent_retco = 0.
 
@@ -1060,7 +1060,7 @@ FORM entry USING ent_retco TYPE sysubrc
     |NAST entry triggered for Repair { lv_repair_id }| ).
 
   " Instantiate NAST handler for this output record
-  lo_nast = NEW lcl_nast_handler( nast-objky ).
+  lr_nast = NEW lcl_nast_handler( nast-objky ).
 
   TRY.
       DATA(lr_engine) = NEW lcl_print_driver_engine( ).
@@ -1074,7 +1074,7 @@ FORM entry USING ent_retco TYPE sysubrc
           ct_comments    = lt_comments ).
 
       " Mark NAST as successfully processed
-      lo_nast->mark_success( ).
+      lr_nast->mark_success( ).
 
     CATCH lcx_print_driver_error INTO DATA(lx_driver_err).
       lcl_print_driver_log=>log_exception( lx_driver_err ).
@@ -1082,14 +1082,14 @@ FORM entry USING ent_retco TYPE sysubrc
       " 1. Store the error message in NAST message fields so the user
       "    can see what happened on the output display screen.
       TRY.
-          lo_nast->store_error_message( lx_driver_err->message ).
+          lr_nast->store_error_message( lx_driver_err->message ).
         CATCH lcx_print_driver_error.
           " Muted
       ENDTRY.
 
       " 2. Reset NAST to 'New' so the output is retried on the next run
       TRY.
-          lo_nast->reset_for_retry( ).
+          lr_nast->reset_for_retry( ).
         CATCH lcx_print_driver_error.
           " Muted — the original error is what matters
       ENDTRY.

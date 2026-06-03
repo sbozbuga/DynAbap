@@ -46,7 +46,7 @@ CLASS /ctdi/cl_print_driver_template IMPLEMENTATION.
     "     |Repair record { iv_repair_id } not found in /CTDI/REPAIR. Using fallback mock header.| ).
     "
     "   " Example of handling missing data (either fail with exception or supply default)
-    "   " If this is a critical error for the process:
+    "   " If this is a critical error for the process.
     "   " RAISE EXCEPTION TYPE /ctdi/cx_print_driver_error
     "   "   EXPORTING
     "   "     repair_id = iv_repair_id
@@ -75,7 +75,7 @@ CLASS /ctdi/cl_print_driver_template IMPLEMENTATION.
     " =========================================================================
     " TEMPLATE METHOD: render_form
     " =========================================================================
-    " Override this method to:
+    " Override this method to perform the following.
     "   - Add custom pre-processing  before form execution (e.g., update
     "     status tables, lock/unlock documents)
     "   - Add custom post-processing after form execution (e.g., send
