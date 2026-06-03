@@ -209,7 +209,7 @@ CLASS /CTDI/CL_PRINT_CUST_ENGINE IMPLEMENTATION.
 
           CALL FUNCTION 'POPUP_GET_VALUES'
             EXPORTING
-              titlebar      = 'Enter Target Development Package'(011)
+              popup_title   = 'Enter Target Development Package'(011)
             IMPORTING
               returncode    = lv_returncode
             TABLES
