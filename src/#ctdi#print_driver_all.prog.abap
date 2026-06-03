@@ -565,8 +565,9 @@ CLASS lcl_print_driver_base IMPLEMENTATION.
         EXCEPTIONS
           err_max_linewidth     = 1
           err_format            = 2
-          err_empty_otf         = 3
-          OTHERS                = 4.
+          err_conv_not_possible = 3
+          err_bad_otf           = 4
+          OTHERS                = 5.
       IF sy-subrc <> 0.
         lv_err = |CONVERT_OTF failed for { iv_form_name } (subrc={ sy-subrc })|.
         lcl_print_driver_log=>log_error( lv_err ).
