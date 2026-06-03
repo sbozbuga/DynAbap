@@ -242,6 +242,8 @@ CLASS /ctdi/cl_print_driver_base IMPLEMENTATION.
       ls_control_params-no_dialog = abap_true.
     ENDIF.
 
+    DATA: lv_subrc_fm TYPE sysubrc.
+
     " Call the Smart Form — conditionally pass error/comment tables
     IF fm_has_parameter( iv_funcname  = lv_fm_name
                          iv_paramname = 'IT_REPAIR_ERROR' ) = abap_true.
@@ -261,6 +263,7 @@ CLASS /ctdi/cl_print_driver_base IMPLEMENTATION.
           send_error         = 3
           user_canceled      = 4
           OTHERS             = 5.
+      lv_subrc_fm = sy-subrc.
     ELSE.
       CALL FUNCTION lv_fm_name
         EXPORTING
@@ -275,10 +278,11 @@ CLASS /ctdi/cl_print_driver_base IMPLEMENTATION.
           send_error         = 3
           user_canceled      = 4
           OTHERS             = 5.
+      lv_subrc_fm = sy-subrc.
     ENDIF.
 
-    IF sy-subrc <> 0.
-      lv_err = |Smart Form { iv_form_name } execution failed (subrc={ sy-subrc })|.
+    IF lv_subrc_fm <> 0.
+      lv_err = |Smart Form { iv_form_name } execution failed (subrc={ lv_subrc_fm })|.
       /ctdi/cl_print_driver_log=>log_error( lv_err ).
       RAISE EXCEPTION TYPE /ctdi/cx_print_driver_error
         EXPORTING repair_id = iv_repair_id
@@ -376,6 +380,9 @@ CLASS /ctdi/cl_print_driver_base IMPLEMENTATION.
         CALL FUNCTION 'FP_JOB_CLOSE'
           EXCEPTIONS
             OTHERS = 1.
+        IF sy-subrc <> 0.
+          DATA(lv_subrc_close_err) = sy-subrc.
+        ENDIF.
         lv_err = |Adobe Form FM resolution failed for { iv_form_name }: { lx_fp->get_text( ) }|.
         /ctdi/cl_print_driver_log=>log_error( lv_err ).
         RAISE EXCEPTION TYPE /ctdi/cx_print_driver_error
@@ -429,7 +436,7 @@ CLASS /ctdi/cl_print_driver_base IMPLEMENTATION.
         internal_error = 3
         OTHERS         = 4.
     IF sy-subrc <> 0.
-      " Muted
+      DATA(lv_subrc_close) = sy-subrc.
     ENDIF.
 
     IF lv_subrc <> 0.
@@ -495,6 +502,9 @@ CLASS /ctdi/cl_print_driver_base IMPLEMENTATION.
         user_action          = lv_action
       EXCEPTIONS
         OTHERS               = 1 ).
+    IF sy-subrc <> 0.
+      DATA(lv_subrc_dialog) = sy-subrc.
+    ENDIF.
 
     IF lv_action = cl_gui_frontend_services=>action_ok AND lv_path IS NOT INITIAL.
       cl_gui_frontend_services=>gui_download(
@@ -523,6 +533,9 @@ CLASS /ctdi/cl_print_driver_base IMPLEMENTATION.
           dataprovider_exception    = 17
           control_flush_error       = 18
           OTHERS                    = 19 ).
+      IF sy-subrc <> 0.
+        DATA(lv_subrc_download) = sy-subrc.
+      ENDIF.
     ENDIF.
   ENDMETHOD.
 
@@ -540,7 +553,7 @@ CLASS /ctdi/cl_print_driver_base IMPLEMENTATION.
       EXCEPTIONS
         OTHERS        = 1.
     IF sy-subrc <> 0.
-      " Fallback: proceed with defaults
+      DATA(lv_subrc_user) = sy-subrc.
     ENDIF.
 
     " 2. Check SET/GET parameter override
