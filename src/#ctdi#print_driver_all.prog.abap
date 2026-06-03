@@ -560,7 +560,7 @@ CLASS lcl_print_driver_base IMPLEMENTATION.
           lines                 = lt_pdf_lines
         EXCEPTIONS
           err_max_linewidth     = 1
-          err_bad_keydate       = 2
+          err_format            = 2
           err_empty_otf         = 3
           OTHERS                = 4.
       IF sy-subrc <> 0.
@@ -627,7 +627,9 @@ CLASS lcl_print_driver_base IMPLEMENTATION.
           IMPORTING
             e_funcname = lv_fm_name.
       CATCH cx_fp_api INTO DATA(lx_fp).
-        CALL FUNCTION 'FP_JOB_CLOSE'.
+        CALL FUNCTION 'FP_JOB_CLOSE'
+          EXCEPTIONS
+            OTHERS = 1.
         lv_err = |Adobe Form FM resolution failed for { iv_form_name }: { lx_fp->get_text( ) }|.
         lcl_print_driver_log=>log_error( lv_err ).
         RAISE EXCEPTION TYPE lcx_print_driver_error
@@ -671,7 +673,7 @@ CLASS lcl_print_driver_base IMPLEMENTATION.
 
     CALL FUNCTION 'FP_JOB_CLOSE'
       IMPORTING
-        e_joboutput    = ls_joboutput
+        e_result       = ls_joboutput
       EXCEPTIONS
         usage_error    = 1
         system_error   = 2
@@ -781,6 +783,9 @@ CLASS lcl_print_driver_base IMPLEMENTATION.
         user_defaults = ls_user_defaults
       EXCEPTIONS
         OTHERS        = 1.
+    IF sy-subrc <> 0.
+      " Fallback: proceed with defaults
+    ENDIF.
 
     GET PARAMETER ID '/CELLAG/PAFR' FIELD lv_user_printer.
 
@@ -962,7 +967,6 @@ CLASS lcl_nast_handler IMPLEMENTATION.
     CALL FUNCTION 'MESSAGE_STORE'
       EXPORTING
         arbgb  = '/CTDI/PRINT'
-        msgnr  = '001'
         msgty  = 'E'
         msgv1  = sy-msgv1
         msgv2  = sy-msgv2
@@ -970,7 +974,9 @@ CLASS lcl_nast_handler IMPLEMENTATION.
         msgv4  = sy-msgv4
         txtnr  = '001'
       EXCEPTIONS
-        OTHERS = 1.
+        message_type_not_valid = 1
+        not_active             = 2
+        OTHERS                 = 3.
     IF sy-subrc <> 0.
       " Muted
     ENDIF.
@@ -1151,7 +1157,8 @@ ENDFORM.
 *&   Subobject = DRIVER
 *&---------------------------------------------------------------------*
 FORM show_log.
-  DATA: lt_log_handles TYPE bal_t_logh,
+  DATA: lt_log_headers TYPE balhdr_t,
+        lt_log_handles TYPE bal_t_logh,
         ls_log_filter  TYPE bal_s_lfil.
 
   CLEAR ls_log_filter.
@@ -1161,19 +1168,26 @@ FORM show_log.
   ls_log_filter-aluser    = VALUE #( ( sign = 'I' option = 'EQ' low = sy-uname ) ).
   ls_log_filter-extnumber = VALUE #( ( sign = 'I' option = 'EQ' low = |{ p_aufnr }| ) ).
 
-  " Read all matching log handles
+  " Read all matching log headers
   CALL FUNCTION 'BAL_DB_SEARCH'
     EXPORTING
       i_s_log_filter = ls_log_filter
     IMPORTING
-      e_t_log_handle = lt_log_handles
+      e_t_log_header = lt_log_headers
     EXCEPTIONS
-      OTHERS         = 1.
+      log_not_found       = 1
+      no_filter_criteria  = 2
+      OTHERS              = 3.
 
-  IF sy-subrc <> 0 OR lt_log_handles IS INITIAL.
+  IF sy-subrc <> 0 OR lt_log_headers IS INITIAL.
     MESSAGE |No application logs found for Repair { p_aufnr } in SLG1| TYPE 'I'.
     RETURN.
   ENDIF.
+
+  " Extract log handles from header table
+  LOOP AT lt_log_headers INTO DATA(ls_header).
+    INSERT ls_header-log_handle INTO TABLE lt_log_handles.
+  ENDLOOP.
 
   " Display the log via SLG1 transaction call
   CALL FUNCTION 'BAL_DSP_LOG_DISPLAY'

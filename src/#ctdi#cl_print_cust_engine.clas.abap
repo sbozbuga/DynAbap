@@ -61,10 +61,14 @@ CLASS /CTDI/CL_PRINT_CUST_ENGINE IMPLEMENTATION.
     ENDIF.
 
     " 2. Check if the current system repository is modifiable
-    DATA: lv_system_edit TYPE c.
+    DATA: lv_system_edit TYPE c,
+          lv_system_name TYPE t000-ccname,
+          lv_system_type TYPE t000-cccategory.
 
     CALL FUNCTION 'TR_SYS_PARAMS'
       IMPORTING
+        systemname    = lv_system_name
+        systemtype    = lv_system_type
         sys_edit      = lv_system_edit  " 'W' = Modifiable, 'R' = Read-only
       EXCEPTIONS
         no_systemname = 1
@@ -128,6 +132,7 @@ CLASS /CTDI/CL_PRINT_CUST_ENGINE IMPLEMENTATION.
 
 
   METHOD validate_entry.
+
     " 1. Class name is required
     IF is_entry-class_name IS INITIAL.
       DATA(lv_msg) = |{ 'Class name is required for Contract &1'(006) }|.
@@ -202,7 +207,7 @@ CLASS /CTDI/CL_PRINT_CUST_ENGINE IMPLEMENTATION.
           ls_field-value     = '/CTDI/WORKSHOP'.
           APPEND ls_field TO lt_fields.
 
-          CALL FUNCTION 'POPUP_TO_GET_VALUES'
+          CALL FUNCTION 'POPUP_GET_VALUES'
             EXPORTING
               titlebar      = 'Enter Target Development Package'(011)
             IMPORTING
@@ -229,22 +234,33 @@ CLASS /CTDI/CL_PRINT_CUST_ENGINE IMPLEMENTATION.
           ENDIF.
 
           " Copy standard base class /CTDI/CL_PRINT_DRIVER_BASE to the new class name
+          DATA: ls_clskey     TYPE seoclskey,
+                ls_new_clskey TYPE seoclskey,
+                ls_new_class  TYPE vseoclass.
+
+          ls_clskey     = '/CTDI/CL_PRINT_DRIVER_BASE'.
+          ls_new_clskey = is_entry-class_name.
+
           CALL FUNCTION 'SEO_CLASS_COPY'
             EXPORTING
-              clsname      = '/CTDI/CL_PRINT_DRIVER_BASE'
-              new_clsname  = is_entry-class_name
+              clskey       = ls_clskey
+              new_clskey   = ls_new_clskey
+            IMPORTING
+              new_class    = ls_new_class
+            CHANGING
               devclass     = lv_package
             EXCEPTIONS
-              existing     = 1
-              is_interface = 2
-              not_created  = 3
-              db_error     = 4
-              no_source    = 5
-              no_authority = 6
+              not_existing = 1
+              deleted      = 2
+              is_interface = 3
+              not_copied   = 4
+              db_error     = 5
+              no_access    = 6
               OTHERS       = 7.
 
           IF sy-subrc = 0.
-            DATA(lv_success) = |{ 'Class &1 generated successfully.'(005) }|.
+            DATA: lv_success TYPE char200.
+            lv_success = |{ 'Class &1 generated successfully.'(005) }|.
             REPLACE '&1' IN lv_success WITH is_entry-class_name.
             MESSAGE lv_success TYPE 'S'.
             RETURN. " Class now successfully generated, bypass error check
