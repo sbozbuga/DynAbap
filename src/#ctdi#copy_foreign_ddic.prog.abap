@@ -428,14 +428,25 @@ CLASS lcl_ddic_copier IMPLEMENTATION.
         ENDIF.
 
       WHEN 'CLAS'.
-        DATA(lt_class_includes) = cl_oo_classname_service=>get_all_class_includes( iv_name ).
-        LOOP AT lt_class_includes INTO DATA(lv_inc).
-          CLEAR lt_source.
-          READ REPORT lv_inc INTO lt_source.
-          IF sy-subrc = 0 AND lt_source IS NOT INITIAL.
-            scan_source( it_source = lt_source ).
-          ENDIF.
-        ENDLOOP.
+        DATA: lt_class_includes TYPE seoincl_t.
+        cl_oo_classname_service=>get_all_class_includes(
+          EXPORTING
+            class_name    = iv_name
+          RECEIVING
+            result        = lt_class_includes
+          EXCEPTIONS
+            no_such_class = 1
+            OTHERS        = 2
+        ).
+        IF sy-subrc = 0.
+          LOOP AT lt_class_includes INTO DATA(lv_inc).
+            CLEAR lt_source.
+            READ REPORT lv_inc INTO lt_source.
+            IF sy-subrc = 0 AND lt_source IS NOT INITIAL.
+              scan_source( it_source = lt_source ).
+            ENDIF.
+          ENDLOOP.
+        ENDIF.
     ENDCASE.
   ENDMETHOD.
 
