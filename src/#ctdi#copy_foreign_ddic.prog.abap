@@ -248,7 +248,7 @@ CLASS lcl_ddic_copier IMPLEMENTATION.
             " Get fields
             SELECT rollname, domname FROM dd03l
               WHERE tabname = @<ls_obj>-name
-                AND rollname IS NOT INITIAL
+                AND rollname <> @space
               INTO TABLE @DATA(lt_fields).
 
             LOOP AT lt_fields INTO DATA(ls_field).
@@ -415,7 +415,7 @@ CLASS lcl_ddic_copier IMPLEMENTATION.
               lv_group     TYPE string.
         DATA(lv_group_str) = CONV string( iv_name ).
         IF lv_group_str(1) = '/'.
-          FIND PCRE '^(/[a-zA-Z0-9_]+/)(.*)$' IN lv_group_str
+          FIND REGEX '^(/[a-zA-Z0-9_]+/)(.*)$' IN lv_group_str
             SUBMATCHES lv_namespace lv_group.
           lv_main_prog = lv_namespace && 'SAPL' && lv_group.
         ELSE.
