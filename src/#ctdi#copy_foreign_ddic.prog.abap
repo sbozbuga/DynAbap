@@ -67,12 +67,22 @@ CLASS lcl_ddic_copier DEFINITION FINAL.
           mv_act     TYPE abap_bool,
           mt_objects TYPE tt_ddic_obj.
 
+    TYPES: tt_source TYPE STANDARD TABLE OF string WITH DEFAULT KEY.
+
     METHODS:
       collect_objects,
       resolve_dependencies,
       determine_copy_names,
       copy_objects,
       activate_objects,
+      scan_code_for_tables
+        IMPORTING
+          iv_type TYPE trobjtype
+          iv_name TYPE ddobjname,
+      scan_source
+        IMPORTING
+          it_source        TYPE tt_source
+          iv_frame_program TYPE program OPTIONAL,
       get_package
         IMPORTING
           iv_type           TYPE trobjtype
@@ -186,6 +196,9 @@ CLASS lcl_ddic_copier IMPLEMENTATION.
               ENDIF.
             ENDLOOP.
           ENDIF.
+          IF ls_tadir-object = 'CLAS' OR ls_tadir-object = 'PROG'.
+            scan_code_for_tables( iv_type = ls_tadir-object iv_name = CONV #( ls_tadir-obj_name ) ).
+          ENDIF.
 
         WHEN 'FUGR'.
           " Find function modules in group
@@ -219,6 +232,7 @@ CLASS lcl_ddic_copier IMPLEMENTATION.
               ENDLOOP.
             ENDIF.
           ENDLOOP.
+          scan_code_for_tables( iv_type = ls_tadir-object iv_name = CONV #( ls_tadir-obj_name ) ).
       ENDCASE.
     ENDLOOP.
   ENDMETHOD.
@@ -383,6 +397,112 @@ CLASS lcl_ddic_copier IMPLEMENTATION.
         ENDIF.
       ENDIF.
     ENDLOOP.
+  ENDMETHOD.
+
+  METHOD scan_code_for_tables.
+    DATA: lt_source TYPE TABLE OF string,
+          lv_main_prog TYPE program.
+
+    CASE iv_type.
+      WHEN 'PROG'.
+        READ REPORT iv_name INTO lt_source.
+        IF sy-subrc = 0 AND lt_source IS NOT INITIAL.
+          scan_source( it_source = lt_source iv_frame_program = CONV #( iv_name ) ).
+        ENDIF.
+
+      WHEN 'FUGR'.
+        DATA: lv_namespace TYPE string,
+              lv_group     TYPE string.
+        DATA(lv_group_str) = CONV string( iv_name ).
+        IF lv_group_str(1) = '/'.
+          FIND PCRE '^(/[a-zA-Z0-9_]+/)(.*)$' IN lv_group_str
+            SUBMATCHES lv_namespace lv_group.
+          lv_main_prog = lv_namespace && 'SAPL' && lv_group.
+        ELSE.
+          lv_main_prog = 'SAPL' && iv_name.
+        ENDIF.
+
+        READ REPORT lv_main_prog INTO lt_source.
+        IF sy-subrc = 0 AND lt_source IS NOT INITIAL.
+          scan_source( it_source = lt_source iv_frame_program = lv_main_prog ).
+        ENDIF.
+
+      WHEN 'CLAS'.
+        DATA(lt_class_includes) = cl_oo_classname_service=>get_all_class_includes( iv_name ).
+        LOOP AT lt_class_includes INTO DATA(lv_inc).
+          CLEAR lt_source.
+          READ REPORT lv_inc INTO lt_source.
+          IF sy-subrc = 0 AND lt_source IS NOT INITIAL.
+            scan_source( it_source = lt_source ).
+          ENDIF.
+        ENDLOOP.
+    ENDCASE.
+  ENDMETHOD.
+
+  METHOD scan_source.
+    DATA: lt_tokens     TYPE TABLE OF stokes,
+          lt_statements TYPE TABLE OF sstmnt.
+
+    IF iv_frame_program IS NOT INITIAL.
+      SCAN ABAP-SOURCE it_source
+        TOKENS INTO lt_tokens
+        STATEMENTS INTO lt_statements
+        WITH INCLUDES
+        FRAME PROGRAM FROM iv_frame_program.
+    ELSE.
+      SCAN ABAP-SOURCE it_source
+        TOKENS INTO lt_tokens
+        STATEMENTS INTO lt_statements.
+    ENDIF.
+
+    DATA: lv_prev1 TYPE string,
+          lv_prev2 TYPE string.
+
+    DATA(lv_token_count) = lines( lt_tokens ).
+    DATA(lv_idx) = 1.
+
+    WHILE lv_idx <= lv_token_count.
+      READ TABLE lt_tokens INTO DATA(ls_token) INDEX lv_idx.
+      DATA(lv_tok) = TO_UPPER( ls_token-str ).
+
+      " Check for database operations (SELECT FROM, JOIN, etc.)
+      IF ( lv_prev1 = 'FROM' OR lv_prev1 = 'JOIN' OR
+           lv_prev1 = 'UPDATE' OR lv_prev1 = 'MODIFY' OR
+           ( lv_prev1 = 'DELETE' AND lv_tok <> 'FROM' ) ).
+        IF lv_tok(1) <> '@' AND lv_tok(1) <> '('.
+          DATA(lv_obj_type) = get_object_type( CONV #( lv_tok ) ).
+          IF lv_obj_type IS NOT INITIAL.
+            add_object_to_list( iv_type = lv_obj_type iv_name = CONV #( lv_tok ) ).
+          ENDIF.
+        ENDIF.
+      ENDIF.
+
+      " Check for TYPE or LIKE references
+      IF lv_tok = 'TYPE' OR lv_tok = 'LIKE'.
+        DATA(lv_next_idx) = lv_idx + 1.
+        WHILE lv_next_idx <= lv_token_count.
+          READ TABLE lt_tokens INTO DATA(ls_next) INDEX lv_next_idx.
+          DATA(lv_next_tok) = TO_UPPER( ls_next-str ).
+          IF lv_next_tok = 'STANDARD' OR lv_next_tok = 'HASHED' OR lv_next_tok = 'SORTED' OR
+             lv_next_tok = 'TABLE' OR lv_next_tok = 'OF' OR lv_next_tok = 'REF' OR
+             lv_next_tok = 'TO' OR lv_next_tok = 'LINE'.
+            lv_next_idx = lv_next_idx + 1.
+          ELSE.
+            IF lv_next_tok(1) <> '@' AND lv_next_tok(1) <> '(' AND lv_next_tok <> 'LINE' AND lv_next_tok <> 'OF'.
+              DATA(lv_type_obj) = get_object_type( CONV #( lv_next_tok ) ).
+              IF lv_type_obj IS NOT INITIAL.
+                add_object_to_list( iv_type = lv_type_obj iv_name = CONV #( lv_next_tok ) ).
+              ENDIF.
+            ENDIF.
+            EXIT.
+          ENDIF.
+        ENDWHILE.
+      ENDIF.
+
+      lv_prev2 = lv_prev1.
+      lv_prev1 = lv_tok.
+      lv_idx = lv_idx + 1.
+    ENDWHILE.
   ENDMETHOD.
 
   METHOD get_package.
