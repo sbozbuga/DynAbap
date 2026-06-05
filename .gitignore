@@ -36,3 +36,5 @@ src/#ctdi#repair_d.sf*
 
 .vsp.json
 zsb_export/
+src/foreignobj.csv
+src/missing_foreignobj.csv
