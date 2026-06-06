@@ -32,7 +32,7 @@ dist/
 src/#ctdi#workshop_m.fugr.*
 
 # Exclude repair_d SFP object
-src/#ctdi#repair_d.sf*
+#src/#ctdi#repair_d.sf*
 
 .vsp.json
 zsb_export/

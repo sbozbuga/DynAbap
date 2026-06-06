@@ -1,0 +1,132 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<?xfa generator="AdobeLiveCycleDesigner_V11.0.9.20260128.1.71_SAP" APIVersion="3.6.26008.0"?>
+<xdp:xdp xmlns:xdp="http://ns.adobe.com/xdp/" timeStamp="2026-06-06T12:00:00Z" uuid="60f1b21c-a99f-43b3-8df8-6c8a245ee0c9">
+   <template xmlns="http://www.xfa.org/schema/xfa-template/2.8/">
+      <?formServer defaultPDFRenderFormat acrobat9.0static?>
+      <subform name="data" layout="tb" locale="en_US" restoreState="auto">
+         
+         <pageSet>
+            <occur max="1"/>
+            <pageArea name="PAGE1">
+               <medium stock="a4" short="210mm" long="297mm"/>
+               
+               <!-- Margins and content area -->
+               <contentArea x="15mm" y="30mm" w="180mm" h="240mm" name="contentArea-PAGE1"/>
+               
+               <!-- Static Header -->
+               <draw name="HeaderLabel" x="15mm" y="10mm" w="180mm" h="15mm">
+                  <value>
+                     <exData contentType="text/html">
+                        <body xmlns="http://www.w3.org/1999/xhtml">
+                           <p style="font-family:'Arial';font-size:16pt;font-weight:bold;color:#1A365D;border-bottom:1px solid #1A365D">
+                              SIMPLE ADOBE FORM DEMO
+                           </p>
+                        </body>
+                     </exData>
+                  </value>
+               </draw>
+
+               <!-- Static Footer with Page Numbers -->
+               <draw name="FooterLabel" x="15mm" y="275mm" w="180mm" h="10mm">
+                  <value>
+                     <exData contentType="text/html">
+                        <body xmlns="http://www.w3.org/1999/xhtml">
+                           <p style="font-family:'Arial';font-size:9pt;text-align:right;color:#718096">
+                              Page {SFSY-PAGE} of {GF_FORMPAGES}
+                           </p>
+                        </body>
+                     </exData>
+                  </value>
+               </draw>
+            </pageArea>
+         </pageSet>
+
+         <!-- Flowable Main Content Subform -->
+         <subform name="Main" layout="tb" w="180mm">
+            
+            <!-- Dynamic Form Title bound to IV_TITLE -->
+            <field name="IV_TITLE" w="180mm" h="12mm" access="readOnly">
+               <ui>
+                  <textEdit>
+                     <border>
+                        <edge presence="none"/>
+                     </border>
+                  </textEdit>
+               </ui>
+               <font typeface="Arial" size="14pt" weight="bold"/>
+               <para vAlign="middle" hAlign="center"/>
+               <bind match="dataRef" ref="$.IV_TITLE"/>
+            </field>
+            
+            <!-- Separator Line -->
+            <draw name="Line1" w="180mm" h="2mm">
+               <value>
+                  <line slope="/">
+                     <edge thickness="0.5mm" color="#2B6CB0"/>
+                  </line>
+               </value>
+            </draw>
+            
+            <!-- Customer Details Block -->
+            <subform name="CustomerBlock" layout="lr-tb" w="180mm">
+               <margin topInset="5mm" bottomInset="5mm"/>
+               
+               <!-- Customer Name field -->
+               <field name="IV_CUSTOMER" w="85mm" h="10mm">
+                  <ui>
+                     <textEdit>
+                        <border>
+                           <edge stroke="lowered"/>
+                        </border>
+                     </textEdit>
+                  </ui>
+                  <font typeface="Arial" size="10pt"/>
+                  <caption reserve="30mm">
+                     <font typeface="Arial" size="10pt" weight="bold"/>
+                     <value>
+                        <text>Customer Name:</text>
+                     </value>
+                  </caption>
+                  <bind match="dataRef" ref="$.IV_CUSTOMER"/>
+               </field>
+
+               <!-- Document Date field -->
+               <field name="IV_DATE" w="85mm" h="10mm" x="10mm">
+                  <ui>
+                     <textEdit>
+                        <border>
+                           <edge stroke="lowered"/>
+                        </border>
+                     </textEdit>
+                  </ui>
+                  <font typeface="Arial" size="10pt"/>
+                  <caption reserve="30mm">
+                     <font typeface="Arial" size="10pt" weight="bold"/>
+                     <value>
+                        <text>Document Date:</text>
+                     </value>
+                  </caption>
+                  <bind match="dataRef" ref="$.IV_DATE"/>
+               </field>
+            </subform>
+            
+            <!-- Descriptive Text Box -->
+            <draw name="DescriptionBox" w="180mm" h="30mm">
+               <value>
+                  <exData contentType="text/html">
+                     <body xmlns="http://www.w3.org/1999/xhtml">
+                        <p style="font-family:'Arial';font-size:10pt;line-height:14pt">
+                           This is a dynamic PDF form generated using SAP Interactive Forms by Adobe.
+                           The layout is styled using standard XML Forms Architecture (XFA) specifications.
+                           Data from the calling ABAP program (such as title, customer name, and date)
+                           is bound directly to the form fields above.
+                        </p>
+                     </body>
+                  </exData>
+               </value>
+            </draw>
+            
+         </subform>
+      </subform>
+   </template>
+</xdp:xdp>
