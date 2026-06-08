@@ -27,6 +27,7 @@ CLASS /ctdi/cl_print_driver_engine DEFINITION
         !iv_akz         TYPE char4 OPTIONAL
       CHANGING
         !cs_repair      TYPE any
+        !cs_project     TYPE any OPTIONAL
         !ct_errors      TYPE STANDARD TABLE
         !ct_comments    TYPE STANDARD TABLE
       RAISING
@@ -130,6 +131,7 @@ CLASS /ctdi/cl_print_driver_engine IMPLEMENTATION.
                     iv_form_name   = lv_form_name
                     iv_save_as_pdf = iv_save_as_pdf
           CHANGING  cs_repair      = cs_repair
+                    cs_project     = cs_project
                     ct_errors      = ct_errors
                     ct_comments    = ct_comments ).
 

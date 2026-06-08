@@ -16,6 +16,7 @@ CLASS /ctdi/cl_print_driver_base DEFINITION
         !iv_repair_id   TYPE aufnr
       CHANGING
         !cs_repair      TYPE any
+        !cs_project     TYPE any OPTIONAL
         !ct_errors      TYPE STANDARD TABLE
         !ct_comments    TYPE STANDARD TABLE
       RAISING
@@ -29,6 +30,7 @@ CLASS /ctdi/cl_print_driver_base DEFINITION
         !iv_save_as_pdf TYPE abap_bool
       CHANGING
         !cs_repair      TYPE any
+        !cs_project     TYPE any OPTIONAL
         !ct_errors      TYPE STANDARD TABLE
         !ct_comments    TYPE STANDARD TABLE
       RAISING
@@ -49,6 +51,7 @@ CLASS /ctdi/cl_print_driver_base DEFINITION
         !iv_save_as_pdf TYPE abap_bool
       CHANGING
         !cs_repair      TYPE any
+        !cs_project     TYPE any OPTIONAL
         !ct_errors      TYPE STANDARD TABLE
         !ct_comments    TYPE STANDARD TABLE
       RAISING
@@ -62,6 +65,7 @@ CLASS /ctdi/cl_print_driver_base DEFINITION
         !iv_save_as_pdf TYPE abap_bool
       CHANGING
         !cs_repair      TYPE any
+        !cs_project     TYPE any OPTIONAL
         !ct_errors      TYPE STANDARD TABLE
         !ct_comments    TYPE STANDARD TABLE
       RAISING
@@ -106,6 +110,7 @@ CLASS /ctdi/cl_print_driver_base IMPLEMENTATION.
     read_data(
       EXPORTING iv_repair_id = iv_repair_id
       CHANGING  cs_repair    = cs_repair
+                cs_project   = cs_project
                 ct_errors    = ct_errors
                 ct_comments  = ct_comments ).
 
@@ -115,6 +120,7 @@ CLASS /ctdi/cl_print_driver_base IMPLEMENTATION.
                 iv_form_name   = iv_form_name
                 iv_save_as_pdf = iv_save_as_pdf
       CHANGING  cs_repair      = cs_repair
+                cs_project     = cs_project
                 ct_errors      = ct_errors
                 ct_comments    = ct_comments ).
 
@@ -150,6 +156,7 @@ CLASS /ctdi/cl_print_driver_base IMPLEMENTATION.
                   iv_form_name   = iv_form_name
                   iv_save_as_pdf = iv_save_as_pdf
         CHANGING  cs_repair      = cs_repair
+                  cs_project     = cs_project
                   ct_errors      = ct_errors
                   ct_comments    = ct_comments ).
     ELSE.
@@ -160,6 +167,7 @@ CLASS /ctdi/cl_print_driver_base IMPLEMENTATION.
                   iv_form_name   = iv_form_name
                   iv_save_as_pdf = iv_save_as_pdf
         CHANGING  cs_repair      = cs_repair
+                  cs_project     = cs_project
                   ct_errors      = ct_errors
                   ct_comments    = ct_comments ).
     ENDIF.
@@ -244,42 +252,64 @@ CLASS /ctdi/cl_print_driver_base IMPLEMENTATION.
 
     DATA: lv_subrc_fm TYPE sysubrc.
 
-    " Call the Smart Form — conditionally pass error/comment tables
+    DATA: lt_ptab TYPE abap_func_parmbind_tab,
+          ls_ptab TYPE abap_func_parmbind,
+          lt_etab TYPE abap_func_excpbind_tab,
+          ls_etab TYPE abap_func_excpbind.
+
+    ls_ptab-name = 'CONTROL_PARAMETERS'.
+    ls_ptab-kind = abap_func_exporting.
+    GET REFERENCE OF ls_control_params INTO ls_ptab-value.
+    INSERT ls_ptab INTO TABLE lt_ptab.
+
+    ls_ptab-name = 'OUTPUT_OPTIONS'.
+    ls_ptab-kind = abap_func_exporting.
+    GET REFERENCE OF ls_output_options INTO ls_ptab-value.
+    INSERT ls_ptab INTO TABLE lt_ptab.
+
+    ls_ptab-name = 'IS_REPAIR'.
+    ls_ptab-kind = abap_func_exporting.
+    GET REFERENCE OF cs_repair INTO ls_ptab-value.
+    INSERT ls_ptab INTO TABLE lt_ptab.
+
+    IF cs_project IS SUPPLIED OR cs_project IS NOT INITIAL.
+      IF fm_has_parameter( iv_funcname  = lv_fm_name
+                           iv_paramname = 'PROJECT' ) = abap_true.
+        ls_ptab-name = 'PROJECT'.
+        ls_ptab-kind = abap_func_exporting.
+        GET REFERENCE OF cs_project INTO ls_ptab-value.
+        INSERT ls_ptab INTO TABLE lt_ptab.
+      ENDIF.
+    ENDIF.
+
     IF fm_has_parameter( iv_funcname  = lv_fm_name
                          iv_paramname = 'IT_REPAIR_ERROR' ) = abap_true.
-      CALL FUNCTION lv_fm_name
-        EXPORTING
-          control_parameters = ls_control_params
-          output_options     = ls_output_options
-          is_repair          = cs_repair
-        IMPORTING
-          job_output_info    = ls_job_output
-        TABLES
-          it_repair_error    = ct_errors
-          it_comment_lines   = ct_comments
-        EXCEPTIONS
-          formatting_error   = 1
-          internal_error     = 2
-          send_error         = 3
-          user_canceled      = 4
-          OTHERS             = 5.
-      lv_subrc_fm = sy-subrc.
-    ELSE.
-      CALL FUNCTION lv_fm_name
-        EXPORTING
-          control_parameters = ls_control_params
-          output_options     = ls_output_options
-          is_repair          = cs_repair
-        IMPORTING
-          job_output_info    = ls_job_output
-        EXCEPTIONS
-          formatting_error   = 1
-          internal_error     = 2
-          send_error         = 3
-          user_canceled      = 4
-          OTHERS             = 5.
-      lv_subrc_fm = sy-subrc.
+      ls_ptab-name = 'IT_REPAIR_ERROR'.
+      ls_ptab-kind = abap_func_tables.
+      GET REFERENCE OF ct_errors INTO ls_ptab-value.
+      INSERT ls_ptab INTO TABLE lt_ptab.
+
+      ls_ptab-name = 'IT_COMMENT_LINES'.
+      ls_ptab-kind = abap_func_tables.
+      GET REFERENCE OF ct_comments INTO ls_ptab-value.
+      INSERT ls_ptab INTO TABLE lt_ptab.
     ENDIF.
+
+    ls_ptab-name = 'JOB_OUTPUT_INFO'.
+    ls_ptab-kind = abap_func_importing.
+    GET REFERENCE OF ls_job_output INTO ls_ptab-value.
+    INSERT ls_ptab INTO TABLE lt_ptab.
+
+    ls_etab-name = 'FORMATTING_ERROR'. ls_etab-value = 1. INSERT ls_etab INTO TABLE lt_etab.
+    ls_etab-name = 'INTERNAL_ERROR'.   ls_etab-value = 2. INSERT ls_etab INTO TABLE lt_etab.
+    ls_etab-name = 'SEND_ERROR'.       ls_etab-value = 3. INSERT ls_etab INTO TABLE lt_etab.
+    ls_etab-name = 'USER_CANCELED'.    ls_etab-value = 4. INSERT ls_etab INTO TABLE lt_etab.
+    ls_etab-name = 'OTHERS'.           ls_etab-value = 5. INSERT ls_etab INTO TABLE lt_etab.
+
+    CALL FUNCTION lv_fm_name
+      PARAMETER-TABLE lt_ptab
+      EXCEPTION-TABLE lt_etab.
+    lv_subrc_fm = sy-subrc.
 
     IF lv_subrc_fm <> 0.
       lv_err = |Smart Form { iv_form_name } execution failed (subrc={ lv_subrc_fm })|.
@@ -396,35 +426,57 @@ CLASS /ctdi/cl_print_driver_base IMPLEMENTATION.
     ls_docparams-langu   = sy-langu.
     ls_docparams-country = 'US'.
 
-    " Call the Adobe Form — conditionally pass error/comment tables
+    DATA: lt_ptab TYPE abap_func_parmbind_tab,
+          ls_ptab TYPE abap_func_parmbind,
+          lt_etab TYPE abap_func_excpbind_tab,
+          ls_etab TYPE abap_func_excpbind.
+
+    ls_ptab-name = '/1BCDWB/DOCPARAMS'.
+    ls_ptab-kind = abap_func_exporting.
+    GET REFERENCE OF ls_docparams INTO ls_ptab-value.
+    INSERT ls_ptab INTO TABLE lt_ptab.
+
+    ls_ptab-name = 'IS_REPAIR'.
+    ls_ptab-kind = abap_func_exporting.
+    GET REFERENCE OF cs_repair INTO ls_ptab-value.
+    INSERT ls_ptab INTO TABLE lt_ptab.
+
+    IF cs_project IS SUPPLIED OR cs_project IS NOT INITIAL.
+      IF fm_has_parameter( iv_funcname  = lv_fm_name
+                           iv_paramname = 'PROJECT' ) = abap_true.
+        ls_ptab-name = 'PROJECT'.
+        ls_ptab-kind = abap_func_exporting.
+        GET REFERENCE OF cs_project INTO ls_ptab-value.
+        INSERT ls_ptab INTO TABLE lt_ptab.
+      ENDIF.
+    ENDIF.
+
     IF fm_has_parameter( iv_funcname  = lv_fm_name
                          iv_paramname = 'IT_REPAIR_ERROR' ) = abap_true.
-      CALL FUNCTION lv_fm_name
-        EXPORTING
-          /1bcdwb/docparams  = ls_docparams
-          is_repair          = cs_repair
-          it_repair_error    = ct_errors
-          it_comment_lines   = ct_comments
-        IMPORTING
-          /1bcdwb/formoutput = ls_formoutput
-        EXCEPTIONS
-          usage_error        = 1
-          system_error       = 2
-          internal_error     = 3
-          OTHERS             = 4.
-    ELSE.
-      CALL FUNCTION lv_fm_name
-        EXPORTING
-          /1bcdwb/docparams  = ls_docparams
-          is_repair          = cs_repair
-        IMPORTING
-          /1bcdwb/formoutput = ls_formoutput
-        EXCEPTIONS
-          usage_error        = 1
-          system_error       = 2
-          internal_error     = 3
-          OTHERS             = 4.
+      ls_ptab-name = 'IT_REPAIR_ERROR'.
+      ls_ptab-kind = abap_func_exporting.
+      GET REFERENCE OF ct_errors INTO ls_ptab-value.
+      INSERT ls_ptab INTO TABLE lt_ptab.
+
+      ls_ptab-name = 'IT_COMMENT_LINES'.
+      ls_ptab-kind = abap_func_exporting.
+      GET REFERENCE OF ct_comments INTO ls_ptab-value.
+      INSERT ls_ptab INTO TABLE lt_ptab.
     ENDIF.
+
+    ls_ptab-name = '/1BCDWB/FORMOUTPUT'.
+    ls_ptab-kind = abap_func_importing.
+    GET REFERENCE OF ls_formoutput INTO ls_ptab-value.
+    INSERT ls_ptab INTO TABLE lt_ptab.
+
+    ls_etab-name = 'USAGE_ERROR'.    ls_etab-value = 1. INSERT ls_etab INTO TABLE lt_etab.
+    ls_etab-name = 'SYSTEM_ERROR'.   ls_etab-value = 2. INSERT ls_etab INTO TABLE lt_etab.
+    ls_etab-name = 'INTERNAL_ERROR'. ls_etab-value = 3. INSERT ls_etab INTO TABLE lt_etab.
+    ls_etab-name = 'OTHERS'.         ls_etab-value = 4. INSERT ls_etab INTO TABLE lt_etab.
+
+    CALL FUNCTION lv_fm_name
+      PARAMETER-TABLE lt_ptab
+      EXCEPTION-TABLE lt_etab.
     lv_subrc = sy-subrc.
 
     " Close the print job

@@ -101,6 +101,7 @@ CLASS /ctdi/cl_print_driver_template IMPLEMENTATION.
                 iv_form_name   = iv_form_name
                 iv_save_as_pdf = iv_save_as_pdf
       CHANGING  cs_repair      = cs_repair
+                cs_project     = cs_project
                 ct_errors      = ct_errors
                 ct_comments    = ct_comments ).
 
