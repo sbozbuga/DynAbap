@@ -13,7 +13,7 @@
     <item>/.github/*</item>
     <item>/src/templates/*</item>
     <item>/src/#ctdi#workshop_m*</item>
-    <item>/src/#ctdi#repair_d.sf*</item>
+    <item>/src/#ctdi#repair_d*</item>
    </IGNORE>
   </DATA>
  </asx:values>
