@@ -483,9 +483,9 @@ CLASS /ctdi/cl_print_data_alcarep IMPLEMENTATION.
     ENDIF.
 
     DATA: BEGIN OF ls_eqstand.
-            INCLUDE STRUCTURE /cellag/cseqstand_in.
-            INCLUDE STRUCTURE /cellag/cseqstand_out.
-          DATA: END OF ls_eqstand.
+            INCLUDE TYPE /cellag/cseqstand_in.
+            INCLUDE TYPE /cellag/cseqstand_out.
+          END OF ls_eqstand.
 
     IF ls_qmel IS NOT INITIAL.
       ms_alcarep-rev_in  = ls_qmel-revin.
