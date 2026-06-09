@@ -223,20 +223,11 @@ CLASS /ctdi/cl_print_driver_base IMPLEMENTATION.
                 ev_immed   = lv_immed
                 ev_delete  = lv_delete ).
 
-    " Configure output parameters
-*    ls_outputparams-connection = 'ADS'.
-    ls_outputparams-reqnew = abap_true.
-    ls_outputparams-reqimm = abap_true.
-    ls_outputparams-reqfinal = abap_true.
-    ls_outputparams-dest       = lv_printer.
-    ls_outputparams-reqimm     = lv_immed.
-    ls_outputparams-reqdel     = lv_delete.
-    IF iv_save_as_pdf = abap_true.
-      ls_outputparams-nodialog   = abap_true.
-      ls_outputparams-getpdf   = abap_true.
-    ELSE.
-      ls_outputparams-preview    = abap_true.
-    ENDIF.
+    ls_output_options-tddest   = lv_printer.
+    ls_output_options-tdcopies = 1.
+    ls_output_options-tdimmed  = lv_immed.
+    ls_output_options-tddelete = lv_delete.
+    ls_output_options-tdnewid  = abap_true.
 
     " Dynamic device type based on logon language
     DATA: lv_devtype TYPE rspoptype.
