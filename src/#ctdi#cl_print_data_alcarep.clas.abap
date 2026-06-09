@@ -352,6 +352,8 @@ CLASS /ctdi/cl_print_data_alcarep IMPLEMENTATION.
           IF lt_cdpos_all IS NOT INITIAL.
             " Sort cdhdr descending by date/time to find the latest valid change first
             SORT lt_cdhdr DESCENDING BY udate utime DESCENDING.
+            " Sort cdpos for binary search
+            SORT lt_cdpos_all BY changenr tabname fname.
 
             DATA: lv_serge_found TYPE abap_bool VALUE abap_false,
                   lv_mapar_found TYPE abap_bool VALUE abap_false.
@@ -369,7 +371,7 @@ CLASS /ctdi/cl_print_data_alcarep IMPLEMENTATION.
                 
                 " Check for SERGE change
                 IF lv_serge_found = abap_false.
-                  READ TABLE lt_cdpos_all INTO DATA(ls_pos_serge) WITH KEY changenr = ls_cdhdr-changenr tabname = 'EQUI' fname = 'SERGE'.
+                  READ TABLE lt_cdpos_all INTO DATA(ls_pos_serge) WITH KEY changenr = ls_cdhdr-changenr tabname = 'EQUI' fname = 'SERGE' BINARY SEARCH.
                   IF sy-subrc = 0.
                     lf_oldserialnr = ls_pos_serge-value_old.
                     lf_newserialnr = ls_pos_serge-value_new.
@@ -379,7 +381,7 @@ CLASS /ctdi/cl_print_data_alcarep IMPLEMENTATION.
 
                 " Check for MAPAR change
                 IF lv_mapar_found = abap_false.
-                  READ TABLE lt_cdpos_all INTO DATA(ls_pos_mapar) WITH KEY changenr = ls_cdhdr-changenr tabname = 'EQUZ' fname = 'MAPAR'.
+                  READ TABLE lt_cdpos_all INTO DATA(ls_pos_mapar) WITH KEY changenr = ls_cdhdr-changenr tabname = 'EQUZ' fname = 'MAPAR' BINARY SEARCH.
                   IF sy-subrc = 0.
                     lf_oldpartnr = ls_pos_mapar-value_old.
                     lf_newpartnr = ls_pos_mapar-value_new.
