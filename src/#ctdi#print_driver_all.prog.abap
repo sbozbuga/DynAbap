@@ -549,7 +549,18 @@ CLASS lcl_print_driver_base IMPLEMENTATION.
     ENDIF.
 
     IF fm_has_parameter( iv_funcname  = lv_fm_name
-                         iv_paramname = 'IT_REPAIR_ERROR' ) = abap_true.
+                         iv_paramname = 'REPAIR_ERRORS' ) = abap_true.
+      ls_ptab-name = 'REPAIR_ERRORS'.
+      ls_ptab-kind = abap_func_tables.
+      GET REFERENCE OF ct_errors INTO ls_ptab-value.
+      INSERT ls_ptab INTO TABLE lt_ptab.
+
+      ls_ptab-name = 'COMMENT_LINES'.
+      ls_ptab-kind = abap_func_tables.
+      GET REFERENCE OF ct_comments INTO ls_ptab-value.
+      INSERT ls_ptab INTO TABLE lt_ptab.
+    ELSEIF fm_has_parameter( iv_funcname  = lv_fm_name
+                             iv_paramname = 'IT_REPAIR_ERROR' ) = abap_true.
       ls_ptab-name = 'IT_REPAIR_ERROR'.
       ls_ptab-kind = abap_func_tables.
       GET REFERENCE OF ct_errors INTO ls_ptab-value.
@@ -572,10 +583,18 @@ CLASS lcl_print_driver_base IMPLEMENTATION.
     ls_etab-name = 'USER_CANCELED'.    ls_etab-value = 4. INSERT ls_etab INTO TABLE lt_etab.
     ls_etab-name = 'OTHERS'.           ls_etab-value = 5. INSERT ls_etab INTO TABLE lt_etab.
 
-    CALL FUNCTION lv_fm_name
-      PARAMETER-TABLE lt_ptab
-      EXCEPTION-TABLE lt_etab.
-    lv_subrc_fm = sy-subrc.
+    TRY.
+        CALL FUNCTION lv_fm_name
+          PARAMETER-TABLE lt_ptab
+          EXCEPTION-TABLE lt_etab.
+        lv_subrc_fm = sy-subrc.
+      CATCH cx_sy_dyn_call_error INTO DATA(lx_dyn_call).
+        lv_err = |Dynamic call error for { iv_form_name }: { lx_dyn_call->get_text( ) }|.
+        lcl_print_driver_log=>log_error( lv_err ).
+        RAISE EXCEPTION TYPE lcx_print_driver_error
+          EXPORTING repair_id = iv_repair_id
+                    message   = lv_err.
+    ENDTRY.
 
     IF lv_subrc_fm <> 0.
       lv_err = |Smart Form { iv_form_name } execution failed (subrc={ lv_subrc_fm })|.
