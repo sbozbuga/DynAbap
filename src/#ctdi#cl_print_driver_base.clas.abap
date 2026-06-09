@@ -459,12 +459,12 @@ CLASS /ctdi/cl_print_driver_base IMPLEMENTATION.
     INSERT ls_ptab INTO TABLE lt_ptab.
 
     ls_ptab-name = 'REPAIR_ERRORS'.
-    ls_ptab-kind = abap_func_exporting.
+    ls_ptab-kind = abap_func_tables.
     GET REFERENCE OF ct_errors INTO ls_ptab-value.
     INSERT ls_ptab INTO TABLE lt_ptab.
 
     ls_ptab-name = 'COMMENT_LINES'.
-    ls_ptab-kind = abap_func_exporting.
+    ls_ptab-kind = abap_func_tables.
     GET REFERENCE OF ct_comments INTO ls_ptab-value.
     INSERT ls_ptab INTO TABLE lt_ptab.
 
