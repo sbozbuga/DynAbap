@@ -133,10 +133,7 @@ CLASS /ctdi/cl_print_data_alcarep IMPLEMENTATION.
       TABLES
         et_order_sn = lt_order_sn
       EXCEPTIONS
-        OTHERS      = 1.
-    IF sy-subrc <> 0.
-      " Ignore or log
-    ENDIF.
+        OTHERS      = 1. "#EC CI_SUBRC
 
     READ TABLE lt_order_sn INTO ls_order_sn
       WITH KEY aufnr = mv_aufnr rmanr = lf_rmanr posnr_rma = lf_posnr_rma.
@@ -301,10 +298,7 @@ CLASS /ctdi/cl_print_data_alcarep IMPLEMENTATION.
         TABLES
           et_order_objk = lt_order_objk
         EXCEPTIONS
-          OTHERS        = 1.
-      IF sy-subrc <> 0.
-        " Ignore
-      ENDIF.
+          OTHERS        = 1. "#EC CI_SUBRC
       LOOP AT lt_order_objk ASSIGNING <ls_objk>.
         lv_p_sernr = <ls_objk>-sernr.
         EXIT.
@@ -740,7 +734,7 @@ CLASS /ctdi/cl_print_data_alcarep IMPLEMENTATION.
       TABLES
         lines                   = lt_lines
       EXCEPTIONS
-        OTHERS                  = 8.
+        OTHERS                  = 8. "#EC CI_SUBRC
 
     mt_comment_lines = lt_lines.
   ENDMETHOD.
@@ -787,11 +781,7 @@ CLASS /ctdi/cl_print_data_alcarep IMPLEMENTATION.
       TABLES
         vbfa_tab      = lt_vbfa
       EXCEPTIONS
-        OTHERS        = 3.
-
-    IF sy-subrc <> 0.
-      " Continue anyway, lt_vbfa will be empty
-    ENDIF.
+        OTHERS        = 3. "#EC CI_SUBRC
 
     READ TABLE lt_vbfa INTO ls_vbfa_rl
                        WITH KEY vbelv = lf_rmanr
