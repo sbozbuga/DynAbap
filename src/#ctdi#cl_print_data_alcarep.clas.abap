@@ -558,7 +558,7 @@ CLASS /ctdi/cl_print_data_alcarep IMPLEMENTATION.
       ms_alcarep-old_part_no   = lf_oldpartnr.
       ms_alcarep-new_part_no   = lf_newpartnr.
     ELSE.
-      MESSAGE e024 WITH lv_p_sernr.
+      MESSAGE e024(/CELLAG/CS01) WITH lv_p_sernr.
     ENDIF.
 
     DATA lf_eqktx TYPE ktx01.
@@ -756,13 +756,13 @@ CLASS /ctdi/cl_print_data_alcarep IMPLEMENTATION.
 
       IF ls_jcds IS NOT INITIAL.
         IF ls_jcds-inact IS NOT INITIAL.
-          MESSAGE e029 WITH mv_aufnr.
+          MESSAGE e029(/CELLAG/CS01) WITH mv_aufnr.
         ENDIF.
         ev_wfer_date  = ls_jcds-udate.
         ev_wfer_time  = ls_jcds-utime.
       ENDIF.
     ELSE.
-      MESSAGE e028 WITH mv_aufnr.
+      MESSAGE e028(/CELLAG/CS01) WITH mv_aufnr.
     ENDIF.
   ENDMETHOD.
 
