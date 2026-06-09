@@ -43,6 +43,7 @@ FORM entry USING ent_retco TYPE sysubrc
 
   DATA: lv_repair_id TYPE aufnr,
         ls_repair    TYPE /ctdi/repair,
+        ls_project   TYPE /ctdi/rep_projec,
         lt_errors    TYPE TABLE OF /ctdi/repair_error,
         lt_comments  TYPE TABLE OF tline.
 
@@ -82,6 +83,7 @@ FORM entry USING ent_retco TYPE sysubrc
           iv_save_as_pdf = abap_false          " NACE always prints to spool
         CHANGING
           cs_repair      = ls_repair
+          cs_project     = ls_project
           ct_errors      = lt_errors
           ct_comments    = lt_comments ).
 
@@ -138,6 +140,7 @@ ENDFORM.
 *&---------------------------------------------------------------------*
 FORM run_standalone.
   DATA: ls_repair   TYPE /ctdi/repair,
+        ls_project  TYPE /ctdi/rep_projec,
         lt_errors   TYPE TABLE OF /ctdi/repair_error,
         lt_comments TYPE TABLE OF tline.
 
@@ -170,6 +173,7 @@ FORM run_standalone.
           iv_save_as_pdf = p_pdf
         CHANGING
           cs_repair      = ls_repair
+          cs_project     = ls_project
           ct_errors      = lt_errors
           ct_comments    = lt_comments ).
 
