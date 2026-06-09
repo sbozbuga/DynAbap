@@ -482,16 +482,18 @@ CLASS /ctdi/cl_print_data_alcarep IMPLEMENTATION.
       SELECT SINGLE * INTO @ls_qmel FROM qmel WHERE qmnum = @lv_qmnum.
     ENDIF.
 
-    DATA: BEGIN OF ls_eqstand.
-            INCLUDE TYPE /cellag/cseqstand_in.
-            INCLUDE TYPE /cellag/cseqstand_out.
-          END OF ls_eqstand.
+    DATA: ls_eqstand_in  TYPE /cellag/cseqstand_in,
+          ls_eqstand_out TYPE /cellag/cseqstand_out.
 
     IF ls_qmel IS NOT INITIAL.
       ms_alcarep-rev_in  = ls_qmel-revin.
       ms_alcarep-rev_out = ls_qmel-revout.
-      MOVE-CORRESPONDING ls_qmel TO ls_eqstand.
-      MOVE-CORRESPONDING ls_eqstand TO ms_alcarep.
+      
+      MOVE-CORRESPONDING ls_qmel TO ls_eqstand_in.
+      MOVE-CORRESPONDING ls_qmel TO ls_eqstand_out.
+      
+      MOVE-CORRESPONDING ls_eqstand_in TO ms_alcarep.
+      MOVE-CORRESPONDING ls_eqstand_out TO ms_alcarep.
     ENDIF.
   ENDMETHOD.
 
