@@ -413,25 +413,25 @@ CLASS /ctdi/cl_print_data_alcarep IMPLEMENTATION.
               iv_time = lf_utime ).
 
             IF lf_tstamp_received <= lf_tstamp_changed AND lf_tstamp_changed <= lf_tstamp_repaired.
-              CLEAR: ls_cdpos.
-              SELECT SINGLE * FROM cdpos INTO @ls_cdpos
-                  WHERE objectclas = 'EQUI' AND objectid = @lf_equnr AND changenr = @ls_cdhdr-changenr
-                    AND tabname = 'EQUI' AND fname = 'SERGE'.
+              SELECT tabname, fname, value_old, value_new FROM cdpos
+                INTO TABLE @DATA(lt_cdpos_single)
+                WHERE objectclas = 'EQUI' AND objectid = @lf_equnr AND changenr = @ls_cdhdr-changenr
+                  AND ( ( tabname = 'EQUI' AND fname = 'SERGE' ) OR
+                        ( tabname = 'EQUZ' AND fname = 'MAPAR' ) ).
+
+              READ TABLE lt_cdpos_single INTO DATA(ls_serge) WITH KEY tabname = 'EQUI' fname = 'SERGE'.
               IF sy-subrc = 0.
-                lf_oldserialnr = ls_cdpos-value_old.
-                lf_newserialnr = ls_cdpos-value_new.
+                lf_oldserialnr = ls_serge-value_old.
+                lf_newserialnr = ls_serge-value_new.
               ELSE.
                 SELECT SINGLE serge FROM equi INTO @lf_newserialnr WHERE equnr = @lf_equnr.
                 lf_oldserialnr = lf_newserialnr.
               ENDIF.
 
-              CLEAR: ls_cdpos.
-              SELECT SINGLE * FROM cdpos INTO @ls_cdpos
-                  WHERE objectclas = 'EQUI' AND objectid = @lf_equnr AND changenr = @ls_cdhdr-changenr
-                    AND tabname = 'EQUZ' AND fname = 'MAPAR'.
+              READ TABLE lt_cdpos_single INTO DATA(ls_mapar) WITH KEY tabname = 'EQUZ' fname = 'MAPAR'.
               IF sy-subrc = 0.
-                lf_oldpartnr = ls_cdpos-value_old.
-                lf_newpartnr = ls_cdpos-value_new.
+                lf_oldpartnr = ls_mapar-value_old.
+                lf_newpartnr = ls_mapar-value_new.
               ELSE.
                 SELECT SINGLE mapar FROM equz INTO @lf_newpartnr WHERE equnr = @lf_equnr.
                 lf_oldpartnr = lf_newpartnr.
