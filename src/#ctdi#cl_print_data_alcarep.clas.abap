@@ -788,6 +788,10 @@ CLASS /ctdi/cl_print_data_alcarep IMPLEMENTATION.
       EXCEPTIONS
         OTHERS        = 3.
 
+    IF sy-subrc <> 0.
+      " Continue anyway, lt_vbfa will be empty
+    ENDIF.
+
     READ TABLE lt_vbfa INTO ls_vbfa_rl
                        WITH KEY vbelv = lf_rmanr
                                 vbtyp_n = 'T'
