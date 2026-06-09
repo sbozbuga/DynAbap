@@ -197,8 +197,8 @@ CLASS lcl_print_driver_engine DEFINITION.
         lcx_print_driver_error.
 
   PRIVATE SECTION.
-    "! Resolves AUFNR (Order) -> VBELN (Contract / Sales Doc).
-    "! Checks AUFK -> KDAUF first (service order case),
+    "! Resolves AUFNR (Order) -&gt; VBELN (Contract / Sales Doc).
+    "! Checks AUFK -&gt; KDAUF first (service order case),
     "! then falls back to treating AUFNR as a direct VBELN.
     METHODS resolve_contract
       IMPORTING
@@ -1147,7 +1147,6 @@ FORM entry USING ent_retco TYPE sysubrc
           iv_save_as_pdf = abap_false
         CHANGING
           cs_repair      = ls_repair
-          cs_project     = ls_project
           ct_errors      = lt_errors
           ct_comments    = lt_comments ).
 
@@ -1198,7 +1197,6 @@ FORM run_standalone.
           iv_save_as_pdf = p_pdf
         CHANGING
           cs_repair      = ls_repair
-          cs_project     = ls_project
           ct_errors      = lt_errors
           ct_comments    = lt_comments ).
 
