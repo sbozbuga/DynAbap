@@ -333,8 +333,8 @@ CLASS /ctdi/cl_print_data_alcarep IMPLEMENTATION.
         lf_tstamp_received = convert_to_timestamp( iv_date = ms_alcarep-date_received iv_time = mv_time_received ).
         lf_tstamp_repaired = convert_to_timestamp( iv_date = ms_alcarep-date_repaired iv_time = mv_time_repaired ).
 
-        SELECT changenr, udate, utime FROM cdhdr 
-          INTO CORRESPONDING FIELDS OF TABLE @lt_cdhdr 
+        SELECT changenr, udate, utime FROM cdhdr
+          INTO CORRESPONDING FIELDS OF TABLE @lt_cdhdr
           WHERE objectclas = 'EQUI' AND objectid = @lf_equnr.
 
         IF lt_cdhdr IS NOT INITIAL.
@@ -368,7 +368,7 @@ CLASS /ctdi/cl_print_data_alcarep IMPLEMENTATION.
 
               " Only consider changes within the repair window
               IF lf_tstamp_changed >= lf_tstamp_received AND lf_tstamp_changed <= lf_tstamp_repaired.
-                
+
                 " Check for SERGE change
                 IF lv_serge_found = abap_false.
                   READ TABLE lt_cdpos_all INTO DATA(ls_pos_serge) WITH KEY changenr = ls_cdhdr-changenr tabname = 'EQUI' fname = 'SERGE' BINARY SEARCH.
