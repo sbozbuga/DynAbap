@@ -11,7 +11,7 @@
      <STATE/>
      <LANGUAGE>D</LANGUAGE>
      <ID/>
-     <TEXT>Fehlerbericht Alcatel/ECI</TEXT>
+     <TEXT>Fehlerbericht</TEXT>
     </FPINTERFACET>
    </INTERFACET>
   </asx:values>
@@ -40,57 +40,32 @@
     <CL_FP_GLOBAL_DEFINITIONS classVersion="1">
      <GLOBAL_DATA>
       <SFPGDATA>
-       <NAME>WA_LINES</NAME>
-       <TYPING>LIKE</TYPING>
-       <TYPENAME>TLINE</TYPENAME>
-       <DEFAULTVAL/>
-       <CONSTANT/>
-      </SFPGDATA>
-      <SFPGDATA>
-       <NAME>LT_LINES</NAME>
-       <TYPING>LIKE STANDARD TABLE OF</TYPING>
-       <TYPENAME>TLINE</TYPENAME>
-       <DEFAULTVAL/>
-       <CONSTANT/>
-      </SFPGDATA>
-      <SFPGDATA>
-       <NAME>GS_ERROR</NAME>
+       <NAME>GV_LOGO_NAME</NAME>
        <TYPING>TYPE</TYPING>
-       <TYPENAME>/CELLAG/ALCAREP_ERROR</TYPENAME>
-       <DEFAULTVAL/>
+       <TYPENAME>TDOBNAME</TYPENAME>
+       <DEFAULTVAL>&apos;CTDI_1C_BLACK2023.BMP&apos;</DEFAULTVAL>
        <CONSTANT/>
       </SFPGDATA>
       <SFPGDATA>
-       <NAME>GS_COMMENT_LINE</NAME>
+       <NAME>GV_LOGO_TYPE</NAME>
        <TYPING>TYPE</TYPING>
-       <TYPENAME>TLINE</TYPENAME>
-       <DEFAULTVAL/>
+       <TYPENAME>TDBTYPE</TYPENAME>
+       <DEFAULTVAL>&apos;BMON&apos;</DEFAULTVAL>
        <CONSTANT/>
       </SFPGDATA>
       <SFPGDATA>
-       <NAME>GF_FORMPAGES</NAME>
+       <NAME>GV_LOGOX</NAME>
        <TYPING>TYPE</TYPING>
-       <TYPENAME>SFSY-FORMPAGES</TYPENAME>
-       <DEFAULTVAL/>
-       <CONSTANT/>
-      </SFPGDATA>
-      <SFPGDATA>
-       <NAME>GF_ALCA_LOGO</NAME>
-       <TYPING>TYPE</TYPING>
-       <TYPENAME>CHAR1</TYPENAME>
+       <TYPENAME>XSTRING</TYPENAME>
        <DEFAULTVAL/>
        <CONSTANT/>
       </SFPGDATA>
      </GLOBAL_DATA>
      <TYPES>
       <FPCLINE>TYPES: BEGIN OF gy_error,</FPCLINE>
-      <FPCLINE>  urgrp TYPE urgrp,</FPCLINE>
-      <FPCLINE>  urcod TYPE urcod,</FPCLINE>
-      <FPCLINE>  END OF gy_error.</FPCLINE>
-      <FPCLINE/>
-      <FPCLINE/>
-      <FPCLINE/>
-      <FPCLINE/>
+      <FPCLINE>         urgrp TYPE urgrp,</FPCLINE>
+      <FPCLINE>         urcod TYPE urcod,</FPCLINE>
+      <FPCLINE>       END OF gy_error.</FPCLINE>
       <FPCLINE/>
       <FPCLINE/>
       <FPCLINE/>
@@ -120,9 +95,19 @@
     <CL_FP_PARAMETERS classVersion="1">
      <IMPORT_PARAMETERS>
       <SFPIOPAR>
-       <NAME>/CELLAG/ALCAREP</NAME>
+       <NAME>REPAIR</NAME>
        <TYPING>TYPE</TYPING>
-       <TYPENAME>/CELLAG/ALCAREP</TYPENAME>
+       <TYPENAME>/CTDI/REPAIR</TYPENAME>
+       <OPTIONAL/>
+       <BYVALUE/>
+       <DEFAULTVAL/>
+       <STANDARD/>
+       <CONSTANT/>
+      </SFPIOPAR>
+      <SFPIOPAR>
+       <NAME>PROJECT</NAME>
+       <TYPING>TYPE</TYPING>
+       <TYPENAME>/CTDI/REP_PROJEC</TYPENAME>
        <OPTIONAL/>
        <BYVALUE/>
        <DEFAULTVAL/>
@@ -133,9 +118,9 @@
      <EXPORT_PARAMETERS/>
      <TABLE_PARAMETERS>
       <SFPIOPAR>
-       <NAME>/CELLAG/ALCAREP_ERROR</NAME>
+       <NAME>REPAIR_ERRORS</NAME>
        <TYPING>TYPE</TYPING>
-       <TYPENAME>/CELLAG/ALCAREP_ERROR_TT</TYPENAME>
+       <TYPENAME>/CTDI/REPAIR_ERROR_TT</TYPENAME>
        <OPTIONAL/>
        <BYVALUE/>
        <DEFAULTVAL/>
@@ -143,7 +128,7 @@
        <CONSTANT/>
       </SFPIOPAR>
       <SFPIOPAR>
-       <NAME>GT_COMMENT_LINES</NAME>
+       <NAME>COMMENT_LINES</NAME>
        <TYPING>TYPE</TYPING>
        <TYPENAME>TLINE_TAB</TYPENAME>
        <OPTIONAL/>
@@ -161,18 +146,28 @@
      <INTERFACE_DATA href="#o1"/>
     </CL_FP_INTERFACE_DATA_CHANGED>
     <CL_FP_CODING classVersion="1">
-     <INPUT_PARAMETERS/>
-     <OUTPUT_PARAMETERS/>
+     <INPUT_PARAMETERS>
+      <FPPARAMETER>GV_LOGO_NAME</FPPARAMETER>
+      <FPPARAMETER>GV_LOGO_TYPE</FPPARAMETER>
+     </INPUT_PARAMETERS>
+     <OUTPUT_PARAMETERS>
+      <FPPARAMETER>GV_LOGOX</FPPARAMETER>
+     </OUTPUT_PARAMETERS>
      <INITIALIZATION>
       <FPCLINE>DATA: lt_error TYPE TABLE OF gy_error.</FPCLINE>
-      <FPCLINE/>
-      <FPCLINE/>
-      <FPCLINE/>
-      <FPCLINE/>
-      <FPCLINE/>
-      <FPCLINE/>
-      <FPCLINE/>
-      <FPCLINE/>
+      <FPCLINE>*BREAK nhs003381.</FPCLINE>
+      <FPCLINE>CALL METHOD cl_ssf_xsf_utilities=&gt;get_bds_graphic_as_bmp</FPCLINE>
+      <FPCLINE>  EXPORTING</FPCLINE>
+      <FPCLINE>    p_object = &apos;GRAPHICS&apos;</FPCLINE>
+      <FPCLINE>    p_name   = gv_logo_name</FPCLINE>
+      <FPCLINE>    p_id     = &apos;BMAP&apos;</FPCLINE>
+      <FPCLINE>    p_btype  = gv_logo_type</FPCLINE>
+      <FPCLINE>  RECEIVING</FPCLINE>
+      <FPCLINE>    p_bmp    = gv_logox</FPCLINE>
+      <FPCLINE>  EXCEPTIONS</FPCLINE>
+      <FPCLINE>    OTHERS   = 1.</FPCLINE>
+      <FPCLINE>IF sy-subrc NE 0.</FPCLINE>
+      <FPCLINE>ENDIF.</FPCLINE>
       <FPCLINE/>
       <FPCLINE/>
       <FPCLINE/>

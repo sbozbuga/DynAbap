@@ -1,4 +1,4 @@
-<?xml version="1.0" encoding="utf-8"?>
+﻿<?xml version="1.0" encoding="utf-8"?>
 <abapGit version="v1.0.0" serializer="LCL_OBJECT_SFPF" serializer_version="v1.0.0">
  <asx:abap version="1.0" xmlns:asx="http://www.sap.com/abapxml">
   <asx:values>
@@ -28,13 +28,17 @@
      <ID/>
      <DIRTY/>
      <LAYOUT/>
+     <LAYOUTM/>
     </FPLAYOUTT>
    </LAYOUTT>
   </asx:values>
   <asx:heap xmlns:xsd="http://www.w3.org/2001/XMLSchema" xmlns:abap="http://www.sap.com/abapxml/types/built-in" xmlns:cls="http://www.sap.com/abapxml/classes/global" xmlns:dic="http://www.sap.com/abapxml/types/dictionary">
    <cls:CL_FP_LAYOUT id="o1">
     <CL_FP_LAYOUT classVersion="1">
-     <LAYOUT_VERSION>A</LAYOUT_VERSION>
+     <TRANSLATION_TYPE/>
+     <CACHE_INFO/>
+     <LAYOUT_TYPE>S</LAYOUT_TYPE>
+     <FORM_TECH/>
     </CL_FP_LAYOUT>
    </cls:CL_FP_LAYOUT>
    <cls:CL_FP_CONTEXT id="o2">
@@ -43,7 +47,7 @@
      <NAME>CONTEXT</NAME>
      <GENERATED/>
      <STATE>A</STATE>
-     <CONDITION href="#o7"/>
+     <CONDITION href="#o9"/>
      <PARENT/>
      <SUCCESSOR/>
      <CHILD href="#o3"/>
@@ -56,7 +60,7 @@
      <NAME>IV_TITLE</NAME>
      <GENERATED/>
      <STATE>A</STATE>
-     <CONDITION href="#o6"/>
+     <CONDITION href="#o8"/>
      <PARENT href="#o2"/>
      <SUCCESSOR href="#o4"/>
      <CHILD/>
@@ -72,7 +76,7 @@
      <NAME>IV_CUSTOMER</NAME>
      <GENERATED/>
      <STATE>A</STATE>
-     <CONDITION href="#o8"/>
+     <CONDITION href="#o7"/>
      <PARENT href="#o2"/>
      <SUCCESSOR href="#o5"/>
      <CHILD/>
@@ -88,7 +92,7 @@
      <NAME>IV_DATE</NAME>
      <GENERATED/>
      <STATE>A</STATE>
-     <CONDITION href="#o9"/>
+     <CONDITION href="#o6"/>
      <PARENT href="#o2"/>
      <SUCCESSOR/>
      <CHILD/>
@@ -100,25 +104,25 @@
    </cls:CL_FP_DATA>
    <cls:CL_FP_CONDITION id="o6">
     <CL_FP_CONDITION classVersion="1">
-     <NODE href="#o3"/>
+     <NODE href="#o5"/>
      <CONDITIONS/>
     </CL_FP_CONDITION>
    </cls:CL_FP_CONDITION>
    <cls:CL_FP_CONDITION id="o7">
     <CL_FP_CONDITION classVersion="1">
-     <NODE href="#o2"/>
+     <NODE href="#o4"/>
      <CONDITIONS/>
     </CL_FP_CONDITION>
    </cls:CL_FP_CONDITION>
    <cls:CL_FP_CONDITION id="o8">
     <CL_FP_CONDITION classVersion="1">
-     <NODE href="#o4"/>
+     <NODE href="#o3"/>
      <CONDITIONS/>
     </CL_FP_CONDITION>
    </cls:CL_FP_CONDITION>
    <cls:CL_FP_CONDITION id="o9">
     <CL_FP_CONDITION classVersion="1">
-     <NODE href="#o5"/>
+     <NODE href="#o2"/>
      <CONDITIONS/>
     </CL_FP_CONDITION>
    </cls:CL_FP_CONDITION>
