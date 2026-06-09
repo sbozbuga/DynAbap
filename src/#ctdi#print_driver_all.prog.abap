@@ -197,6 +197,8 @@ CLASS lcl_print_driver_engine DEFINITION.
         lcx_print_driver_error.
 
   PRIVATE SECTION.
+    CLASS-DATA gt_project_cache TYPE HASHED TABLE OF /ctdi/rep_projec WITH UNIQUE KEY vbeln.
+
     "! Resolves AUFNR (Order) -&gt; VBELN (Contract / Sales Doc).
     "! Checks AUFK -&gt; KDAUF first (service order case),
     "! then falls back to treating AUFNR as a direct VBELN.
@@ -1011,23 +1013,31 @@ CLASS lcl_print_driver_engine IMPLEMENTATION.
 
     ev_form_name = lv_db_form.
     
-    " Step 3: Look up the project in the project table
-    SELECT SINGLE *
-      FROM /ctdi/rep_projec
-      INTO @es_project
-      WHERE vbeln = @lv_contract.
-
+    " Step 3: Look up the project in the project table (with memory caching)
+    READ TABLE gt_project_cache INTO es_project WITH TABLE KEY vbeln = lv_contract.
+    
     IF sy-subrc <> 0.
-      IF lv_raw IS INITIAL.
-        lv_raw = |{ lv_contract ALPHA = OUT }|.
-        lv_in  = |{ lv_contract ALPHA = IN }|.
-      ENDIF.
-
       SELECT SINGLE *
         FROM /ctdi/rep_projec
         INTO @es_project
-        WHERE vbeln = @lv_raw
-           OR vbeln = @lv_in.
+        WHERE vbeln = @lv_contract.
+
+      IF sy-subrc <> 0.
+        IF lv_raw IS INITIAL.
+          lv_raw = |{ lv_contract ALPHA = OUT }|.
+          lv_in  = |{ lv_contract ALPHA = IN }|.
+        ENDIF.
+
+        SELECT SINGLE *
+          FROM /ctdi/rep_projec
+          INTO @es_project
+          WHERE vbeln = @lv_raw
+             OR vbeln = @lv_in.
+      ENDIF.
+      
+      IF es_project IS NOT INITIAL.
+        INSERT es_project INTO TABLE gt_project_cache.
+      ENDIF.
     ENDIF.
 
     lcl_print_driver_log=>log_info(
