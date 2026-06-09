@@ -838,5 +838,5 @@ CLASS /ctdi/cl_print_data_alcarep IMPLEMENTATION.
 *      ENDIF.
 *    ENDIF.
 *  ENDMETHOD.
-*
-*ENDCLASS.
+
+ENDCLASS.
