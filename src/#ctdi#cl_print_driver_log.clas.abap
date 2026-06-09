@@ -4,6 +4,12 @@ CLASS /ctdi/cl_print_driver_log DEFINITION
   CREATE PUBLIC.
 
   PUBLIC SECTION.
+    CLASS-DATA gv_log_level TYPE char1 VALUE 'W'.
+
+    CLASS-METHODS set_log_level
+      IMPORTING
+        !iv_level TYPE char1.
+
     "! Log an informational message to SLG1
     CLASS-METHODS log_info
       IMPORTING
@@ -46,6 +52,10 @@ ENDCLASS.
 
 CLASS /ctdi/cl_print_driver_log IMPLEMENTATION.
 
+  METHOD set_log_level.
+    gv_log_level = iv_level.
+  ENDMETHOD.
+
   METHOD log_info.
     add_to_log( iv_text      = iv_text
                 iv_msgty     = 'I'
@@ -80,7 +90,28 @@ CLASS /ctdi/cl_print_driver_log IMPLEMENTATION.
           lv_handle   TYPE balloghndl,
           ls_msg      TYPE bal_s_msg,
           lv_len      TYPE i,
-          lt_handles  TYPE bal_t_logh.
+          lt_handles  TYPE bal_t_logh,
+          lv_level_num TYPE i,
+          lv_msg_num   TYPE i.
+
+    " 0. Check log level
+    CASE gv_log_level.
+      WHEN 'I'. lv_level_num = 1.
+      WHEN 'W'. lv_level_num = 2.
+      WHEN 'E'. lv_level_num = 3.
+      WHEN OTHERS. lv_level_num = 2.
+    ENDCASE.
+
+    CASE iv_msgty.
+      WHEN 'I' OR 'S'. lv_msg_num = 1.
+      WHEN 'W'. lv_msg_num = 2.
+      WHEN 'E'. lv_msg_num = 3.
+      WHEN OTHERS. lv_msg_num = 3.
+    ENDCASE.
+
+    IF lv_msg_num < lv_level_num.
+      RETURN.
+    ENDIF.
 
     " 1. Define log header
     ls_log-object    = iv_object.
