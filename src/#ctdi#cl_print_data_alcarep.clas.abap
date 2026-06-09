@@ -397,6 +397,7 @@ CLASS /ctdi/cl_print_data_alcarep IMPLEMENTATION.
             ENDLOOP.
           ENDIF.
         ENDIF.
+      ENDIF.
 
         " --- LEGACY CODE (Commented for reference) ---
 *        SELECT changenr, udate, utime FROM cdhdr INTO CORRESPONDING FIELDS OF TABLE @lt_cdhdr WHERE objectclas = 'EQUI' AND objectid = @lf_equnr.
