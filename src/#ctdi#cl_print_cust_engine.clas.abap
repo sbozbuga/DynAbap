@@ -387,12 +387,12 @@ CLASS /CTDI/CL_PRINT_CUST_ENGINE IMPLEMENTATION.
            lv_param = 'MAIL_APPL_OBJ'      OR
            lv_param = 'MAIL_RECIPIENT'     OR
            lv_param = 'MAIL_SENDER'        OR
-           lv_param = 'IS_REPAIR'.
+           lv_param = 'REPAIR'.
           CONTINUE.
         ENDIF.
       ELSE. " Adobe Form
         IF lv_param = '/1BCDWB/DOCPARAMS' OR
-           lv_param = 'IS_REPAIR'.
+           lv_param = 'REPAIR'.
           CONTINUE.
         ENDIF.
       ENDIF.

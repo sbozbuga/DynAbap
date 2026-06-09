@@ -267,7 +267,7 @@ CLASS /ctdi/cl_print_driver_base IMPLEMENTATION.
     GET REFERENCE OF ls_output_options INTO ls_ptab-value.
     INSERT ls_ptab INTO TABLE lt_ptab.
 
-    ls_ptab-name = 'IS_REPAIR'.
+    ls_ptab-name = 'REPAIR'.
     ls_ptab-kind = abap_func_exporting.
     GET REFERENCE OF cs_repair INTO ls_ptab-value.
     INSERT ls_ptab INTO TABLE lt_ptab.
@@ -436,7 +436,7 @@ CLASS /ctdi/cl_print_driver_base IMPLEMENTATION.
     GET REFERENCE OF ls_docparams INTO ls_ptab-value.
     INSERT ls_ptab INTO TABLE lt_ptab.
 
-    ls_ptab-name = 'IS_REPAIR'.
+    ls_ptab-name = 'REPAIR'.
     ls_ptab-kind = abap_func_exporting.
     GET REFERENCE OF cs_repair INTO ls_ptab-value.
     INSERT ls_ptab INTO TABLE lt_ptab.
