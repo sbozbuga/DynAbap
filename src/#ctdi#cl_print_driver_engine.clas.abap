@@ -40,6 +40,7 @@ CLASS /ctdi/cl_print_driver_engine DEFINITION
     TYPES tt_config_buffer TYPE HASHED TABLE OF /ctdi/rep_forms WITH UNIQUE KEY vbeln skz akz.
 
     DATA mt_config_buffer TYPE tt_config_buffer.
+    DATA mt_project_buffer TYPE HASHED TABLE OF /ctdi/rep_projec WITH UNIQUE KEY vbeln.
 
     "! Resolves AUFNR (Order) -> VBELN (Contract / Sales Doc).
     "! Checks AUFK -> VBAP -> vbeln_vl first (service order case),
@@ -61,6 +62,7 @@ CLASS /ctdi/cl_print_driver_engine DEFINITION
       EXPORTING
         !ev_form_name   TYPE fpname
         !ev_class_name  TYPE seoclsname
+        !es_project     TYPE /ctdi/rep_projec
       RAISING
         /ctdi/cx_print_driver_error
         /ctdi/cx_no_config_found.
@@ -89,7 +91,8 @@ CLASS /ctdi/cl_print_driver_engine IMPLEMENTATION.
 
   METHOD execute.
     DATA: lv_form_name  TYPE fpname,
-          lv_class_name TYPE seoclsname.
+          lv_class_name TYPE seoclsname,
+          ls_project_db TYPE /ctdi/rep_projec.
 
     /ctdi/cl_print_driver_log=>log_info(
       |Print driver engine invoked for Repair { iv_repair_id }| ).
@@ -101,6 +104,13 @@ CLASS /ctdi/cl_print_driver_engine IMPLEMENTATION.
       lv_class_name = iv_class_name.
       /ctdi/cl_print_driver_log=>log_info(
         |Using explicit config — Form: { lv_form_name }, Class: { lv_class_name }| ).
+        
+      IF cs_project IS SUPPLIED AND cs_project IS INITIAL.
+        get_config_from_db(
+          EXPORTING iv_repair_id  = iv_repair_id
+          IMPORTING es_project    = ls_project_db ).
+        cs_project = ls_project_db.
+      ENDIF.
     ELSE.
       " Look up from customizing table
       get_config_from_db(
@@ -108,7 +118,12 @@ CLASS /ctdi/cl_print_driver_engine IMPLEMENTATION.
                   iv_skz        = iv_skz
                   iv_akz        = iv_akz
         IMPORTING ev_form_name  = lv_form_name
-                  ev_class_name = lv_class_name ).
+                  ev_class_name = lv_class_name
+                  es_project    = ls_project_db ).
+                  
+      IF cs_project IS SUPPLIED.
+        cs_project = ls_project_db.
+      ENDIF.
     ENDIF.
 
     " Fallback to base class if nothing configured
@@ -320,15 +335,42 @@ CLASS /ctdi/cl_print_driver_engine IMPLEMENTATION.
           AND akz = ''.
     ENDIF.
 
-    IF ls_config IS INITIAL.
+    IF ls_config IS INITIAL AND ( ev_form_name IS SUPPLIED OR ev_class_name IS SUPPLIED ).
       RAISE EXCEPTION TYPE /ctdi/cx_no_config_found.
     ENDIF.
 
-    " Save to cache
-    INSERT ls_config INTO TABLE mt_config_buffer.
+    IF ls_config IS NOT INITIAL.
+      " Save to cache
+      INSERT ls_config INTO TABLE mt_config_buffer.
 
-    ev_form_name  = ls_config-form_name.
-    ev_class_name = resolve_class_name( ls_config-class_name ).
+      ev_form_name  = ls_config-form_name.
+      ev_class_name = resolve_class_name( ls_config-class_name ).
+    ENDIF.
+    
+    " Look up the project in the project table (with memory caching)
+    READ TABLE mt_project_buffer INTO es_project WITH TABLE KEY vbeln = lv_contract.
+    
+    IF sy-subrc <> 0.
+      SELECT SINGLE *
+        FROM /ctdi/rep_projec
+        INTO @es_project
+        WHERE vbeln = @lv_contract.
+
+      IF sy-subrc <> 0.
+        DATA(lv_raw_proj) = |{ lv_contract ALPHA = OUT }|.
+        DATA(lv_in_proj)  = |{ lv_contract ALPHA = IN }|.
+
+        SELECT SINGLE *
+          FROM /ctdi/rep_projec
+          INTO @es_project
+          WHERE vbeln = @lv_raw_proj
+             OR vbeln = @lv_in_proj.
+      ENDIF.
+      
+      IF es_project IS NOT INITIAL.
+        INSERT es_project INTO TABLE mt_project_buffer.
+      ENDIF.
+    ENDIF.
 
     /ctdi/cl_print_driver_log=>log_info(
       |Config resolved and cached — Contract: { lv_contract }, | &&
