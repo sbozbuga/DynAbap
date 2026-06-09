@@ -38,3 +38,5 @@ src/#ctdi#workshop_m.fugr.*
 zsb_export/
 src/foreignobj.csv
 src/missing_foreignobj.csv
+
+src/#ctdi#copy_foreign_ddic.prog*
