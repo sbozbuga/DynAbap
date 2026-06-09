@@ -458,7 +458,7 @@ CLASS /ctdi/cl_print_driver_base IMPLEMENTATION.
     GET REFERENCE OF cs_project INTO ls_ptab-value.
     INSERT ls_ptab INTO TABLE lt_ptab.
 
-    ls_ptab-name = 'REPAIR_ERROR'.
+    ls_ptab-name = 'REPAIR_ERRORS'.
     ls_ptab-kind = abap_func_exporting.
     GET REFERENCE OF ct_errors INTO ls_ptab-value.
     INSERT ls_ptab INTO TABLE lt_ptab.
@@ -467,8 +467,6 @@ CLASS /ctdi/cl_print_driver_base IMPLEMENTATION.
     ls_ptab-kind = abap_func_exporting.
     GET REFERENCE OF ct_comments INTO ls_ptab-value.
     INSERT ls_ptab INTO TABLE lt_ptab.
-
-
 
     ls_ptab-name = '/1BCDWB/FORMOUTPUT'.
     ls_ptab-kind = abap_func_importing.
