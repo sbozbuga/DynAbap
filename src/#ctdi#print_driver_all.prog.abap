@@ -211,6 +211,7 @@ CLASS lcl_print_driver_engine DEFINITION.
         !iv_repair_id   TYPE aufnr
       EXPORTING
         !ev_form_name   TYPE fpname
+        !es_project     TYPE /ctdi/rep_projec
       RAISING
         lcx_print_driver_error.
 ENDCLASS.
@@ -886,7 +887,8 @@ ENDCLASS.
 CLASS lcl_print_driver_engine IMPLEMENTATION.
 
   METHOD execute.
-    DATA: lv_form_name TYPE fpname.
+    DATA: lv_form_name  TYPE fpname,
+          ls_project_db TYPE /ctdi/rep_projec.
 
     lcl_print_driver_log=>log_info(
       |Print driver engine invoked for Repair { iv_repair_id }| ).
@@ -895,10 +897,21 @@ CLASS lcl_print_driver_engine IMPLEMENTATION.
       lv_form_name = iv_form_name.
       lcl_print_driver_log=>log_info(
         |Using explicit form name: { lv_form_name }| ).
+        
+      IF cs_project IS SUPPLIED AND cs_project IS INITIAL.
+        get_config_from_db(
+          EXPORTING iv_repair_id  = iv_repair_id
+          IMPORTING es_project    = ls_project_db ).
+        cs_project = ls_project_db.
+      ENDIF.
     ELSE.
       get_config_from_db(
         EXPORTING iv_repair_id  = iv_repair_id
-        IMPORTING ev_form_name  = lv_form_name ).
+        IMPORTING ev_form_name  = lv_form_name
+                  es_project    = ls_project_db ).
+      IF cs_project IS SUPPLIED.
+        cs_project = ls_project_db.
+      ENDIF.
     ENDIF.
 
     IF lv_form_name IS INITIAL.
@@ -989,7 +1002,7 @@ CLASS lcl_print_driver_engine IMPLEMENTATION.
            OR vbeln = @lv_in.
     ENDIF.
 
-    IF sy-subrc <> 0.
+    IF ev_form_name IS SUPPLIED AND sy-subrc <> 0.
       RAISE EXCEPTION TYPE lcx_print_driver_error
         EXPORTING
           repair_id = iv_repair_id
@@ -997,6 +1010,26 @@ CLASS lcl_print_driver_engine IMPLEMENTATION.
     ENDIF.
 
     ev_form_name = lv_db_form.
+    
+    " Step 3: Look up the project in the project table
+    SELECT SINGLE *
+      FROM /ctdi/rep_projec
+      INTO @es_project
+      WHERE vbeln = @lv_contract.
+
+    IF sy-subrc <> 0.
+      IF lv_raw IS INITIAL.
+        lv_raw = |{ lv_contract ALPHA = OUT }|.
+        lv_in  = |{ lv_contract ALPHA = IN }|.
+      ENDIF.
+
+      SELECT SINGLE *
+        FROM /ctdi/rep_projec
+        INTO @es_project
+        WHERE vbeln = @lv_raw
+           OR vbeln = @lv_in.
+    ENDIF.
+
     lcl_print_driver_log=>log_info(
       |Config resolved — Contract: { lv_contract }, Form: { ev_form_name }| ).
   ENDMETHOD.
@@ -1120,6 +1153,7 @@ FORM entry USING ent_retco TYPE sysubrc
 
   DATA: lv_repair_id TYPE aufnr,
         ls_repair    TYPE /ctdi/repair,
+        ls_project   TYPE /ctdi/rep_projec,
         lt_errors    TYPE TABLE OF /ctdi/repair_error,
         lt_comments  TYPE TABLE OF tline,
         lr_nast      TYPE REF TO lcl_nast_handler.
@@ -1147,6 +1181,7 @@ FORM entry USING ent_retco TYPE sysubrc
           iv_save_as_pdf = abap_false
         CHANGING
           cs_repair      = ls_repair
+          cs_project     = ls_project
           ct_errors      = lt_errors
           ct_comments    = lt_comments ).
 
@@ -1185,6 +1220,7 @@ ENDFORM.
 *&---------------------------------------------------------------------*
 FORM run_standalone.
   DATA: ls_repair   TYPE /ctdi/repair,
+        ls_project  TYPE /ctdi/rep_projec,
         lt_errors   TYPE TABLE OF /ctdi/repair_error,
         lt_comments TYPE TABLE OF tline.
 
@@ -1197,6 +1233,7 @@ FORM run_standalone.
           iv_save_as_pdf = p_pdf
         CHANGING
           cs_repair      = ls_repair
+          cs_project     = ls_project
           ct_errors      = lt_errors
           ct_comments    = lt_comments ).
 
