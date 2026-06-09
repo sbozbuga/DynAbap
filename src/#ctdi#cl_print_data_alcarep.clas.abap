@@ -130,7 +130,12 @@ CLASS /ctdi/cl_print_data_alcarep IMPLEMENTATION.
         i_vbeln     = lf_rmanr
         i_posnr     = lf_posnv_rma
       TABLES
-        et_order_sn = lt_order_sn.
+        et_order_sn = lt_order_sn
+      EXCEPTIONS
+        OTHERS      = 1.
+    IF sy-subrc <> 0.
+      " Ignore or log
+    ENDIF.
 
     READ TABLE lt_order_sn INTO ls_order_sn
       WITH KEY aufnr = mv_aufnr rmanr = lf_rmanr posnr_rma = lf_posnr_rma.
@@ -293,7 +298,12 @@ CLASS /ctdi/cl_print_data_alcarep IMPLEMENTATION.
         EXPORTING
           i_aufnr       = mv_aufnr
         TABLES
-          et_order_objk = lt_order_objk.
+          et_order_objk = lt_order_objk
+        EXCEPTIONS
+          OTHERS        = 1.
+      IF sy-subrc <> 0.
+        " Ignore
+      ENDIF.
       LOOP AT lt_order_objk ASSIGNING <ls_objk>.
         lv_p_sernr = <ls_objk>-sernr.
         EXIT.
@@ -313,7 +323,7 @@ CLASS /ctdi/cl_print_data_alcarep IMPLEMENTATION.
            WHERE equnr = @mv_equnr_retlief.
         SELECT SINGLE mapar FROM equz INTO @lf_oldpartnr WHERE equnr = @mv_equnr_retlief.
       ELSE.
-        SELECT * FROM cdhdr INTO TABLE @lt_cdhdr WHERE objectclas = 'EQUI' AND objectid = @lf_equnr.
+        SELECT changenr, udate, utime FROM cdhdr INTO CORRESPONDING FIELDS OF TABLE @lt_cdhdr WHERE objectclas = 'EQUI' AND objectid = @lf_equnr.
 
         IF lt_cdhdr IS NOT INITIAL.
           lv_lines = lines( lt_cdhdr ).
@@ -331,19 +341,34 @@ CLASS /ctdi/cl_print_data_alcarep IMPLEMENTATION.
             iv_time = mv_time_thisdate ).
 
           IF lv_lines > 1.
+            IF lt_cdhdr IS NOT INITIAL.
+              SELECT changenr, tabname, fname
+                FROM cdpos
+                INTO TABLE @DATA(lt_cdpos_opt)
+                FOR ALL ENTRIES IN @lt_cdhdr
+                WHERE objectclas = 'EQUI'
+                  AND objectid   = @lf_equnr
+                  AND changenr   = @lt_cdhdr-changenr
+                  AND ( ( tabname = 'EQUI' AND fname = 'SERGE' ) OR
+                        ( tabname = 'EQUZ' AND fname = 'MAPAR' ) ).
+              SORT lt_cdpos_opt BY changenr tabname fname.
+            ENDIF.
+
             LOOP AT lt_cdhdr INTO ls_cdhdr.
-              CLEAR: ls_cdpos_serge.
-              SELECT SINGLE * FROM cdpos INTO @ls_cdpos_first
-                  WHERE objectclas = 'EQUI' AND objectid = @lf_equnr AND changenr = @ls_cdhdr-changenr
-                    AND tabname = 'EQUI' AND fname = 'SERGE'.
+              READ TABLE lt_cdpos_opt TRANSPORTING NO FIELDS
+                WITH KEY changenr = ls_cdhdr-changenr
+                         tabname  = 'EQUI'
+                         fname    = 'SERGE'
+                BINARY SEARCH.
               IF sy-subrc = 0.
                 APPEND ls_cdhdr TO lt_cdhdr_serge.
               ENDIF.
 
-              CLEAR: ls_cdpos_mapar.
-              SELECT SINGLE * FROM cdpos INTO @ls_cdpos_mapar
-                  WHERE objectclas = 'EQUI' AND objectid = @lf_equnr AND changenr = @ls_cdhdr-changenr
-                    AND tabname = 'EQUZ' AND fname = 'MAPAR'.
+              READ TABLE lt_cdpos_opt TRANSPORTING NO FIELDS
+                WITH KEY changenr = ls_cdhdr-changenr
+                         tabname  = 'EQUZ'
+                         fname    = 'MAPAR'
+                BINARY SEARCH.
               IF sy-subrc = 0.
                 APPEND ls_cdhdr TO lt_cdhdr_mapar.
               ENDIF.
@@ -470,7 +495,7 @@ CLASS /ctdi/cl_print_data_alcarep IMPLEMENTATION.
           lv_qmnum TYPE qmel-qmnum,
           ls_qmel  TYPE qmel.
 
-    SELECT SINGLE * INTO @ls_afih FROM afih WHERE aufnr = @mv_aufnr.
+    SELECT SINGLE qmnum, obknr FROM afih INTO CORRESPONDING FIELDS OF @ls_afih WHERE aufnr = @mv_aufnr.
     IF ls_afih-qmnum IS NOT INITIAL.
       lv_qmnum = ls_afih-qmnum.
     ELSE.
@@ -479,7 +504,7 @@ CLASS /ctdi/cl_print_data_alcarep IMPLEMENTATION.
     ENDIF.
 
     IF lv_qmnum IS NOT INITIAL.
-      SELECT SINGLE * INTO @ls_qmel FROM qmel WHERE qmnum = @lv_qmnum.
+      SELECT SINGLE * INTO @ls_qmel FROM qmel WHERE qmnum = @lv_qmnum. "#EC CI_ALL_FIELDS_NEEDED
     ENDIF.
 
     DATA: ls_eqstand_in  TYPE /cellag/cseqstand_in,
@@ -647,7 +672,7 @@ CLASS /ctdi/cl_print_data_alcarep IMPLEMENTATION.
     DATA: ls_jcds  TYPE jcds,
           lt_jcds  TYPE TABLE OF jcds.
 
-    SELECT * FROM jcds INTO TABLE @lt_jcds WHERE objnr = @iv_objnr AND stat = @co_wfer_stat.
+    SELECT objnr, stat, chgnr, udate, utime FROM jcds INTO CORRESPONDING FIELDS OF TABLE @lt_jcds WHERE objnr = @iv_objnr AND stat = @co_wfer_stat.
 
     IF lt_jcds IS NOT INITIAL.
       SORT lt_jcds DESCENDING BY udate utime DESCENDING.

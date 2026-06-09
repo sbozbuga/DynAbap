@@ -309,7 +309,7 @@ CLASS /ctdi/cl_print_driver_base IMPLEMENTATION.
             EXCEPTION-TABLE lt_etab.
           lv_subrc_fm = sy-subrc.
         CATCH cx_sy_dyn_call_param_not_found INTO DATA(lx_not_found).
-          DELETE lt_ptab WHERE name = lx_not_found->parameter.
+          DELETE TABLE lt_ptab WITH TABLE KEY name = lx_not_found->parameter.
           lv_retry = abap_true.
         CATCH cx_sy_dyn_call_error INTO DATA(lx_dyn_call).
           lv_err = |Dynamic call error for { iv_form_name }: { lx_dyn_call->get_text( ) }|.
@@ -491,7 +491,7 @@ CLASS /ctdi/cl_print_driver_base IMPLEMENTATION.
             EXCEPTION-TABLE lt_etab.
           lv_subrc = sy-subrc.
         CATCH cx_sy_dyn_call_param_not_found INTO DATA(lx_not_found).
-          DELETE lt_ptab WHERE name = lx_not_found->parameter.
+          DELETE TABLE lt_ptab WITH TABLE KEY name = lx_not_found->parameter.
           lv_retry = abap_true.
         CATCH cx_sy_dyn_call_error INTO DATA(lx_dyn_call).
           lv_err = |Dynamic call error for { iv_form_name }: { lx_dyn_call->get_text( ) }|.
