@@ -12,7 +12,7 @@
     <item>/.abaplintignore</item>
     <item>/.github/*</item>
     <item>/src/templates/*</item>
-    <item>/src/#ctdi#workshop_m.fugr.*</item>
+    <item>/src/#ctdi#workshop_m*</item>
     <item>/src/#ctdi#repair_d.sf*</item>
    </IGNORE>
   </DATA>
