@@ -340,62 +340,48 @@ CLASS /ctdi/cl_print_data_alcarep IMPLEMENTATION.
         lf_tstamp_received = convert_to_timestamp( iv_date = ms_alcarep-date_received iv_time = mv_time_received ).
         lf_tstamp_repaired = convert_to_timestamp( iv_date = ms_alcarep-date_repaired iv_time = mv_time_repaired ).
 
-        SELECT changenr, udate, utime FROM cdhdr 
-          INTO CORRESPONDING FIELDS OF TABLE @lt_cdhdr 
-          WHERE objectclas = 'EQUI' AND objectid = @lf_equnr.
+        SELECT h~changenr, h~udate, h~utime, p~tabname, p~fname, p~value_old, p~value_new
+          FROM cdhdr AS h
+          INNER JOIN cdpos AS p ON h~objectclas = p~objectclas AND h~objectid = p~objectid AND h~changenr = p~changenr
+          INTO TABLE @DATA(lt_cd_join)
+          WHERE h~objectclas = 'EQUI' AND h~objectid = @lf_equnr
+            AND ( ( p~tabname = 'EQUI' AND p~fname = 'SERGE' ) OR
+                  ( p~tabname = 'EQUZ' AND p~fname = 'MAPAR' ) ).
 
-        IF lt_cdhdr IS NOT INITIAL.
-          " Fetch all relevant CDPOS records in one go
-          SELECT changenr, tabname, fname, value_old, value_new FROM cdpos
-            INTO TABLE @DATA(lt_cdpos_all)
-            FOR ALL ENTRIES IN @lt_cdhdr
-            WHERE objectclas = 'EQUI'
-              AND objectid   = @lf_equnr
-              AND changenr   = @lt_cdhdr-changenr
-              AND ( ( tabname = 'EQUI' AND fname = 'SERGE' ) OR
-                    ( tabname = 'EQUZ' AND fname = 'MAPAR' ) ).
+        IF lt_cd_join IS NOT INITIAL.
+          " Sort descending by date/time to find the latest valid change first
+          SORT lt_cd_join DESCENDING BY udate utime DESCENDING.
 
-          IF lt_cdpos_all IS NOT INITIAL.
-            " Sort cdhdr descending by date/time to find the latest valid change first
-            SORT lt_cdhdr DESCENDING BY udate utime DESCENDING.
+          DATA: lv_serge_found TYPE abap_bool VALUE abap_false,
+                lv_mapar_found TYPE abap_bool VALUE abap_false.
 
-            DATA: lv_serge_found TYPE abap_bool VALUE abap_false,
-                  lv_mapar_found TYPE abap_bool VALUE abap_false.
+          LOOP AT lt_cd_join INTO DATA(ls_cd_join).
+            " Stop if we found both
+            IF lv_serge_found = abap_true AND lv_mapar_found = abap_true.
+              EXIT.
+            ENDIF.
 
-            LOOP AT lt_cdhdr INTO ls_cdhdr.
-              " Stop if we found both
-              IF lv_serge_found = abap_true AND lv_mapar_found = abap_true.
-                EXIT.
+            lf_tstamp_changed = convert_to_timestamp( iv_date = ls_cd_join-udate iv_time = ls_cd_join-utime ).
+
+            " Only consider changes within the repair window
+            IF lf_tstamp_changed >= lf_tstamp_received AND lf_tstamp_changed <= lf_tstamp_repaired.
+              
+              " Check for SERGE change
+              IF lv_serge_found = abap_false AND ls_cd_join-tabname = 'EQUI' AND ls_cd_join-fname = 'SERGE'.
+                lf_oldserialnr = ls_cd_join-value_old.
+                lf_newserialnr = ls_cd_join-value_new.
+                lv_serge_found = abap_true.
               ENDIF.
 
-              lf_tstamp_changed = convert_to_timestamp( iv_date = ls_cdhdr-udate iv_time = ls_cdhdr-utime ).
-
-              " Only consider changes within the repair window
-              IF lf_tstamp_changed >= lf_tstamp_received AND lf_tstamp_changed <= lf_tstamp_repaired.
-                
-                " Check for SERGE change
-                IF lv_serge_found = abap_false.
-                  READ TABLE lt_cdpos_all INTO DATA(ls_pos_serge) WITH KEY changenr = ls_cdhdr-changenr tabname = 'EQUI' fname = 'SERGE'.
-                  IF sy-subrc = 0.
-                    lf_oldserialnr = ls_pos_serge-value_old.
-                    lf_newserialnr = ls_pos_serge-value_new.
-                    lv_serge_found = abap_true.
-                  ENDIF.
-                ENDIF.
-
-                " Check for MAPAR change
-                IF lv_mapar_found = abap_false.
-                  READ TABLE lt_cdpos_all INTO DATA(ls_pos_mapar) WITH KEY changenr = ls_cdhdr-changenr tabname = 'EQUZ' fname = 'MAPAR'.
-                  IF sy-subrc = 0.
-                    lf_oldpartnr = ls_pos_mapar-value_old.
-                    lf_newpartnr = ls_pos_mapar-value_new.
-                    lv_mapar_found = abap_true.
-                  ENDIF.
-                ENDIF.
-
+              " Check for MAPAR change
+              IF lv_mapar_found = abap_false AND ls_cd_join-tabname = 'EQUZ' AND ls_cd_join-fname = 'MAPAR'.
+                lf_oldpartnr = ls_cd_join-value_old.
+                lf_newpartnr = ls_cd_join-value_new.
+                lv_mapar_found = abap_true.
               ENDIF.
-            ENDLOOP.
-          ENDIF.
+
+            ENDIF.
+          ENDLOOP.
         ENDIF.
       ENDIF.
 
