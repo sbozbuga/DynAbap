@@ -46,33 +46,33 @@ CLASS /ctdi/cl_print_data_alcarep DEFINITION
     METHODS get_repair_result.
     METHODS get_comment.
     METHODS check_sernr_swap.
-    
+
     METHODS get_astatus_data
       IMPORTING
         !iv_objnr     TYPE j_objnr
       EXPORTING
         !ev_wfer_date TYPE dats
         !ev_wfer_time TYPE tims.
-        
+
     METHODS get_rlf_wedate
       IMPORTING
         !iv_vbeln_vl  TYPE vbeln_vl
       EXPORTING
         !ev_vl_erdat  TYPE likp-erdat
         !ev_vl_zeit   TYPE likp-erzet.
-        
+
     METHODS get_retlief
       EXPORTING
         !es_vbfa      TYPE vbfa
         !ev_vbfa_rl   TYPE vbeln_vl.
-        
+
     METHODS convert_to_timestamp
       IMPORTING
         !iv_date      TYPE dats
         !iv_time      TYPE tims
       RETURNING
         VALUE(rv_tstamp) TYPE timestamp.
-        
+
     METHODS get_last_record
       IMPORTING
         !it_cdhdr          TYPE STANDARD TABLE
@@ -164,7 +164,7 @@ CLASS /ctdi/cl_print_data_alcarep IMPLEMENTATION.
           lf_aezeit      TYPE tims.
 
     CLEAR: lf_kdauf, lf_kdpos, lf_erdat, lf_tabg_status, lf_erfzeit, lf_aezeit, lf_objnr.
-    
+
     SELECT SINGLE kdauf, kdpos, erdat, idat2, erfzeit, aezeit, objnr
       FROM aufk
       INTO ( @lf_kdauf, @lf_kdpos, @lf_erdat, @lf_tabg_status, @lf_erfzeit, @lf_aezeit, @lf_objnr )
@@ -172,12 +172,12 @@ CLASS /ctdi/cl_print_data_alcarep IMPLEMENTATION.
 
     IF sy-subrc = 0.
       mv_kdauf = lf_kdauf.
-      
+
       get_astatus_data(
         EXPORTING iv_objnr     = lf_objnr
         IMPORTING ev_wfer_date = lf_wfer_date
                   ev_wfer_time = lf_wfer_time ).
-                  
+
       get_rlf_wedate(
         EXPORTING iv_vbeln_vl  = mv_retlief_nr
         IMPORTING ev_vl_erdat  = lf_vl_erdat
@@ -215,29 +215,29 @@ CLASS /ctdi/cl_print_data_alcarep IMPLEMENTATION.
             lv_bstkd_u TYPE vbkd-bstkd.
 
       SELECT SINGLE qmart INTO @lv_qmart FROM qmel WHERE qmnum = @mv_qmnum.
-      
+
       IF lv_qmart = co_zx_qmart.
         SELECT SINGLE ebeln, ebelp FROM qmfe INTO ( @lv_ebeln_u, @lv_ebelp_u )
           WHERE qmnum = @mv_qmnum AND fenum = @mv_fenum.
-          
+
         CLEAR: mv_qmnum, mv_fenum.
         SELECT SINGLE aufnr FROM ekkn INTO @lv_aufnr
           WHERE ebeln = @lv_ebeln_u AND ebelp = @lv_ebelp_u.
-          
+
         IF lv_aufnr IS NOT INITIAL.
           SELECT SINGLE kdauf, kdpos FROM aufk INTO ( @lv_kdauf_u, @lv_kdpos_u )
             WHERE aufnr = @lv_aufnr.
-            
+
           SELECT SINGLE /cellag/qmnum, /cellag/fenum, posex FROM vbap
             INTO ( @lv_qmnum_u, @lv_fenum_u, @lv_posex_u )
             WHERE vbeln = @lv_kdauf_u AND posnr = @lv_kdpos_u.
-            
+
           mv_fenum = lv_fenum_u.
           mv_qmnum = lv_qmnum_u.
 
           SELECT SINGLE bstkd FROM vbkd INTO @lv_bstkd_u
             WHERE vbeln = @lv_kdauf_u AND posnr = @lv_kdpos_u.
-            
+
           CLEAR: mv_po_nr, mv_po_pos.
           mv_po_pos = lv_posex_u.
           mv_po_nr  = lv_bstkd_u.
@@ -317,15 +317,15 @@ CLASS /ctdi/cl_print_data_alcarep IMPLEMENTATION.
 
         IF lt_cdhdr IS NOT INITIAL.
           lv_lines = lines( lt_cdhdr ).
-          
+
           lf_tstamp_received = convert_to_timestamp(
             iv_date = ms_alcarep-date_received
             iv_time = mv_time_received ).
-            
+
           lf_tstamp_repaired = convert_to_timestamp(
             iv_date = ms_alcarep-date_repaired
             iv_time = mv_time_repaired ).
-            
+
           lf_tstamp_thisdate = convert_to_timestamp(
             iv_date = ms_alcarep-date_current
             iv_time = mv_time_thisdate ).
@@ -382,11 +382,11 @@ CLASS /ctdi/cl_print_data_alcarep IMPLEMENTATION.
             READ TABLE lt_cdhdr INTO ls_cdhdr INDEX 1.
             lf_udate = ls_cdhdr-udate.
             lf_utime = ls_cdhdr-utime.
-            
+
             lf_tstamp_changed = convert_to_timestamp(
               iv_date = lf_udate
               iv_time = lf_utime ).
-              
+
             IF lf_tstamp_received <= lf_tstamp_changed AND lf_tstamp_changed <= lf_tstamp_repaired.
               CLEAR: ls_cdpos.
               SELECT SINGLE * FROM cdpos INTO @ls_cdpos
@@ -488,10 +488,10 @@ CLASS /ctdi/cl_print_data_alcarep IMPLEMENTATION.
     IF ls_qmel IS NOT INITIAL.
       ms_alcarep-rev_in  = ls_qmel-revin.
       ms_alcarep-rev_out = ls_qmel-revout.
-      
+
       MOVE-CORRESPONDING ls_qmel TO ls_eqstand_in.
       MOVE-CORRESPONDING ls_qmel TO ls_eqstand_out.
-      
+
       MOVE-CORRESPONDING ls_eqstand_in TO ms_alcarep.
       MOVE-CORRESPONDING ls_eqstand_out TO ms_alcarep.
     ENDIF.
@@ -717,11 +717,11 @@ CLASS /ctdi/cl_print_data_alcarep IMPLEMENTATION.
     IF sy-subrc = 0.
       lf_udate = ls_cdhdr-udate.
       lf_utime = ls_cdhdr-utime.
-      
+
       lf_tstamp_changed = convert_to_timestamp(
         iv_date = lf_udate
         iv_time = lf_utime ).
-        
+
       IF iv_tstamp_received <= lf_tstamp_changed AND lf_tstamp_changed <= iv_tstamp_repaired.
         CLEAR: ls_cdpos.
         SELECT SINGLE * FROM cdpos INTO @ls_cdpos

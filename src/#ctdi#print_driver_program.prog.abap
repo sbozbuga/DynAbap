@@ -68,12 +68,12 @@ FORM entry USING ent_retco TYPE sysubrc
       lr_data->read_data( iv_aufnr = lv_repair_id ).
 
       MOVE-CORRESPONDING lr_data->ms_alcarep TO ls_repair.
-      
+
       LOOP AT lr_data->mt_alcarep_error INTO DATA(ls_alcarep_error).
         APPEND INITIAL LINE TO lt_errors ASSIGNING FIELD-SYMBOL(<ls_err>).
         MOVE-CORRESPONDING ls_alcarep_error TO <ls_err>.
       ENDLOOP.
-      
+
       lt_comments = lr_data->mt_comment_lines.
 
       DATA(lr_engine) = NEW /ctdi/cl_print_driver_engine( ).
@@ -151,12 +151,12 @@ FORM run_standalone.
                           iv_sernr = p_sernr ).
 
       MOVE-CORRESPONDING lr_data->ms_alcarep TO ls_repair.
-      
+
       LOOP AT lr_data->mt_alcarep_error INTO DATA(ls_alcarep_error).
         APPEND INITIAL LINE TO lt_errors ASSIGNING FIELD-SYMBOL(<ls_err>).
         MOVE-CORRESPONDING ls_alcarep_error TO <ls_err>.
       ENDLOOP.
-      
+
       lt_comments = lr_data->mt_comment_lines.
 
       " Populate serial number if supplied manually

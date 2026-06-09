@@ -104,7 +104,7 @@ CLASS /ctdi/cl_print_driver_engine IMPLEMENTATION.
       lv_class_name = iv_class_name.
       /ctdi/cl_print_driver_log=>log_info(
         |Using explicit config — Form: { lv_form_name }, Class: { lv_class_name }| ).
-        
+
       IF cs_project IS SUPPLIED AND cs_project IS INITIAL.
         get_config_from_db(
           EXPORTING iv_repair_id  = iv_repair_id
@@ -120,7 +120,7 @@ CLASS /ctdi/cl_print_driver_engine IMPLEMENTATION.
         IMPORTING ev_form_name  = lv_form_name
                   ev_class_name = lv_class_name
                   es_project    = ls_project_db ).
-                  
+
       IF cs_project IS SUPPLIED.
         cs_project = ls_project_db.
       ENDIF.
@@ -346,10 +346,10 @@ CLASS /ctdi/cl_print_driver_engine IMPLEMENTATION.
       ev_form_name  = ls_config-form_name.
       ev_class_name = resolve_class_name( ls_config-class_name ).
     ENDIF.
-    
+
     " Look up the project in the project table (with memory caching)
     READ TABLE mt_project_buffer INTO es_project WITH TABLE KEY vbeln = lv_contract.
-    
+
     IF sy-subrc <> 0.
       SELECT SINGLE *
         FROM /ctdi/rep_projec
@@ -366,7 +366,7 @@ CLASS /ctdi/cl_print_driver_engine IMPLEMENTATION.
           WHERE vbeln = @lv_raw_proj
              OR vbeln = @lv_in_proj.
       ENDIF.
-      
+
       IF es_project IS NOT INITIAL.
         INSERT es_project INTO TABLE mt_project_buffer.
       ENDIF.
