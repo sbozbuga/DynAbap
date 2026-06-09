@@ -384,8 +384,8 @@ CLASS /ctdi/cl_print_driver_base IMPLEMENTATION.
                 ev_delete  = lv_delete ).
 
     " Configure output parameters
-    ls_outputparams-connection = 'ADS'.
-    ls_outputparams-nodialog   = abap_true.
+    "ls_outputparams-connection = 'ADS'.
+    ls_outputparams-nodialog   = abap_false.
     ls_outputparams-preview    = abap_true.
     ls_outputparams-dest       = lv_printer.
     ls_outputparams-reqimm     = lv_immed.
