@@ -234,13 +234,13 @@ CLASS /CTDI/CL_PRINT_CUST_ENGINE IMPLEMENTATION.
                 message   = 'Class generation cancelled by user.'.
           ENDIF.
 
-          " Copy standard base class /CTDI/CL_PRINT_DRIVER_BASE to the new class name
+          " Copy standard base class /CTDI/CL_PRINT_DRIVER_TEMPLATE to the new class name
           DATA: ls_clskey     TYPE seoclskey,
                 ls_new_clskey TYPE seoclskey,
                 ls_new_class  TYPE vseoclass.
 
-          ls_clskey     = '/CTDI/CL_PRINT_DRIVER_BASE'.
-          ls_new_clskey = is_entry-class_name.
+          ls_clskey-clsname     = '/CTDI/CL_PRINT_DRIVER_TEMPLATE'.
+          ls_new_clskey-clsname = is_entry-class_name.
 
           CALL FUNCTION 'SEO_CLASS_COPY'
             EXPORTING
