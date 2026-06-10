@@ -1,0 +1,11 @@
+services:
+  arc-1:
+    ports:
+      - 8080:8080
+    environment:
+      - SAP_URL=http://host.docker.internal:50000
+      - SAP_USER=DEVELOPER
+      - SAP_PASSWORD=ABAPtr2023#00
+      - SAP_CLIENT=001
+      - SAP_INSECURE=true
+    image: ghcr.io/marianfoo/arc-1:latest
