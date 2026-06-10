@@ -260,6 +260,26 @@ CLASS /CTDI/CL_PRINT_CUST_ENGINE IMPLEMENTATION.
               OTHERS       = 7.
 
           IF sy-subrc = 0.
+            " Activate the newly generated class
+            DATA: lt_objects TYPE STANDARD TABLE OF dwinactiv,
+                  ls_object  TYPE dwinactiv.
+
+            ls_object-object   = 'CLAS'.
+            ls_object-obj_name = is_entry-class_name.
+            APPEND ls_object TO lt_objects.
+
+            CALL FUNCTION 'RS_WORKING_OBJECTS_ACTIVATE'
+              EXPORTING
+                activate_ddic_objects  = abap_true
+                with_popup             = abap_false
+              TABLES
+                objects                = lt_objects
+              EXCEPTIONS
+                excecution_error       = 1
+                cancelled              = 2
+                insert_into_corr_error = 3
+                OTHERS                 = 4.
+
             DATA: lv_success TYPE char200.
             lv_success = |{ 'Class &1 generated successfully.'(005) }|.
             REPLACE '&1' IN lv_success WITH is_entry-class_name.
