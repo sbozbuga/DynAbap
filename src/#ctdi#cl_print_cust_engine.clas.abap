@@ -260,6 +260,11 @@ CLASS /CTDI/CL_PRINT_CUST_ENGINE IMPLEMENTATION.
               OTHERS       = 7.
 
           IF sy-subrc = 0.
+            DATA: lv_success TYPE char200.
+            lv_success = |{ 'Class &1 generated successfully.'(005) }|.
+            REPLACE '&1' IN lv_success WITH is_entry-class_name.
+            MESSAGE lv_success TYPE 'S'.
+
             " Activate the newly generated class
             DATA: lt_objects TYPE STANDARD TABLE OF dwinactiv,
                   ls_object  TYPE dwinactiv.
@@ -279,11 +284,12 @@ CLASS /CTDI/CL_PRINT_CUST_ENGINE IMPLEMENTATION.
                 cancelled              = 2
                 insert_into_corr_error = 3
                 OTHERS                 = 4.
+            IF sy-subrc EQ 0.
+              lv_success = |{ 'Class &1 activated successfully.' }|.
+              REPLACE '&1' IN lv_success WITH is_entry-class_name.
+              MESSAGE lv_success TYPE 'S'.
+            ENDIF.
 
-            DATA: lv_success TYPE char200.
-            lv_success = |{ 'Class &1 generated successfully.'(005) }|.
-            REPLACE '&1' IN lv_success WITH is_entry-class_name.
-            MESSAGE lv_success TYPE 'S'.
             RETURN. " Class now successfully generated, bypass error check
           ELSE.
             DATA(lv_subrc) = sy-subrc.
