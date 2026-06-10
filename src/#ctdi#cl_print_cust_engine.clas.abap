@@ -310,12 +310,34 @@ CLASS /CTDI/CL_PRINT_CUST_ENGINE IMPLEMENTATION.
           message   = lv_class_err.
     ELSE.
       " Validate Interface Implementation on Existing Classes (Strictly enforces /CTDI/IF_PRINT_DRIVER)
-      SELECT SINGLE clsname FROM seometarel
-        INTO @DATA(lv_implements)
-        WHERE clsname = @lv_class_name
-          AND refclsname = '/CTDI/IF_PRINT_DRIVER'
-          AND reltype = '1'. " 1 = Interface Implementation
-      IF sy-subrc <> 0.
+      " Check the class and all its superclasses
+      DATA: lv_current_class TYPE seoclsname,
+            lv_implemented   TYPE abap_bool.
+
+      lv_current_class = lv_class_name.
+      lv_implemented   = abap_false.
+
+      WHILE lv_current_class IS NOT INITIAL AND lv_implemented = abap_false.
+        SELECT SINGLE clsname FROM seometarel
+          INTO @DATA(lv_implements)
+          WHERE clsname = @lv_current_class
+            AND refclsname = '/CTDI/IF_PRINT_DRIVER'
+            AND reltype = '1'. " 1 = Interface Implementation
+        IF sy-subrc = 0.
+          lv_implemented = abap_true.
+        ELSE.
+          " Try to get the superclass
+          SELECT SINGLE refclsname FROM seometarel
+            INTO @lv_current_class
+            WHERE clsname = @lv_current_class
+              AND reltype = '2'. " 2 = Inheritance
+          IF sy-subrc <> 0.
+            CLEAR lv_current_class. " Reached the top of the hierarchy
+          ENDIF.
+        ENDIF.
+      ENDWHILE.
+
+      IF lv_implemented = abap_false.
         DATA(lv_interface_err) = |{ 'Class &1 does not implement interface /CTDI/IF_PRINT_DRIVER'(010) }|.
         REPLACE '&1' IN lv_interface_err WITH is_entry-class_name.
         RAISE EXCEPTION TYPE /ctdi/cx_print_error
