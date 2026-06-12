@@ -18,8 +18,6 @@ public section.
   methods EXECUTE
     importing
       !IV_REPAIR_ID type AUFNR
-      !IV_FORM_NAME type FPNAME optional
-      !IV_CLASS_NAME type SEOCLSNAME optional
       !IV_SAVE_AS_PDF type ABAP_BOOL default ABAP_FALSE
       !IO_DATA type ref to OBJECT optional
     raising
@@ -107,14 +105,7 @@ CLASS /CTDI/CL_PRINT_DRIVER_ENGINE IMPLEMENTATION.
                 ev_class_name = lv_class_name
                 es_project    = ls_project_db ).
 
-    " Resolve configuration
-    IF iv_form_name IS NOT INITIAL AND iv_class_name IS NOT INITIAL.
-      " Fully explicit — overwrite customizing lookup
-      lv_form_name  = iv_form_name.
-      lv_class_name = iv_class_name.
-      /ctdi/cl_print_driver_log=>log_info(
-        |Using explicit config — Form: { lv_form_name }, Class: { lv_class_name }| ).
-    ENDIF.
+
 
     IF lv_form_name = gc_form_alca.
       "Fallback to the old design for Alcatel

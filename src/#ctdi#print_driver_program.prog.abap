@@ -20,8 +20,7 @@ TABLES: nast, tnapr.
 SELECTION-SCREEN BEGIN OF BLOCK b1 WITH FRAME TITLE TEXT-002.
 PARAMETERS: p_aufnr TYPE aufk-aufnr OBLIGATORY,      " Repair / Order ID
             p_sernr TYPE equi-sernr,                   " Serial number (optional)
-            p_form  TYPE fpname,                       " Form name (optional)
-            p_class TYPE seoclsname,                   " Class name (optional)
+
             p_pdf   AS CHECKBOX DEFAULT ' '.           " Save as PDF
 PARAMETERS: p_sf    type abap_bool NO-DISPLAY.            " Legacy compat flag
 SELECTION-SCREEN END OF BLOCK b1.
@@ -129,8 +128,7 @@ FORM run_standalone.
       lr_engine->execute(
         EXPORTING
           iv_repair_id   = p_aufnr
-          iv_form_name   = p_form
-          iv_class_name  = p_class
+
           iv_save_as_pdf = p_pdf
           io_data        = lr_data ).
 
