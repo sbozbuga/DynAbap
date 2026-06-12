@@ -11,18 +11,18 @@
    <TPOOL>
     <item>
      <ID>R</ID>
-     <ENTRY>Ablaufdokumentation des Druckprozesses</ENTRY>
-     <LENGTH>38</LENGTH>
+     <ENTRY>Print Process Flow Documentation</ENTRY>
+     <LENGTH>32</LENGTH>
     </item>
    </TPOOL>
    <I18N_TPOOL>
     <item>
-     <LANGUAGE>E</LANGUAGE>
+     <LANGUAGE>D</LANGUAGE>
      <TEXTPOOL>
       <item>
        <ID>R</ID>
-       <ENTRY>Print Process Flow Documentation</ENTRY>
-       <LENGTH>32</LENGTH>
+       <ENTRY>Ablaufdokumentation des Druckprozesses</ENTRY>
+       <LENGTH>38</LENGTH>
       </item>
      </TEXTPOOL>
     </item>

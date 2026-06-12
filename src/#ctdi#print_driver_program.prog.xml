@@ -13,130 +13,127 @@
     <item>
      <ID>I</ID>
      <KEY>001</KEY>
-     <ENTRY>Druckertreiber-Ausgabebestimmung</ENTRY>
+     <ENTRY>Print Driver Output Determination</ENTRY>
      <LENGTH>35</LENGTH>
     </item>
     <item>
      <ID>I</ID>
      <KEY>002</KEY>
-     <ENTRY>Druckparameter</ENTRY>
+     <ENTRY>Print Parameters</ENTRY>
      <LENGTH>18</LENGTH>
     </item>
     <item>
      <ID>I</ID>
      <KEY>003</KEY>
-     <ENTRY>Drucken fehlgeschlagen: &amp;1</ENTRY>
+     <ENTRY>Print failed: &amp;1</ENTRY>
      <LENGTH>50</LENGTH>
     </item>
     <item>
      <ID>I</ID>
      <KEY>004</KEY>
-     <ENTRY>Unerwarteter Fehler: &amp;1</ENTRY>
+     <ENTRY>Unexpected error: &amp;1</ENTRY>
      <LENGTH>50</LENGTH>
     </item>
     <item>
      <ID>I</ID>
      <KEY>006</KEY>
-     <ENTRY>Legacy-Druckroutine (print_old) für Reparatur &amp;1 wird ausgeführt</ENTRY>
+     <ENTRY>Executing legacy printing routine (print_old) for repair &amp;1</ENTRY>
      <LENGTH>75</LENGTH>
     </item>
     <item>
      <ID>S</ID>
      <KEY>P_AUFNR</KEY>
-     <ENTRY>Reparatur- / Auftrags-ID</ENTRY>
-     <LENGTH>32</LENGTH>
-    </item>
-    <item>
-     <ID>S</ID>
-     <KEY>P_SERNR</KEY>
-     <ENTRY>Seriennummer</ENTRY>
-     <LENGTH>20</LENGTH>
-    </item>
-    <item>
-     <ID>S</ID>
-     <KEY>P_FORM</KEY>
-     <ENTRY>Formularname</ENTRY>
-     <LENGTH>20</LENGTH>
+     <ENTRY>Repair / Order ID</ENTRY>
+     <LENGTH>25</LENGTH>
     </item>
     <item>
      <ID>S</ID>
      <KEY>P_CLASS</KEY>
-     <ENTRY>Klassenname</ENTRY>
-     <LENGTH>20</LENGTH>
+     <ENTRY>Class name (optional)</ENTRY>
+     <LENGTH>30</LENGTH>
+    </item>
+    <item>
+     <ID>S</ID>
+     <KEY>P_FORM</KEY>
+     <ENTRY>Form name (optional)</ENTRY>
+     <LENGTH>30</LENGTH>
     </item>
     <item>
      <ID>S</ID>
      <KEY>P_PDF</KEY>
-     <ENTRY>Als PDF speichern</ENTRY>
-     <LENGTH>25</LENGTH>
+     <ENTRY>Save as PDF</ENTRY>
+     <LENGTH>20</LENGTH>
+    </item>
+    <item>
+     <ID>S</ID>
+     <KEY>P_SERNR</KEY>
+     <ENTRY>Serial number (optional)</ENTRY>
+     <LENGTH>32</LENGTH>
     </item>
    </TPOOL>
    <I18N_TPOOL>
     <item>
-     <LANGUAGE>E</LANGUAGE>
+     <LANGUAGE>D</LANGUAGE>
      <TEXTPOOL>
       <item>
        <ID>I</ID>
        <KEY>001</KEY>
-       <ENTRY>Print Driver Output Determination</ENTRY>
+       <ENTRY>Druckertreiber-Ausgabebestimmung</ENTRY>
        <LENGTH>35</LENGTH>
       </item>
       <item>
        <ID>I</ID>
        <KEY>002</KEY>
-       <ENTRY>Print Parameters</ENTRY>
+       <ENTRY>Druckparameter</ENTRY>
        <LENGTH>18</LENGTH>
       </item>
       <item>
        <ID>I</ID>
        <KEY>003</KEY>
-       <ENTRY>Print failed: &amp;1</ENTRY>
+       <ENTRY>Drucken fehlgeschlagen: &amp;1</ENTRY>
        <LENGTH>50</LENGTH>
       </item>
       <item>
        <ID>I</ID>
        <KEY>004</KEY>
-       <ENTRY>Unexpected error: &amp;1</ENTRY>
+       <ENTRY>Unerwarteter Fehler: &amp;1</ENTRY>
        <LENGTH>50</LENGTH>
       </item>
       <item>
        <ID>I</ID>
        <KEY>006</KEY>
-       <ENTRY>Executing legacy printing routine (print_old) for repair &amp;1</ENTRY>
+       <ENTRY>Legacy-Druckroutine (print_old) für Reparatur &amp;1 wird ausgeführt</ENTRY>
        <LENGTH>75</LENGTH>
-      </item>
-      <item>
-       <ID>R</ID>
       </item>
       <item>
        <ID>S</ID>
        <KEY>P_AUFNR</KEY>
-       <ENTRY>Repair / Order ID</ENTRY>
-       <LENGTH>25</LENGTH>
-      </item>
-      <item>
-       <ID>S</ID>
-       <KEY>P_CLASS</KEY>
-       <ENTRY>Class name (optional)</ENTRY>
-       <LENGTH>30</LENGTH>
-      </item>
-      <item>
-       <ID>S</ID>
-       <KEY>P_FORM</KEY>
-       <ENTRY>Form name (optional)</ENTRY>
-       <LENGTH>30</LENGTH>
-      </item>
-      <item>
-       <ID>S</ID>
-       <KEY>P_PDF</KEY>
-       <ENTRY>Save as PDF</ENTRY>
-       <LENGTH>20</LENGTH>
+       <ENTRY>Reparatur- / Auftrags-ID</ENTRY>
+       <LENGTH>32</LENGTH>
       </item>
       <item>
        <ID>S</ID>
        <KEY>P_SERNR</KEY>
-       <ENTRY>Serial number (optional)</ENTRY>
-       <LENGTH>32</LENGTH>
+       <ENTRY>Seriennummer</ENTRY>
+       <LENGTH>20</LENGTH>
+      </item>
+      <item>
+       <ID>S</ID>
+       <KEY>P_FORM</KEY>
+       <ENTRY>Formularname</ENTRY>
+       <LENGTH>20</LENGTH>
+      </item>
+      <item>
+       <ID>S</ID>
+       <KEY>P_CLASS</KEY>
+       <ENTRY>Klassenname</ENTRY>
+       <LENGTH>20</LENGTH>
+      </item>
+      <item>
+       <ID>S</ID>
+       <KEY>P_PDF</KEY>
+       <ENTRY>Als PDF speichern</ENTRY>
+       <LENGTH>25</LENGTH>
       </item>
      </TEXTPOOL>
     </item>

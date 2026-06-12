@@ -4,32 +4,32 @@
   <asx:values>
    <DD04V>
     <ROLLNAME>/CTDI/REPMT</ROLLNAME>
-    <DDLANGUAGE>D</DDLANGUAGE>
+    <DDLANGUAGE>E</DDLANGUAGE>
     <DOMNAME>CHECKBOX</DOMNAME>
     <HEADLEN>11</HEADLEN>
     <SCRLEN1>10</SCRLEN1>
     <SCRLEN2>15</SCRLEN2>
     <SCRLEN3>20</SCRLEN3>
-    <DDTEXT>Austausch</DDTEXT>
-    <REPTEXT>Austausch</REPTEXT>
-    <SCRTEXT_S>Austausch</SCRTEXT_S>
-    <SCRTEXT_M>Austausch</SCRTEXT_M>
-    <SCRTEXT_L>Austausch</SCRTEXT_L>
+    <DDTEXT>Replacement</DDTEXT>
+    <REPTEXT>Replacement</REPTEXT>
+    <SCRTEXT_S>Replacemen</SCRTEXT_S>
+    <SCRTEXT_M>Replacement</SCRTEXT_M>
+    <SCRTEXT_L>Replacement</SCRTEXT_L>
     <DTELMASTER>E</DTELMASTER>
     <DEFFDNAME>CHECKBOX</DEFFDNAME>
     <REFKIND>D</REFKIND>
    </DD04V>
    <I18N_LANGS>
-    <LANGU>E</LANGU>
+    <LANGU>D</LANGU>
    </I18N_LANGS>
    <DD04_TEXTS>
     <item>
-     <DDLANGUAGE>E</DDLANGUAGE>
-     <DDTEXT>Replacement</DDTEXT>
-     <REPTEXT>Replacement</REPTEXT>
-     <SCRTEXT_S>Replacemen</SCRTEXT_S>
-     <SCRTEXT_M>Replacement</SCRTEXT_M>
-     <SCRTEXT_L>Replacement</SCRTEXT_L>
+     <DDLANGUAGE>D</DDLANGUAGE>
+     <DDTEXT>Austausch</DDTEXT>
+     <REPTEXT>Austausch</REPTEXT>
+     <SCRTEXT_S>Austausch</SCRTEXT_S>
+     <SCRTEXT_M>Austausch</SCRTEXT_M>
+     <SCRTEXT_L>Austausch</SCRTEXT_L>
     </item>
    </DD04_TEXTS>
   </asx:values>

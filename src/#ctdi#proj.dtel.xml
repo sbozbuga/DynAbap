@@ -4,13 +4,13 @@
   <asx:values>
    <DD04V>
     <ROLLNAME>/CTDI/PROJ</ROLLNAME>
-    <DDLANGUAGE>D</DDLANGUAGE>
+    <DDLANGUAGE>E</DDLANGUAGE>
     <DOMNAME>TEXT50</DOMNAME>
     <HEADLEN>50</HEADLEN>
     <SCRLEN1>10</SCRLEN1>
     <SCRLEN2>15</SCRLEN2>
     <SCRLEN3>20</SCRLEN3>
-    <DDTEXT>Positionstext</DDTEXT>
+    <DDTEXT>Project</DDTEXT>
     <REPTEXT>Project</REPTEXT>
     <SCRTEXT_S>Project</SCRTEXT_S>
     <SCRTEXT_M>Project</SCRTEXT_M>
@@ -22,7 +22,7 @@
    <I18N_LANGS>
     <LANGU>4</LANGU>
     <LANGU>C</LANGU>
-    <LANGU>E</LANGU>
+    <LANGU>D</LANGU>
     <LANGU>F</LANGU>
     <LANGU>H</LANGU>
     <LANGU>I</LANGU>
@@ -49,8 +49,8 @@
      <SCRTEXT_L>Text</SCRTEXT_L>
     </item>
     <item>
-     <DDLANGUAGE>E</DDLANGUAGE>
-     <DDTEXT>Project</DDTEXT>
+     <DDLANGUAGE>D</DDLANGUAGE>
+     <DDTEXT>Positionstext</DDTEXT>
      <REPTEXT>Project</REPTEXT>
      <SCRTEXT_S>Project</SCRTEXT_S>
      <SCRTEXT_M>Project</SCRTEXT_M>
