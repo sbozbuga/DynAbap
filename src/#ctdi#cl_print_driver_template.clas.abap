@@ -34,8 +34,9 @@ CLASS /ctdi/cl_print_driver_template IMPLEMENTATION.
       |Template read_data started for Repair ID: { iv_repair_id } (internal format: { lv_repair_id })| ).
 
     " Example 1: Select header data into mr_repair structure.
+    " FIELD-SYMBOLS: <ls_repair> TYPE ANY.
     " CREATE DATA mr_repair TYPE /ctdi/repair.
-    " ASSIGN mr_repair->* TO FIELD-SYMBOL(<ls_repair>).
+    " ASSIGN mr_repair->* TO <ls_repair>.
     " SELECT SINGLE *
     "   FROM /ctdi/repair
     "   INTO @<ls_repair>
@@ -54,19 +55,21 @@ CLASS /ctdi/cl_print_driver_template IMPLEMENTATION.
     " ENDIF.
 
     " Example 2: Select error/defect records.
+    " FIELD-SYMBOLS: <lt_errors> TYPE ANY TABLE.
     " CREATE DATA mr_errors TYPE STANDARD TABLE OF /ctdi/repair_error.
-    " ASSIGN mr_errors->* TO FIELD-SYMBOL(<lt_errors>).
+    " ASSIGN mr_errors->* TO <lt_errors>.
     " SELECT *
     "   FROM /ctdi/repair_error
     "   INTO TABLE @<lt_errors>
     "   WHERE aufnr = @lv_repair_id.
     "
     " /ctdi/cl_print_driver_log=>log_info(
-    "   |Loaded { lines( ct_errors ) } error/defect lines for Repair { iv_repair_id }| ).
+    "   |Loaded { lines( <lt_errors> ) } error/defect lines for Repair { iv_repair_id }| ).
 
     " Example 3: Enriching comments or custom long texts.
+    " FIELD-SYMBOLS: <lt_comments> TYPE ANY TABLE.
     " CREATE DATA mr_comments TYPE STANDARD TABLE OF tline.
-    " ASSIGN mr_comments->* TO FIELD-SYMBOL(<lt_comments>).
+    " ASSIGN mr_comments->* TO <lt_comments>.
     " APPEND INITIAL LINE TO <lt_comments> ASSIGNING FIELD-SYMBOL(<ls_comment>).
     " ...
 

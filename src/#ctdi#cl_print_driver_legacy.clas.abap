@@ -12,15 +12,19 @@ ENDCLASS.
 CLASS /ctdi/cl_print_driver_legacy IMPLEMENTATION.
 
   METHOD read_data.
+    FIELD-SYMBOLS: <ls_repair>   TYPE ANY,
+                   <lt_comments> TYPE ANY TABLE,
+                   <lt_errors>   TYPE ANY TABLE.
+
     " Allocate dynamic memory for the driver state
     CREATE DATA mr_repair TYPE /ctdi/repair.
-    ASSIGN mr_repair->* TO FIELD-SYMBOL(<ls_repair>).
+    ASSIGN mr_repair->* TO <ls_repair>.
 
     CREATE DATA mr_comments TYPE STANDARD TABLE OF tline.
-    ASSIGN mr_comments->* TO FIELD-SYMBOL(<lt_comments>).
+    ASSIGN mr_comments->* TO <lt_comments>.
 
     CREATE DATA mr_errors TYPE STANDARD TABLE OF /ctdi/repair_error.
-    ASSIGN mr_errors->* TO FIELD-SYMBOL(<lt_errors>).
+    ASSIGN mr_errors->* TO <lt_errors>.
 
     " If an external data object is passed, unpack it
     IF io_data IS BOUND.
