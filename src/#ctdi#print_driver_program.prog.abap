@@ -68,7 +68,7 @@ FORM entry USING ent_retco TYPE sysubrc
         EXPORTING
           iv_repair_id   = lv_repair_id
           iv_save_as_pdf = abap_false          " NACE always prints to spool
-          iv_class_name  = '/CTDI/CL_PRINT_DRIVER_ALCAREP' " Explicitly route to Alcarep driver
+          iv_class_name  = '/CTDI/CL_PRINT_DRIVER_LEGACY' " Explicitly route to Legacy driver
         CHANGING
           cs_repair      = ls_repair
           cs_project     = ls_project

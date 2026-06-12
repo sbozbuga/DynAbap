@@ -1,4 +1,4 @@
-CLASS /ctdi/cl_print_driver_alcarep DEFINITION
+CLASS /ctdi/cl_print_driver_legacy DEFINITION
   PUBLIC
   INHERITING FROM /ctdi/cl_print_driver_base
   CREATE PUBLIC.
@@ -9,7 +9,7 @@ CLASS /ctdi/cl_print_driver_alcarep DEFINITION
   PRIVATE SECTION.
 ENDCLASS.
 
-CLASS /ctdi/cl_print_driver_alcarep IMPLEMENTATION.
+CLASS /ctdi/cl_print_driver_legacy IMPLEMENTATION.
 
   METHOD read_data.
     " If the caller already provided populated data, do nothing!
@@ -34,10 +34,10 @@ CLASS /ctdi/cl_print_driver_alcarep IMPLEMENTATION.
           ENDLOOP.
 
           /ctdi/cl_print_driver_log=>log_info(
-            |Alcarep Print Driver successfully unpacked io_data for Repair { iv_repair_id }| ).
+            |Legacy Print Driver successfully unpacked io_data for Repair { iv_repair_id }| ).
 
         CATCH cx_sy_move_cast_error INTO DATA(lx_cast).
-          DATA(lv_err) = |Invalid data object passed to Alcarep Print Driver for { iv_repair_id }|.
+          DATA(lv_err) = |Invalid data object passed to Legacy Print Driver for { iv_repair_id }|.
           /ctdi/cl_print_driver_log=>log_error( lv_err ).
           RAISE EXCEPTION TYPE /ctdi/cx_print_driver_error
             EXPORTING
@@ -60,7 +60,7 @@ CLASS /ctdi/cl_print_driver_alcarep IMPLEMENTATION.
           ENDLOOP.
           
           /ctdi/cl_print_driver_log=>log_info(
-            |Alcarep Print Driver successfully read data from DB for Repair { iv_repair_id }| ).
+            |Legacy Print Driver successfully read data from DB for Repair { iv_repair_id }| ).
         CATCH cx_root INTO DATA(lx_root).
           lv_err = |Error reading data from DB for { iv_repair_id }: { lx_root->get_text( ) }|.
           /ctdi/cl_print_driver_log=>log_error( lv_err ).
