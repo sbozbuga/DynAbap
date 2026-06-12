@@ -125,10 +125,7 @@ CLASS /CTDI/CL_PRINT_DRIVER_ENGINE IMPLEMENTATION.
       " Look up from customizing table
       get_config_from_db(
         EXPORTING iv_repair_id  = iv_repair_id
-*                  ev_skz        = iv_skz
-*                  ev_akz        = iv_akz
-IMPORTING
-                  ev_form_name  = lv_form_name
+        IMPORTING ev_form_name  = lv_form_name
                   ev_class_name = lv_class_name
                   es_project    = ls_project_db ).
 
@@ -142,8 +139,6 @@ IMPORTING
       RAISE EXCEPTION TYPE /ctdi/cx_no_config_found.
       RETURN.
     ENDIF.
-
-
 
     " Instantiate provider class
     DATA(lr_instance) = create_provider(
