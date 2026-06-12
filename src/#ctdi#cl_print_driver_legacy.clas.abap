@@ -13,7 +13,7 @@ CLASS /ctdi/cl_print_driver_legacy IMPLEMENTATION.
 
   METHOD read_data.
     " Allocate dynamic memory for the driver state
-    CREATE DATA mr_repair TYPE /cellag/alcarep.
+    CREATE DATA mr_repair TYPE /ctdi/repair.
     ASSIGN mr_repair->* TO FIELD-SYMBOL(<ls_repair>).
 
     CREATE DATA mr_comments TYPE STANDARD TABLE OF tline.
@@ -26,12 +26,12 @@ CLASS /ctdi/cl_print_driver_legacy IMPLEMENTATION.
     IF io_data IS BOUND.
       TRY.
           " Cast io_data to /ctdi/cl_print_data_legacy or its subclasses
-          DATA(lr_alca_data) = CAST /ctdi/cl_print_data_legacy( io_data ).
+          DATA(lr_legacy_data) = CAST /ctdi/cl_print_data_legacy( io_data ).
 
-          <ls_repair>   = lr_alca_data->ms_alcarep.
-          <lt_comments> = lr_alca_data->mt_comment_lines.
+          MOVE-CORRESPONDING lr_legacy_data->ms_alcarep TO <ls_repair>.
+          <lt_comments> = lr_legacy_data->mt_comment_lines.
 
-          LOOP AT lr_alca_data->mt_alcarep_error INTO DATA(ls_err).
+          LOOP AT lr_legacy_data->mt_alcarep_error INTO DATA(ls_err).
             APPEND INITIAL LINE TO <lt_errors> ASSIGNING FIELD-SYMBOL(<ls_target_err>).
             MOVE-CORRESPONDING ls_err TO <ls_target_err>.
           ENDLOOP.
@@ -53,7 +53,7 @@ CLASS /ctdi/cl_print_driver_legacy IMPLEMENTATION.
           DATA(lr_data_db) = NEW /ctdi/cl_print_data_legacy_ext( ).
           lr_data_db->read_data( iv_aufnr = iv_repair_id ).
 
-          <ls_repair>   = lr_data_db->ms_alcarep.
+          MOVE-CORRESPONDING lr_data_db->ms_alcarep TO <ls_repair>.
           <lt_comments> = lr_data_db->mt_comment_lines.
 
           LOOP AT lr_data_db->mt_alcarep_error INTO DATA(ls_err_db).
