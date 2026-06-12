@@ -4,10 +4,10 @@
   <asx:values>
    <DD02V>
     <TABNAME>/CTDI/REP_FORMS</TABNAME>
-    <DDLANGUAGE>D</DDLANGUAGE>
+    <DDLANGUAGE>E</DDLANGUAGE>
     <TABCLASS>TRANSP</TABCLASS>
     <CLIDEP>X</CLIDEP>
-    <DDTEXT>Reparaturformulare</DDTEXT>
+    <DDTEXT>Repair Forms</DDTEXT>
     <MAINFLAG>X</MAINFLAG>
     <CONTFLAG>A</CONTFLAG>
     <EXCLASS>1</EXCLASS>
@@ -144,12 +144,12 @@
     </DD36M>
    </DD36M>
    <I18N_LANGS>
-    <LANGU>E</LANGU>
+    <LANGU>D</LANGU>
    </I18N_LANGS>
    <DD02_TEXTS>
     <item>
-     <DDLANGUAGE>E</DDLANGUAGE>
-     <DDTEXT>Repair Forms</DDTEXT>
+     <DDLANGUAGE>D</DDLANGUAGE>
+     <DDTEXT>Reparaturformulare</DDTEXT>
     </item>
    </DD02_TEXTS>
    <TABL_EXTRAS>

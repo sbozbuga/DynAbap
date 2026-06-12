@@ -4,10 +4,10 @@
   <asx:values>
    <DD02V>
     <TABNAME>/CTDI/REPAIR_ERROR</TABNAME>
-    <DDLANGUAGE>D</DDLANGUAGE>
+    <DDLANGUAGE>E</DDLANGUAGE>
     <TABCLASS>INTTAB</TABCLASS>
     <LANGDEP>X</LANGDEP>
-    <DDTEXT>Fehlerrep. Error-Codes/-Texte</DDTEXT>
+    <DDTEXT>Error reporting for error codes and texts</DDTEXT>
     <EXCLASS>4</EXCLASS>
    </DD02V>
    <DD03P_TABLE>
@@ -16,17 +16,16 @@
      <ADMINFIELD>0</ADMINFIELD>
      <PRECFIELD>/CELLAG/ALCAREP_ERROR</PRECFIELD>
      <MASK>      S</MASK>
-     <DDTEXT>ALCATEL Fehlerrep. Error-Codes/-Texte SmartFormSchnittstelle</DDTEXT>
      <COMPTYPE>S</COMPTYPE>
     </DD03P>
    </DD03P_TABLE>
    <I18N_LANGS>
-    <LANGU>E</LANGU>
+    <LANGU>D</LANGU>
    </I18N_LANGS>
    <DD02_TEXTS>
     <item>
-     <DDLANGUAGE>E</DDLANGUAGE>
-     <DDTEXT>Error reporting for error codes and texts</DDTEXT>
+     <DDLANGUAGE>D</DDLANGUAGE>
+     <DDTEXT>Fehlerrep. Error-Codes/-Texte</DDTEXT>
     </item>
    </DD02_TEXTS>
   </asx:values>

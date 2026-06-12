@@ -140,6 +140,7 @@ CLASS /CTDI/CL_PRINT_DRIVER_ENGINE IMPLEMENTATION.
       RETURN.
     ENDIF.
 
+
     " Instantiate provider class
     DATA(lr_instance) = create_provider(
       iv_class_name = lv_class_name
