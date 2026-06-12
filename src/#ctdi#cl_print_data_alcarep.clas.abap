@@ -1,6 +1,5 @@
 CLASS /ctdi/cl_print_data_alcarep DEFINITION
   PUBLIC
-  FINAL
   CREATE PUBLIC.
 
   PUBLIC SECTION.
@@ -15,35 +14,37 @@ CLASS /ctdi/cl_print_data_alcarep DEFINITION
         !iv_sernr TYPE equi-sernr OPTIONAL.
 
   PROTECTED SECTION.
+    DATA mv_aufnr TYPE aufk-aufnr.
+    DATA mv_qmcod TYPE qmel-qmcod.
+    DATA mv_kdauf TYPE aufk-kdauf.
+    DATA mv_swap_flag TYPE flag.
+
+    METHODS get_repair_result.
+
   PRIVATE SECTION.
     CONSTANTS co_equi_vers TYPE imrc_psort VALUE 'EQUI-VERS'.
     CONSTANTS co_qmart     TYPE qmart      VALUE 'Z2'.
     CONSTANTS co_wfer_stat TYPE j_estat    VALUE 'E0001'.
     CONSTANTS co_zx_qmart  TYPE qmart      VALUE 'ZX'.
 
-    DATA mv_aufnr TYPE aufk-aufnr.
     DATA mv_sernr TYPE equi-sernr.
 
     DATA mv_po_nr           TYPE vbkd-bstkd_e.
     DATA mv_po_pos          TYPE vbkd-posex_e.
     DATA mv_ctdi_odernr     TYPE c LENGTH 20.
     DATA mv_qmnum           TYPE qmel-qmnum.
-    DATA mv_qmcod           TYPE qmel-qmcod.
     DATA mv_fenum           TYPE qmfe-fenum.
     DATA mv_time_received   TYPE tims.
     DATA mv_time_repaired   TYPE tims.
     DATA mv_time_thisdate   TYPE tims.
-    DATA mv_kdauf           TYPE aufk-kdauf.
     DATA mv_spras           TYPE sy-langu.
     DATA mv_retlief_nr      TYPE vbeln_vl.
     DATA mv_equnr_retlief   TYPE equnr.
-    DATA mv_swap_flag       TYPE flag.
     DATA mv_katalogart      TYPE qkatart.
 
     METHODS get_kddata.
     METHODS get_part_data.
     METHODS get_error_description.
-    METHODS get_repair_result.
     METHODS get_comment.
     METHODS check_sernr_swap.
 
