@@ -38,20 +38,25 @@ CLASS /ctdi/cl_print_data_alca_ext IMPLEMENTATION.
              tauschfall TYPE flag,
            END OF ty_query_step.
     DATA: lt_steps TYPE TABLE OF ty_query_step.
+    DATA: lv_contract TYPE vbak-vgbel.
 
     IF mv_kdauf IS NOT INITIAL.
+      SELECT SINGLE vgbel FROM vbak INTO @lv_contract WHERE vbeln = @mv_kdauf.
+    ENDIF.
+
+    IF lv_contract IS NOT INITIAL.
       " 1. Kontrakt + SKZ + AKZ + Tauschflag
-      APPEND VALUE #( vbeln = mv_kdauf bemot = lv_bemot akz = mv_qmcod tauschfall = mv_swap_flag ) TO lt_steps.
+      APPEND VALUE #( vbeln = lv_contract bemot = lv_bemot akz = mv_qmcod tauschfall = mv_swap_flag ) TO lt_steps.
       " 2. Kontrakt + SKZ + AKZ
-      APPEND VALUE #( vbeln = mv_kdauf bemot = lv_bemot akz = mv_qmcod tauschfall = space ) TO lt_steps.
+      APPEND VALUE #( vbeln = lv_contract bemot = lv_bemot akz = mv_qmcod tauschfall = space ) TO lt_steps.
       " 3. Kontrakt + SKZ + Tauschflag
-      APPEND VALUE #( vbeln = mv_kdauf bemot = lv_bemot akz = space tauschfall = mv_swap_flag ) TO lt_steps.
+      APPEND VALUE #( vbeln = lv_contract bemot = lv_bemot akz = space tauschfall = mv_swap_flag ) TO lt_steps.
       " 4. Kontrakt + SKZ
-      APPEND VALUE #( vbeln = mv_kdauf bemot = lv_bemot akz = space tauschfall = space ) TO lt_steps.
+      APPEND VALUE #( vbeln = lv_contract bemot = lv_bemot akz = space tauschfall = space ) TO lt_steps.
       " 5. Kontrakt + AKZ
-      APPEND VALUE #( vbeln = mv_kdauf bemot = space akz = mv_qmcod tauschfall = space ) TO lt_steps.
+      APPEND VALUE #( vbeln = lv_contract bemot = space akz = mv_qmcod tauschfall = space ) TO lt_steps.
       " 6. kontrakt
-      APPEND VALUE #( vbeln = mv_kdauf bemot = space akz = space tauschfall = space ) TO lt_steps.
+      APPEND VALUE #( vbeln = lv_contract bemot = space akz = space tauschfall = space ) TO lt_steps.
     ENDIF.
 
     " 7. (Kontrakt = leer ) + SKZ + AKZ + Tauschflag
@@ -65,15 +70,13 @@ CLASS /ctdi/cl_print_data_alca_ext IMPLEMENTATION.
     " 11. (Kontrakt = leer ) + AKZ
     APPEND VALUE #( vbeln = space bemot = space akz = mv_qmcod tauschfall = space ) TO lt_steps.
 
-    IF lt_steps IS NOT INITIAL.
-      SELECT * FROM /ctdi/rep_result
-        INTO TABLE @DATA(lt_results)
-        FOR ALL ENTRIES IN @lt_steps
-        WHERE vbeln      = @lt_steps-vbeln
-          AND bemot      = @lt_steps-bemot
-          AND akz        = @lt_steps-akz
-          AND tauschfall = @lt_steps-tauschfall.
+    " Read all config for the current contract or empty contract records
+    SELECT * FROM /ctdi/rep_result
+      INTO TABLE @DATA(lt_results)
+      WHERE vbeln = @lv_contract
+         OR vbeln = @space.
 
+    IF lt_results IS NOT INITIAL AND lt_steps IS NOT INITIAL.
       LOOP AT lt_steps INTO DATA(ls_step).
         READ TABLE lt_results INTO DATA(ls_result) WITH KEY
           vbeln      = ls_step-vbeln
