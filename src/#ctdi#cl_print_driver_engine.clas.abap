@@ -13,9 +13,6 @@ public section.
     "! @parameter iv_save_as_pdf | If TRUE, saves output as PDF
     "! @parameter iv_skz          | Optional explicit SKZ
     "! @parameter iv_akz          | Optional explicit AKZ
-    "! @parameter cs_repair      | Repair data structure (in/out)
-    "! @parameter ct_errors      | Device defect lines
-    "! @parameter ct_comments    | Comment lines
     "! @raising   /ctdi/cx_print_driver_error | Engine or provider failure
     "! @raising   /ctdi/cx_no_config_found    | Config not found failure
   methods EXECUTE
@@ -25,11 +22,6 @@ public section.
       !IV_CLASS_NAME type SEOCLSNAME optional
       !IV_SAVE_AS_PDF type ABAP_BOOL default ABAP_FALSE
       !IO_DATA type ref to OBJECT optional
-    changing
-      !CS_REPAIR type ANY
-      !CS_PROJECT type ANY optional
-      !CT_ERRORS type STANDARD TABLE
-      !CT_COMMENTS type STANDARD TABLE
     raising
       /CTDI/CX_PRINT_DRIVER_ERROR
       /CTDI/CX_NO_CONFIG_FOUND
@@ -115,10 +107,6 @@ CLASS /CTDI/CL_PRINT_DRIVER_ENGINE IMPLEMENTATION.
                 ev_class_name = lv_class_name
                 es_project    = ls_project_db ).
 
-    IF cs_project IS SUPPLIED.
-      cs_project = ls_project_db.
-    ENDIF.
-
     " Resolve configuration
     IF iv_form_name IS NOT INITIAL AND iv_class_name IS NOT INITIAL.
       " Fully explicit — overwrite customizing lookup
@@ -148,10 +136,7 @@ CLASS /CTDI/CL_PRINT_DRIVER_ENGINE IMPLEMENTATION.
                     iv_form_name   = lv_form_name
                     iv_save_as_pdf = iv_save_as_pdf
                     io_data        = io_data
-          CHANGING  cs_repair      = cs_repair
-                    cs_project     = cs_project
-                    ct_errors      = ct_errors
-                    ct_comments    = ct_comments ).
+                    is_project     = ls_project_db ).
 
         /ctdi/cl_print_driver_log=>log_info(
           |Print driver engine completed successfully via /CTDI/IF_PRINT_DRIVER for Repair { iv_repair_id }| ).

@@ -17,11 +17,7 @@ INTERFACE /ctdi/if_print_driver PUBLIC.
       !iv_form_name   TYPE fpname
       !iv_save_as_pdf TYPE abap_bool DEFAULT abap_false
       !io_data        TYPE REF TO object OPTIONAL
-    CHANGING
-      !cs_repair      TYPE any
-      !cs_project     TYPE any OPTIONAL
-      !ct_errors      TYPE STANDARD TABLE
-      !ct_comments    TYPE STANDARD TABLE
+      !is_project     TYPE /ctdi/rep_projec OPTIONAL
     RAISING
       /ctdi/cx_print_driver_error.
 

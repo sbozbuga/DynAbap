@@ -41,11 +41,7 @@ START-OF-SELECTION.
 FORM entry USING ent_retco TYPE sysubrc
                  ent_screen TYPE c.
 
-  DATA: lv_repair_id TYPE aufnr,
-        ls_repair    TYPE /ctdi/repair,
-        ls_project   TYPE /ctdi/rep_projec,
-        lt_errors    TYPE TABLE OF /ctdi/repair_error,
-        lt_comments  TYPE TABLE OF tline.
+  DATA: lv_repair_id TYPE aufnr.
 
   " Clear return code
   ent_retco = 0.
@@ -67,13 +63,7 @@ FORM entry USING ent_retco TYPE sysubrc
       lr_engine->execute(
         EXPORTING
           iv_repair_id   = lv_repair_id
-          iv_save_as_pdf = abap_false          " NACE always prints to spool
-          iv_class_name  = '/CTDI/CL_PRINT_DRIVER_LEGACY' " Explicitly route to Legacy driver
-        CHANGING
-          cs_repair      = ls_repair
-          cs_project     = ls_project
-          ct_errors      = lt_errors
-          ct_comments    = lt_comments ).
+          iv_save_as_pdf = abap_false ).       " NACE always prints to spool
 
       " Mark NAST as successfully processed (vstat = '2')
       nast-vstat   = '2'.
@@ -127,10 +117,7 @@ ENDFORM.
 *& Form RUN_STANDALONE
 *&---------------------------------------------------------------------*
 FORM run_standalone.
-  DATA: ls_repair   TYPE /ctdi/repair,
-        ls_project  TYPE /ctdi/rep_projec,
-        lt_errors   TYPE TABLE OF /ctdi/repair_error,
-        lt_comments TYPE TABLE OF tline.
+
 
   TRY.
       " Read data using the specific data provider extension (allows passing manual parameters like p_sernr)
@@ -145,12 +132,7 @@ FORM run_standalone.
           iv_form_name   = p_form
           iv_class_name  = p_class
           iv_save_as_pdf = p_pdf
-          io_data        = lr_data
-        CHANGING
-          cs_repair      = ls_repair
-          cs_project     = ls_project
-          ct_errors      = lt_errors
-          ct_comments    = lt_comments ).
+          io_data        = lr_data ).
 
       MESSAGE |Print completed successfully for { p_aufnr }| TYPE 'S'.
 

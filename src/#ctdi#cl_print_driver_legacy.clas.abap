@@ -12,11 +12,15 @@ ENDCLASS.
 CLASS /ctdi/cl_print_driver_legacy IMPLEMENTATION.
 
   METHOD read_data.
-    " If the caller already provided populated data, do nothing!
-    IF cs_repair IS NOT INITIAL.
-      /ctdi/cl_print_driver_log=>log_info( |Data already populated externally for { iv_repair_id }. Skipping read.| ).
-      RETURN.
-    ENDIF.
+    " Allocate dynamic memory for the driver state
+    CREATE DATA mr_repair TYPE /cellag/alcarep.
+    ASSIGN mr_repair->* TO FIELD-SYMBOL(<ls_repair>).
+
+    CREATE DATA mr_comments TYPE STANDARD TABLE OF tline.
+    ASSIGN mr_comments->* TO FIELD-SYMBOL(<lt_comments>).
+
+    CREATE DATA mr_errors TYPE STANDARD TABLE OF /ctdi/repair_error.
+    ASSIGN mr_errors->* TO FIELD-SYMBOL(<lt_errors>).
 
     " If an external data object is passed, unpack it
     IF io_data IS BOUND.
@@ -24,12 +28,11 @@ CLASS /ctdi/cl_print_driver_legacy IMPLEMENTATION.
           " Cast io_data to /ctdi/cl_print_data_legacy or its subclasses
           DATA(lr_alca_data) = CAST /ctdi/cl_print_data_legacy( io_data ).
 
-          cs_repair   = lr_alca_data->ms_alcarep.
-          ct_comments = lr_alca_data->mt_comment_lines.
+          <ls_repair>   = lr_alca_data->ms_alcarep.
+          <lt_comments> = lr_alca_data->mt_comment_lines.
 
-          CLEAR ct_errors.
           LOOP AT lr_alca_data->mt_alcarep_error INTO DATA(ls_err).
-            APPEND INITIAL LINE TO ct_errors ASSIGNING FIELD-SYMBOL(<ls_target_err>).
+            APPEND INITIAL LINE TO <lt_errors> ASSIGNING FIELD-SYMBOL(<ls_target_err>).
             MOVE-CORRESPONDING ls_err TO <ls_target_err>.
           ENDLOOP.
 
@@ -50,12 +53,11 @@ CLASS /ctdi/cl_print_driver_legacy IMPLEMENTATION.
           DATA(lr_data_db) = NEW /ctdi/cl_print_data_legacy_ext( ).
           lr_data_db->read_data( iv_aufnr = iv_repair_id ).
 
-          cs_repair   = lr_data_db->ms_alcarep.
-          ct_comments = lr_data_db->mt_comment_lines.
+          <ls_repair>   = lr_data_db->ms_alcarep.
+          <lt_comments> = lr_data_db->mt_comment_lines.
 
-          CLEAR ct_errors.
           LOOP AT lr_data_db->mt_alcarep_error INTO DATA(ls_err_db).
-            APPEND INITIAL LINE TO ct_errors ASSIGNING FIELD-SYMBOL(<ls_target_err_db>).
+            APPEND INITIAL LINE TO <lt_errors> ASSIGNING FIELD-SYMBOL(<ls_target_err_db>).
             MOVE-CORRESPONDING ls_err_db TO <ls_target_err_db>.
           ENDLOOP.
           

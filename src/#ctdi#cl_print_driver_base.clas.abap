@@ -9,17 +9,17 @@ CLASS /ctdi/cl_print_driver_base DEFINITION
       FOR /ctdi/if_print_driver~execute.
 
   PROTECTED SECTION.
-    "! Reads repair data from the database into cs_repair.
+    DATA: mr_repair   TYPE REF TO data,
+          mr_project  TYPE REF TO data,
+          mr_errors   TYPE REF TO data,
+          mr_comments TYPE REF TO data.
+
+    "! Reads repair data from the database into memory.
     "! Subclasses should redefine this method to supply custom data.
     METHODS read_data
       IMPORTING
         !iv_repair_id   TYPE aufnr
         !io_data        TYPE REF TO object OPTIONAL
-      CHANGING
-        !cs_repair      TYPE any
-        !cs_project     TYPE any OPTIONAL
-        !ct_errors      TYPE STANDARD TABLE
-        !ct_comments    TYPE STANDARD TABLE
       RAISING
         /ctdi/cx_print_driver_error.
 
@@ -29,11 +29,7 @@ CLASS /ctdi/cl_print_driver_base DEFINITION
         !iv_repair_id   TYPE aufnr
         !iv_form_name   TYPE fpname
         !iv_save_as_pdf TYPE abap_bool
-      CHANGING
-        !cs_repair      TYPE any
-        !cs_project     TYPE any OPTIONAL
-        !ct_errors      TYPE STANDARD TABLE
-        !ct_comments    TYPE STANDARD TABLE
+
       RAISING
         /ctdi/cx_print_driver_error.
 
@@ -50,11 +46,7 @@ CLASS /ctdi/cl_print_driver_base DEFINITION
         !iv_repair_id   TYPE aufnr
         !iv_form_name   TYPE fpname
         !iv_save_as_pdf TYPE abap_bool
-      CHANGING
-        !cs_repair      TYPE any
-        !cs_project     TYPE any OPTIONAL
-        !ct_errors      TYPE STANDARD TABLE
-        !ct_comments    TYPE STANDARD TABLE
+
       RAISING
         /ctdi/cx_print_driver_error.
 
@@ -64,11 +56,7 @@ CLASS /ctdi/cl_print_driver_base DEFINITION
         !iv_repair_id   TYPE aufnr
         !iv_form_name   TYPE fpname
         !iv_save_as_pdf TYPE abap_bool
-      CHANGING
-        !cs_repair      TYPE any
-        !cs_project     TYPE any OPTIONAL
-        !ct_errors      TYPE STANDARD TABLE
-        !ct_comments    TYPE STANDARD TABLE
+
       RAISING
         /ctdi/cx_print_driver_error.
 
@@ -107,24 +95,22 @@ CLASS /ctdi/cl_print_driver_base IMPLEMENTATION.
       |Print driver started | &&
       |Repair: { iv_repair_id }, Form: { iv_form_name }, Save PDF: { iv_save_as_pdf }| ).
 
+    IF is_project IS SUPPLIED AND is_project IS NOT INITIAL.
+      CREATE DATA mr_project TYPE /ctdi/rep_projec.
+      ASSIGN mr_project->* TO FIELD-SYMBOL(<ls_project>).
+      <ls_project> = is_project.
+    ENDIF.
+
     " Step 1: Read business data
     read_data(
       EXPORTING iv_repair_id = iv_repair_id
-                io_data      = io_data
-      CHANGING  cs_repair    = cs_repair
-                cs_project   = cs_project
-                ct_errors    = ct_errors
-                ct_comments  = ct_comments ).
+                io_data      = io_data ).
 
     " Step 2: Render the form (SmartForm or Adobe)
     render_form(
       EXPORTING iv_repair_id   = iv_repair_id
                 iv_form_name   = iv_form_name
-                iv_save_as_pdf = iv_save_as_pdf
-      CHANGING  cs_repair      = cs_repair
-                cs_project     = cs_project
-                ct_errors      = ct_errors
-                ct_comments    = ct_comments ).
+                iv_save_as_pdf = iv_save_as_pdf ).
 
     /ctdi/cl_print_driver_log=>log_info(
       |Print driver completed successfully for Repair { iv_repair_id }| ).
@@ -141,9 +127,9 @@ CLASS /ctdi/cl_print_driver_base IMPLEMENTATION.
 
   METHOD render_form.
     " Ensure passed repair header is valid
-    IF cs_repair IS INITIAL.
+    IF mr_repair IS INITIAL.
       /ctdi/cl_print_driver_log=>log_warning(
-        |Passed repair header data is empty - | &&
+        |Repair data reference is empty - | &&
         |Print execution bypassed for Repair ID { iv_repair_id }| ).
       RETURN.
     ENDIF.
@@ -156,22 +142,14 @@ CLASS /ctdi/cl_print_driver_base IMPLEMENTATION.
       execute_smartform(
         EXPORTING iv_repair_id   = iv_repair_id
                   iv_form_name   = iv_form_name
-                  iv_save_as_pdf = iv_save_as_pdf
-        CHANGING  cs_repair      = cs_repair
-                  cs_project     = cs_project
-                  ct_errors      = ct_errors
-                  ct_comments    = ct_comments ).
+                  iv_save_as_pdf = iv_save_as_pdf ).
     ELSE.
       /ctdi/cl_print_driver_log=>log_info(
         |Form { iv_form_name } detected as Adobe Form| ).
       execute_adobeform(
         EXPORTING iv_repair_id   = iv_repair_id
                   iv_form_name   = iv_form_name
-                  iv_save_as_pdf = iv_save_as_pdf
-        CHANGING  cs_repair      = cs_repair
-                  cs_project     = cs_project
-                  ct_errors      = ct_errors
-                  ct_comments    = ct_comments ).
+                  iv_save_as_pdf = iv_save_as_pdf ).
     ENDIF.
   ENDMETHOD.
 
@@ -272,28 +250,28 @@ CLASS /ctdi/cl_print_driver_base IMPLEMENTATION.
     IF fm_has_parameter( iv_funcname = lv_fm_name iv_paramname = 'REPAIR' ) = abap_true.
       ls_ptab-name = 'REPAIR'.
       ls_ptab-kind = abap_func_exporting.
-      GET REFERENCE OF cs_repair INTO ls_ptab-value.
+      ls_ptab-value = mr_repair.
       INSERT ls_ptab INTO TABLE lt_ptab.
     ENDIF.
 
     IF fm_has_parameter( iv_funcname = lv_fm_name iv_paramname = 'PROJECT' ) = abap_true.
       ls_ptab-name = 'PROJECT'.
       ls_ptab-kind = abap_func_exporting.
-      GET REFERENCE OF cs_project INTO ls_ptab-value.
+      ls_ptab-value = mr_project.
       INSERT ls_ptab INTO TABLE lt_ptab.
     ENDIF.
 
     IF fm_has_parameter( iv_funcname = lv_fm_name iv_paramname = 'REPAIR_ERRORS' ) = abap_true.
       ls_ptab-name = 'REPAIR_ERRORS'.
       ls_ptab-kind = abap_func_tables.
-      GET REFERENCE OF ct_errors INTO ls_ptab-value.
+      ls_ptab-value = mr_errors.
       INSERT ls_ptab INTO TABLE lt_ptab.
     ENDIF.
 
     IF fm_has_parameter( iv_funcname = lv_fm_name iv_paramname = 'COMMENT_LINES' ) = abap_true.
       ls_ptab-name = 'COMMENT_LINES'.
       ls_ptab-kind = abap_func_tables.
-      GET REFERENCE OF ct_comments INTO ls_ptab-value.
+      ls_ptab-value = mr_comments.
       INSERT ls_ptab INTO TABLE lt_ptab.
     ENDIF.
 
@@ -455,28 +433,28 @@ CLASS /ctdi/cl_print_driver_base IMPLEMENTATION.
     IF fm_has_parameter( iv_funcname = lv_fm_name iv_paramname = 'REPAIR' ) = abap_true.
       ls_ptab-name = 'REPAIR'.
       ls_ptab-kind = abap_func_exporting.
-      GET REFERENCE OF cs_repair INTO ls_ptab-value.
+      ls_ptab-value = mr_repair.
       INSERT ls_ptab INTO TABLE lt_ptab.
     ENDIF.
 
     IF fm_has_parameter( iv_funcname = lv_fm_name iv_paramname = 'PROJECT' ) = abap_true.
       ls_ptab-name = 'PROJECT'.
       ls_ptab-kind = abap_func_exporting.
-      GET REFERENCE OF cs_project INTO ls_ptab-value.
+      ls_ptab-value = mr_project.
       INSERT ls_ptab INTO TABLE lt_ptab.
     ENDIF.
 
     IF fm_has_parameter( iv_funcname = lv_fm_name iv_paramname = 'REPAIR_ERRORS' ) = abap_true.
       ls_ptab-name = 'REPAIR_ERRORS'.
       ls_ptab-kind = abap_func_exporting.
-      GET REFERENCE OF ct_errors INTO ls_ptab-value.
+      ls_ptab-value = mr_errors.
       INSERT ls_ptab INTO TABLE lt_ptab.
     ENDIF.
 
     IF fm_has_parameter( iv_funcname = lv_fm_name iv_paramname = 'COMMENT_LINES' ) = abap_true.
       ls_ptab-name = 'COMMENT_LINES'.
       ls_ptab-kind = abap_func_exporting.
-      GET REFERENCE OF ct_comments INTO ls_ptab-value.
+      ls_ptab-value = mr_comments.
       INSERT ls_ptab INTO TABLE lt_ptab.
     ENDIF.
 

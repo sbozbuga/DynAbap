@@ -24,8 +24,8 @@ CLASS /ctdi/cl_print_driver_template IMPLEMENTATION.
     " TEMPLATE METHOD: read_data
     " =========================================================================
     " Subclasses should redefine this method to supply custom business data
-    " for a new process. The business data is loaded into cs_repair, ct_errors,
-    " and ct_comments.
+    " for a new process. The business data should be allocated and loaded into
+    " mr_repair, mr_errors, and mr_comments.
     " =========================================================================
 
     DATA(lv_repair_id) = |{ iv_repair_id ALPHA = IN }|.
@@ -33,12 +33,12 @@ CLASS /ctdi/cl_print_driver_template IMPLEMENTATION.
     /ctdi/cl_print_driver_log=>log_info(
       |Template read_data started for Repair ID: { iv_repair_id } (internal format: { lv_repair_id })| ).
 
-    " Example 1: Select header data into cs_repair structure.
-    " In a real custom process, cs_repair should be typed as the appropriate structure
-    " (e.g. /CTDI/REPAIR) and filled accordingly.
+    " Example 1: Select header data into mr_repair structure.
+    " CREATE DATA mr_repair TYPE /ctdi/repair.
+    " ASSIGN mr_repair->* TO FIELD-SYMBOL(<ls_repair>).
     " SELECT SINGLE *
     "   FROM /ctdi/repair
-    "   INTO @cs_repair
+    "   INTO @<ls_repair>
     "   WHERE aufnr = @lv_repair_id.
     "
     " IF sy-subrc <> 0.
@@ -54,18 +54,20 @@ CLASS /ctdi/cl_print_driver_template IMPLEMENTATION.
     " ENDIF.
 
     " Example 2: Select error/defect records.
-    " ct_errors should be filled from your process-specific defect/log table.
+    " CREATE DATA mr_errors TYPE STANDARD TABLE OF /ctdi/repair_error.
+    " ASSIGN mr_errors->* TO FIELD-SYMBOL(<lt_errors>).
     " SELECT *
     "   FROM /ctdi/repair_error
-    "   INTO TABLE @ct_errors
+    "   INTO TABLE @<lt_errors>
     "   WHERE aufnr = @lv_repair_id.
     "
     " /ctdi/cl_print_driver_log=>log_info(
     "   |Loaded { lines( ct_errors ) } error/defect lines for Repair { iv_repair_id }| ).
 
     " Example 3: Enriching comments or custom long texts.
-    " Developers can append custom info or read standard SAP texts (READ_TEXT) here.
-    " APPEND INITIAL LINE TO ct_comments ASSIGNING FIELD-SYMBOL(<ls_comment>).
+    " CREATE DATA mr_comments TYPE STANDARD TABLE OF tline.
+    " ASSIGN mr_comments->* TO FIELD-SYMBOL(<lt_comments>).
+    " APPEND INITIAL LINE TO <lt_comments> ASSIGNING FIELD-SYMBOL(<ls_comment>).
     " ...
 
   ENDMETHOD.
@@ -99,11 +101,7 @@ CLASS /ctdi/cl_print_driver_template IMPLEMENTATION.
     super->render_form(
       EXPORTING iv_repair_id   = iv_repair_id
                 iv_form_name   = iv_form_name
-                iv_save_as_pdf = iv_save_as_pdf
-      CHANGING  cs_repair      = cs_repair
-                cs_project     = cs_project
-                ct_errors      = ct_errors
-                ct_comments    = ct_comments ).
+                iv_save_as_pdf = iv_save_as_pdf ).
 
     " --- Example: Post-processing ---
     " Log or trigger a follow-up action after successful printing
