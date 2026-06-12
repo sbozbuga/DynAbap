@@ -41,7 +41,10 @@ CLASS /ctdi/cl_print_data_alca_ext IMPLEMENTATION.
     DATA: lv_contract TYPE vbak-vgbel.
 
     IF mv_kdauf IS NOT INITIAL.
-      SELECT SINGLE vgbel FROM vbak INTO @lv_contract WHERE vbeln = @mv_kdauf.
+      SELECT SINGLE vgbel FROM vbak INTO @lv_contract WHERE vbeln = @mv_kdauf and vbtyp = 'G'.
+      IF sy-subrc <> 0.
+        RETURN.
+      ENDIF.
     ENDIF.
 
     IF lv_contract IS NOT INITIAL.
