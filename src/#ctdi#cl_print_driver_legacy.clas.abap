@@ -21,8 +21,8 @@ CLASS /ctdi/cl_print_driver_legacy IMPLEMENTATION.
     " If an external data object is passed, unpack it
     IF io_data IS BOUND.
       TRY.
-          " Cast io_data to /ctdi/cl_print_data_alcarep or its subclasses
-          DATA(lr_alca_data) = CAST /ctdi/cl_print_data_alcarep( io_data ).
+          " Cast io_data to /ctdi/cl_print_data_legacy or its subclasses
+          DATA(lr_alca_data) = CAST /ctdi/cl_print_data_legacy( io_data ).
 
           cs_repair   = lr_alca_data->ms_alcarep.
           ct_comments = lr_alca_data->mt_comment_lines.
@@ -47,7 +47,7 @@ CLASS /ctdi/cl_print_driver_legacy IMPLEMENTATION.
     ELSE.
       " If no external object is provided, fallback to instantiating and reading from DB directly
       TRY.
-          DATA(lr_data_db) = NEW /ctdi/cl_print_data_alca_ext( ).
+          DATA(lr_data_db) = NEW /ctdi/cl_print_data_legacy_ext( ).
           lr_data_db->read_data( iv_aufnr = iv_repair_id ).
 
           cs_repair   = lr_data_db->ms_alcarep.

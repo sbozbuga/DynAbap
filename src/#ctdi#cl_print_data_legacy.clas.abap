@@ -1,4 +1,4 @@
-CLASS /ctdi/cl_print_data_alcarep DEFINITION
+CLASS /ctdi/cl_print_data_legacy DEFINITION
   PUBLIC
   CREATE PUBLIC.
 
@@ -112,7 +112,7 @@ CLASS /ctdi/cl_print_data_alcarep DEFINITION
 ENDCLASS.
 
 
-CLASS /ctdi/cl_print_data_alcarep IMPLEMENTATION.
+CLASS /ctdi/cl_print_data_legacy IMPLEMENTATION.
 
   METHOD read_data.
     CLEAR: ms_alcarep, mt_alcarep_error, mt_comment_lines.
