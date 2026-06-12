@@ -90,7 +90,7 @@ ENDCLASS.
 CLASS /ctdi/cl_print_driver_engine IMPLEMENTATION.
 
   METHOD execute.
-    DATA: lv_form_name  TYPE fpname,
+      DATA: lv_form_name  TYPE fpname,
           lv_class_name TYPE seoclsname,
           ls_project_db TYPE /ctdi/rep_projec.
 
@@ -115,8 +115,6 @@ CLASS /ctdi/cl_print_driver_engine IMPLEMENTATION.
       " Look up from customizing table
       get_config_from_db(
         EXPORTING iv_repair_id  = iv_repair_id
-                  iv_skz        = iv_skz
-                  iv_akz        = iv_akz
         IMPORTING ev_form_name  = lv_form_name
                   ev_class_name = lv_class_name
                   es_project    = ls_project_db ).
@@ -126,12 +124,12 @@ CLASS /ctdi/cl_print_driver_engine IMPLEMENTATION.
       ENDIF.
     ENDIF.
 
-    " Fallback to base class if nothing configured
-    IF lv_class_name IS INITIAL.
-      lv_class_name = '/CTDI/CL_PRINT_DRIVER_BASE'.
-      /ctdi/cl_print_driver_log=>log_info(
-        |No class configured — falling back to { lv_class_name }| ).
+    IF lv_form_name = gc_form_alca.
+      "Fallback to the old design for Alcatel
+      RAISE EXCEPTION TYPE /ctdi/cx_no_config_found.
+      RETURN.
     ENDIF.
+
 
     " Instantiate provider class
     DATA(lr_instance) = create_provider(
