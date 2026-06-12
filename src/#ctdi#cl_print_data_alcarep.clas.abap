@@ -13,6 +13,30 @@ CLASS /ctdi/cl_print_data_alcarep DEFINITION
         !iv_aufnr TYPE aufk-aufnr
         !iv_sernr TYPE equi-sernr OPTIONAL.
 
+    "! Sets the global parameters of the class
+    METHODS set_global_parameters
+      IMPORTING
+        !is_alcarep       TYPE /cellag/alcarep OPTIONAL
+        !it_alcarep_error TYPE ANY TABLE OPTIONAL
+        !it_comment_lines TYPE ANY TABLE OPTIONAL
+        !iv_aufnr         TYPE aufk-aufnr OPTIONAL
+        !iv_qmcod         TYPE qmel-qmcod OPTIONAL
+        !iv_kdauf         TYPE aufk-kdauf OPTIONAL
+        !iv_swap_flag     TYPE flag OPTIONAL
+        !iv_sernr         TYPE equi-sernr OPTIONAL
+        !iv_po_nr         TYPE vbkd-bstkd_e OPTIONAL
+        !iv_po_pos        TYPE vbkd-posex_e OPTIONAL
+        !iv_ctdi_odernr   TYPE csequence OPTIONAL
+        !iv_qmnum         TYPE qmel-qmnum OPTIONAL
+        !iv_fenum         TYPE qmfe-fenum OPTIONAL
+        !iv_time_received TYPE tims OPTIONAL
+        !iv_time_repaired TYPE tims OPTIONAL
+        !iv_time_thisdate TYPE tims OPTIONAL
+        !iv_spras         TYPE sy-langu OPTIONAL
+        !iv_retlief_nr    TYPE vbeln_vl OPTIONAL
+        !iv_equnr_retlief TYPE equnr OPTIONAL
+        !iv_katalogart    TYPE qkatart OPTIONAL.
+
   PROTECTED SECTION.
     DATA mv_aufnr TYPE aufk-aufnr.
     DATA mv_qmcod TYPE qmel-qmcod.
@@ -838,5 +862,68 @@ CLASS /ctdi/cl_print_data_alcarep IMPLEMENTATION.
 *      ENDIF.
 *    ENDIF.
 *  ENDMETHOD.
+
+  METHOD set_global_parameters.
+    IF is_alcarep IS SUPPLIED.
+      ms_alcarep = is_alcarep.
+    ENDIF.
+    IF it_alcarep_error IS SUPPLIED.
+      mt_alcarep_error = it_alcarep_error.
+    ENDIF.
+    IF it_comment_lines IS SUPPLIED.
+      mt_comment_lines = it_comment_lines.
+    ENDIF.
+    IF iv_aufnr IS SUPPLIED.
+      mv_aufnr = iv_aufnr.
+    ENDIF.
+    IF iv_qmcod IS SUPPLIED.
+      mv_qmcod = iv_qmcod.
+    ENDIF.
+    IF iv_kdauf IS SUPPLIED.
+      mv_kdauf = iv_kdauf.
+    ENDIF.
+    IF iv_swap_flag IS SUPPLIED.
+      mv_swap_flag = iv_swap_flag.
+    ENDIF.
+    IF iv_sernr IS SUPPLIED.
+      mv_sernr = iv_sernr.
+    ENDIF.
+    IF iv_po_nr IS SUPPLIED.
+      mv_po_nr = iv_po_nr.
+    ENDIF.
+    IF iv_po_pos IS SUPPLIED.
+      mv_po_pos = iv_po_pos.
+    ENDIF.
+    IF iv_ctdi_odernr IS SUPPLIED.
+      mv_ctdi_odernr = iv_ctdi_odernr.
+    ENDIF.
+    IF iv_qmnum IS SUPPLIED.
+      mv_qmnum = iv_qmnum.
+    ENDIF.
+    IF iv_fenum IS SUPPLIED.
+      mv_fenum = iv_fenum.
+    ENDIF.
+    IF iv_time_received IS SUPPLIED.
+      mv_time_received = iv_time_received.
+    ENDIF.
+    IF iv_time_repaired IS SUPPLIED.
+      mv_time_repaired = iv_time_repaired.
+    ENDIF.
+    IF iv_time_thisdate IS SUPPLIED.
+      mv_time_thisdate = iv_time_thisdate.
+    ENDIF.
+    IF iv_spras IS SUPPLIED.
+      mv_spras = iv_spras.
+    ENDIF.
+    IF iv_retlief_nr IS SUPPLIED.
+      mv_retlief_nr = iv_retlief_nr.
+    ENDIF.
+    IF iv_equnr_retlief IS SUPPLIED.
+      mv_equnr_retlief = iv_equnr_retlief.
+    ENDIF.
+    IF iv_katalogart IS SUPPLIED.
+      mv_katalogart = iv_katalogart.
+    ENDIF.
+  ENDMETHOD.
 
 ENDCLASS.
