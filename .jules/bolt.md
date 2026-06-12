@@ -1,0 +1,5 @@
+## 2024-05-13 - [SELECT SINGLE performance]
+**Learning:** `src/#ctdi#cl_print_data_legacy.clas.abap` has an N+1 query issue inside a LOOP where it fetches text descriptions from `qpgt` and `qpct`. This is a clear bottleneck if there are multiple errors.
+**Action:** Replace the `SELECT SINGLE` inside the loop with a bulk fetch using `FOR ALL ENTRIES` or a joined query outside the loop, or collect the distinct keys first. Wait, `mv_katalogart` changes dynamically inside the loop based on `ms_alcarep-kvgr1 = '0SU'` which is constant per method call (since it uses the instance attribute `ms_alcarep` which isn't changed in the loop). So `mv_katalogart` is predictable. Let's trace it. Wait, `mv_katalogart` is set to 'Z' or 'E'. Then for the second `qpgt` lookup it's still 'Z'. Then for `fecod` it says `IF mv_katalogart = 'E'. mv_katalogart = 'Z'. ENDIF.` That means it alters it for the last query. That makes the queries slightly complex, but still optimizable via `FOR ALL ENTRIES` or caching.
+
+Let's do this! This is a classic ABAP performance optimization.

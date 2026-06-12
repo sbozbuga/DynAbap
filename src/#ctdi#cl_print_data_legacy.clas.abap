@@ -642,49 +642,81 @@ CLASS /ctdi/cl_print_data_legacy IMPLEMENTATION.
         ORDER BY PRIMARY KEY.
 
       IF lt_error IS NOT INITIAL.
+        DATA: lv_kat1 TYPE qpct-katalogart,
+              lv_kat2 TYPE qpct-katalogart.
+
+        IF ms_alcarep-kvgr1 = '0SU'.
+          lv_kat1 = 'E'.
+          lv_kat2 = 'Z'.
+        ELSE.
+          lv_kat1 = 'Z'.
+          lv_kat2 = 'Z'.
+        ENDIF.
+
+        TYPES: BEGIN OF ty_qpgt,
+                 codegruppe TYPE qpgt-codegruppe,
+                 kurztext   TYPE qpgt-kurztext,
+               END OF ty_qpgt,
+               BEGIN OF ty_qpct,
+                 codegruppe TYPE qpct-codegruppe,
+                 code       TYPE qpct-code,
+                 kurztext   TYPE qpct-kurztext,
+               END OF ty_qpct.
+
+        DATA: lt_qpgt_ot TYPE HASHED TABLE OF ty_qpgt WITH UNIQUE KEY codegruppe,
+              lt_qpgt_fe TYPE HASHED TABLE OF ty_qpgt WITH UNIQUE KEY codegruppe,
+              lt_qpct_ot TYPE HASHED TABLE OF ty_qpct WITH UNIQUE KEY codegruppe code,
+              lt_qpct_fe TYPE HASHED TABLE OF ty_qpct WITH UNIQUE KEY codegruppe code.
+
+        IF lv_kat1 = 'Z'.
+          SELECT codegruppe, kurztext FROM qpgt INTO TABLE @lt_qpgt_ot
+            FOR ALL ENTRIES IN @lt_error
+            WHERE katalogart = @lv_kat1 AND codegruppe = @lt_error-otgrp AND sprache = @mv_spras.
+
+          SELECT codegruppe, kurztext FROM qpgt INTO TABLE @lt_qpgt_fe
+            FOR ALL ENTRIES IN @lt_error
+            WHERE katalogart = @lv_kat1 AND codegruppe = @lt_error-fegrp AND sprache = @mv_spras.
+        ENDIF.
+
+        SELECT codegruppe, code, kurztext FROM qpct INTO TABLE @lt_qpct_ot
+          FOR ALL ENTRIES IN @lt_error
+          WHERE katalogart = @lv_kat1 AND codegruppe = @lt_error-otgrp AND code = @lt_error-oteil AND sprache = @mv_spras.
+
+        SELECT codegruppe, code, kurztext FROM qpct INTO TABLE @lt_qpct_fe
+          FOR ALL ENTRIES IN @lt_error
+          WHERE katalogart = @lv_kat2 AND codegruppe = @lt_error-fegrp AND code = @lt_error-fecod AND sprache = @mv_spras.
+
         LOOP AT lt_error INTO ls_error.
           lf_besz_string = ls_error-besz.
           CONCATENATE lf_besz lf_besz_string '; ' INTO lf_besz.
 
-          IF ms_alcarep-kvgr1 = '0SU'.
-            mv_katalogart = 'E'.
-          ELSE.
-            mv_katalogart = 'Z'.
+          IF lv_kat1 = 'Z'.
+            READ TABLE lt_qpgt_ot INTO DATA(ls_qpgt_ot) WITH TABLE KEY codegruppe = ls_error-otgrp.
+            IF sy-subrc = 0.
+              ls_error-otgrp_ktxt = ls_qpgt_ot-kurztext.
+            ENDIF.
+
+            READ TABLE lt_qpgt_fe INTO DATA(ls_qpgt_fe) WITH TABLE KEY codegruppe = ls_error-fegrp.
+            IF sy-subrc = 0.
+              ls_error-fegrp_ktxt = ls_qpgt_fe-kurztext.
+            ENDIF.
           ENDIF.
 
-          IF mv_katalogart = 'Z'.
-            SELECT SINGLE kurztext FROM qpgt INTO @ls_error-otgrp_ktxt
-                    WHERE katalogart  = @mv_katalogart AND
-                          codegruppe  = @ls_error-otgrp AND
-                          sprache     = @mv_spras.
+          READ TABLE lt_qpct_ot INTO DATA(ls_qpct_ot) WITH TABLE KEY codegruppe = ls_error-otgrp code = ls_error-oteil.
+          IF sy-subrc = 0.
+            ls_error-oteil_ktxt = ls_qpct_ot-kurztext.
           ENDIF.
 
-          SELECT SINGLE kurztext FROM qpct INTO @ls_error-oteil_ktxt
-                    WHERE katalogart  = @mv_katalogart AND
-                          codegruppe  = @ls_error-otgrp AND
-                          code        = @ls_error-oteil AND
-                          sprache     = @mv_spras.
-
-          IF mv_katalogart = 'Z'.
-            SELECT SINGLE kurztext FROM qpgt INTO @ls_error-fegrp_ktxt
-                    WHERE katalogart  = @mv_katalogart AND
-                          codegruppe  = @ls_error-fegrp AND
-                          sprache     = @mv_spras.
+          READ TABLE lt_qpct_fe INTO DATA(ls_qpct_fe) WITH TABLE KEY codegruppe = ls_error-fegrp code = ls_error-fecod.
+          IF sy-subrc = 0.
+            ls_error-fecod_ktxt = ls_qpct_fe-kurztext.
           ENDIF.
-
-          IF mv_katalogart = 'E'.
-            mv_katalogart = 'Z'.
-          ENDIF.
-
-          SELECT SINGLE kurztext FROM qpct INTO @ls_error-fecod_ktxt
-                    WHERE katalogart  = @mv_katalogart AND
-                          codegruppe  = @ls_error-fegrp AND
-                          code        = @ls_error-fecod AND
-                          sprache     = @mv_spras.
 
           APPEND ls_error TO mt_alcarep_error.
           CLEAR ls_error.
         ENDLOOP.
+
+        mv_katalogart = 'Z'. " Maintain expected post-loop state for legacy callers
       ENDIF.
     ENDIF.
 
