@@ -11,6 +11,12 @@
     <FIXPT>X</FIXPT>
     <UNICODE>X</UNICODE>
    </VSEOCLASS>
+   <DESCRIPTIONS_CLASS>
+    <SEOCLASSTX>
+     <LANGU>E</LANGU>
+     <DESCRIPT>Print Driver: Base Provider Class (SmartF + Adobe)</DESCRIPT>
+    </SEOCLASSTX>
+   </DESCRIPTIONS_CLASS>
    <DESCRIPTIONS_SUB>
     <SEOSUBCOTX>
      <LANGU>D</LANGU>

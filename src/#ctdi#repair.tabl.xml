@@ -4,10 +4,10 @@
   <asx:values>
    <DD02V>
     <TABNAME>/CTDI/REPAIR</TABNAME>
-    <DDLANGUAGE>E</DDLANGUAGE>
+    <DDLANGUAGE>D</DDLANGUAGE>
     <TABCLASS>INTTAB</TABCLASS>
     <LANGDEP>X</LANGDEP>
-    <DDTEXT>Error report</DDTEXT>
+    <DDTEXT>Fehlerbericht</DDTEXT>
     <EXCLASS>4</EXCLASS>
    </DD02V>
    <DD03P_TABLE>
@@ -16,16 +16,17 @@
      <ADMINFIELD>0</ADMINFIELD>
      <PRECFIELD>/CELLAG/ALCAREP</PRECFIELD>
      <MASK>      S</MASK>
+     <DDTEXT>Struktur für  Alcatel Lucent Fehlerbericht</DDTEXT>
      <COMPTYPE>S</COMPTYPE>
     </DD03P>
    </DD03P_TABLE>
    <I18N_LANGS>
-    <LANGU>D</LANGU>
+    <LANGU>E</LANGU>
    </I18N_LANGS>
    <DD02_TEXTS>
     <item>
-     <DDLANGUAGE>D</DDLANGUAGE>
-     <DDTEXT>Fehlerbericht</DDTEXT>
+     <DDLANGUAGE>E</DDLANGUAGE>
+     <DDTEXT>Error report</DDTEXT>
     </item>
    </DD02_TEXTS>
   </asx:values>

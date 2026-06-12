@@ -9,18 +9,13 @@
     <RLOAD>D</RLOAD>
     <UCCHECK>X</UCCHECK>
    </PROGDIR>
-   <I18N_TPOOL>
+   <TPOOL>
     <item>
-     <LANGUAGE>D</LANGUAGE>
-     <TEXTPOOL>
-      <item>
-       <ID>R</ID>
-       <ENTRY>Include /CTDI/WORKSHOP_INCL_SE54</ENTRY>
-       <LENGTH>32</LENGTH>
-      </item>
-     </TEXTPOOL>
+     <ID>R</ID>
+     <ENTRY>Include /CTDI/WORKSHOP_INCL_SE54</ENTRY>
+     <LENGTH>32</LENGTH>
     </item>
-   </I18N_TPOOL>
+   </TPOOL>
   </asx:values>
  </asx:abap>
 </abapGit>

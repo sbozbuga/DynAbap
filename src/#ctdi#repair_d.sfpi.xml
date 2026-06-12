@@ -3,7 +3,7 @@
  <asx:abap version="1.0" xmlns:asx="http://www.sap.com/abapxml">
   <asx:values>
    <VERSION>1</VERSION>
-   <TYPE>S</TYPE>
+   <TYPE/>
    <INTERFACE href="#o1"/>
    <INTERFACET>
     <FPINTERFACET>
@@ -60,13 +60,15 @@
        <DEFAULTVAL/>
        <CONSTANT/>
       </SFPGDATA>
+      <SFPGDATA>
+       <NAME>GV_TEST_PRINT</NAME>
+       <TYPING>TYPE</TYPING>
+       <TYPENAME>STRING</TYPENAME>
+       <DEFAULTVAL>&apos;TEST PRINTOUT&apos;</DEFAULTVAL>
+       <CONSTANT/>
+      </SFPGDATA>
      </GLOBAL_DATA>
      <TYPES>
-      <FPCLINE>TYPES: BEGIN OF gy_error,</FPCLINE>
-      <FPCLINE>         urgrp TYPE urgrp,</FPCLINE>
-      <FPCLINE>         urcod TYPE urcod,</FPCLINE>
-      <FPCLINE>       END OF gy_error.</FPCLINE>
-      <FPCLINE/>
       <FPCLINE/>
       <FPCLINE/>
       <FPCLINE/>
@@ -114,9 +116,6 @@
        <STANDARD/>
        <CONSTANT/>
       </SFPIOPAR>
-     </IMPORT_PARAMETERS>
-     <EXPORT_PARAMETERS/>
-     <TABLE_PARAMETERS>
       <SFPIOPAR>
        <NAME>REPAIR_ERRORS</NAME>
        <TYPING>TYPE</TYPING>
@@ -137,7 +136,9 @@
        <STANDARD/>
        <CONSTANT/>
       </SFPIOPAR>
-     </TABLE_PARAMETERS>
+     </IMPORT_PARAMETERS>
+     <EXPORT_PARAMETERS/>
+     <TABLE_PARAMETERS/>
      <EXCEPTIONS/>
     </CL_FP_PARAMETERS>
    </cls:CL_FP_PARAMETERS>
@@ -152,9 +153,9 @@
      </INPUT_PARAMETERS>
      <OUTPUT_PARAMETERS>
       <FPPARAMETER>GV_LOGOX</FPPARAMETER>
+      <FPPARAMETER>GV_TEST_PRINT</FPPARAMETER>
      </OUTPUT_PARAMETERS>
      <INITIALIZATION>
-      <FPCLINE>DATA: lt_error TYPE TABLE OF gy_error.</FPCLINE>
       <FPCLINE>*BREAK nhs003381.</FPCLINE>
       <FPCLINE>CALL METHOD cl_ssf_xsf_utilities=&gt;get_bds_graphic_as_bmp</FPCLINE>
       <FPCLINE>  EXPORTING</FPCLINE>
@@ -169,8 +170,9 @@
       <FPCLINE>IF sy-subrc NE 0.</FPCLINE>
       <FPCLINE>ENDIF.</FPCLINE>
       <FPCLINE/>
-      <FPCLINE/>
-      <FPCLINE/>
+      <FPCLINE>IF sy-sysid EQ &apos;PA1&apos;.</FPCLINE>
+      <FPCLINE>  CLEAR gv_test_print.</FPCLINE>
+      <FPCLINE>ENDIF.</FPCLINE>
       <FPCLINE/>
       <FPCLINE/>
       <FPCLINE/>

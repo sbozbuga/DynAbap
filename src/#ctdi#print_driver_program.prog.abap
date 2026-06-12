@@ -63,8 +63,8 @@ FORM entry USING ent_retco TYPE sysubrc
     |NAST entry triggered for Repair { lv_repair_id }| ).
 
   TRY.
-      " Read data using the specific data provider extension
-      DATA(lr_data) = NEW /ctdi/cl_print_data_alca_ext( ).
+      " Read data using the specific data provider
+      DATA(lr_data) = NEW /ctdi/cl_print_data_alcarep( ).
       lr_data->read_data( iv_aufnr = lv_repair_id ).
 
       MOVE-CORRESPONDING lr_data->ms_alcarep TO ls_repair.
@@ -145,8 +145,8 @@ FORM run_standalone.
         lt_comments TYPE TABLE OF tline.
 
   TRY.
-      " Read data using the specific data provider extension
-      DATA(lr_data) = NEW /ctdi/cl_print_data_alca_ext( ).
+      " Read data using the specific data provider
+      DATA(lr_data) = NEW /ctdi/cl_print_data_alcarep( ).
       lr_data->read_data( iv_aufnr = p_aufnr
                           iv_sernr = p_sernr ).
 

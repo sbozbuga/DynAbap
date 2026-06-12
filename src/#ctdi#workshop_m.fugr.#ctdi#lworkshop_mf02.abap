@@ -2,6 +2,4 @@
 ***INCLUDE /CTDI/LWORKSHOP_MF02.
 *----------------------------------------------------------------------*
 
-FORM check_entry.
-
-ENDFORM.
+include /CTDI/WORKSHOP_incl_se54.

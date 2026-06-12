@@ -6,16 +6,11 @@
     <NAMESPACE>/CTDI/</NAMESPACE>
     <REPLICENSE>34289826181512727252</REPLICENSE>
    </NSPC>
-   <I18N_LANGS>
-    <LANGU>D</LANGU>
-   </I18N_LANGS>
-   <NSPC_TEXTS>
-    <item>
-     <SPRAS>D</SPRAS>
-     <DESCRIPTN>CTDI Malsch GmbH Headquarter Germany</DESCRIPTN>
-     <OWNER>CTDI GmbH Malsch</OWNER>
-    </item>
-   </NSPC_TEXTS>
+   <NSPC_TEXT>
+    <SPRAS>D</SPRAS>
+    <DESCRIPTN>CTDI Malsch GmbH Headquarter Germany</DESCRIPTN>
+    <OWNER>CTDI GmbH Malsch</OWNER>
+   </NSPC_TEXT>
   </asx:values>
  </asx:abap>
 </abapGit>

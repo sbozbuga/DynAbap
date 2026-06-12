@@ -4,10 +4,10 @@
   <asx:values>
    <DD02V>
     <TABNAME>/CTDI/REP_PROJEC</TABNAME>
-    <DDLANGUAGE>E</DDLANGUAGE>
+    <DDLANGUAGE>D</DDLANGUAGE>
     <TABCLASS>TRANSP</TABCLASS>
     <CLIDEP>X</CLIDEP>
-    <DDTEXT>Repair Projects</DDTEXT>
+    <DDTEXT>Reparaturprojekte</DDTEXT>
     <MAINFLAG>X</MAINFLAG>
     <CONTFLAG>C</CONTFLAG>
     <EXCLASS>1</EXCLASS>
@@ -44,12 +44,12 @@
     </DD03P>
    </DD03P_TABLE>
    <I18N_LANGS>
-    <LANGU>D</LANGU>
+    <LANGU>E</LANGU>
    </I18N_LANGS>
    <DD02_TEXTS>
     <item>
-     <DDLANGUAGE>D</DDLANGUAGE>
-     <DDTEXT>Reparaturprojekte</DDTEXT>
+     <DDLANGUAGE>E</DDLANGUAGE>
+     <DDTEXT>Repair Projects</DDTEXT>
     </item>
    </DD02_TEXTS>
    <TABL_EXTRAS>

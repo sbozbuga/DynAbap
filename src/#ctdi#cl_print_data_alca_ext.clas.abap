@@ -1,6 +1,3 @@
-"! <summary>CTDI Print Data Provider Extension</summary>
-"! <desc>Extends the base Alcatel class to read repair results from the new 
-"! /CTDI/REP_RESULT table using an 11-step access sequence based on Contract, SKZ, AKZ, and Swap Flag.</desc>
 CLASS /ctdi/cl_print_data_alca_ext DEFINITION
   PUBLIC
   INHERITING FROM /ctdi/cl_print_data_alcarep
@@ -9,9 +6,6 @@ CLASS /ctdi/cl_print_data_alca_ext DEFINITION
   PUBLIC SECTION.
 
   PROTECTED SECTION.
-    "! <summary>Redefined repair result retrieval</summary>
-    "! <desc>First fetches the contract (vgbel) from VBAK. Then reads operation 9010 
-    "! from AFRU to get SKZ. Evaluates an access sequence against /CTDI/REP_RESULT.</desc>
     METHODS get_repair_result REDEFINITION.
 
   PRIVATE SECTION.
