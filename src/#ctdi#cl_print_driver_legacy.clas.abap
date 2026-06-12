@@ -13,8 +13,8 @@ CLASS /ctdi/cl_print_driver_legacy IMPLEMENTATION.
 
   METHOD read_data.
     FIELD-SYMBOLS: <ls_repair>   TYPE ANY,
-                   <lt_comments> TYPE ANY TABLE,
-                   <lt_errors>   TYPE ANY TABLE.
+                   <lt_comments> TYPE STANDARD TABLE,
+                   <lt_errors>   TYPE STANDARD TABLE.
 
     " Allocate dynamic memory for the driver state
     CREATE DATA mr_repair TYPE /ctdi/repair.

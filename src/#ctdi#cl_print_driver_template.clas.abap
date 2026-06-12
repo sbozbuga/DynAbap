@@ -55,7 +55,7 @@ CLASS /ctdi/cl_print_driver_template IMPLEMENTATION.
     " ENDIF.
 
     " Example 2: Select error/defect records.
-    " FIELD-SYMBOLS: <lt_errors> TYPE ANY TABLE.
+    " FIELD-SYMBOLS: <lt_errors> TYPE STANDARD TABLE.
     " CREATE DATA mr_errors TYPE STANDARD TABLE OF /ctdi/repair_error.
     " ASSIGN mr_errors->* TO <lt_errors>.
     " SELECT *
@@ -67,7 +67,7 @@ CLASS /ctdi/cl_print_driver_template IMPLEMENTATION.
     "   |Loaded { lines( <lt_errors> ) } error/defect lines for Repair { iv_repair_id }| ).
 
     " Example 3: Enriching comments or custom long texts.
-    " FIELD-SYMBOLS: <lt_comments> TYPE ANY TABLE.
+    " FIELD-SYMBOLS: <lt_comments> TYPE STANDARD TABLE.
     " CREATE DATA mr_comments TYPE STANDARD TABLE OF tline.
     " ASSIGN mr_comments->* TO <lt_comments>.
     " APPEND INITIAL LINE TO <lt_comments> ASSIGNING FIELD-SYMBOL(<ls_comment>).
