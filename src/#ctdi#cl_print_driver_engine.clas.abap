@@ -108,31 +108,24 @@ CLASS /CTDI/CL_PRINT_DRIVER_ENGINE IMPLEMENTATION.
     /ctdi/cl_print_driver_log=>log_info(
       |Print driver engine invoked for Repair { iv_repair_id }| ).
 
+    " Always fetch config from DB to ensure project is loaded and cached
+    get_config_from_db(
+      EXPORTING iv_repair_id  = iv_repair_id
+      IMPORTING ev_form_name  = lv_form_name
+                ev_class_name = lv_class_name
+                es_project    = ls_project_db ).
+
+    IF cs_project IS SUPPLIED.
+      cs_project = ls_project_db.
+    ENDIF.
+
     " Resolve configuration
     IF iv_form_name IS NOT INITIAL AND iv_class_name IS NOT INITIAL.
-      " Fully explicit — no customizing lookup needed
+      " Fully explicit — overwrite customizing lookup
       lv_form_name  = iv_form_name.
       lv_class_name = iv_class_name.
       /ctdi/cl_print_driver_log=>log_info(
         |Using explicit config — Form: { lv_form_name }, Class: { lv_class_name }| ).
-
-      IF cs_project IS SUPPLIED AND cs_project IS INITIAL.
-        get_config_from_db(
-          EXPORTING iv_repair_id  = iv_repair_id
-          IMPORTING es_project    = ls_project_db ).
-        cs_project = ls_project_db.
-      ENDIF.
-    ELSE.
-      " Look up from customizing table
-      get_config_from_db(
-        EXPORTING iv_repair_id  = iv_repair_id
-        IMPORTING ev_form_name  = lv_form_name
-                  ev_class_name = lv_class_name
-                  es_project    = ls_project_db ).
-
-      IF cs_project IS SUPPLIED.
-        cs_project = ls_project_db.
-      ENDIF.
     ENDIF.
 
     IF lv_form_name = gc_form_alca.

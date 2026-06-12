@@ -269,25 +269,33 @@ CLASS /ctdi/cl_print_driver_base IMPLEMENTATION.
     GET REFERENCE OF ls_output_options INTO ls_ptab-value.
     INSERT ls_ptab INTO TABLE lt_ptab.
 
-    ls_ptab-name = 'REPAIR'.
-    ls_ptab-kind = abap_func_exporting.
-    GET REFERENCE OF cs_repair INTO ls_ptab-value.
-    INSERT ls_ptab INTO TABLE lt_ptab.
+    IF fm_has_parameter( iv_funcname = lv_fm_name iv_paramname = 'REPAIR' ) = abap_true.
+      ls_ptab-name = 'REPAIR'.
+      ls_ptab-kind = abap_func_exporting.
+      GET REFERENCE OF cs_repair INTO ls_ptab-value.
+      INSERT ls_ptab INTO TABLE lt_ptab.
+    ENDIF.
 
-    ls_ptab-name = 'PROJECT'.
-    ls_ptab-kind = abap_func_exporting.
-    GET REFERENCE OF cs_project INTO ls_ptab-value.
-    INSERT ls_ptab INTO TABLE lt_ptab.
+    IF fm_has_parameter( iv_funcname = lv_fm_name iv_paramname = 'PROJECT' ) = abap_true.
+      ls_ptab-name = 'PROJECT'.
+      ls_ptab-kind = abap_func_exporting.
+      GET REFERENCE OF cs_project INTO ls_ptab-value.
+      INSERT ls_ptab INTO TABLE lt_ptab.
+    ENDIF.
 
-    ls_ptab-name = 'REPAIR_ERRORS'.
-    ls_ptab-kind = abap_func_tables.
-    GET REFERENCE OF ct_errors INTO ls_ptab-value.
-    INSERT ls_ptab INTO TABLE lt_ptab.
+    IF fm_has_parameter( iv_funcname = lv_fm_name iv_paramname = 'REPAIR_ERRORS' ) = abap_true.
+      ls_ptab-name = 'REPAIR_ERRORS'.
+      ls_ptab-kind = abap_func_tables.
+      GET REFERENCE OF ct_errors INTO ls_ptab-value.
+      INSERT ls_ptab INTO TABLE lt_ptab.
+    ENDIF.
 
-    ls_ptab-name = 'COMMENT_LINES'.
-    ls_ptab-kind = abap_func_tables.
-    GET REFERENCE OF ct_comments INTO ls_ptab-value.
-    INSERT ls_ptab INTO TABLE lt_ptab.
+    IF fm_has_parameter( iv_funcname = lv_fm_name iv_paramname = 'COMMENT_LINES' ) = abap_true.
+      ls_ptab-name = 'COMMENT_LINES'.
+      ls_ptab-kind = abap_func_tables.
+      GET REFERENCE OF ct_comments INTO ls_ptab-value.
+      INSERT ls_ptab INTO TABLE lt_ptab.
+    ENDIF.
 
 
 
@@ -302,28 +310,18 @@ CLASS /ctdi/cl_print_driver_base IMPLEMENTATION.
     ls_etab-name = 'USER_CANCELED'.    ls_etab-value = 4. INSERT ls_etab INTO TABLE lt_etab.
     ls_etab-name = 'OTHERS'.           ls_etab-value = 5. INSERT ls_etab INTO TABLE lt_etab.
 
-    DATA: lv_retry TYPE abap_bool.
-    DO.
-      lv_retry = abap_false.
-      TRY.
-          CALL FUNCTION lv_fm_name
-            PARAMETER-TABLE lt_ptab
-            EXCEPTION-TABLE lt_etab.
-          lv_subrc_fm = sy-subrc.
-        CATCH cx_sy_dyn_call_param_not_found INTO DATA(lx_not_found).
-          DELETE lt_ptab WHERE name = lx_not_found->parameter. "#EC CI_SORTSEQ
-          lv_retry = abap_true.
-        CATCH cx_sy_dyn_call_error INTO DATA(lx_dyn_call).
-          lv_err = |Dynamic call error for { iv_form_name }: { lx_dyn_call->get_text( ) }|.
-          /ctdi/cl_print_driver_log=>log_error( lv_err ).
-          RAISE EXCEPTION TYPE /ctdi/cx_print_driver_error
-            EXPORTING repair_id = iv_repair_id
-                      message   = lv_err.
-      ENDTRY.
-      IF lv_retry = abap_false.
-        EXIT.
-      ENDIF.
-    ENDDO.
+    TRY.
+        CALL FUNCTION lv_fm_name
+          PARAMETER-TABLE lt_ptab
+          EXCEPTION-TABLE lt_etab.
+        lv_subrc_fm = sy-subrc.
+      CATCH cx_sy_dyn_call_error INTO DATA(lx_dyn_call).
+        lv_err = |Dynamic call error for { iv_form_name }: { lx_dyn_call->get_text( ) }|.
+        /ctdi/cl_print_driver_log=>log_error( lv_err ).
+        RAISE EXCEPTION TYPE /ctdi/cx_print_driver_error
+          EXPORTING repair_id = iv_repair_id
+                    message   = lv_err.
+    ENDTRY.
 
     IF lv_subrc_fm <> 0.
       lv_err = |Smart Form { iv_form_name } execution failed (subrc={ lv_subrc_fm })|.
@@ -454,25 +452,33 @@ CLASS /ctdi/cl_print_driver_base IMPLEMENTATION.
     GET REFERENCE OF ls_docparams INTO ls_ptab-value.
     INSERT ls_ptab INTO TABLE lt_ptab.
 
-    ls_ptab-name = 'REPAIR'.
-    ls_ptab-kind = abap_func_exporting.
-    GET REFERENCE OF cs_repair INTO ls_ptab-value.
-    INSERT ls_ptab INTO TABLE lt_ptab.
+    IF fm_has_parameter( iv_funcname = lv_fm_name iv_paramname = 'REPAIR' ) = abap_true.
+      ls_ptab-name = 'REPAIR'.
+      ls_ptab-kind = abap_func_exporting.
+      GET REFERENCE OF cs_repair INTO ls_ptab-value.
+      INSERT ls_ptab INTO TABLE lt_ptab.
+    ENDIF.
 
-    ls_ptab-name = 'PROJECT'.
-    ls_ptab-kind = abap_func_exporting.
-    GET REFERENCE OF cs_project INTO ls_ptab-value.
-    INSERT ls_ptab INTO TABLE lt_ptab.
+    IF fm_has_parameter( iv_funcname = lv_fm_name iv_paramname = 'PROJECT' ) = abap_true.
+      ls_ptab-name = 'PROJECT'.
+      ls_ptab-kind = abap_func_exporting.
+      GET REFERENCE OF cs_project INTO ls_ptab-value.
+      INSERT ls_ptab INTO TABLE lt_ptab.
+    ENDIF.
 
-    ls_ptab-name = 'REPAIR_ERRORS'.
-    ls_ptab-kind = abap_func_exporting.
-    GET REFERENCE OF ct_errors INTO ls_ptab-value.
-    INSERT ls_ptab INTO TABLE lt_ptab.
+    IF fm_has_parameter( iv_funcname = lv_fm_name iv_paramname = 'REPAIR_ERRORS' ) = abap_true.
+      ls_ptab-name = 'REPAIR_ERRORS'.
+      ls_ptab-kind = abap_func_exporting.
+      GET REFERENCE OF ct_errors INTO ls_ptab-value.
+      INSERT ls_ptab INTO TABLE lt_ptab.
+    ENDIF.
 
-    ls_ptab-name = 'COMMENT_LINES'.
-    ls_ptab-kind = abap_func_exporting.
-    GET REFERENCE OF ct_comments INTO ls_ptab-value.
-    INSERT ls_ptab INTO TABLE lt_ptab.
+    IF fm_has_parameter( iv_funcname = lv_fm_name iv_paramname = 'COMMENT_LINES' ) = abap_true.
+      ls_ptab-name = 'COMMENT_LINES'.
+      ls_ptab-kind = abap_func_exporting.
+      GET REFERENCE OF ct_comments INTO ls_ptab-value.
+      INSERT ls_ptab INTO TABLE lt_ptab.
+    ENDIF.
 
     ls_ptab-name = '/1BCDWB/FORMOUTPUT'.
     ls_ptab-kind = abap_func_importing.
@@ -484,28 +490,18 @@ CLASS /ctdi/cl_print_driver_base IMPLEMENTATION.
     ls_etab-name = 'INTERNAL_ERROR'. ls_etab-value = 3. INSERT ls_etab INTO TABLE lt_etab.
     ls_etab-name = 'OTHERS'.         ls_etab-value = 4. INSERT ls_etab INTO TABLE lt_etab.
 
-    DATA: lv_retry TYPE abap_bool.
-    DO.
-      lv_retry = abap_false.
-      TRY.
-          CALL FUNCTION lv_fm_name
-            PARAMETER-TABLE lt_ptab
-            EXCEPTION-TABLE lt_etab.
-          lv_subrc = sy-subrc.
-        CATCH cx_sy_dyn_call_param_not_found INTO DATA(lx_not_found).
-          DELETE lt_ptab WHERE name = lx_not_found->parameter. "#EC CI_SORTSEQ
-          lv_retry = abap_true.
-        CATCH cx_sy_dyn_call_error INTO DATA(lx_dyn_call).
-          lv_err = |Dynamic call error for { iv_form_name }: { lx_dyn_call->get_text( ) }|.
-          /ctdi/cl_print_driver_log=>log_error( lv_err ).
-          RAISE EXCEPTION TYPE /ctdi/cx_print_driver_error
-            EXPORTING repair_id = iv_repair_id
-                      message   = lv_err.
-      ENDTRY.
-      IF lv_retry = abap_false.
-        EXIT.
-      ENDIF.
-    ENDDO.
+    TRY.
+        CALL FUNCTION lv_fm_name
+          PARAMETER-TABLE lt_ptab
+          EXCEPTION-TABLE lt_etab.
+        lv_subrc = sy-subrc.
+      CATCH cx_sy_dyn_call_error INTO DATA(lx_dyn_call).
+        lv_err = |Dynamic call error for { iv_form_name }: { lx_dyn_call->get_text( ) }|.
+        /ctdi/cl_print_driver_log=>log_error( lv_err ).
+        RAISE EXCEPTION TYPE /ctdi/cx_print_driver_error
+          EXPORTING repair_id = iv_repair_id
+                    message   = lv_err.
+    ENDTRY.
 
     " Close the print job
     CALL FUNCTION 'FP_JOB_CLOSE'
