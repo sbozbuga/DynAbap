@@ -309,15 +309,14 @@ CLASS /CTDI/CL_PRINT_DRIVER_ENGINE IMPLEMENTATION.
     ENDIF.
 
 
-    IF es_project IS SUPPLIED.
-      " Look up the project in the project table (with memory caching)
-      READ TABLE mt_project_buffer INTO es_project WITH TABLE KEY vbeln = lv_contract.
+    " Look up the project in the project table (with memory caching)
+    READ TABLE mt_project_buffer INTO es_project WITH TABLE KEY vbeln = lv_contract.
 
-      IF sy-subrc <> 0.
-        SELECT SINGLE *
-          FROM /ctdi/rep_projec
-          INTO @es_project
-          WHERE vbeln = @lv_contract.
+    IF sy-subrc <> 0.
+      SELECT SINGLE *
+        FROM /ctdi/rep_projec
+        INTO @es_project
+        WHERE vbeln = @lv_contract.
 
 *      IF sy-subrc <> 0.
 *        DATA(lv_raw_proj) = |{ lv_contract ALPHA = OUT }|.
@@ -330,9 +329,8 @@ CLASS /CTDI/CL_PRINT_DRIVER_ENGINE IMPLEMENTATION.
 *             OR vbeln = @lv_in_proj.
 *      ENDIF.
 
-        IF es_project IS NOT INITIAL.
-          INSERT es_project INTO TABLE mt_project_buffer.
-        ENDIF.
+      IF es_project IS NOT INITIAL.
+        INSERT es_project INTO TABLE mt_project_buffer.
       ENDIF.
     ENDIF.
 
