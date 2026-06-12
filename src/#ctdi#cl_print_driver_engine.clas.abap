@@ -170,14 +170,25 @@ CLASS /ctdi/cl_print_driver_engine IMPLEMENTATION.
     " 1. Try Resolving Contract via Service Order (AUFK -> VBAP)
     SELECT SINGLE
            v~/cellag/vbeln_vl
-      INTO @ev_contract_id
+      INTO @DATA(lv_order_id)
       FROM aufk AS a
       LEFT OUTER JOIN vbap AS v
         ON v~vbeln = a~kdauf
        AND v~posnr = a~kdpos
       WHERE a~aufnr = @lv_aufnr.
 
-    IF sy-subrc = 0 AND ev_contract_id IS NOT INITIAL.
+    IF sy-subrc = 0 AND lv_order_id IS NOT INITIAL.
+
+      SELECT SINGLE vgbel
+        INTO @ev_contract_id
+       FROM vbak
+      WHERE vbeln = @lv_order_id.
+      IF sy-subrc NE 0.
+        /ctdi/cl_print_driver_log=>log_info(
+           |Could not find a Contract for Order { lv_order_id }| ).
+        RETURN.
+      ENDIF.
+
       " Read AFRU confirmations for operation 9010
       SELECT bemot, stokz, stzhl
         FROM afru
