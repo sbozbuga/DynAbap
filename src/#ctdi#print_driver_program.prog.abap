@@ -63,24 +63,12 @@ FORM entry USING ent_retco TYPE sysubrc
     |NAST entry triggered for Repair { lv_repair_id }| ).
 
   TRY.
-      " Read data using the specific data provider extension
-      DATA(lr_data) = NEW /ctdi/cl_print_data_alca_ext( ).
-      lr_data->read_data( iv_aufnr = lv_repair_id ).
-
-      MOVE-CORRESPONDING lr_data->ms_alcarep TO ls_repair.
-
-      LOOP AT lr_data->mt_alcarep_error INTO DATA(ls_alcarep_error).
-        APPEND INITIAL LINE TO lt_errors ASSIGNING FIELD-SYMBOL(<ls_err>).
-        MOVE-CORRESPONDING ls_alcarep_error TO <ls_err>.
-      ENDLOOP.
-
-      lt_comments = lr_data->mt_comment_lines.
-
       DATA(lr_engine) = NEW /ctdi/cl_print_driver_engine( ).
       lr_engine->execute(
         EXPORTING
           iv_repair_id   = lv_repair_id
           iv_save_as_pdf = abap_false          " NACE always prints to spool
+          iv_class_name  = '/CTDI/CL_PRINT_DRIVER_ALCAREP' " Explicitly route to Alcarep driver
         CHANGING
           cs_repair      = ls_repair
           cs_project     = ls_project
@@ -145,24 +133,10 @@ FORM run_standalone.
         lt_comments TYPE TABLE OF tline.
 
   TRY.
-      " Read data using the specific data provider extension
+      " Read data using the specific data provider extension (allows passing manual parameters like p_sernr)
       DATA(lr_data) = NEW /ctdi/cl_print_data_alca_ext( ).
       lr_data->read_data( iv_aufnr = p_aufnr
                           iv_sernr = p_sernr ).
-
-      MOVE-CORRESPONDING lr_data->ms_alcarep TO ls_repair.
-
-      LOOP AT lr_data->mt_alcarep_error INTO DATA(ls_alcarep_error).
-        APPEND INITIAL LINE TO lt_errors ASSIGNING FIELD-SYMBOL(<ls_err>).
-        MOVE-CORRESPONDING ls_alcarep_error TO <ls_err>.
-      ENDLOOP.
-
-      lt_comments = lr_data->mt_comment_lines.
-
-      " Populate serial number if supplied manually
-      IF p_sernr IS NOT INITIAL.
-        ls_repair-sernr = p_sernr.
-      ENDIF.
 
       DATA(lr_engine) = NEW /ctdi/cl_print_driver_engine( ).
       lr_engine->execute(
@@ -171,6 +145,7 @@ FORM run_standalone.
           iv_form_name   = p_form
           iv_class_name  = p_class
           iv_save_as_pdf = p_pdf
+          io_data        = lr_data
         CHANGING
           cs_repair      = ls_repair
           cs_project     = ls_project

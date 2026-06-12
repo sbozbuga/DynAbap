@@ -24,6 +24,7 @@ public section.
       !IV_FORM_NAME type FPNAME optional
       !IV_CLASS_NAME type SEOCLSNAME optional
       !IV_SAVE_AS_PDF type ABAP_BOOL default ABAP_FALSE
+      !IO_DATA type ref to OBJECT optional
     changing
       !CS_REPAIR type ANY
       !CS_PROJECT type ANY optional
@@ -153,6 +154,7 @@ CLASS /CTDI/CL_PRINT_DRIVER_ENGINE IMPLEMENTATION.
           EXPORTING iv_repair_id   = iv_repair_id
                     iv_form_name   = lv_form_name
                     iv_save_as_pdf = iv_save_as_pdf
+                    io_data        = io_data
           CHANGING  cs_repair      = cs_repair
                     cs_project     = cs_project
                     ct_errors      = ct_errors

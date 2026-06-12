@@ -14,6 +14,7 @@ CLASS /ctdi/cl_print_driver_base DEFINITION
     METHODS read_data
       IMPORTING
         !iv_repair_id   TYPE aufnr
+        !io_data        TYPE REF TO object OPTIONAL
       CHANGING
         !cs_repair      TYPE any
         !cs_project     TYPE any OPTIONAL
@@ -109,6 +110,7 @@ CLASS /ctdi/cl_print_driver_base IMPLEMENTATION.
     " Step 1: Read business data
     read_data(
       EXPORTING iv_repair_id = iv_repair_id
+                io_data      = io_data
       CHANGING  cs_repair    = cs_repair
                 cs_project   = cs_project
                 ct_errors    = ct_errors
