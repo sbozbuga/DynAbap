@@ -16,6 +16,7 @@ By decoupling form execution logic from hardcoded standard print programs, this 
 * **Service Order ID Integration (aufnr)**: Complete migration of print program signatures, print provider interface, engine execution, and custom exception classes (`/ctdi/cx_print_error`, `/ctdi/cx_form_error`, `/ctdi/cx_repair_not_found`) to use the standard **`aufnr`** type (CHAR12) rather than `vbeln_va` (CHAR10) to fully support PM/CS Service Orders without truncation.
 * **Production-Safe Checks**: Auto-generation of SE24 class skeletons is gated by `S_DEVELOP` and client modifiability check (`TR_SYS_PARAMS`), ensuring it bypasses repository generation seamlessly in locked Quality Assurance (QA) and Production (PRD) environments, saving customizing records cleanly.
 * **Automated Form Type Detection**: Dynamically detects the form technology (**Smart Forms** vs. **Adobe PDF-based Forms**) at runtime by checking standard SAP metadata (`STXFADM`), eliminating manually-configured technology flags.
+* **Dynamic Repair Result Access Sequence**: Implements a highly configurable 11-step fallback access sequence reading from `/CTDI/REP_RESULT` using combinations of Contract, SKZ, AKZ, and Swap Flags to determine exact repair result descriptions dynamically.
 * **Robust ABAP Unit Tests**: Covered test classes utilizing SQL double isolation and dynamic mock providers to reach comprehensive statement and branch coverage.
 
 ---
@@ -32,6 +33,8 @@ All ABAP objects are structured in an **abapGit** compatible format under the `s
 * **Customizing Engine Class**: [src/#ctdi#cl_repair_cust_engine.clas.abap](src/%23ctdi%23cl_repair_cust_engine.clas.abap)
 * **Dynamic Logger Class**: [src/#ctdi#cl_repair_log.clas.abap](src/%23ctdi%23cl_repair_log.clas.abap)
 * **Base Print Class**: [src/#ctdi#cl_repair_print_base.clas.abap](src/%23ctdi%23cl_repair_print_base.clas.abap)
+* **Alcatel Print Data Provider**: [src/#ctdi#cl_print_data_alcarep.clas.abap](src/%23ctdi%23cl_print_data_alcarep.clas.abap)
+* **CTDI Print Data Provider Extension**: [src/#ctdi#cl_print_data_alca_ext.clas.abap](src/%23ctdi%23cl_print_data_alca_ext.clas.abap)
 * **Output Determination Wrapper**: [src/#ctdi#sd_repair_print_program.prog.abap](src/%23ctdi%23sd_repair_print_program.prog.abap)
 * **ABAP Unit Tests**: [src/#ctdi#cl_repair_print_engine.clas.testclasses.abap](src/%23ctdi%23cl_repair_print_engine.clas.testclasses.abap)
 * **Exception Classes**: 
