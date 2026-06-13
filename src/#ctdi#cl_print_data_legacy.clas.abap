@@ -706,14 +706,20 @@ CLASS /ctdi/cl_print_data_legacy IMPLEMENTATION.
              WHERE bemot = 'RE'
                AND akz   = ''.
     ELSE.
-      SELECT bemot, stokz, stzhl FROM afru INTO ( @lv_bemot, @lv_stokz, @lv_stzhl )
+      " ⚡ Bolt Optimization: Replaced SELECT...ENDSELECT loop with array fetch
+      SELECT bemot, stokz, stzhl FROM afru INTO TABLE @DATA(lt_afru)
         WHERE aufnr = @mv_aufnr
           AND vornr = '9010'.
-        IF lv_stokz = ' ' AND lv_stzhl = '00000000'.
-          EXIT.
-        ENDIF.
-      ENDSELECT.
+
       IF sy-subrc = 0.
+        LOOP AT lt_afru ASSIGNING FIELD-SYMBOL(<ls_afru>).
+          lv_bemot = <ls_afru>-bemot.
+          lv_stokz = <ls_afru>-stokz.
+          lv_stzhl = <ls_afru>-stzhl.
+          IF lv_stokz = ' ' AND lv_stzhl = '00000000'.
+            EXIT.
+          ENDIF.
+        ENDLOOP.
         SELECT SINGLE repres_barc, repres_txt FROM zalca_rep_result
            INTO ( @lf_repres, @lf_repres_txt )
            WHERE bemot = @lv_bemot
