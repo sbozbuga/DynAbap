@@ -1,0 +1,26 @@
+{
+  "global": {
+    "files": "/src/**/*.*",
+    "skipGeneratedGatewayClasses": true,
+    "skipGeneratedPersistentClasses": true,
+    "skipGeneratedFunctionGroups": true
+  },
+  "syntax": {
+    "version": "v750",
+    "errorNamespace": "^(Z|Y|/CTDI/)"
+  },
+  "rules": {
+    "downport": true,
+    "avoid_use": false, 
+    "local_class_naming": false,
+    "object_naming": false,
+    "selection_screen_naming": false,
+    "types_naming": false,
+    "line_length": false,
+    "space_before_colon": false,
+    "colon_missing_space": false,
+    "strict_sql": false,
+    "inline_data_old_versions": false,
+    "message_exists": false
+  }
+}
