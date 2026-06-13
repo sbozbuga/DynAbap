@@ -12,7 +12,7 @@
 *
 * ```mermaid
 * graph TD
-*     A[Trigger: /CTDI/PRINT_DRIVER_PROGRAM or NACE] --> B[Call Engine: /CTDI/CL_PRINT_DRIVER_ENGINE=>EXECUTE]
+*     A[Trigger: /CTDI/PRINT_DRIVER_PROGRAM or NACE] --> B[Call Factory: /CTDI/CL_PRINT_DRIVER_BASE=>FACTORY]
 *     B --> C[Contract Resolution: AUFK/AFIH -> VBAK]
 *     C --> D[Access Sequence Search: /CTDI/REP_FORMS]
 *     D --> E{Config Cached?}
@@ -20,9 +20,9 @@
 *     E -- No --> G[Query DB + Cache Entry]
 *     F & G --> H[Instantiate Class]
 *     H --> I{Custom Class Configured?}
-*     I -- Yes --> J[Dynamic Instantiation + Cast to /CTDI/IF_PRINT_DRIVER]
+*     I -- Yes --> J[Dynamic Instantiation + Cast to /CTDI/CL_PRINT_DRIVER_BASE]
 *     I -- No --> K[Fallback to /CTDI/CL_PRINT_DRIVER_BASE]
-*     J & K --> L[Call IF_PRINT_DRIVER~EXECUTE]
+*     J & K --> L[Call EXECUTE method]
 *     L --> M[Base / Custom Provider: EXECUTE]
 *     M --> N[read_data: Load DB fields, defects, comments]
 *     N --> O[render_form: Detect Form Tech]
@@ -41,7 +41,7 @@
 *                                   |
 *                                   v
 * +--------------------------------------------------------------------+
-* | 2. ENGINE ENTRY: /CTDI/CL_PRINT_DRIVER_ENGINE=>EXECUTE             |
+* | 2. FACTORY ENTRY: /CTDI/CL_PRINT_DRIVER_BASE=>FACTORY              |
 * +---------------------------------+----------------------------------+
 *                                   |
 *                                   v
@@ -64,7 +64,7 @@
 *                                              |
 *                                              v
 * +--------------------------------------------------------------------+
-* | 5. INSTANTIATION & STRICT INTERFACE CAST TO /CTDI/IF_PRINT_DRIVER  |
+* | 5. INSTANTIATION & STRICT INHERITANCE CAST TO /CTDI/CL_PRINT_DRIVER_BASE |
 * +---------------------------------+----------------------------------+
 *                                   |
 *          +------------------------+------------------------+
@@ -121,8 +121,8 @@
 *    - Supplies inputs: iv_repair_id, iv_form_name, iv_save_as_pdf,    *
 *      and optional iv_class_name (for explicit driver overrides).     *
 *                                                                      *
-* 2. INITIALIZATION & CONTRACT RESOLUTION (ENGINE LAYER)                *
-*    - Engine '/CTDI/CL_PRINT_DRIVER_ENGINE' takes control.            *
+* 2. INITIALIZATION & CONTRACT RESOLUTION (FACTORY)                     *
+*    - Base class '/CTDI/CL_PRINT_DRIVER_BASE=>FACTORY' takes control. *
 *    - Checks table AUFK & AFIH to see if 'iv_repair_id' is a Service   *
 *      Order. If so, resolves the corresponding customer and sales      *
 *      order header data from table VBAK.                              *
@@ -130,7 +130,7 @@
 *      directly from VBAK.                                             *
 *                                                                      *
 * 3. ACCESS SEQUENCE CUSTOMIZING RESOLUTION                             *
-*    - The Engine checks for matching configurations in customizing    *
+*    - The Factory checks for matching configurations in customizing   *
 *      table '/CTDI/REP_FORMS' using a strict 7-level fallback hierarchy: *
 *      - Level 1: Specific Customer + Service Order Type + Sales Order *
 *      - Level 2: Specific Customer + Service Order Type + Any Sales    *
@@ -141,23 +141,23 @@
 *      - Level 7: Fallback Default (No Customer, Service, or Sales Key) *
 *                                                                      *
 * 4. HASHED BUFFER CACHING                                             *
-*    - Results of the Access Sequence lookup are saved in an internal  *
-*      hashed cache (mt_config_cache) within the Engine instance.       *
+*    - Results of the Access Sequence lookup are saved in a static     *
+*      hashed cache (mt_config_buffer) within the base class.          *
 *    - Subsequent print executions for identical parameters are        *
 *      served instantly from memory, avoiding redundant DB queries.    *
 *                                                                      *
 * 5. PROVIDER INSTANTIATION & CASTING                                  *
-*    - The Engine dynamically instantiates the custom ClassName        *
+*    - The Factory dynamically instantiates the custom ClassName       *
 *      configured in /CTDI/REP_FORMS (e.g. ZCL_PRINT_MYPROVIDER).      *
 *    - Performs automatic namespace normalization (e.g., matching 'Z'   *
 *      classes into '/CTDI/' custom packages if appropriate).          *
 *    - Verifies class compatibility and strictly casts the instance to *
-*      the unified single interface: '/CTDI/IF_PRINT_DRIVER'.          *
-*    - Fallback: If no provider is configured, the Engine            *
+*      the unified base class: '/CTDI/CL_PRINT_DRIVER_BASE'.           *
+*    - Fallback: If no provider is configured, the Factory           *
 *      instantiates the default base class '/CTDI/CL_PRINT_DRIVER_BASE'.*
 *                                                                      *
 * 6. EXECUTION LAYER (BASE / CUSTOM PROVIDER CLASS)                    *
-*    - Engine invokes: o_provider->execute( ... )                      *
+*    - Program invokes: lr_driver->execute( ... )                      *
 *    - Step A (read_data): Fetches the business data, serial numbers,  *
 *      defects (from /CTDI/REPAIR_ERROR) & tdline comment tables.      *
 *    - Step B (render_form): Identifies Form Technology (Smart Form vs.*
@@ -177,25 +177,7 @@
 *
 * ---
 *
-* ## 🛠️ Unified Class Interface Reference
-*
-* ### `Interface: /CTDI/IF_PRINT_DRIVER`
-* The sole unified printing interface. All custom print providers must implement this interface:
-* ```abap
-* interface /CTDI/IF_PRINT_DRIVER public.
-*   methods EXECUTE
-*     importing
-*       !IV_REPAIR_ID type AUFNR
-*       !IV_FORM_NAME type FPNAME
-*       !IV_SAVE_AS_PDF type ABAP_BOOL default ABAP_FALSE
-*     changing
-*       !CS_REPAIR type /CTDI/REPAIR
-*       !CT_ERRORS type /CTDI/REPAIR_ERROR_T
-*       !CT_COMMENTS type TLINE_T
-*     raising
-*       /CTDI/CX_PRINT_DRIVER_ERROR.
-* endinterface.
-* ```
+* ## 🛠️ Unified Class Inheritance Reference
 *
 * ### `Base Class: /CTDI/CL_PRINT_DRIVER_BASE`
 * Provides standard out-of-the-box form processing. Custom classes should
