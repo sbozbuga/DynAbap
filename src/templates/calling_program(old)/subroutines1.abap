@@ -1439,18 +1439,14 @@ FORM print_new USING    iv_save_as_pdf TYPE abap_bool
   ENDIF.
 
   TRY.
-      " Instantiate unified print engine
-      CREATE OBJECT lo_engine.
+      " Instantiate unified print driver
+      DATA(lo_driver) = /ctdi/cl_print_driver_base=>factory( p_aufnr ).
 
-      " Trigger engine execution
-      lo_engine->execute(
+      " Trigger execution
+      lo_driver->execute(
         EXPORTING
           iv_repair_id   = p_aufnr
-          iv_save_as_pdf = iv_save_as_pdf
-        CHANGING
-          cs_repair      = /cellag/alcarep
-          ct_errors      = /cellag/alcarep_error
-          ct_comments    = gt_comment_lines ).
+          iv_save_as_pdf = iv_save_as_pdf ).
 
       " If it completes without cx_no_config_found, the new print was successful
       cv_fail = abap_false.

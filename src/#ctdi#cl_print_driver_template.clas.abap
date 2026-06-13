@@ -28,49 +28,40 @@ CLASS /ctdi/cl_print_driver_template IMPLEMENTATION.
     " mr_repair, mr_errors, and mr_comments.
     " =========================================================================
 
-    DATA(lv_repair_id) = |{ iv_repair_id ALPHA = IN }|.
+    DATA(lv_repair_id) = |{ mv_repair_order ALPHA = IN }|.
 
     /ctdi/cl_print_driver_log=>log_info(
-      |Template read_data started for Repair ID: { iv_repair_id } (internal format: { lv_repair_id })| ).
+      |Template read_data started for Repair ID: { mv_repair_order } (internal format: { lv_repair_id })| ).
 
-    " Example 1: Select header data into mr_repair structure.
-    " FIELD-SYMBOLS: <ls_repair> TYPE ANY.
-    " CREATE DATA mr_repair TYPE /ctdi/repair.
-    " ASSIGN mr_repair->* TO <ls_repair>.
+    " Example 1: Select header data into ms_repair structure.
     " SELECT SINGLE *
     "   FROM /ctdi/repair
-    "   INTO @<ls_repair>
+    "   INTO @ms_repair
     "   WHERE aufnr = @lv_repair_id.
     "
     " IF sy-subrc <> 0.
     "   /ctdi/cl_print_driver_log=>log_warning(
-    "     |Repair record { iv_repair_id } not found in /CTDI/REPAIR. Using fallback mock header.| ).
+    "     |Repair record { mv_repair_order } not found in /CTDI/REPAIR. Using fallback mock header.| ).
     "
     "   " Example of handling missing data (either fail with exception or supply default)
     "   " If this is a critical error for the process.
     "   " RAISE EXCEPTION TYPE /ctdi/cx_print_driver_error
     "   "   EXPORTING
-    "   "     repair_id = iv_repair_id
-    "   "     message   = |Process data could not be retrieved for { iv_repair_id }|.
+    "   "     repair_id = mv_repair_order
+    "   "     message   = |Process data could not be retrieved for { mv_repair_order }|.
     " ENDIF.
 
     " Example 2: Select error/defect records.
-    " FIELD-SYMBOLS: <lt_errors> TYPE STANDARD TABLE.
-    " CREATE DATA mr_errors TYPE STANDARD TABLE OF /ctdi/repair_error.
-    " ASSIGN mr_errors->* TO <lt_errors>.
     " SELECT *
     "   FROM /ctdi/repair_error
-    "   INTO TABLE @<lt_errors>
+    "   INTO TABLE @mt_errors
     "   WHERE aufnr = @lv_repair_id.
     "
     " /ctdi/cl_print_driver_log=>log_info(
-    "   |Loaded { lines( <lt_errors> ) } error/defect lines for Repair { iv_repair_id }| ).
+    "   |Loaded { lines( mt_errors ) } error/defect lines for Repair { mv_repair_order }| ).
 
     " Example 3: Enriching comments or custom long texts.
-    " FIELD-SYMBOLS: <lt_comments> TYPE STANDARD TABLE.
-    " CREATE DATA mr_comments TYPE STANDARD TABLE OF tline.
-    " ASSIGN mr_comments->* TO <lt_comments>.
-    " APPEND INITIAL LINE TO <lt_comments> ASSIGNING FIELD-SYMBOL(<ls_comment>).
+    " APPEND INITIAL LINE TO mt_comments ASSIGNING FIELD-SYMBOL(<ls_comment>).
     " ...
 
   ENDMETHOD.
@@ -93,24 +84,22 @@ CLASS /ctdi/cl_print_driver_template IMPLEMENTATION.
     " =========================================================================
 
     /ctdi/cl_print_driver_log=>log_info(
-      |Template render_form invoked for Repair { iv_repair_id }, Form { iv_form_name }| ).
+      |Template render_form invoked for Repair { mv_repair_order }, Form { mv_form_name }| ).
 
     " --- Example: Pre-processing ---
     " Update a custom status before printing
-    " UPDATE /ctdi/repair SET print_status = 'IN_PROGRESS' WHERE aufnr = @iv_repair_id.
+    " UPDATE /ctdi/repair SET print_status = 'IN_PROGRESS' WHERE aufnr = @mv_repair_order.
     " COMMIT WORK.
 
     " --- Standard base pipeline ---
     super->render_form(
-      EXPORTING iv_repair_id   = iv_repair_id
-                iv_form_name   = iv_form_name
-                iv_save_as_pdf = iv_save_as_pdf ).
+      EXPORTING iv_save_as_pdf = iv_save_as_pdf ).
 
     " --- Example: Post-processing ---
     " Log or trigger a follow-up action after successful printing
     " /ctdi/cl_print_driver_log=>log_info(
-    "   |Print completed — triggering follow-up for { iv_repair_id }| ).
-    " UPDATE /ctdi/repair SET print_status = 'PRINTED' WHERE aufnr = @iv_repair_id.
+    "   |Print completed — triggering follow-up for { mv_repair_order }| ).
+    " UPDATE /ctdi/repair SET print_status = 'PRINTED' WHERE aufnr = @mv_repair_order.
     " COMMIT WORK.
 
   ENDMETHOD.

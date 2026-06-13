@@ -58,10 +58,9 @@ FORM entry USING ent_retco TYPE sysubrc
     |NAST entry triggered for Repair { lv_repair_id }| ).
 
   TRY.
-      DATA(lr_engine) = NEW /ctdi/cl_print_driver_engine( ).
-      lr_engine->execute(
+      DATA(lr_driver) = /ctdi/cl_print_driver_base=>factory( lv_repair_id ).
+      lr_driver->execute(
         EXPORTING
-          iv_repair_id   = lv_repair_id
           iv_save_as_pdf = abap_false ).       " NACE always prints to spool
 
       " Mark NAST as successfully processed (vstat = '2')
@@ -124,11 +123,9 @@ FORM run_standalone.
       lr_data->read_data( iv_aufnr = p_aufnr
                           iv_sernr = p_sernr ).
 
-      DATA(lr_engine) = NEW /ctdi/cl_print_driver_engine( ).
-      lr_engine->execute(
+      DATA(lr_driver) = /ctdi/cl_print_driver_base=>factory( p_aufnr ).
+      lr_driver->execute(
         EXPORTING
-          iv_repair_id   = p_aufnr
-
           iv_save_as_pdf = p_pdf
           io_data        = lr_data ).
 
