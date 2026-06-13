@@ -31,3 +31,13 @@ Key implementations bridging these requirements include:
 ## Modernization & Strict SQL Compliance (ABAP 7.50)
 - **Strict SQL OpenSQL**: Modernized all OpenSQL queries across `/CTDI/CL_PRINT_DRIVER_BASE` and `/CTDI/CL_PRINT_CUST_ENGINE`. Moved all `INTO` and `INTO TABLE` clauses to the absolute end of the `SELECT` statements, guaranteeing forward compatibility with strict-SQL ABAP environments while maintaining 100% data integrity.
 - **ABAPLint Configuration**: Generated a robust `abaplint.json` pipeline configuration natively targeted for **ABAP 7.50**. Successfully suppressed non-standard, subjective formatting rules (like penalizing Hungarian notation `lv_`, `ls_`, `lt_`) and eliminated false-positive warnings dictating 7.52+ specific syntaxes (such as `RAISE EXCEPTION NEW`). The codebase now passes checks with zero major issues.
+
+## Local Development Environment
+- **SAP System**: Local containerized SAP A4H instance (`ghcr.io/marianfoo/arc-1:latest`).
+- **Connection Details**:
+  - **URL**: `http://localhost:50000`
+  - **Client**: `001`
+  - **User**: `DEVELOPER`
+  - **Password**: `ABAPtr2023#00`
+- **Docker Integration**: Managed via `docker-compose.yaml` exposing necessary ports.
+- **CLI Tooling**: `vsp.exe` is configured via the `.env` file (Tool Mode: `hyperfocused`, Transports Enabled) to interact with the local ABAP environment.
