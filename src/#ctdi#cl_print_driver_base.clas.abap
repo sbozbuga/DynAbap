@@ -42,7 +42,8 @@ CLASS /ctdi/cl_print_driver_base DEFINITION
     METHODS register_custom_parameter
       IMPORTING
         !iv_name TYPE string
-        !ir_data TYPE REF TO data.
+        !ir_data TYPE REF TO data
+        !iv_kind TYPE abap_func_parmbind-kind DEFAULT abap_func_exporting.
 
     "! Reads repair data from the database into memory.
     "! Subclasses should redefine this method to supply custom data.
@@ -103,28 +104,28 @@ CLASS /ctdi/cl_print_driver_base DEFINITION
   PRIVATE SECTION.
     CLASS-METHODS resolve_contract
       IMPORTING
-        !iv_repair_id type AUFNR
+        !iv_repair_id TYPE aufnr
       EXPORTING
-        !ev_contract_id type VBELN_VA
-        !ev_skz type BEMOT
-        !ev_akz type CHAR4.
+        !ev_contract_id TYPE vbeln_va
+        !ev_skz TYPE bemot
+        !ev_akz TYPE char4.
         
     CLASS-METHODS get_config_from_db
       IMPORTING
-        !iv_repair_id type AUFNR
+        !iv_repair_id TYPE aufnr
       EXPORTING
-        !ev_form_name type FPNAME
-        !ev_class_name type SEOCLSNAME
-        !es_project type /CTDI/REP_PROJEC
+        !ev_form_name TYPE fpname
+        !ev_class_name TYPE seoclsname
+        !es_project TYPE /ctdi/rep_projec
       RAISING
-        /CTDI/CX_PRINT_DRIVER_ERROR
-        /CTDI/CX_NO_CONFIG_FOUND.
+        /ctdi/cx_print_driver_error
+        /ctdi/cx_no_config_found.
         
     CLASS-METHODS resolve_class_name
       IMPORTING
-        !iv_class_name type SEOCLSNAME
+        !iv_class_name TYPE seoclsname
       RETURNING
-        value(rv_class_name) type SEOCLSNAME.
+        VALUE(rv_class_name) TYPE seoclsname.
 ENDCLASS.
 
 
@@ -335,12 +336,11 @@ CLASS /ctdi/cl_print_driver_base IMPLEMENTATION.
         ENDIF.
 
         IF lt_steps IS NOT INITIAL.
+
           SELECT * FROM /ctdi/rep_forms
             INTO TABLE @DATA(lt_forms)
-            FOR ALL ENTRIES IN @lt_steps
-            WHERE vbeln = @lt_steps-vbeln
-              AND skz   = @lt_steps-skz
-              AND akz   = @lt_steps-akz.
+            WHERE vbeln = @lv_contract OR vbeln =  ''
+            ORDER BY PRIMARY KEY ##SUBRC_OK.
 
           LOOP AT lt_steps ASSIGNING FIELD-SYMBOL(<ls_step>).
             READ TABLE lt_forms INTO ls_config WITH KEY
@@ -370,7 +370,7 @@ CLASS /ctdi/cl_print_driver_base IMPLEMENTATION.
       SELECT SINGLE *
         FROM /ctdi/rep_projec
         INTO @es_project
-        WHERE vbeln = @lv_contract.
+        WHERE vbeln = @lv_contract ##SUBRC_OK.
 
       IF es_project IS NOT INITIAL.
         INSERT es_project INTO TABLE mt_project_buffer.
@@ -468,13 +468,12 @@ CLASS /ctdi/cl_print_driver_base IMPLEMENTATION.
     CALL FUNCTION 'SSF_GET_DEVICE_TYPE'
       EXPORTING
         i_language    = sy-langu
-        i_application = 'SAPDEFAULT'
       IMPORTING
         e_devtype     = lv_devtype
       EXCEPTIONS
         OTHERS        = 1.
     IF sy-subrc <> 0.
-      lv_devtype = 'SAPDEFAULT'.
+      lv_devtype = 'YPDF'.
     ENDIF.
     ls_output_options-tdprinter = lv_devtype.
 
@@ -906,7 +905,7 @@ CLASS /ctdi/cl_print_driver_base IMPLEMENTATION.
   METHOD register_custom_parameter.
     DATA: ls_param TYPE abap_func_parmbind.
     ls_param-name  = iv_name.
-    ls_param-kind  = abap_func_exporting.
+    ls_param-kind  = iv_kind.
     ls_param-value = ir_data.
     INSERT ls_param INTO TABLE mt_custom_form_params.
   ENDMETHOD.
