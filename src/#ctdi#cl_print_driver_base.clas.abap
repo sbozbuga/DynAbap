@@ -197,18 +197,18 @@ CLASS /ctdi/cl_print_driver_base IMPLEMENTATION.
 
     SELECT SINGLE
            v~/cellag/vbeln_vl
-      INTO @DATA(lv_order_id)
       FROM aufk AS a
       LEFT OUTER JOIN vbap AS v
         ON v~vbeln = a~kdauf
        AND v~posnr = a~kdpos
-      WHERE a~aufnr = @lv_aufnr.
+      WHERE a~aufnr = @lv_aufnr
+      INTO @DATA(lv_order_id).
 
     IF sy-subrc = 0 AND ev_contract_id IS NOT INITIAL.
       SELECT SINGLE vgbel
-        INTO @ev_contract_id
        FROM vbak
-      WHERE vbeln = @lv_order_id.
+      WHERE vbeln = @lv_order_id
+        INTO @ev_contract_id.
       IF sy-subrc NE 0.
         /ctdi/cl_print_driver_log=>log_info(
            |Could not find a Contract for Order { lv_order_id }| ).
@@ -217,9 +217,9 @@ CLASS /ctdi/cl_print_driver_base IMPLEMENTATION.
 
       SELECT bemot, stokz, stzhl
         FROM afru
-        INTO TABLE @DATA(lt_afru)
         WHERE aufnr = @lv_aufnr
-          AND vornr = '9010'.
+          AND vornr = '9010'
+        INTO TABLE @DATA(lt_afru).
 
       LOOP AT lt_afru ASSIGNING FIELD-SYMBOL(<ls_afru>).
         IF <ls_afru>-stokz = space AND <ls_afru>-stzhl = '00000000'.
@@ -229,10 +229,10 @@ CLASS /ctdi/cl_print_driver_base IMPLEMENTATION.
       ENDLOOP.
 
       SELECT SINGLE qmcod
-        INTO @ev_akz
         FROM qmel
         WHERE aufnr = @lv_aufnr
-          AND qmart = 'Z2'.
+          AND qmart = 'Z2'
+        INTO @ev_akz.
 
       /ctdi/cl_print_driver_log=>log_info(
         |Resolved Order { iv_repair_id } -> Contract { ev_contract_id }, SKZ { ev_skz }, AKZ { ev_akz }| ).
@@ -241,9 +241,9 @@ CLASS /ctdi/cl_print_driver_base IMPLEMENTATION.
 
     SELECT SINGLE kdauf
       FROM aufk
-      INTO @ev_contract_id
       WHERE aufnr = @lv_aufnr
-        AND kdauf <> @space.
+        AND kdauf <> @space
+      INTO @ev_contract_id.
 
     IF sy-subrc = 0 AND ev_contract_id IS NOT INITIAL.
       /ctdi/cl_print_driver_log=>log_info(
@@ -253,8 +253,8 @@ CLASS /ctdi/cl_print_driver_base IMPLEMENTATION.
 
     SELECT SINGLE vbeln
       FROM vbak
-      INTO @ev_contract_id
-      WHERE vbeln = @lv_aufnr.
+      WHERE vbeln = @lv_aufnr
+      INTO @ev_contract_id.
 
     IF sy-subrc = 0.
       /ctdi/cl_print_driver_log=>log_info(
@@ -281,11 +281,12 @@ CLASS /ctdi/cl_print_driver_base IMPLEMENTATION.
     DATA: lt_steps TYPE TABLE OF ty_query_step.
 
     IF ev_form_name IS SUPPLIED OR ev_class_name IS SUPPLIED.
-      SELECT SINGLE form_name, class_name INTO @DATA(ls_dconf)
+      SELECT SINGLE form_name, class_name
         FROM /ctdi/rep_forms
               WHERE vbeln = ''
                 AND skz   = ''
-                AND akz   = ''.
+                AND akz   = ''
+        INTO @DATA(ls_dconf).
       IF sy-subrc EQ 0.
         ev_form_name = ls_dconf-form_name.
         IF ls_dconf-class_name IS INITIAL.
@@ -338,9 +339,9 @@ CLASS /ctdi/cl_print_driver_base IMPLEMENTATION.
         IF lt_steps IS NOT INITIAL.
 
           SELECT * FROM /ctdi/rep_forms
-            INTO TABLE @DATA(lt_forms)
             WHERE vbeln = @lv_contract OR vbeln =  ''
-            ORDER BY PRIMARY KEY ##SUBRC_OK.
+            ORDER BY PRIMARY KEY ##SUBRC_OK
+            INTO TABLE @DATA(lt_forms).
 
           LOOP AT lt_steps ASSIGNING FIELD-SYMBOL(<ls_step>).
             READ TABLE lt_forms INTO ls_config WITH KEY
@@ -369,8 +370,8 @@ CLASS /ctdi/cl_print_driver_base IMPLEMENTATION.
     IF sy-subrc <> 0.
       SELECT SINGLE *
         FROM /ctdi/rep_projec
-        INTO @es_project
-        WHERE vbeln = @lv_contract ##SUBRC_OK.
+        WHERE vbeln = @lv_contract ##SUBRC_OK
+        INTO @es_project.
 
       IF es_project IS NOT INITIAL.
         INSERT es_project INTO TABLE mt_project_buffer.
@@ -410,8 +411,8 @@ CLASS /ctdi/cl_print_driver_base IMPLEMENTATION.
 
   METHOD detect_form_type.
     SELECT SINGLE formname FROM stxfadm
-      INTO @DATA(lv_ssf_name)
-      WHERE formname = @mv_form_name.
+      WHERE formname = @mv_form_name
+      INTO @DATA(lv_ssf_name).
     IF sy-subrc = 0.
       rv_type = 'S'.          " Smart Form exists in STXFADM
     ELSE.
@@ -896,9 +897,9 @@ CLASS /ctdi/cl_print_driver_base IMPLEMENTATION.
 
   METHOD fm_has_parameter.
     SELECT SINGLE parameter FROM fupararef
-      INTO @DATA(lv_dummy)
       WHERE funcname  = @iv_funcname
-        AND parameter = @iv_paramname.
+        AND parameter = @iv_paramname
+      INTO @DATA(lv_dummy).
     rv_has = COND #( WHEN sy-subrc = 0 THEN abap_true ELSE abap_false ).
   ENDMETHOD.
 

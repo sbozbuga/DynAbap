@@ -115,8 +115,8 @@ CLASS /CTDI/CL_PRINT_CUST_ENGINE IMPLEMENTATION.
     ENDIF.
 
     SELECT SINGLE clsname FROM seoclass
-      INTO @DATA(lv_exists)
-      WHERE clsname = @rv_class_name.
+      WHERE clsname = @rv_class_name
+      INTO @DATA(lv_exists).
     IF sy-subrc = 0.
       RETURN.
     ENDIF.
@@ -127,8 +127,8 @@ CLASS /CTDI/CL_PRINT_CUST_ENGINE IMPLEMENTATION.
     ENDIF.
 
     SELECT SINGLE clsname FROM seoclass
-      INTO @lv_exists
-      WHERE clsname = @lv_normalized.
+      WHERE clsname = @lv_normalized
+      INTO @lv_exists.
     IF sy-subrc = 0.
       rv_class_name = lv_normalized.
     ENDIF.
@@ -140,12 +140,12 @@ CLASS /CTDI/CL_PRINT_CUST_ENGINE IMPLEMENTATION.
     " 1. Validate Form Name existence in Smart Forms (STXFADM) or Adobe Forms (FPCONTEXT)
     IF is_entry-form_name IS NOT INITIAL.
       SELECT SINGLE formname FROM stxfadm
-        INTO @DATA(lv_ssf_exists)
-        WHERE formname = @is_entry-form_name.
+        WHERE formname = @is_entry-form_name
+        INTO @DATA(lv_ssf_exists).
       IF sy-subrc <> 0.
         SELECT SINGLE name FROM fpcontext
-          INTO @DATA(lv_fp_exists)
-          WHERE name = @is_entry-form_name.
+          WHERE name = @is_entry-form_name
+          INTO @DATA(lv_fp_exists).
         IF sy-subrc <> 0.
           DATA(lv_form_err) = |{ 'Form &1 does not exist as a Smart Form or Adobe Form'(007) }|.
           REPLACE '&1' IN lv_form_err WITH is_entry-form_name.
@@ -178,8 +178,8 @@ CLASS /CTDI/CL_PRINT_CUST_ENGINE IMPLEMENTATION.
       DATA(lv_class_name) = resolve_class_name( is_entry-class_name ).
 
       SELECT SINGLE clsname FROM seoclass
-        INTO @DATA(lv_class_exists)
-        WHERE clsname = @lv_class_name.
+        WHERE clsname = @lv_class_name
+        INTO @DATA(lv_class_exists).
       IF sy-subrc <> 0.
         " Class does not exist! Offer to generate it on-the-fly if system modifiability and authorizations permit
         IF check_generation_allowed( ) = abap_true.
@@ -319,24 +319,25 @@ CLASS /CTDI/CL_PRINT_CUST_ENGINE IMPLEMENTATION.
         DATA: lv_current_class TYPE seoclsname,
               lv_implemented   TYPE abap_bool.
 
-        lv_current_class = lv_class_name.
-        lv_implemented   = abap_false.
-
-        WHILE lv_current_class IS NOT INITIAL AND lv_implemented = abap_false.
-          IF lv_current_class = /ctdi/cl_print_driver_base=>gc_base_class.
-            lv_implemented = abap_true.
-            EXIT.
+        IF lv_class_name = /ctdi/cl_print_driver_base=>gc_base_class.
+          lv_implemented = abap_true.
+        ELSE.
+          CALL FUNCTION 'SEO_CLASS_GET_SUPERCLASSES'
+            EXPORTING
+              clsname      = lv_class_name
+            IMPORTING
+              superclasses = DATA(lt_superclasses)
+            EXCEPTIONS
+              OTHERS       = 1.
+          IF sy-subrc = 0.
+            LOOP AT lt_superclasses INTO DATA(ls_super).
+              IF ls_super-refclsname = /ctdi/cl_print_driver_base=>gc_base_class.
+                lv_implemented = abap_true.
+                EXIT.
+              ENDIF.
+            ENDLOOP.
           ENDIF.
-
-          " Try to get the superclass
-          SELECT SINGLE refclsname FROM seometarel
-            INTO @lv_current_class
-            WHERE clsname = @lv_current_class
-              AND reltype = '2'. " 2 = Inheritance
-          IF sy-subrc <> 0.
-            CLEAR lv_current_class. " Reached the top of the hierarchy
-          ENDIF.
-        ENDWHILE.
+        ENDIF.
 
         IF lv_implemented = abap_false.
           DATA(lv_interface_err) = |{ 'Class &1 does not inherit from /CTDI/CL_PRINT_DRIVER_BASE'(010) }|.
@@ -350,15 +351,15 @@ CLASS /CTDI/CL_PRINT_CUST_ENGINE IMPLEMENTATION.
         " 4. Validate Method existence in Class Components (SEOCOMPO)
         IF is_entry-method_name IS NOT INITIAL.
           SELECT SINGLE cmpname FROM seocompo
-            INTO @DATA(lv_method_exists)
             WHERE clsname = @lv_class_name
-              AND cmpname = @is_entry-method_name.
+              AND cmpname = @is_entry-method_name
+            INTO @DATA(lv_method_exists).
           IF sy-subrc <> 0.
             " If not found, check in base class /CTDI/CL_PRINT_DRIVER_BASE
             SELECT SINGLE cmpname FROM seocompo
-              INTO @lv_method_exists
               WHERE clsname = /ctdi/cl_print_driver_base=>gc_base_class
-                AND cmpname = @is_entry-method_name.
+                AND cmpname = @is_entry-method_name
+              INTO @lv_method_exists.
             IF sy-subrc <> 0.
               DATA(lv_method_err) = |{ 'Method &1 does not exist in class &2 or its base class'(009) }|.
               REPLACE '&1' IN lv_method_err WITH is_entry-method_name.
@@ -383,8 +384,8 @@ CLASS /CTDI/CL_PRINT_CUST_ENGINE IMPLEMENTATION.
 
     " 1. Determine form type and generated FM name
     SELECT SINGLE formname FROM stxfadm
-      INTO @DATA(lv_ssf_name)
-      WHERE formname = @iv_form_name.
+      WHERE formname = @iv_form_name
+      INTO @DATA(lv_ssf_name).
     IF sy-subrc = 0.
       lv_form_type = 'S'. " Smart Form
       CALL FUNCTION 'SSF_FUNCTION_MODULE_NAME'
@@ -415,11 +416,11 @@ CLASS /CTDI/CL_PRINT_CUST_ENGINE IMPLEMENTATION.
     " 2. Fetch all mandatory parameters (OPTIONAL = space, DEFAULTVAL = space)
     SELECT parameter
       FROM fupararef
-      INTO TABLE @DATA(lt_mandatory_params)
       WHERE funcname = @lv_fm_name
         AND paramtype IN ('I', 'T', 'C')
         AND optional = @space
-        AND defaultval = @space.
+        AND defaultval = @space
+      INTO TABLE @DATA(lt_mandatory_params).
 
     IF sy-subrc <> 0.
       RETURN. " No mandatory parameters found
