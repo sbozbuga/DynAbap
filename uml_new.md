@@ -5,6 +5,8 @@
 ```mermaid
 classDiagram
     class `/CTDI/CL_PRINT_DRIVER_BASE` {
+        #mv_repair_order: AUFNR
+        #mv_form_name: FPNAME
         #ms_repair: /CTDI/REPAIR
         #ms_project: /CTDI/REP_PROJEC
         #mt_errors: /CTDI/REPAIR_ERROR_TT
@@ -12,27 +14,27 @@ classDiagram
         -mt_config_buffer
         -mt_project_buffer
         +factory(iv_repair_id)$ REF TO /CTDI/CL_PRINT_DRIVER_BASE
-        +execute(iv_repair_id, iv_form_name, iv_save_as_pdf, io_data, is_project)
-        #read_data(iv_repair_id, io_data)
-        #render_form(iv_repair_id, iv_form_name, iv_save_as_pdf)
+        +execute(iv_save_as_pdf, io_data)
+        #read_data(io_data)
+        #render_form(iv_save_as_pdf)
         -resolve_contract(iv_repair_id)$
         -get_config_from_db(iv_repair_id)$
         -resolve_class_name(iv_class_name)$
-        #detect_form_type(iv_form_name)
-        #execute_smartform(...)
-        #execute_adobeform(...)
-        #download_pdf(...)
+        #detect_form_type()
+        #execute_smartform(iv_save_as_pdf)
+        #execute_adobeform(iv_save_as_pdf)
+        #download_pdf(iv_pdf_data)
         #get_user_print_defaults()
         #fm_has_parameter(...)
     }
 
     class `/CTDI/CL_PRINT_DRIVER_LEGACY` {
-        #read_data(iv_repair_id, io_data)
+        #read_data(io_data)
     }
 
     class `/CTDI/CL_PRINT_DRIVER_TEMPLATE` {
-        #read_data(iv_repair_id, io_data)
-        #render_form(iv_repair_id, iv_form_name, iv_save_as_pdf)
+        #read_data(io_data)
+        #render_form(iv_save_as_pdf)
     }
 
     `/CTDI/CL_PRINT_DRIVER_BASE` <|-- `/CTDI/CL_PRINT_DRIVER_LEGACY` : Inherits
