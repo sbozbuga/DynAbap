@@ -33,7 +33,14 @@ CLASS /ctdi/cl_print_driver_base DEFINITION
           ms_repair    TYPE /ctdi/repair,
           ms_project  TYPE /ctdi/rep_projec,
           mt_errors   TYPE /ctdi/repair_error_tt,
-          mt_comments TYPE STANDARD TABLE OF tline.
+          mt_comments TYPE STANDARD TABLE OF tline,
+          mt_custom_form_params TYPE abap_func_parmbind_tab.
+
+    "! Registers a custom parameter to be passed dynamically to the form
+    METHODS register_custom_parameter
+      IMPORTING
+        !iv_name TYPE string
+        !ir_data TYPE REF TO data.
 
     "! Reads repair data from the database into memory.
     "! Subclasses should redefine this method to supply custom data.
@@ -520,7 +527,12 @@ CLASS /ctdi/cl_print_driver_base IMPLEMENTATION.
       INSERT ls_ptab INTO TABLE lt_ptab.
     ENDIF.
 
-
+    " Inject any dynamically registered custom parameters
+    LOOP AT mt_custom_form_params INTO DATA(ls_custom_param_sf).
+      IF fm_has_parameter( iv_funcname = lv_fm_name iv_paramname = ls_custom_param_sf-name ) = abap_true.
+        INSERT ls_custom_param_sf INTO TABLE lt_ptab.
+      ENDIF.
+    ENDLOOP.
 
     ls_ptab-name = 'JOB_OUTPUT_INFO'.
     ls_ptab-kind = abap_func_importing.
@@ -702,6 +714,13 @@ CLASS /ctdi/cl_print_driver_base IMPLEMENTATION.
       INSERT ls_ptab INTO TABLE lt_ptab.
     ENDIF.
 
+    " Inject any dynamically registered custom parameters
+    LOOP AT mt_custom_form_params INTO DATA(ls_custom_param_af).
+      IF fm_has_parameter( iv_funcname = lv_fm_name iv_paramname = ls_custom_param_af-name ) = abap_true.
+        INSERT ls_custom_param_af INTO TABLE lt_ptab.
+      ENDIF.
+    ENDLOOP.
+
     ls_ptab-name = '/1BCDWB/FORMOUTPUT'.
     ls_ptab-kind = abap_func_importing.
     GET REFERENCE OF ls_formoutput INTO ls_ptab-value.
@@ -880,6 +899,14 @@ CLASS /ctdi/cl_print_driver_base IMPLEMENTATION.
       WHERE funcname  = @iv_funcname
         AND parameter = @iv_paramname.
     rv_has = COND #( WHEN sy-subrc = 0 THEN abap_true ELSE abap_false ).
+  ENDMETHOD.
+
+  METHOD register_custom_parameter.
+    DATA: ls_param TYPE abap_func_parmbind.
+    ls_param-name  = iv_name.
+    ls_param-kind  = abap_func_exporting.
+    ls_param-value = ir_data.
+    INSERT ls_param INTO TABLE mt_custom_form_params.
   ENDMETHOD.
 
 ENDCLASS.

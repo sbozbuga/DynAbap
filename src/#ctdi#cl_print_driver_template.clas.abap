@@ -64,6 +64,13 @@ CLASS /ctdi/cl_print_driver_template IMPLEMENTATION.
     " APPEND INITIAL LINE TO mt_comments ASSIGNING FIELD-SYMBOL(<ls_comment>).
     " ...
 
+    " Example 4: Injecting completely custom data structures for specific forms.
+    " If your form expects a parameter NOT in the base class (e.g., 'CUST_DATA'),
+    " you can register it dynamically here. The Base class will inject it for you.
+    " DATA ls_cust_data TYPE zcust_data.
+    " SELECT SINGLE * FROM zcust_table INTO ls_cust_data WHERE aufnr = lv_repair_id.
+    " register_custom_parameter( iv_name = 'CUST_DATA' ir_data = REF #( ls_cust_data ) ).
+
   ENDMETHOD.
 
 
