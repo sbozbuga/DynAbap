@@ -221,18 +221,23 @@ CLASS /ctdi/cl_print_driver_base IMPLEMENTATION.
           AND vornr = '9010'
         INTO TABLE @DATA(lt_afru).
 
-      LOOP AT lt_afru ASSIGNING FIELD-SYMBOL(<ls_afru>).
-        IF <ls_afru>-stokz = space AND <ls_afru>-stzhl = '00000000'.
-          ev_skz = <ls_afru>-bemot.
-          EXIT.
-        ENDIF.
-      ENDLOOP.
+      IF sy-subrc = 0.
+        LOOP AT lt_afru ASSIGNING FIELD-SYMBOL(<ls_afru>).
+          IF <ls_afru>-stokz = space AND <ls_afru>-stzhl = '00000000'.
+            ev_skz = <ls_afru>-bemot.
+            EXIT.
+          ENDIF.
+        ENDLOOP.
+      ENDIF.
 
       SELECT SINGLE qmcod
         FROM qmel
         WHERE aufnr = @lv_aufnr
           AND qmart = 'Z2'
         INTO @ev_akz.
+      IF sy-subrc <> 0.
+        " Ignore
+      ENDIF.
 
       /ctdi/cl_print_driver_log=>log_info(
         |Resolved Order { iv_repair_id } -> Contract { ev_contract_id }, SKZ { ev_skz }, AKZ { ev_akz }| ).
@@ -338,7 +343,7 @@ CLASS /ctdi/cl_print_driver_base IMPLEMENTATION.
 
         IF lt_steps IS NOT INITIAL.
 
-          SELECT * FROM /ctdi/rep_forms
+          SELECT * FROM /ctdi/rep_forms "#EC CI_ALL_FIELDS_NEEDED
             WHERE vbeln = @lv_contract OR vbeln =  ''
             ORDER BY PRIMARY KEY ##SUBRC_OK
             INTO TABLE @DATA(lt_forms).
@@ -369,7 +374,7 @@ CLASS /ctdi/cl_print_driver_base IMPLEMENTATION.
 
     IF sy-subrc <> 0.
       SELECT SINGLE *
-        FROM /ctdi/rep_projec
+        FROM /ctdi/rep_projec "#EC CI_ALL_FIELDS_NEEDED
         WHERE vbeln = @lv_contract ##SUBRC_OK
         INTO @es_project.
 
@@ -900,7 +905,7 @@ CLASS /ctdi/cl_print_driver_base IMPLEMENTATION.
       WHERE funcname  = @iv_funcname
         AND parameter = @iv_paramname
       INTO @DATA(lv_dummy).
-    rv_has = COND #( WHEN sy-subrc = 0 THEN abap_true ELSE abap_false ).
+    rv_has = xsdbool( sy-subrc = 0 ).
   ENDMETHOD.
 
   METHOD register_custom_parameter.

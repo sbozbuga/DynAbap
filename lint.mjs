@@ -29,7 +29,7 @@ async function run() {
   const issues = reg.findIssues();
 
   for (const issue of issues) {
-    console.log(`${issue.getFilename()} [${issue.getStart().getRow()}, ${issue.getStart().getCol()}]: ${issue.getMessage()}`);
+    console.log(`${issue.getFilename()} [${issue.getStart().getRow()}, ${issue.getStart().getCol()}]: (${issue.getKey()}) ${issue.getMessage()}`);
   }
   
   console.log(`Found ${issues.length} issues.`);
