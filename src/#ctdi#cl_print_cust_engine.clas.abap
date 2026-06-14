@@ -18,17 +18,6 @@ CLASS /CTDI/CL_PRINT_CUST_ENGINE DEFINITION
       RETURNING
         VALUE(rv_allowed) TYPE abap_bool.
 
-    CLASS-METHODS normalize_class_name
-      IMPORTING
-        !iv_class_name TYPE seoclsname
-      RETURNING
-        VALUE(rv_class_name) TYPE seoclsname.
-
-    CLASS-METHODS resolve_class_name
-      IMPORTING
-        !iv_class_name TYPE seoclsname
-      RETURNING
-        VALUE(rv_class_name) TYPE seoclsname.
 
   PROTECTED SECTION.
 private section.
@@ -93,17 +82,6 @@ CLASS /CTDI/CL_PRINT_CUST_ENGINE IMPLEMENTATION.
   ENDMETHOD.
 
 
-  METHOD normalize_class_name.
-    rv_class_name = iv_class_name.
-
-    IF rv_class_name IS INITIAL.
-      RETURN.
-    ENDIF.
-
-    IF rv_class_name(1) = 'Z' AND rv_class_name CP 'Z*'.
-      rv_class_name = |/CTDI/{ rv_class_name+1 }|.
-    ENDIF.
-  ENDMETHOD.
 
 
   METHOD on_new_entry.
@@ -112,34 +90,6 @@ CLASS /CTDI/CL_PRINT_CUST_ENGINE IMPLEMENTATION.
 *      cs_entry-class_name = /ctdi/cl_print_driver_base=>gc_base_class.
 *    ENDIF.
 *    cs_entry-method_name = 'EXECUTE'.
-  ENDMETHOD.
-
-
-  METHOD resolve_class_name.
-    rv_class_name = iv_class_name.
-
-    IF rv_class_name IS INITIAL.
-      RETURN.
-    ENDIF.
-
-    SELECT SINGLE clsname FROM seoclass
-      WHERE clsname = @rv_class_name
-      INTO @DATA(lv_exists).
-    IF sy-subrc = 0.
-      RETURN.
-    ENDIF.
-
-    DATA(lv_normalized) = normalize_class_name( iv_class_name ).
-    IF lv_normalized = rv_class_name.
-      RETURN.
-    ENDIF.
-
-    SELECT SINGLE clsname FROM seoclass
-      WHERE clsname = @lv_normalized
-      INTO @lv_exists.
-    IF sy-subrc = 0.
-      rv_class_name = lv_normalized.
-    ENDIF.
   ENDMETHOD.
 
 
@@ -181,7 +131,7 @@ CLASS /CTDI/CL_PRINT_CUST_ENGINE IMPLEMENTATION.
       ENDIF.
 
       " 3. Validate Class existence in Repository (SEOCLASS)
-      DATA(lv_class_name) = resolve_class_name( is_entry-class_name ).
+      DATA(lv_class_name) = is_entry-class_name.
 
       SELECT SINGLE clsname FROM seoclass
         WHERE clsname = @lv_class_name
@@ -448,16 +398,11 @@ CLASS /CTDI/CL_PRINT_CUST_ENGINE IMPLEMENTATION.
            lv_param = 'ARCHIVE_PARAMETERS' OR
            lv_param = 'MAIL_APPL_OBJ'      OR
            lv_param = 'MAIL_RECIPIENT'     OR
-           lv_param = 'MAIL_SENDER'        OR
-           lv_param = 'REPAIR'.
+           lv_param = 'MAIL_SENDER'.
           CONTINUE.
         ENDIF.
       ELSE. " Adobe Form
-        IF lv_param = '/1BCDWB/DOCPARAMS' OR
-           lv_param = 'REPAIR' OR
-           lv_param = 'PROJECT' OR
-           lv_param = 'COMMENT_LINES' OR
-           lv_param = 'REPAIR_ERRORS'.
+        IF lv_param = '/1BCDWB/DOCPARAMS'.
           CONTINUE.
         ENDIF.
       ENDIF.
