@@ -55,14 +55,22 @@ CLASS /ctdi/cl_print_data_ctdi IMPLEMENTATION.
           lv_stokz TYPE afru-stokz,
           lv_stzhl TYPE afru-stzhl.
 
+    " ⚡ Bolt: Removed SELECT...ENDSELECT in favor of SELECT INTO TABLE
     " Always get SKZ from AFRU for operation 9010
-    SELECT bemot, stokz, stzhl FROM afru INTO ( @lv_bemot, @lv_stokz, @lv_stzhl )
+    SELECT bemot, stokz, stzhl
+      FROM afru
       WHERE aufnr = @mv_aufnr
-        AND vornr = '9010'.
+        AND vornr = '9010'
+      INTO TABLE @DATA(lt_afru_skz).
+
+    LOOP AT lt_afru_skz INTO DATA(ls_afru_skz).
+      lv_bemot = ls_afru_skz-bemot.
+      lv_stokz = ls_afru_skz-stokz.
+      lv_stzhl = ls_afru_skz-stzhl.
       IF lv_stokz = ' ' AND lv_stzhl = '00000000'.
         EXIT.
       ENDIF.
-    ENDSELECT.
+    ENDLOOP.
 
     " Access Sequences for /ctdi/rep_result
     TYPES: BEGIN OF ty_query_step,
