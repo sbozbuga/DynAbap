@@ -813,7 +813,7 @@ CLASS /ctdi/cl_print_driver_base IMPLEMENTATION.
       DATA(lv_subrc_user) = sy-subrc.
     ENDIF.
 
-    " 2. Check SET/GET parameter override
+    " 2. Check SET/GET parameter override (/CELLAG/PAFR)
     GET PARAMETER ID '/CELLAG/PAFR' FIELD lv_user_printer.
 
     " 3. Printer: parameter takes precedence over user default
@@ -821,15 +821,15 @@ CLASS /ctdi/cl_print_driver_base IMPLEMENTATION.
                          THEN lv_user_printer
                          ELSE ls_user_defaults-spld ).
 
-    " 4. Print-immediately flag
-    ev_immed = COND #( WHEN ls_user_defaults-splg IS NOT INITIAL
-                       THEN ls_user_defaults-splg
-                       ELSE abap_true ).
+    " 4. Legacy override: Druckersteuerung durch ycl_printer
+    ev_printer = ycl_printer=>select_printer(
+                     iv_uname   = sy-uname
+                     iv_medium  = ycl_printer=>co_paperprinter_dina4
+                     iv_printer = ev_printer ).
 
-    " 5. Delete-after-print flag
-    ev_delete = COND #( WHEN ls_user_defaults-spda IS NOT INITIAL
-                        THEN ls_user_defaults-spda
-                        ELSE abap_true ).
+    " 5. Hardcoded values from legacy print_sf subroutine
+    ev_immed  = abap_true.
+    ev_delete = abap_true.
   ENDMETHOD.
 
 

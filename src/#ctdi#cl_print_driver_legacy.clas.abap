@@ -6,7 +6,6 @@ CLASS /ctdi/cl_print_driver_legacy DEFINITION
   PUBLIC SECTION.
   PROTECTED SECTION.
     METHODS read_data REDEFINITION.
-    METHODS get_user_print_defaults REDEFINITION.
   PRIVATE SECTION.
     DATA ms_alcarep_legacy TYPE /cellag/alcarep.
     DATA mt_alcarep_error  TYPE STANDARD TABLE OF /cellag/alcarep_error.
@@ -71,22 +70,6 @@ CLASS /ctdi/cl_print_driver_legacy IMPLEMENTATION.
     ENDIF.
   ENDMETHOD.
 
-  METHOD get_user_print_defaults.
-    " 1. Let the base class fetch the standard user defaults
-    super->get_user_print_defaults(
-      IMPORTING ev_printer = ev_printer
-                ev_immed   = ev_immed
-                ev_delete  = ev_delete ).
 
-    " 2. Legacy override: Druckersteuerung durch ycl_printer
-    ev_printer = ycl_printer=>select_printer(
-                     iv_uname   = sy-uname
-                     iv_medium  = ycl_printer=>co_paperprinter_dina4
-                     iv_printer = ev_printer ).
-
-    " 3. Hardcoded values from legacy print_sf subroutine
-    ev_immed  = abap_true.
-    ev_delete = abap_true.
-  ENDMETHOD.
 
 ENDCLASS.
