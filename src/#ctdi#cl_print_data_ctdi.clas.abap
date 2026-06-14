@@ -1,14 +1,19 @@
 "! <summary>CTDI Print Data Provider Extension</summary>
 "! <desc>Extends the base Alcatel class to read repair results from the new
 "! /CTDI/REP_RESULT table using an 11-step access sequence based on Contract, SKZ, AKZ, and Swap Flag.</desc>
-CLASS /ctdi/cl_print_data_legacy_ext DEFINITION
+CLASS /ctdi/cl_print_data_ctdi DEFINITION
   PUBLIC
   INHERITING FROM /ctdi/cl_print_data_legacy
   CREATE PUBLIC.
 
   PUBLIC SECTION.
+    DATA ms_repair       TYPE /ctdi/repair.
+    DATA mt_repair_error TYPE /ctdi/repair_error_tt.
+    DATA mt_comments     TYPE STANDARD TABLE OF tline.
 
   PROTECTED SECTION.
+    METHODS read_data REDEFINITION.
+
     "! <summary>Redefined repair result retrieval</summary>
     "! <desc>First fetches the contract (vgbel) from VBAK. Then reads operation 9010
     "! from AFRU to get SKZ. Evaluates an access sequence against /CTDI/REP_RESULT.</desc>
@@ -17,7 +22,24 @@ CLASS /ctdi/cl_print_data_legacy_ext DEFINITION
   PRIVATE SECTION.
 ENDCLASS.
 
-CLASS /ctdi/cl_print_data_legacy_ext IMPLEMENTATION.
+CLASS /ctdi/cl_print_data_ctdi IMPLEMENTATION.
+
+  METHOD read_data.
+    " 1. Call super class logic to fetch raw legacy data into ms_alcarep, mt_alcarep_error, etc.
+    super->read_data( iv_aufnr = iv_aufnr iv_sernr = iv_sernr ).
+
+    " 2. Convert legacy structures to new CTDI structures
+    CLEAR: ms_repair, mt_repair_error, mt_comments.
+
+    MOVE-CORRESPONDING ms_alcarep TO ms_repair.
+
+    LOOP AT mt_alcarep_error INTO DATA(ls_error).
+      APPEND INITIAL LINE TO mt_repair_error ASSIGNING FIELD-SYMBOL(<ls_repair_error>).
+      MOVE-CORRESPONDING ls_error TO <ls_repair_error>.
+    ENDLOOP.
+
+    mt_comments = mt_comment_lines.
+  ENDMETHOD.
 
   METHOD get_repair_result.
     DATA: lf_repres     TYPE /cellag/repair_result,

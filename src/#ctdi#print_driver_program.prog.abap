@@ -119,7 +119,7 @@ FORM run_standalone.
 
   TRY.
       " Read data using the specific data provider extension (allows passing manual parameters like p_sernr)
-      DATA(lr_data) = NEW /ctdi/cl_print_data_legacy_ext( ).
+      DATA(lr_data) = NEW /ctdi/cl_print_data_ctdi( ).
       lr_data->read_data( iv_aufnr = p_aufnr
                           iv_sernr = p_sernr ).
 

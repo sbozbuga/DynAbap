@@ -41,7 +41,7 @@ CLASS /ctdi/cl_print_driver_legacy IMPLEMENTATION.
     ELSE.
       " If no external object is provided, fallback to instantiating and reading from DB directly
       TRY.
-          DATA(lr_data_db) = NEW /ctdi/cl_print_data_legacy_ext( ).
+          DATA(lr_data_db) = NEW /ctdi/cl_print_data_legacy( ).
           lr_data_db->read_data( iv_aufnr = mv_repair_order ).
 
           MOVE-CORRESPONDING lr_data_db->ms_alcarep TO ms_repair.
