@@ -6,20 +6,22 @@
 classDiagram
     class `/CTDI/CL_PRINT_DRIVER_BASE` {
         #mv_repair_order: AUFNR
+        #mv_sernr: EQUI-SERNR
         #mv_form_name: FPNAME
         #ms_repair: /CTDI/REPAIR
         #ms_project: /CTDI/REP_PROJEC
         #mt_errors: /CTDI/REPAIR_ERROR_TT
         #mt_comments: STANDARD TABLE OF TLINE
+        #mt_custom_form_params: ABAP_FUNC_PARMBIND_TAB
         -mt_config_buffer
         -mt_project_buffer
-        +factory(iv_repair_id)$ REF TO /CTDI/CL_PRINT_DRIVER_BASE
-        +execute(iv_save_as_pdf, io_data)
+        +factory(iv_repair_id, iv_sernr)$ REF TO /CTDI/CL_PRINT_DRIVER_BASE
+        +execute(iv_save_as_pdf)
         #read_data(io_data)
         #render_form(iv_save_as_pdf)
+        #register_custom_parameter(iv_name, ir_data, iv_kind)
         -resolve_contract(iv_repair_id)$
         -get_config_from_db(iv_repair_id)$
-        -resolve_class_name(iv_class_name)$
         #detect_form_type()
         #execute_smartform(iv_save_as_pdf)
         #execute_adobeform(iv_save_as_pdf)
@@ -30,6 +32,11 @@ classDiagram
 
     class `/CTDI/CL_PRINT_DRIVER_LEGACY` {
         #read_data(io_data)
+        #get_user_print_defaults()
+    }
+
+    class `/CTDI/CL_PRINT_DRIVER_CTDI` {
+        #read_data(io_data)
     }
 
     class `/CTDI/CL_PRINT_DRIVER_TEMPLATE` {
@@ -37,8 +44,39 @@ classDiagram
         #render_form(iv_save_as_pdf)
     }
 
+    class `/CTDI/CL_PRINT_DRIVER_FUTURE` {
+        #read_data(io_data)
+        Note: "Example of a future driver"
+    }
+
+    class `/CTDI/CL_PRINT_DATA_LEGACY` {
+        +ms_legacy: /CELLAG/ALCAREP
+        +mt_legacy_error: STANDARD TABLE
+        +read_data(iv_aufnr, iv_sernr)
+    }
+
+    class `/CTDI/CL_PRINT_DATA_CTDI` {
+        +ms_repair: /CTDI/REPAIR
+        +mt_repair_error: /CTDI/REPAIR_ERROR_TT
+        +read_data(iv_aufnr, iv_sernr)
+    }
+
+    class `/CTDI/CL_PRINT_DATA_FUTURE` {
+        +ms_custom_future_data: ZFUTURE_STRUCT
+        +read_data(iv_aufnr, iv_sernr)
+    }
+
     `/CTDI/CL_PRINT_DRIVER_BASE` <|-- `/CTDI/CL_PRINT_DRIVER_LEGACY` : Inherits
+    `/CTDI/CL_PRINT_DRIVER_BASE` <|-- `/CTDI/CL_PRINT_DRIVER_CTDI` : Inherits
     `/CTDI/CL_PRINT_DRIVER_BASE` <|-- `/CTDI/CL_PRINT_DRIVER_TEMPLATE` : Inherits
+    `/CTDI/CL_PRINT_DRIVER_BASE` <|-- `/CTDI/CL_PRINT_DRIVER_FUTURE` : Inherits
+    
+    `/CTDI/CL_PRINT_DATA_LEGACY` <|-- `/CTDI/CL_PRINT_DATA_CTDI` : Inherits
+    `/CTDI/CL_PRINT_DATA_LEGACY` <|-- `/CTDI/CL_PRINT_DATA_FUTURE` : Inherits (Crucial for global memory fallback!)
+
+    `/CTDI/CL_PRINT_DRIVER_LEGACY` ..> `/CTDI/CL_PRINT_DATA_LEGACY` : Uses Data Provider
+    `/CTDI/CL_PRINT_DRIVER_CTDI` ..> `/CTDI/CL_PRINT_DATA_CTDI` : Uses Data Provider
+    `/CTDI/CL_PRINT_DRIVER_FUTURE` ..> `/CTDI/CL_PRINT_DATA_FUTURE` : Uses Data Provider
 ```
 
 ## Sequence Diagram (Execution Flow)
@@ -48,9 +86,10 @@ sequenceDiagram
     autonumber
     actor Caller
     participant Base as /CTDI/CL_PRINT_DRIVER_BASE
-    participant Subclass as Subclass (Legacy/Template)
+    participant Subclass as Subclass (CTDI/Legacy)
+    participant DataProv as /CTDI/CL_PRINT_DATA_*
 
-    Caller->>Base: factory(iv_repair_id)
+    Caller->>Base: factory(iv_repair_id, iv_sernr)
     activate Base
 
     Base->>Base: get_config_from_db()
@@ -59,24 +98,30 @@ sequenceDiagram
     Base-->>Base: ev_form_name, ev_class_name, es_project
     deactivate Base
 
-    Base->>Base: resolve_class_name()
-    Base->>Subclass: CREATE OBJECT
+    Base->>Subclass: CREATE OBJECT (from config)
     Base-->>Caller: Provider Instance (lo_driver)
     deactivate Base
 
-    Caller->>Base: lo_driver->execute(iv_repair_id, ...)
+    Caller->>Base: lo_driver->execute(iv_save_as_pdf)
     activate Base
 
     Base->>Subclass: read_data()
     activate Subclass
-    Note right of Subclass: Populates strongly typed attributes<br/>(ms_repair, mt_errors, etc.)
+    Subclass->>DataProv: NEW() & read_data()
+    activate DataProv
+    Note right of DataProv: Populates attributes<br/>(ms_repair, mt_errors, ms_legacy)
+    DataProv-->>Subclass: 
+    deactivate DataProv
+    
+    Subclass->>Base: register_custom_parameter()
+    Note right of Subclass: Dynamically binds structures<br/>to be injected into form
+    
     Subclass-->>Base: return
     deactivate Subclass
 
     Base->>Subclass: render_form()
     activate Subclass
-    Note right of Subclass: Template overrides this to add pre/post processing.<br/>Legacy uses Base implementation.
-    Subclass->>Base: super->render_form() (if applicable)
+    Subclass->>Base: super->render_form()
     activate Base
     
     Base->>Base: detect_form_type()
@@ -85,6 +130,7 @@ sequenceDiagram
     else Type = 'A'
         Base->>Base: execute_adobeform()
     end
+    Note right of Base: Automatically injects any parameters<br/>registered in the previous step
 
     Base-->>Subclass: return
     deactivate Base

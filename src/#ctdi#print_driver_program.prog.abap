@@ -118,16 +118,11 @@ FORM run_standalone.
 
 
   TRY.
-      " Read data using the specific data provider extension (allows passing manual parameters like p_sernr)
-      DATA(lr_data) = NEW /ctdi/cl_print_data_ctdi( ).
-      lr_data->read_data( iv_aufnr = p_aufnr
-                          iv_sernr = p_sernr ).
-
-      DATA(lr_driver) = /ctdi/cl_print_driver_base=>factory( p_aufnr ).
+      DATA(lr_driver) = /ctdi/cl_print_driver_base=>factory( iv_repair_id = p_aufnr
+                                                             iv_sernr     = p_sernr ).
       lr_driver->execute(
         EXPORTING
-          iv_save_as_pdf = p_pdf
-          io_data        = lr_data ).
+          iv_save_as_pdf = p_pdf ).
 
       MESSAGE |Print completed successfully for { p_aufnr }| TYPE 'S'.
 

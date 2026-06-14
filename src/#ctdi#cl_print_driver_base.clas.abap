@@ -15,6 +15,7 @@ CLASS /ctdi/cl_print_driver_base DEFINITION
     CLASS-METHODS factory
       IMPORTING
         !iv_repair_id TYPE aufnr
+        !iv_sernr     TYPE equi-sernr OPTIONAL
       RETURNING
         VALUE(ro_driver) TYPE REF TO /ctdi/cl_print_driver_base
       RAISING
@@ -31,6 +32,7 @@ CLASS /ctdi/cl_print_driver_base DEFINITION
 
   PROTECTED SECTION.
     DATA: mv_repair_order TYPE aufnr,
+          mv_sernr        TYPE equi-sernr,
           mv_form_name TYPE fpname,
           ms_repair    TYPE /ctdi/repair,
           ms_project  TYPE /ctdi/rep_projec,
@@ -121,14 +123,7 @@ CLASS /ctdi/cl_print_driver_base DEFINITION
         /ctdi/cx_print_driver_error
         /ctdi/cx_no_config_found.
         
-    CLASS-METHODS resolve_class_name
-      IMPORTING
-        !iv_class_name TYPE seoclsname
-      RETURNING
-        VALUE(rv_class_name) TYPE seoclsname.
 ENDCLASS.
-
-
 
 CLASS /ctdi/cl_print_driver_base IMPLEMENTATION.
 
@@ -153,7 +148,7 @@ CLASS /ctdi/cl_print_driver_base IMPLEMENTATION.
           ls_project_db TYPE /ctdi/rep_projec.
 
     /ctdi/cl_print_driver_log=>log_info(
-      |Print driver factory invoked for Repair { iv_repair_id }| ).
+      |Print driver factory invoked for Repair { iv_repair_id }, Sernr { iv_sernr }| ).
 
     get_config_from_db(
       EXPORTING iv_repair_id  = iv_repair_id
@@ -165,11 +160,10 @@ CLASS /ctdi/cl_print_driver_base IMPLEMENTATION.
       RAISE EXCEPTION TYPE /ctdi/cx_no_config_found.
     ENDIF.
 
-    DATA(lv_class) = resolve_class_name( lv_class_name ).
-
     TRY.
-        CREATE OBJECT ro_driver TYPE (lv_class).
+        CREATE OBJECT ro_driver TYPE (lv_class_name).
         ro_driver->mv_repair_order = iv_repair_id.
+        ro_driver->mv_sernr        = iv_sernr.
         ro_driver->mv_form_name = lv_form_name.
         ro_driver->ms_project   = ls_project_db.
       CATCH cx_sy_create_object_error INTO DATA(lx_create).
@@ -181,15 +175,7 @@ CLASS /ctdi/cl_print_driver_base IMPLEMENTATION.
     ENDTRY.
   ENDMETHOD.
 
-  METHOD resolve_class_name.
-    rv_class_name = iv_class_name.
-    IF rv_class_name IS INITIAL.
-      RETURN.
-    ENDIF.
-    IF rv_class_name(1) = 'Z' OR rv_class_name(1) = 'Y'.
-      rv_class_name = |/CTDI/{ rv_class_name+1 }|.
-    ENDIF.
-  ENDMETHOD.
+
 
   METHOD resolve_contract.
     DATA(lv_aufnr) = |{ iv_repair_id ALPHA = IN }|.

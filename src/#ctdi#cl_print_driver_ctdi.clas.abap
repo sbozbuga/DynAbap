@@ -32,7 +32,8 @@ CLASS /ctdi/cl_print_driver_ctdi IMPLEMENTATION.
     ELSE.
       TRY.
           lr_provider = NEW /ctdi/cl_print_data_ctdi( ).
-          lr_provider->read_data( iv_aufnr = mv_repair_order ).
+          lr_provider->read_data( iv_aufnr = mv_repair_order 
+                                  iv_sernr = mv_sernr ).
           /ctdi/cl_print_driver_log=>log_info(
             |CTDI Print Driver successfully read data from DB for Repair { mv_repair_order }| ).
         CATCH cx_root INTO DATA(lx_root).
