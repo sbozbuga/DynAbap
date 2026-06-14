@@ -1439,6 +1439,13 @@ FORM print_new USING    iv_save_as_pdf TYPE abap_bool
   ENDIF.
 
   TRY.
+      " Populate the data object with already-read global memory
+      DATA(lo_data) = NEW /ctdi/cl_print_data_ctdi( ).
+      lo_data->ms_legacy       = /cellag/alcarep.
+      lo_data->mt_legacy_error = /cellag/alcarep_error[].
+      lo_data->mt_comment_lines = gt_comment_lines[].
+      lo_data->map_legacy_data( ).
+
       " Instantiate unified print driver
       DATA(lo_driver) = /ctdi/cl_print_driver_base=>factory( p_aufnr ).
 
@@ -1446,6 +1453,7 @@ FORM print_new USING    iv_save_as_pdf TYPE abap_bool
       lo_driver->execute(
         EXPORTING
           iv_repair_id   = p_aufnr
+          io_data        = lo_data
           iv_save_as_pdf = iv_save_as_pdf ).
 
       " If it completes without cx_no_config_found, the new print was successful

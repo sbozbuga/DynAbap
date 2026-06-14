@@ -11,6 +11,8 @@ CLASS /ctdi/cl_print_data_ctdi DEFINITION
     DATA mt_repair_error TYPE /ctdi/repair_error_tt.
     DATA mt_comments     TYPE STANDARD TABLE OF tline.
 
+    METHODS map_legacy_data.
+
   PROTECTED SECTION.
     METHODS read_data REDEFINITION.
 
@@ -25,15 +27,19 @@ ENDCLASS.
 CLASS /ctdi/cl_print_data_ctdi IMPLEMENTATION.
 
   METHOD read_data.
-    " 1. Call super class logic to fetch raw legacy data into ms_alcarep, mt_alcarep_error, etc.
+    " 1. Call super class logic to fetch raw legacy data into ms_legacy, mt_legacy_error, etc.
     super->read_data( iv_aufnr = iv_aufnr iv_sernr = iv_sernr ).
 
     " 2. Convert legacy structures to new CTDI structures
+    map_legacy_data( ).
+  ENDMETHOD.
+
+  METHOD map_legacy_data.
     CLEAR: ms_repair, mt_repair_error, mt_comments.
 
-    MOVE-CORRESPONDING ms_alcarep TO ms_repair.
+    MOVE-CORRESPONDING ms_legacy TO ms_repair.
 
-    LOOP AT mt_alcarep_error INTO DATA(ls_error).
+    LOOP AT mt_legacy_error INTO DATA(ls_error).
       APPEND INITIAL LINE TO mt_repair_error ASSIGNING FIELD-SYMBOL(<ls_repair_error>).
       MOVE-CORRESPONDING ls_error TO <ls_repair_error>.
     ENDLOOP.
@@ -121,8 +127,8 @@ CLASS /ctdi/cl_print_data_ctdi IMPLEMENTATION.
       ENDLOOP.
     ENDIF.
 
-    ms_alcarep-repair_result     = lf_repres.
-    ms_alcarep-repair_result_txt = lf_repres_txt.
+    ms_legacy-repair_result     = lf_repres.
+    ms_legacy-repair_result_txt = lf_repres_txt.
   ENDMETHOD.
 
 ENDCLASS.

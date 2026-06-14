@@ -71,6 +71,13 @@ CLASS /ctdi/cl_print_driver_template IMPLEMENTATION.
     " SELECT SINGLE * FROM zcust_table INTO ls_cust_data WHERE aufnr = lv_repair_id.
     " register_custom_parameter( iv_name = 'CUST_DATA' ir_data = REF #( ls_cust_data ) ).
 
+    " --- STANDARD BINDING ---
+    " Because the base class no longer hardcodes parameter injection, we must
+    " explicitly register the standard structures if our form expects them.
+    " register_custom_parameter( iv_name = 'REPAIR'        iv_kind = abap_func_exporting ir_data = REF #( ms_repair ) ).
+    " register_custom_parameter( iv_name = 'PROJECT'       iv_kind = abap_func_exporting ir_data = REF #( ms_project ) ).
+    " register_custom_parameter( iv_name = 'REPAIR_ERRORS' iv_kind = abap_func_tables    ir_data = REF #( mt_errors ) ).
+    " register_custom_parameter( iv_name = 'COMMENT_LINES' iv_kind = abap_func_tables    ir_data = REF #( mt_comments ) ).
   ENDMETHOD.
 
 

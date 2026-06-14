@@ -3,8 +3,8 @@ CLASS /ctdi/cl_print_data_legacy DEFINITION
   CREATE PUBLIC.
 
   PUBLIC SECTION.
-    DATA ms_alcarep       TYPE /cellag/alcarep.
-    DATA mt_alcarep_error TYPE STANDARD TABLE OF /cellag/alcarep_error.
+    DATA ms_legacy       TYPE /cellag/alcarep.
+    DATA mt_legacy_error TYPE STANDARD TABLE OF /cellag/alcarep_error.
     DATA mt_comment_lines TYPE STANDARD TABLE OF tline.
 
     "! Reads the required data for the Alcatel repair process.
@@ -16,8 +16,8 @@ CLASS /ctdi/cl_print_data_legacy DEFINITION
     "! Sets the global parameters of the class
     METHODS set_global_parameters
       IMPORTING
-        !is_alcarep       TYPE /cellag/alcarep OPTIONAL
-        !it_alcarep_error TYPE ANY TABLE OPTIONAL
+        !is_legacy       TYPE /cellag/alcarep OPTIONAL
+        !it_legacy_error TYPE ANY TABLE OPTIONAL
         !it_comment_lines TYPE ANY TABLE OPTIONAL
         !iv_aufnr         TYPE aufk-aufnr OPTIONAL
         !iv_qmcod         TYPE qmel-qmcod OPTIONAL
@@ -115,7 +115,7 @@ ENDCLASS.
 CLASS /ctdi/cl_print_data_legacy IMPLEMENTATION.
 
   METHOD read_data.
-    CLEAR: ms_alcarep, mt_alcarep_error, mt_comment_lines.
+    CLEAR: ms_legacy, mt_legacy_error, mt_comment_lines.
 
     mv_aufnr = iv_aufnr.
     mv_sernr = iv_sernr.
@@ -275,15 +275,15 @@ CLASS /ctdi/cl_print_data_legacy IMPLEMENTATION.
       mv_ctdi_odernr = |{ mv_qmnum }-{ mv_fenum }|.
     ENDIF.
 
-    ms_alcarep-csaufnr         = mv_aufnr.
-    ms_alcarep-sernr           = mv_sernr.
-    ms_alcarep-po_no           = mv_po_nr.
-    ms_alcarep-po_item_no      = mv_po_pos.
-    ms_alcarep-ctdi_order_no   = mv_ctdi_odernr.
-    ms_alcarep-date_received   = lf_vl_erdat.
-    ms_alcarep-date_repaired   = lf_wfer_date.
-    ms_alcarep-date_current    = sy-datum.
-    ms_alcarep-kvgr1           = lf_kvgr1.
+    ms_legacy-csaufnr         = mv_aufnr.
+    ms_legacy-sernr           = mv_sernr.
+    ms_legacy-po_no           = mv_po_nr.
+    ms_legacy-po_item_no      = mv_po_pos.
+    ms_legacy-ctdi_order_no   = mv_ctdi_odernr.
+    ms_legacy-date_received   = lf_vl_erdat.
+    ms_legacy-date_repaired   = lf_wfer_date.
+    ms_legacy-date_current    = sy-datum.
+    ms_legacy-kvgr1           = lf_kvgr1.
   ENDMETHOD.
 
   METHOD get_part_data.
@@ -355,8 +355,8 @@ CLASS /ctdi/cl_print_data_legacy IMPLEMENTATION.
         lf_newpartnr   = lv_cur_mapar.
         lf_oldpartnr   = lv_cur_mapar.
         " Determine timestamp window
-        lf_tstamp_received = convert_to_timestamp( iv_date = ms_alcarep-date_received iv_time = mv_time_received ).
-        lf_tstamp_repaired = convert_to_timestamp( iv_date = ms_alcarep-date_repaired iv_time = mv_time_repaired ).
+        lf_tstamp_received = convert_to_timestamp( iv_date = ms_legacy-date_received iv_time = mv_time_received ).
+        lf_tstamp_repaired = convert_to_timestamp( iv_date = ms_legacy-date_repaired iv_time = mv_time_repaired ).
 
         SELECT changenr, udate, utime FROM cdhdr
           INTO CORRESPONDING FIELDS OF TABLE @lt_cdhdr
@@ -427,15 +427,15 @@ CLASS /ctdi/cl_print_data_legacy IMPLEMENTATION.
 *          lv_lines = lines( lt_cdhdr ).
 *
 *          lf_tstamp_received = convert_to_timestamp(
-*            iv_date = ms_alcarep-date_received
+*            iv_date = ms_legacy-date_received
 *            iv_time = mv_time_received ).
 *
 *          lf_tstamp_repaired = convert_to_timestamp(
-*            iv_date = ms_alcarep-date_repaired
+*            iv_date = ms_legacy-date_repaired
 *            iv_time = mv_time_repaired ).
 *
 *          lf_tstamp_thisdate = convert_to_timestamp(
-*            iv_date = ms_alcarep-date_current
+*            iv_date = ms_legacy-date_current
 *            iv_time = mv_time_thisdate ).
 *
 *          IF lv_lines > 1.
@@ -578,10 +578,10 @@ CLASS /ctdi/cl_print_data_legacy IMPLEMENTATION.
         ENDIF.
       ENDIF.
 
-      ms_alcarep-old_serial_no = lf_oldserialnr.
-      ms_alcarep-new_serial_no = lf_newserialnr.
-      ms_alcarep-old_part_no   = lf_oldpartnr.
-      ms_alcarep-new_part_no   = lf_newpartnr.
+      ms_legacy-old_serial_no = lf_oldserialnr.
+      ms_legacy-new_serial_no = lf_newserialnr.
+      ms_legacy-old_part_no   = lf_oldpartnr.
+      ms_legacy-new_part_no   = lf_newpartnr.
     ELSE.
       MESSAGE e024(/CELLAG/CS01) WITH lv_p_sernr.
     ENDIF.
@@ -589,7 +589,7 @@ CLASS /ctdi/cl_print_data_legacy IMPLEMENTATION.
     DATA lf_eqktx TYPE ktx01.
     SELECT SINGLE eqktx FROM eqkt INTO @lf_eqktx
       WHERE equnr = @lf_equnr AND spras = @mv_spras.
-    ms_alcarep-model = lf_eqktx.
+    ms_legacy-model = lf_eqktx.
 
     DATA: ls_afih  TYPE afih,
           lv_qmnum TYPE qmel-qmnum,
@@ -611,14 +611,14 @@ CLASS /ctdi/cl_print_data_legacy IMPLEMENTATION.
           ls_eqstand_out TYPE /cellag/cseqstand_out.
 
     IF ls_qmel IS NOT INITIAL.
-      ms_alcarep-rev_in  = ls_qmel-revin.
-      ms_alcarep-rev_out = ls_qmel-revout.
+      ms_legacy-rev_in  = ls_qmel-revin.
+      ms_legacy-rev_out = ls_qmel-revout.
 
       MOVE-CORRESPONDING ls_qmel TO ls_eqstand_in.
       MOVE-CORRESPONDING ls_qmel TO ls_eqstand_out.
 
-      MOVE-CORRESPONDING ls_eqstand_in TO ms_alcarep.
-      MOVE-CORRESPONDING ls_eqstand_out TO ms_alcarep.
+      MOVE-CORRESPONDING ls_eqstand_in TO ms_legacy.
+      MOVE-CORRESPONDING ls_eqstand_out TO ms_legacy.
     ENDIF.
   ENDMETHOD.
 
@@ -646,7 +646,7 @@ CLASS /ctdi/cl_print_data_legacy IMPLEMENTATION.
           lf_besz_string = ls_error-besz.
           CONCATENATE lf_besz lf_besz_string '; ' INTO lf_besz.
 
-          IF ms_alcarep-kvgr1 = '0SU'.
+          IF ms_legacy-kvgr1 = '0SU'.
             mv_katalogart = 'E'.
           ELSE.
             mv_katalogart = 'Z'.
@@ -682,14 +682,14 @@ CLASS /ctdi/cl_print_data_legacy IMPLEMENTATION.
                           code        = @ls_error-fecod AND
                           sprache     = @mv_spras.
 
-          APPEND ls_error TO mt_alcarep_error.
+          APPEND ls_error TO mt_legacy_error.
           CLEAR ls_error.
         ENDLOOP.
       ENDIF.
     ENDIF.
 
     SHIFT lf_besz RIGHT DELETING TRAILING ';'.
-    ms_alcarep-besz_cld = lf_besz.
+    ms_legacy-besz_cld = lf_besz.
   ENDMETHOD.
 
   METHOD get_repair_result.
@@ -700,7 +700,7 @@ CLASS /ctdi/cl_print_data_legacy IMPLEMENTATION.
           lv_stokz TYPE afru-stokz,
           lv_stzhl TYPE afru-stzhl.
 
-    IF ms_alcarep-old_serial_no IS NOT INITIAL AND ms_alcarep-old_serial_no <> ms_alcarep-new_serial_no.
+    IF ms_legacy-old_serial_no IS NOT INITIAL AND ms_legacy-old_serial_no <> ms_legacy-new_serial_no.
       SELECT SINGLE repres_barc, repres_txt FROM zalca_rep_result
              INTO ( @lf_repres, @lf_repres_txt )
              WHERE bemot = 'RE'
@@ -727,8 +727,8 @@ CLASS /ctdi/cl_print_data_legacy IMPLEMENTATION.
       ENDIF.
     ENDIF.
 
-    ms_alcarep-repair_result     = lf_repres.
-    ms_alcarep-repair_result_txt = lf_repres_txt.
+    ms_legacy-repair_result     = lf_repres.
+    ms_legacy-repair_result_txt = lf_repres_txt.
   ENDMETHOD.
 
   METHOD get_comment.
@@ -864,11 +864,11 @@ CLASS /ctdi/cl_print_data_legacy IMPLEMENTATION.
 *  ENDMETHOD.
 
   METHOD set_global_parameters.
-    IF is_alcarep IS SUPPLIED.
-      ms_alcarep = is_alcarep.
+    IF is_legacy IS SUPPLIED.
+      ms_legacy = is_legacy.
     ENDIF.
-    IF it_alcarep_error IS SUPPLIED.
-      mt_alcarep_error = it_alcarep_error.
+    IF it_legacy_error IS SUPPLIED.
+      mt_legacy_error = it_legacy_error.
     ENDIF.
     IF it_comment_lines IS SUPPLIED.
       mt_comment_lines = it_comment_lines.

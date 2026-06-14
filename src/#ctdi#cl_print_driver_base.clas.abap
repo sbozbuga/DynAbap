@@ -506,33 +506,6 @@ CLASS /ctdi/cl_print_driver_base IMPLEMENTATION.
     GET REFERENCE OF ls_output_options INTO ls_ptab-value.
     INSERT ls_ptab INTO TABLE lt_ptab.
 
-    IF fm_has_parameter( iv_funcname = lv_fm_name iv_paramname = 'REPAIR' ) = abap_true.
-      ls_ptab-name = 'REPAIR'.
-      ls_ptab-kind = abap_func_exporting.
-      GET REFERENCE OF ms_repair INTO ls_ptab-value.
-      INSERT ls_ptab INTO TABLE lt_ptab.
-    ENDIF.
-
-    IF fm_has_parameter( iv_funcname = lv_fm_name iv_paramname = 'PROJECT' ) = abap_true.
-      ls_ptab-name = 'PROJECT'.
-      ls_ptab-kind = abap_func_exporting.
-      GET REFERENCE OF ms_project INTO ls_ptab-value.
-      INSERT ls_ptab INTO TABLE lt_ptab.
-    ENDIF.
-
-    IF fm_has_parameter( iv_funcname = lv_fm_name iv_paramname = 'REPAIR_ERRORS' ) = abap_true.
-      ls_ptab-name = 'REPAIR_ERRORS'.
-      ls_ptab-kind = abap_func_tables.
-      GET REFERENCE OF mt_errors INTO ls_ptab-value.
-      INSERT ls_ptab INTO TABLE lt_ptab.
-    ENDIF.
-
-    IF fm_has_parameter( iv_funcname = lv_fm_name iv_paramname = 'COMMENT_LINES' ) = abap_true.
-      ls_ptab-name = 'COMMENT_LINES'.
-      ls_ptab-kind = abap_func_tables.
-      GET REFERENCE OF mt_comments INTO ls_ptab-value.
-      INSERT ls_ptab INTO TABLE lt_ptab.
-    ENDIF.
 
     " Inject any dynamically registered custom parameters
     LOOP AT mt_custom_form_params INTO DATA(ls_custom_param_sf).
@@ -693,33 +666,7 @@ CLASS /ctdi/cl_print_driver_base IMPLEMENTATION.
     GET REFERENCE OF ls_docparams INTO ls_ptab-value.
     INSERT ls_ptab INTO TABLE lt_ptab.
 
-    IF fm_has_parameter( iv_funcname = lv_fm_name iv_paramname = 'REPAIR' ) = abap_true.
-      ls_ptab-name = 'REPAIR'.
-      ls_ptab-kind = abap_func_exporting.
-      GET REFERENCE OF ms_repair INTO ls_ptab-value.
-      INSERT ls_ptab INTO TABLE lt_ptab.
-    ENDIF.
 
-    IF fm_has_parameter( iv_funcname = lv_fm_name iv_paramname = 'PROJECT' ) = abap_true.
-      ls_ptab-name = 'PROJECT'.
-      ls_ptab-kind = abap_func_exporting.
-      GET REFERENCE OF ms_project INTO ls_ptab-value.
-      INSERT ls_ptab INTO TABLE lt_ptab.
-    ENDIF.
-
-    IF fm_has_parameter( iv_funcname = lv_fm_name iv_paramname = 'REPAIR_ERRORS' ) = abap_true.
-      ls_ptab-name = 'REPAIR_ERRORS'.
-      ls_ptab-kind = abap_func_exporting.
-      GET REFERENCE OF mt_errors INTO ls_ptab-value.
-      INSERT ls_ptab INTO TABLE lt_ptab.
-    ENDIF.
-
-    IF fm_has_parameter( iv_funcname = lv_fm_name iv_paramname = 'COMMENT_LINES' ) = abap_true.
-      ls_ptab-name = 'COMMENT_LINES'.
-      ls_ptab-kind = abap_func_exporting.
-      GET REFERENCE OF mt_comments INTO ls_ptab-value.
-      INSERT ls_ptab INTO TABLE lt_ptab.
-    ENDIF.
 
     " Inject any dynamically registered custom parameters
     LOOP AT mt_custom_form_params INTO DATA(ls_custom_param_af).
