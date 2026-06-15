@@ -620,6 +620,10 @@ CLASS /ctdi/cl_print_driver_base IMPLEMENTATION.
     LOOP AT mt_custom_form_params INTO DATA(ls_custom_param_af).
       READ TABLE lt_valid_params_af WITH KEY parameter = ls_custom_param_af-name TRANSPORTING NO FIELDS.
       IF sy-subrc = 0.
+        " Adobe Forms do not have a TABLES interface, they expect tables as EXPORTING
+        IF ls_custom_param_af-kind = abap_func_tables.
+          ls_custom_param_af-kind = abap_func_exporting.
+        ENDIF.
         INSERT ls_custom_param_af INTO TABLE lt_ptab.
       ENDIF.
     ENDLOOP.
