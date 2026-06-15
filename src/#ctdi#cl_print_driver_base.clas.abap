@@ -683,12 +683,14 @@ CLASS /ctdi/cl_print_driver_base IMPLEMENTATION.
 
 
   METHOD download_pdf.
-    DATA: lt_filetab TYPE filetable,
-          lv_rc      TYPE i,
-          lv_action  TYPE i,
-          lv_path    TYPE string,
+    DATA: lt_filetab  TYPE filetable,
+          lv_rc       TYPE i,
+          lv_action   TYPE i,
+          lv_path     TYPE string,
           lv_filename TYPE string,
-          lt_data    TYPE solix_tab.
+          lv_fpath    TYPE string,
+          lv_filesize TYPE i,
+          lt_data     TYPE solix_tab.
 
     IF iv_pdf_data IS INITIAL.
       RETURN.
@@ -722,7 +724,7 @@ CLASS /ctdi/cl_print_driver_base IMPLEMENTATION.
       CHANGING
         filename             = lv_filename
         path                 = lv_path
-        fullpath             = lv_path
+        fullpath             = lv_fpath
         user_action          = lv_action
       EXCEPTIONS
         OTHERS               = 1 ).
@@ -730,12 +732,14 @@ CLASS /ctdi/cl_print_driver_base IMPLEMENTATION.
       DATA(lv_subrc_dialog) = sy-subrc.
     ENDIF.
 
-    IF lv_action = cl_gui_frontend_services=>action_ok AND lv_path IS NOT INITIAL.
+    IF lv_action = cl_gui_frontend_services=>action_ok AND lv_fpath IS NOT INITIAL.
+      lv_filesize = xstrlen( iv_pdf_data ).
+
       cl_gui_frontend_services=>gui_download(
         EXPORTING
-          filename                  = lv_path
+          filename                  = lv_fpath
           filetype                  = 'BIN'
-          bin_filesize              = xstrlen( iv_pdf_data )
+          bin_filesize              = lv_filesize
         CHANGING
           data_tab                  = lt_data
         EXCEPTIONS
