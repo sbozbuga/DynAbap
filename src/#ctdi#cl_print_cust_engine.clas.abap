@@ -20,6 +20,15 @@ CLASS /CTDI/CL_PRINT_CUST_ENGINE DEFINITION
       RETURNING
         VALUE(rv_allowed) TYPE abap_bool.
 
+    "! Normalizes a short class name to the full provider class name
+    "! @parameter iv_class_name | Short or full class name
+    "! @parameter rv_class_name | Full normalized class name
+    CLASS-METHODS normalize_class_name
+      IMPORTING
+        !iv_class_name       TYPE seoclsname
+      RETURNING
+        VALUE(rv_class_name) TYPE seoclsname.
+
 
   PROTECTED SECTION.
 private section.
@@ -46,6 +55,26 @@ ENDCLASS.
 
 
 CLASS /CTDI/CL_PRINT_CUST_ENGINE IMPLEMENTATION.
+
+  METHOD normalize_class_name.
+    rv_class_name = to_upper( iv_class_name ).
+
+    IF rv_class_name IS INITIAL.
+      RETURN.
+    ENDIF.
+
+    " If it already contains a namespace or standard prefix, do nothing
+    IF rv_class_name CS '/'.
+      RETURN.
+    ENDIF.
+
+    " Normalize short names like 'CTDI', 'BASE' into full class names
+    IF rv_class_name CS 'CL_PRINT_DRIVER_'.
+      rv_class_name = |/CTDI/{ rv_class_name }|.
+    ELSE.
+      rv_class_name = |/CTDI/CL_PRINT_DRIVER_{ rv_class_name }|.
+    ENDIF.
+  ENDMETHOD.
 
 
   METHOD check_generation_allowed.

@@ -285,7 +285,7 @@ CLASS /ctdi/cl_print_driver_base IMPLEMENTATION.
 
       IF sy-subrc = 0.
         ev_form_name  = ls_config-form_name.
-        ev_class_name = ls_config-class_name.
+        ev_class_name = /ctdi/cl_print_cust_engine=>normalize_class_name( ls_config-class_name ).
       ELSE.
         IF lv_contract IS NOT INITIAL.
           IF lv_skz IS NOT INITIAL AND lv_akz IS NOT INITIAL.
@@ -334,7 +334,7 @@ CLASS /ctdi/cl_print_driver_base IMPLEMENTATION.
         IF ls_config IS NOT INITIAL.
           INSERT ls_config INTO TABLE mt_config_buffer.
           ev_form_name  = ls_config-form_name.
-          ev_class_name = ls_config-class_name.
+          ev_class_name = /ctdi/cl_print_cust_engine=>normalize_class_name( ls_config-class_name ).
         ELSE.
           RAISE EXCEPTION TYPE /ctdi/cx_print_driver_error
             EXPORTING
