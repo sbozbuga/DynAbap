@@ -126,8 +126,8 @@ CLASS /ctdi/cl_print_data_legacy IMPLEMENTATION.
 
     SELECT SINGLE rmanr, posnv_rma, posnr_rma
       FROM afko
-      INTO ( @lf_rmanr, @lf_posnv_rma, @lf_posnr_rma )
-      WHERE aufnr = @mv_aufnr.
+      
+      WHERE aufnr = @mv_aufnr INTO ( @lf_rmanr, @lf_posnv_rma, @lf_posnr_rma ).
 
     CALL FUNCTION '/CELLAG/SDPOS_RALMENGE_GET'
       EXPORTING
@@ -173,8 +173,8 @@ CLASS /ctdi/cl_print_data_legacy IMPLEMENTATION.
 
     SELECT SINGLE kdauf, kdpos, erdat, idat2, erfzeit, aezeit, objnr
       FROM aufk
-      INTO ( @lf_kdauf, @lf_kdpos, @lf_erdat, @lf_tabg_status, @lf_erfzeit, @lf_aezeit, @lf_objnr )
-      WHERE aufnr = @mv_aufnr.
+      
+      WHERE aufnr = @mv_aufnr INTO ( @lf_kdauf, @lf_kdpos, @lf_erdat, @lf_tabg_status, @lf_erfzeit, @lf_aezeit, @lf_objnr ).
 
     IF sy-subrc = 0.
       mv_kdauf = lf_kdauf.
@@ -194,18 +194,18 @@ CLASS /ctdi/cl_print_data_legacy IMPLEMENTATION.
       mv_time_thisdate = sy-uzeit.
 
       CLEAR lf_po_nr.
-      SELECT SINGLE bstkd FROM vbkd INTO @lf_po_nr
-        WHERE vbeln = @lf_kdauf AND posnr = @lf_kdpos.
+      SELECT SINGLE bstkd FROM vbkd 
+        WHERE vbeln = @lf_kdauf AND posnr = @lf_kdpos INTO @lf_po_nr.
       mv_po_nr = lf_po_nr.
 
       CLEAR: lf_qmnum, lf_kvgr1.
-      SELECT SINGLE kvgr1, qmnum FROM vbak INTO ( @lf_kvgr1, @lf_qmnum )
-        WHERE vbeln = @lf_kdauf.
+      SELECT SINGLE kvgr1, qmnum FROM vbak 
+        WHERE vbeln = @lf_kdauf INTO ( @lf_kvgr1, @lf_qmnum ).
       mv_qmnum = lf_qmnum.
 
       CLEAR: lf_fenum, lf_po_pos.
-      SELECT SINGLE /cellag/fenum, posex FROM vbap INTO ( @lf_fenum, @lf_po_pos )
-        WHERE vbeln = @lf_kdauf AND posnr = @lf_kdpos.
+      SELECT SINGLE /cellag/fenum, posex FROM vbap 
+        WHERE vbeln = @lf_kdauf AND posnr = @lf_kdpos INTO ( @lf_fenum, @lf_po_pos ).
       mv_fenum = lf_fenum.
       mv_po_pos = lf_po_pos.
 
@@ -220,29 +220,29 @@ CLASS /ctdi/cl_print_data_legacy IMPLEMENTATION.
             lv_posex_u TYPE vbap-posex,
             lv_bstkd_u TYPE vbkd-bstkd.
 
-      SELECT SINGLE qmart INTO @lv_qmart FROM qmel WHERE qmnum = @mv_qmnum.
+      SELECT SINGLE qmart  FROM qmel WHERE qmnum = @mv_qmnum INTO @lv_qmart.
 
       IF lv_qmart = co_zx_qmart.
-        SELECT SINGLE ebeln, ebelp FROM qmfe INTO ( @lv_ebeln_u, @lv_ebelp_u )
-          WHERE qmnum = @mv_qmnum AND fenum = @mv_fenum.
+        SELECT SINGLE ebeln, ebelp FROM qmfe 
+          WHERE qmnum = @mv_qmnum AND fenum = @mv_fenum INTO ( @lv_ebeln_u, @lv_ebelp_u ).
 
         CLEAR: mv_qmnum, mv_fenum.
-        SELECT SINGLE aufnr FROM ekkn INTO @lv_aufnr
-          WHERE ebeln = @lv_ebeln_u AND ebelp = @lv_ebelp_u.
+        SELECT SINGLE aufnr FROM ekkn 
+          WHERE ebeln = @lv_ebeln_u AND ebelp = @lv_ebelp_u INTO @lv_aufnr.
 
         IF lv_aufnr IS NOT INITIAL.
-          SELECT SINGLE kdauf, kdpos FROM aufk INTO ( @lv_kdauf_u, @lv_kdpos_u )
-            WHERE aufnr = @lv_aufnr.
+          SELECT SINGLE kdauf, kdpos FROM aufk 
+            WHERE aufnr = @lv_aufnr INTO ( @lv_kdauf_u, @lv_kdpos_u ).
 
           SELECT SINGLE /cellag/qmnum, /cellag/fenum, posex FROM vbap
-            INTO ( @lv_qmnum_u, @lv_fenum_u, @lv_posex_u )
-            WHERE vbeln = @lv_kdauf_u AND posnr = @lv_kdpos_u.
+            
+            WHERE vbeln = @lv_kdauf_u AND posnr = @lv_kdpos_u INTO ( @lv_qmnum_u, @lv_fenum_u, @lv_posex_u ).
 
           mv_fenum = lv_fenum_u.
           mv_qmnum = lv_qmnum_u.
 
-          SELECT SINGLE bstkd FROM vbkd INTO @lv_bstkd_u
-            WHERE vbeln = @lv_kdauf_u AND posnr = @lv_kdpos_u.
+          SELECT SINGLE bstkd FROM vbkd 
+            WHERE vbeln = @lv_kdauf_u AND posnr = @lv_kdpos_u INTO @lv_bstkd_u.
 
           CLEAR: mv_po_nr, mv_po_pos.
           mv_po_pos = lv_posex_u.
@@ -308,23 +308,23 @@ CLASS /ctdi/cl_print_data_legacy IMPLEMENTATION.
       ENDLOOP.
     ENDIF.
 
-    SELECT SINGLE equnr FROM equi INTO @lf_equnr WHERE sernr = @lv_p_sernr.
+    SELECT SINGLE equnr FROM equi  WHERE sernr = @lv_p_sernr INTO @lf_equnr.
     IF lf_equnr IS NOT INITIAL.
       IF mv_swap_flag IS NOT INITIAL.
         SELECT SINGLE serge, matnr
-           FROM equi INTO ( @lf_newserialnr, @lv_newmatnr )
-           WHERE equnr = @lf_equnr.
-        SELECT SINGLE mapar FROM equz INTO @lf_newpartnr WHERE equnr = @lf_equnr.
+           FROM equi 
+           WHERE equnr = @lf_equnr INTO ( @lf_newserialnr, @lv_newmatnr ).
+        SELECT SINGLE mapar FROM equz  WHERE equnr = @lf_equnr INTO @lf_newpartnr.
 
         SELECT SINGLE serge, matnr
-           FROM equi INTO ( @lf_oldserialnr, @lv_oldmatnr )
-           WHERE equnr = @mv_equnr_retlief.
-        SELECT SINGLE mapar FROM equz INTO @lf_oldpartnr WHERE equnr = @mv_equnr_retlief.
+           FROM equi 
+           WHERE equnr = @mv_equnr_retlief INTO ( @lf_oldserialnr, @lv_oldmatnr ).
+        SELECT SINGLE mapar FROM equz  WHERE equnr = @mv_equnr_retlief INTO @lf_oldpartnr.
       ELSE.
         " --- NEW OPTIMIZED LOGIC ---
         " Pre-fetch current values as defaults
-        SELECT SINGLE serge, matnr FROM equi INTO ( @DATA(lv_cur_serge), @DATA(lv_cur_matnr) ) WHERE equnr = @lf_equnr.
-        SELECT SINGLE mapar FROM equz INTO @DATA(lv_cur_mapar) WHERE equnr = @lf_equnr.
+        SELECT SINGLE serge, matnr FROM equi  WHERE equnr = @lf_equnr INTO ( @DATA(lv_cur_serge), @DATA(lv_cur_matnr) ).
+        SELECT SINGLE mapar FROM equz  WHERE equnr = @lf_equnr INTO @DATA(lv_cur_mapar).
 
         lf_newserialnr = lv_cur_serge.
         lf_oldserialnr = lv_cur_serge.
@@ -337,8 +337,8 @@ CLASS /ctdi/cl_print_data_legacy IMPLEMENTATION.
         lf_tstamp_repaired = convert_to_timestamp( iv_date = ms_legacy-date_repaired iv_time = mv_time_repaired ).
 
         SELECT changenr, udate, utime FROM cdhdr
-          INTO CORRESPONDING FIELDS OF TABLE @lt_cdhdr
-          WHERE objectclas = 'EQUI' AND objectid = @lf_equnr.
+          
+          WHERE objectclas = 'EQUI' AND objectid = @lf_equnr INTO CORRESPONDING FIELDS OF TABLE @lt_cdhdr.
 
         IF lt_cdhdr IS NOT INITIAL.
           " Build a RANGE table for changenr to avoid ATC FOR ALL ENTRIES warning on cluster table
@@ -347,10 +347,10 @@ CLASS /ctdi/cl_print_data_legacy IMPLEMENTATION.
 
           " Fetch all relevant CDPOS records in one go
           SELECT changenr, tabname, fname, value_old, value_new FROM cdpos
-            INTO TABLE @DATA(lt_cdpos_all)
+            
             WHERE objectclas = 'EQUI'
               AND objectid   = @lf_equnr
-              AND changenr   IN @lr_changenr.
+              AND changenr   IN @lr_changenr INTO TABLE @DATA(lt_cdpos_all).
 
           IF lt_cdpos_all IS NOT INITIAL.
             " Sort cdhdr descending by date/time to find the latest valid change first
@@ -540,19 +540,19 @@ CLASS /ctdi/cl_print_data_legacy IMPLEMENTATION.
 
       IF lf_newpartnr IS INITIAL.
         IF lv_newmatnr IS INITIAL.
-          SELECT SINGLE matnr FROM equi INTO @lv_newmatnr WHERE equnr = @lf_equnr.
+          SELECT SINGLE matnr FROM equi  WHERE equnr = @lf_equnr INTO @lv_newmatnr.
         ENDIF.
         IF lv_newmatnr IS NOT INITIAL.
-          SELECT SINGLE mfrpn FROM mara INTO @lf_newpartnr WHERE matnr = @lv_newmatnr.
+          SELECT SINGLE mfrpn FROM mara  WHERE matnr = @lv_newmatnr INTO @lf_newpartnr.
         ENDIF.
       ENDIF.
 
       IF lf_oldpartnr IS INITIAL.
         IF lv_oldmatnr IS INITIAL.
-          SELECT SINGLE matnr FROM equi INTO @lv_oldmatnr WHERE equnr = @mv_equnr_retlief.
+          SELECT SINGLE matnr FROM equi  WHERE equnr = @mv_equnr_retlief INTO @lv_oldmatnr.
         ENDIF.
         IF lv_oldmatnr IS NOT INITIAL.
-          SELECT SINGLE mfrpn FROM mara INTO @lf_oldpartnr WHERE matnr = @lv_oldmatnr.
+          SELECT SINGLE mfrpn FROM mara  WHERE matnr = @lv_oldmatnr INTO @lf_oldpartnr.
         ENDIF.
       ENDIF.
 
@@ -565,24 +565,24 @@ CLASS /ctdi/cl_print_data_legacy IMPLEMENTATION.
     ENDIF.
 
     DATA lf_eqktx TYPE ktx01.
-    SELECT SINGLE eqktx FROM eqkt INTO @lf_eqktx
-      WHERE equnr = @lf_equnr AND spras = @mv_spras.
+    SELECT SINGLE eqktx FROM eqkt 
+      WHERE equnr = @lf_equnr AND spras = @mv_spras INTO @lf_eqktx.
     ms_legacy-model = lf_eqktx.
 
     DATA: ls_afih  TYPE afih,
           lv_qmnum TYPE qmel-qmnum,
           ls_qmel  TYPE qmel.
 
-    SELECT SINGLE qmnum, obknr FROM afih INTO CORRESPONDING FIELDS OF @ls_afih WHERE aufnr = @mv_aufnr.
+    SELECT SINGLE qmnum, obknr FROM afih  WHERE aufnr = @mv_aufnr INTO CORRESPONDING FIELDS OF @ls_afih.
     IF ls_afih-qmnum IS NOT INITIAL.
       lv_qmnum = ls_afih-qmnum.
     ELSE.
-      SELECT SINGLE ihnum INTO @lv_qmnum FROM objk
-       WHERE obknr = @ls_afih-obknr AND ihnum <> @space.
+      SELECT SINGLE ihnum  FROM objk
+       WHERE obknr = @ls_afih-obknr AND ihnum <> @space INTO @lv_qmnum.
     ENDIF.
 
     IF lv_qmnum IS NOT INITIAL.
-      SELECT SINGLE * INTO @ls_qmel FROM qmel WHERE qmnum = @lv_qmnum. "#EC CI_ALL_FIELDS_NEEDED
+      SELECT SINGLE *  FROM qmel WHERE qmnum = @lv_qmnum INTO @ls_qmel. "#EC CI_ALL_FIELDS_NEEDED
     ENDIF.
 
     DATA: ls_eqstand_in  TYPE /cellag/cseqstand_in,
@@ -608,16 +608,16 @@ CLASS /ctdi/cl_print_data_legacy IMPLEMENTATION.
           lt_error           TYPE TABLE OF /cellag/alcarep_error,
           ls_error           LIKE LINE OF lt_error.
 
-    SELECT SINGLE qmnum, qmcod FROM qmel INTO ( @lf_qmnum, @lf_qmcod )
-      WHERE aufnr = @mv_aufnr AND qmart = @co_qmart.
+    SELECT SINGLE qmnum, qmcod FROM qmel 
+      WHERE aufnr = @mv_aufnr AND qmart = @co_qmart INTO ( @lf_qmnum, @lf_qmcod ).
 
     IF sy-subrc = 0.
       mv_qmnum = lf_qmnum.
       mv_qmcod = lf_qmcod.
 
-      SELECT otgrp, oteil, fegrp, fecod, besz INTO CORRESPONDING FIELDS OF TABLE @lt_error FROM qmfe
+      SELECT otgrp, oteil, fegrp, fecod, besz  FROM qmfe
         WHERE qmnum = @lf_qmnum
-        ORDER BY PRIMARY KEY.
+        ORDER BY PRIMARY KEY INTO CORRESPONDING FIELDS OF TABLE @lt_error.
 
       IF lt_error IS NOT INITIAL.
         LOOP AT lt_error INTO ls_error.
@@ -631,34 +631,34 @@ CLASS /ctdi/cl_print_data_legacy IMPLEMENTATION.
           ENDIF.
 
           IF mv_katalogart = 'Z'.
-            SELECT SINGLE kurztext FROM qpgt INTO @ls_error-otgrp_ktxt
+            SELECT SINGLE kurztext FROM qpgt 
                     WHERE katalogart  = @mv_katalogart AND
                           codegruppe  = @ls_error-otgrp AND
-                          sprache     = @mv_spras.
+                          sprache     = @mv_spras INTO @ls_error-otgrp_ktxt.
           ENDIF.
 
-          SELECT SINGLE kurztext FROM qpct INTO @ls_error-oteil_ktxt
+          SELECT SINGLE kurztext FROM qpct 
                     WHERE katalogart  = @mv_katalogart AND
                           codegruppe  = @ls_error-otgrp AND
                           code        = @ls_error-oteil AND
-                          sprache     = @mv_spras.
+                          sprache     = @mv_spras INTO @ls_error-oteil_ktxt.
 
           IF mv_katalogart = 'Z'.
-            SELECT SINGLE kurztext FROM qpgt INTO @ls_error-fegrp_ktxt
+            SELECT SINGLE kurztext FROM qpgt 
                     WHERE katalogart  = @mv_katalogart AND
                           codegruppe  = @ls_error-fegrp AND
-                          sprache     = @mv_spras.
+                          sprache     = @mv_spras INTO @ls_error-fegrp_ktxt.
           ENDIF.
 
           IF mv_katalogart = 'E'.
             mv_katalogart = 'Z'.
           ENDIF.
 
-          SELECT SINGLE kurztext FROM qpct INTO @ls_error-fecod_ktxt
+          SELECT SINGLE kurztext FROM qpct 
                     WHERE katalogart  = @mv_katalogart AND
                           codegruppe  = @ls_error-fegrp AND
                           code        = @ls_error-fecod AND
-                          sprache     = @mv_spras.
+                          sprache     = @mv_spras INTO @ls_error-fecod_ktxt.
 
           APPEND ls_error TO mt_legacy_error.
           CLEAR ls_error.
@@ -680,27 +680,27 @@ CLASS /ctdi/cl_print_data_legacy IMPLEMENTATION.
 
     IF ms_legacy-old_serial_no IS NOT INITIAL AND ms_legacy-old_serial_no <> ms_legacy-new_serial_no.
       SELECT SINGLE repres_barc, repres_txt FROM zalca_rep_result
-             INTO ( @lf_repres, @lf_repres_txt )
+             
              WHERE bemot = 'RE'
-               AND akz   = ''.
+               AND akz   = '' INTO ( @lf_repres, @lf_repres_txt ).
     ELSE.
-      SELECT bemot, stokz, stzhl FROM afru INTO ( @lv_bemot, @lv_stokz, @lv_stzhl )
+      SELECT bemot, stokz, stzhl FROM afru 
         WHERE aufnr = @mv_aufnr
-          AND vornr = '9010'.
+          AND vornr = '9010' INTO ( @lv_bemot, @lv_stokz, @lv_stzhl ).
         IF lv_stokz = ' ' AND lv_stzhl = '00000000'.
           EXIT.
         ENDIF.
       ENDSELECT.
       IF sy-subrc = 0.
         SELECT SINGLE repres_barc, repres_txt FROM zalca_rep_result
-           INTO ( @lf_repres, @lf_repres_txt )
+           
            WHERE bemot = @lv_bemot
-             AND akz   = @mv_qmcod.
+             AND akz   = @mv_qmcod INTO ( @lf_repres, @lf_repres_txt ).
         IF sy-subrc <> 0.
           SELECT SINGLE repres_barc, repres_txt FROM zalca_rep_result
-           INTO ( @lf_repres, @lf_repres_txt )
+           
            WHERE bemot = @lv_bemot
-             AND akz   = ''.
+             AND akz   = '' INTO ( @lf_repres, @lf_repres_txt ).
         ENDIF.
       ENDIF.
     ENDIF.
@@ -723,10 +723,10 @@ CLASS /ctdi/cl_print_data_legacy IMPLEMENTATION.
 
     lf_name = lf_qmnum_conv.
 
-    SELECT SINGLE tdspras FROM stxh INTO @lf_spras
+    SELECT SINGLE tdspras FROM stxh 
       WHERE tdobject = 'QMEL'
         AND tdname   = @lf_name
-        AND tdid     = 'LTXT'.
+        AND tdid     = 'LTXT' INTO @lf_spras.
     IF sy-subrc <> 0.
       lf_spras = mv_spras.
     ENDIF.
@@ -750,7 +750,7 @@ CLASS /ctdi/cl_print_data_legacy IMPLEMENTATION.
     DATA: ls_jcds  TYPE jcds,
           lt_jcds  TYPE TABLE OF jcds.
 
-    SELECT objnr, stat, chgnr, udate, utime, inact FROM jcds INTO CORRESPONDING FIELDS OF TABLE @lt_jcds WHERE objnr = @iv_objnr AND stat = @co_wfer_stat.
+    SELECT objnr, stat, chgnr, udate, utime, inact FROM jcds  WHERE objnr = @iv_objnr AND stat = @co_wfer_stat INTO CORRESPONDING FIELDS OF TABLE @lt_jcds.
 
     IF lt_jcds IS NOT INITIAL.
       SORT lt_jcds DESCENDING BY udate utime DESCENDING.
@@ -770,7 +770,7 @@ CLASS /ctdi/cl_print_data_legacy IMPLEMENTATION.
   ENDMETHOD.
 
   METHOD get_rlf_wedate.
-    SELECT SINGLE erdat, erzet FROM likp INTO ( @ev_vl_erdat, @ev_vl_zeit ) WHERE vbeln = @iv_vbeln_vl.
+    SELECT SINGLE erdat, erzet FROM likp  WHERE vbeln = @iv_vbeln_vl INTO ( @ev_vl_erdat, @ev_vl_zeit ).
   ENDMETHOD.
 
   METHOD get_retlief.
@@ -782,8 +782,8 @@ CLASS /ctdi/cl_print_data_legacy IMPLEMENTATION.
           ls_vbfa_rl   TYPE vbfa.
 
     SELECT SINGLE rmanr, posnr_rma, posnv_rma FROM afko
-      INTO ( @lf_rmanr, @lf_posnr_rma, @lf_posnv_rma )
-      WHERE aufnr = @mv_aufnr.
+      
+      WHERE aufnr = @mv_aufnr INTO ( @lf_rmanr, @lf_posnr_rma, @lf_posnv_rma ).
     ls_comwa-vbeln = lf_rmanr.
     ls_comwa-posnr = lf_posnv_rma.
 

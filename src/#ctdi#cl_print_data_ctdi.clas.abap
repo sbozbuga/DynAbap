@@ -56,9 +56,10 @@ CLASS /ctdi/cl_print_data_ctdi IMPLEMENTATION.
           lv_stzhl TYPE afru-stzhl.
 
     " Always get SKZ from AFRU for operation 9010
-    SELECT bemot, stokz, stzhl FROM afru INTO ( @lv_bemot, @lv_stokz, @lv_stzhl )
+    SELECT bemot, stokz, stzhl FROM afru
       WHERE aufnr = @mv_aufnr
-        AND vornr = '9010'.
+        AND vornr = '9010'
+      INTO ( @lv_bemot, @lv_stokz, @lv_stzhl ).
       IF lv_stokz = ' ' AND lv_stzhl = '00000000'.
         EXIT.
       ENDIF.
@@ -75,7 +76,7 @@ CLASS /ctdi/cl_print_data_ctdi IMPLEMENTATION.
     DATA: lv_contract TYPE vbak-vgbel.
 
     IF mv_kdauf IS NOT INITIAL.
-      SELECT SINGLE vgbel FROM vbak INTO @lv_contract WHERE vbeln = @mv_kdauf and vbtyp = 'G'.
+      SELECT SINGLE vgbel FROM vbak WHERE vbeln = @mv_kdauf and vbtyp = 'G' INTO @lv_contract.
       IF sy-subrc <> 0.
         RETURN.
       ENDIF.
@@ -109,9 +110,9 @@ CLASS /ctdi/cl_print_data_ctdi IMPLEMENTATION.
 
     " Read all config for the current contract or empty contract records
     SELECT * FROM /ctdi/rep_result
-      INTO TABLE @DATA(lt_results)
       WHERE vbeln = @lv_contract
-         OR vbeln = @space.
+         OR vbeln = @space
+      INTO TABLE @DATA(lt_results).
 
     IF lt_results IS NOT INITIAL AND lt_steps IS NOT INITIAL.
       LOOP AT lt_steps INTO DATA(ls_step).
