@@ -175,10 +175,22 @@ CLASS /ctdi/cl_print_driver_base IMPLEMENTATION.
 
     IF sy-subrc = 0 AND lv_order_id IS NOT INITIAL.
       SELECT SINGLE vgbel
-       FROM vbak
-      WHERE vbeln = @lv_order_id
-        AND vbtyp = 'G'
+        FROM vbak
+       WHERE vbeln = @lv_order_id
         INTO @ev_contract_id.
+
+      IF sy-subrc = 0 AND ev_contract_id IS NOT INITIAL.
+        " Verify the linked document is actually a contract (vbtyp = 'G')
+        SELECT SINGLE vbtyp
+          FROM vbak
+         WHERE vbeln = @ev_contract_id
+          INTO @DATA(lv_vbtyp).
+
+        IF lv_vbtyp NE 'G'.
+          CLEAR ev_contract_id.
+          sy-subrc = 4. " Force failure flag
+        ENDIF.
+      ENDIF.
         
       IF sy-subrc NE 0.
         DATA(lv_err1) = |Could not find a Contract for Order { lv_order_id }|.
