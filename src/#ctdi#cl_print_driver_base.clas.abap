@@ -101,7 +101,9 @@ CLASS /ctdi/cl_print_driver_base DEFINITION
       EXPORTING
         !ev_contract_id TYPE vbeln_va
         !ev_skz TYPE bemot
-        !ev_akz TYPE char4.
+        !ev_akz TYPE char4
+      RAISING
+        /ctdi/cx_print_driver_error.
         
     CLASS-METHODS get_config_from_db
       IMPORTING
@@ -166,8 +168,6 @@ CLASS /ctdi/cl_print_driver_base IMPLEMENTATION.
     ENDTRY.
   ENDMETHOD.
 
-
-
   METHOD resolve_contract.
     DATA(lv_aufnr) = |{ iv_repair_id ALPHA = IN }|.
     CLEAR: ev_contract_id, ev_skz, ev_akz.
@@ -181,15 +181,20 @@ CLASS /ctdi/cl_print_driver_base IMPLEMENTATION.
       WHERE a~aufnr = @lv_aufnr
       INTO @DATA(lv_order_id).
 
-    IF sy-subrc = 0 AND ev_contract_id IS NOT INITIAL.
+    IF sy-subrc = 0 AND lv_order_id IS NOT INITIAL.
       SELECT SINGLE vgbel
        FROM vbak
       WHERE vbeln = @lv_order_id
+        AND vbtyp = 'G'
         INTO @ev_contract_id.
+        
       IF sy-subrc NE 0.
-        /ctdi/cl_print_driver_log=>log_info(
-           |Could not find a Contract for Order { lv_order_id }| ).
-        RETURN.
+        DATA(lv_err1) = |Could not find a Contract for Order { lv_order_id }|.
+        /ctdi/cl_print_driver_log=>log_error( lv_err1 ).
+        RAISE EXCEPTION TYPE /ctdi/cx_print_driver_error
+          EXPORTING
+            repair_id = iv_repair_id
+            message   = lv_err1.
       ENDIF.
 
       SELECT bemot, stokz, stzhl
@@ -218,35 +223,8 @@ CLASS /ctdi/cl_print_driver_base IMPLEMENTATION.
 
       /ctdi/cl_print_driver_log=>log_info(
         |Resolved Order { iv_repair_id } -> Contract { ev_contract_id }, SKZ { ev_skz }, AKZ { ev_akz }| ).
-      RETURN.
+
     ENDIF.
-
-    SELECT SINGLE kdauf
-      FROM aufk
-      WHERE aufnr = @lv_aufnr
-        AND kdauf <> @space
-      INTO @ev_contract_id.
-
-    IF sy-subrc = 0 AND ev_contract_id IS NOT INITIAL.
-      /ctdi/cl_print_driver_log=>log_info(
-        |Resolved Order { iv_repair_id } -> Contract { ev_contract_id } via KDAUF fallback| ).
-      RETURN.
-    ENDIF.
-
-    SELECT SINGLE vbeln
-      FROM vbak
-      WHERE vbeln = @lv_aufnr
-      INTO @ev_contract_id.
-
-    IF sy-subrc = 0.
-      /ctdi/cl_print_driver_log=>log_info(
-        |Using Repair { iv_repair_id } directly as Contract VBELN| ).
-      RETURN.
-    ENDIF.
-
-    ev_contract_id = lv_aufnr.
-    /ctdi/cl_print_driver_log=>log_warning(
-      |Could not resolve Contract for Order { iv_repair_id } — using as-is| ).
   ENDMETHOD.
 
   METHOD get_config_from_db.
