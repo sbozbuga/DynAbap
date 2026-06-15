@@ -3,7 +3,6 @@ CLASS /ctdi/cl_print_driver_base DEFINITION
   CREATE PUBLIC.
 
   PUBLIC SECTION.
-    CONSTANTS gc_base_class TYPE seoclsname VALUE '/CTDI/CL_PRINT_DRIVER_BASE'.
 
     TYPES:
       tt_config_buffer TYPE HASHED TABLE OF /ctdi/rep_forms WITH UNIQUE KEY vbeln skz akz.
@@ -281,7 +280,7 @@ CLASS /ctdi/cl_print_driver_base IMPLEMENTATION.
       IF sy-subrc EQ 0.
         ev_form_name = ls_dconf-form_name.
         IF ls_dconf-class_name IS INITIAL.
-          ev_class_name = gc_base_class.
+          ev_class_name = /ctdi/cl_print_cust_engine=>gc_base_class.
         ELSE.
           ev_class_name = ls_dconf-class_name.
         ENDIF.

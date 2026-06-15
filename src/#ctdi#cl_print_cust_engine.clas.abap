@@ -4,6 +4,8 @@ CLASS /CTDI/CL_PRINT_CUST_ENGINE DEFINITION
   CREATE PUBLIC.
 
   PUBLIC SECTION.
+    CONSTANTS gc_base_class TYPE seoclsname VALUE '/CTDI/CL_PRINT_DRIVER_BASE'.
+
     CLASS-METHODS on_new_entry
       CHANGING
         !cs_entry TYPE /ctdi/rep_forms.
@@ -87,7 +89,7 @@ CLASS /CTDI/CL_PRINT_CUST_ENGINE IMPLEMENTATION.
   METHOD on_new_entry.
 *    " Default class name and method name to standard base provider class
 *    IF cs_entry-class_name IS INITIAL.
-*      cs_entry-class_name = /ctdi/cl_print_driver_base=>gc_base_class.
+*      cs_entry-class_name = gc_base_class.
 *    ENDIF.
 *    cs_entry-method_name = 'EXECUTE'.
   ENDMETHOD.
@@ -153,27 +155,26 @@ CLASS /CTDI/CL_PRINT_CUST_ENGINE IMPLEMENTATION.
       ELSE.
         " Validate inheritance from base class /CTDI/CL_PRINT_DRIVER_BASE
         " Check the class and all its superclasses
-        DATA: lv_implemented   TYPE abap_bool.
+        DATA: lv_implemented   TYPE abap_bool,
+              lv_current_class TYPE seoclsname.
 
-        IF lv_class_name = /ctdi/cl_print_driver_base=>gc_base_class.
-          lv_implemented = abap_true.
-        ELSE.
-          CALL FUNCTION 'SEO_CLASS_GET_SUPERCLASSES'
-            EXPORTING
-              clsname      = lv_class_name
-            IMPORTING
-              superclasses = DATA(lt_superclasses)
-            EXCEPTIONS
-              OTHERS       = 1.
-          IF sy-subrc = 0.
-            LOOP AT lt_superclasses INTO DATA(ls_super).
-              IF ls_super-refclsname = /ctdi/cl_print_driver_base=>gc_base_class.
-                lv_implemented = abap_true.
-                EXIT.
-              ENDIF.
-            ENDLOOP.
+        lv_current_class = lv_class_name.
+        lv_implemented   = abap_false.
+
+        WHILE lv_current_class IS NOT INITIAL.
+          IF lv_current_class = gc_base_class.
+            lv_implemented = abap_true.
+            EXIT.
           ENDIF.
-        ENDIF.
+
+          SELECT SINGLE refclsname FROM seometarel
+            WHERE clsname = @lv_current_class
+              AND reltype = '2' " 2 = Inheritance
+            INTO @lv_current_class.
+          IF sy-subrc <> 0.
+            CLEAR lv_current_class.
+          ENDIF.
+        ENDWHILE.
 
         IF lv_implemented = abap_false.
           DATA(lv_interface_err) = |Class { is_entry-class_name } does not inherit from /CTDI/CL_PRINT_DRIVER_BASE|.
@@ -192,7 +193,7 @@ CLASS /CTDI/CL_PRINT_CUST_ENGINE IMPLEMENTATION.
           IF sy-subrc <> 0.
             " If not found, check in base class /CTDI/CL_PRINT_DRIVER_BASE
             SELECT SINGLE cmpname FROM seocompo
-              WHERE clsname = @/ctdi/cl_print_driver_base=>gc_base_class
+              WHERE clsname = @gc_base_class
                 AND cmpname = @is_entry-method_name
               INTO @lv_method_exists.
             IF sy-subrc <> 0.
@@ -409,7 +410,7 @@ CLASS /CTDI/CL_PRINT_CUST_ENGINE IMPLEMENTATION.
 
       " If we reach here, we found a custom mandatory parameter!
       " If the base class is configured, it will dump because it cannot supply this parameter.
-      IF iv_class_name = /ctdi/cl_print_driver_base=>gc_base_class.
+      IF iv_class_name = gc_base_class.
         DATA(lv_err_msg) = |Form { iv_form_name } requires custom mandatory parameter { ls_param-parameter } which standard base class does not support.|.
         RAISE EXCEPTION TYPE /ctdi/cx_print_error
           EXPORTING
