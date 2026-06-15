@@ -76,9 +76,13 @@ CLASS /ctdi/cl_print_data_ctdi IMPLEMENTATION.
     DATA: lv_contract TYPE vbak-vgbel.
 
     IF mv_kdauf IS NOT INITIAL.
-      SELECT SINGLE vgbel FROM vbak WHERE vbeln = @mv_kdauf and vbtyp = 'G' INTO @lv_contract.
-      IF sy-subrc <> 0.
-        RETURN.
+      SELECT SINGLE vgbel FROM vbak WHERE vbeln = @mv_kdauf INTO @lv_contract.
+      IF sy-subrc = 0 AND lv_contract IS NOT INITIAL.
+        " Verify the linked document is actually a contract (vbtyp = 'G')
+        SELECT SINGLE vbtyp FROM vbak WHERE vbeln = @lv_contract INTO @DATA(lv_vbtyp).
+        IF lv_vbtyp <> 'G'.
+          CLEAR lv_contract.
+        ENDIF.
       ENDIF.
     ENDIF.
 
