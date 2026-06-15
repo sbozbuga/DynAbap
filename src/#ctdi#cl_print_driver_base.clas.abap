@@ -272,23 +272,21 @@ CLASS /ctdi/cl_print_driver_base IMPLEMENTATION.
       " Global fallback (Empty Keys)
       APPEND VALUE #( vbeln = '' skz = '' akz = '' ) TO lt_steps.
 
-      IF lt_steps IS NOT INITIAL.
+      SELECT * FROM /ctdi/rep_forms "#EC CI_ALL_FIELDS_NEEDED
+        WHERE vbeln = @lv_contract OR vbeln =  ''
+        ORDER BY PRIMARY KEY ##SUBRC_OK
+        INTO TABLE @DATA(lt_forms).
 
-        SELECT * FROM /ctdi/rep_forms "#EC CI_ALL_FIELDS_NEEDED
-          WHERE vbeln = @lv_contract OR vbeln =  ''
-          ORDER BY PRIMARY KEY ##SUBRC_OK
-          INTO TABLE @DATA(lt_forms).
-
-        LOOP AT lt_steps ASSIGNING FIELD-SYMBOL(<ls_step>).
-          READ TABLE lt_forms INTO ls_config WITH KEY
-            vbeln = <ls_step>-vbeln
-            skz   = <ls_step>-skz
-            akz   = <ls_step>-akz.
-          IF sy-subrc = 0.
-            EXIT.
-          ENDIF.
-        ENDLOOP.
-      ENDIF.
+      CLEAR ls_config.
+      LOOP AT lt_steps ASSIGNING FIELD-SYMBOL(<ls_step>).
+        READ TABLE lt_forms INTO ls_config WITH KEY
+          vbeln = <ls_step>-vbeln
+          skz   = <ls_step>-skz
+          akz   = <ls_step>-akz.
+        IF sy-subrc = 0.
+          EXIT.
+        ENDIF.
+      ENDLOOP.
 
       IF ls_config IS NOT INITIAL.
         ev_form_name  = ls_config-form_name.
