@@ -94,14 +94,6 @@ CLASS /ctdi/cl_print_driver_base DEFINITION
         !ev_immed   TYPE c
         !ev_delete  TYPE c.
 
-    "! Checks if a generated function module accepts a given parameter.
-    METHODS fm_has_parameter
-      IMPORTING
-        !iv_funcname  TYPE rs38l_fnam
-        !iv_paramname TYPE abap_parmname
-      RETURNING
-        VALUE(rv_has) TYPE abap_bool.
-
   PRIVATE SECTION.
     CLASS-METHODS resolve_contract
       IMPORTING
@@ -484,9 +476,15 @@ CLASS /ctdi/cl_print_driver_base IMPLEMENTATION.
     INSERT ls_ptab INTO TABLE lt_ptab.
 
 
-    " Inject any dynamically registered custom parameters
+    " Fetch all valid parameters for the generated function module to prevent dumps
+    SELECT parameter FROM fupararef
+      WHERE funcname = @lv_fm_name
+      INTO TABLE @DATA(lt_valid_params_sf).
+
+    " Inject any dynamically registered custom parameters if they exist in the form
     LOOP AT mt_custom_form_params INTO DATA(ls_custom_param_sf).
-      IF fm_has_parameter( iv_funcname = lv_fm_name iv_paramname = ls_custom_param_sf-name ) = abap_true.
+      READ TABLE lt_valid_params_sf WITH KEY parameter = ls_custom_param_sf-name TRANSPORTING NO FIELDS.
+      IF sy-subrc = 0.
         INSERT ls_custom_param_sf INTO TABLE lt_ptab.
       ENDIF.
     ENDLOOP.
@@ -645,9 +643,15 @@ CLASS /ctdi/cl_print_driver_base IMPLEMENTATION.
 
 
 
-    " Inject any dynamically registered custom parameters
+    " Fetch all valid parameters for the generated function module to prevent dumps
+    SELECT parameter FROM fupararef
+      WHERE funcname = @lv_fm_name
+      INTO TABLE @DATA(lt_valid_params_af).
+
+    " Inject any dynamically registered custom parameters if they exist in the form
     LOOP AT mt_custom_form_params INTO DATA(ls_custom_param_af).
-      IF fm_has_parameter( iv_funcname = lv_fm_name iv_paramname = ls_custom_param_af-name ) = abap_true.
+      READ TABLE lt_valid_params_af WITH KEY parameter = ls_custom_param_af-name TRANSPORTING NO FIELDS.
+      IF sy-subrc = 0.
         INSERT ls_custom_param_af INTO TABLE lt_ptab.
       ENDIF.
     ENDLOOP.
@@ -824,13 +828,6 @@ CLASS /ctdi/cl_print_driver_base IMPLEMENTATION.
   ENDMETHOD.
 
 
-  METHOD fm_has_parameter.
-    SELECT SINGLE parameter FROM fupararef
-      WHERE funcname  = @iv_funcname
-        AND parameter = @iv_paramname
-      INTO @DATA(lv_dummy).
-    rv_has = xsdbool( sy-subrc = 0 ).
-  ENDMETHOD.
 
   METHOD register_custom_parameter.
     DATA: ls_param TYPE abap_func_parmbind.

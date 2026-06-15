@@ -1428,8 +1428,7 @@ FORM print_new USING    iv_save_as_pdf TYPE abap_bool
                CHANGING cv_fail        TYPE abap_bool.
   DATA: lx_no_config  TYPE REF TO /ctdi/cx_no_config_found,
         lx_driver_err TYPE REF TO /ctdi/cx_print_driver_error,
-        lx_root       TYPE REF TO cx_root,
-        lo_engine     TYPE REF TO /ctdi/cl_print_driver_engine.
+        lx_root       TYPE REF TO cx_root.
 
   cv_fail = abap_true.
 
@@ -1452,7 +1451,6 @@ FORM print_new USING    iv_save_as_pdf TYPE abap_bool
       " Trigger execution
       lo_driver->execute(
         EXPORTING
-          iv_repair_id   = p_aufnr
           io_data        = lo_data
           iv_save_as_pdf = iv_save_as_pdf ).
 
