@@ -224,6 +224,13 @@ CLASS /ctdi/cl_print_driver_base IMPLEMENTATION.
       /ctdi/cl_print_driver_log=>log_info(
         |Resolved Order { iv_repair_id } -> Contract { ev_contract_id }, SKZ { ev_skz }, AKZ { ev_akz }| ).
 
+    ELSE.
+      DATA(lv_err2) = |Could not resolve Contract for Repair Order { iv_repair_id }|.
+      /ctdi/cl_print_driver_log=>log_error( lv_err2 ).
+      RAISE EXCEPTION TYPE /ctdi/cx_print_driver_error
+        EXPORTING
+          repair_id = iv_repair_id
+          message   = lv_err2.
     ENDIF.
   ENDMETHOD.
 
