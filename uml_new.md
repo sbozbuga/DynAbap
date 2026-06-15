@@ -27,7 +27,16 @@ classDiagram
         #execute_adobeform(iv_save_as_pdf)
         #download_pdf(iv_pdf_data)
         #get_user_print_defaults()
-        #fm_has_parameter(...)
+        #fm_has_parameter(iv_funcname, iv_paramname)
+    }
+
+    class `/CTDI/CL_PRINT_CUST_ENGINE` {
+        +gc_base_class: SEOCLSNAME$
+        +on_new_entry(cs_entry)$
+        +validate_entry(is_entry)$
+        +check_generation_allowed()$
+        #validate_form_interface(iv_form_name, iv_class_name, iv_vbeln)$
+        -generate_provider_class(iv_class_name, iv_vbeln)$
     }
 
     class `/CTDI/CL_PRINT_DRIVER_LEGACY` {
