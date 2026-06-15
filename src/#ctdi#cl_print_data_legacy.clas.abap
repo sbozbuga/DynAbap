@@ -13,29 +13,7 @@ CLASS /ctdi/cl_print_data_legacy DEFINITION
         !iv_aufnr TYPE aufk-aufnr
         !iv_sernr TYPE equi-sernr OPTIONAL.
 
-    "! Sets the global parameters of the class
-    METHODS set_global_parameters
-      IMPORTING
-        !is_legacy       TYPE /cellag/alcarep OPTIONAL
-        !it_legacy_error TYPE ANY TABLE OPTIONAL
-        !it_comment_lines TYPE ANY TABLE OPTIONAL
-        !iv_aufnr         TYPE aufk-aufnr OPTIONAL
-        !iv_qmcod         TYPE qmel-qmcod OPTIONAL
-        !iv_kdauf         TYPE aufk-kdauf OPTIONAL
-        !iv_swap_flag     TYPE flag OPTIONAL
-        !iv_sernr         TYPE equi-sernr OPTIONAL
-        !iv_po_nr         TYPE vbkd-bstkd_e OPTIONAL
-        !iv_po_pos        TYPE vbkd-posex_e OPTIONAL
-        !iv_ctdi_odernr   TYPE csequence OPTIONAL
-        !iv_qmnum         TYPE qmel-qmnum OPTIONAL
-        !iv_fenum         TYPE qmfe-fenum OPTIONAL
-        !iv_time_received TYPE tims OPTIONAL
-        !iv_time_repaired TYPE tims OPTIONAL
-        !iv_time_thisdate TYPE tims OPTIONAL
-        !iv_spras         TYPE sy-langu OPTIONAL
-        !iv_retlief_nr    TYPE vbeln_vl OPTIONAL
-        !iv_equnr_retlief TYPE equnr OPTIONAL
-        !iv_katalogart    TYPE qkatart OPTIONAL.
+
 
   PROTECTED SECTION.
     DATA mv_aufnr TYPE aufk-aufnr.
