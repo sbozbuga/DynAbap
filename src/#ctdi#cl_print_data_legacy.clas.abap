@@ -93,24 +93,24 @@ ENDCLASS.
 CLASS /ctdi/cl_print_data_legacy IMPLEMENTATION.
 
   METHOD read_data.
-    CLEAR: ms_legacy, mt_legacy_error, mt_comment_lines.
+    CLEAR: me->ms_legacy, me->mt_legacy_error, me->mt_comment_lines.
 
-    mv_aufnr = iv_aufnr.
-    mv_sernr = iv_sernr.
+    me->mv_aufnr = iv_aufnr.
+    me->mv_sernr = iv_sernr.
 
     " set language
     IF sy-langu = 'D'.
-      mv_spras = 'D'.
+      me->mv_spras = 'D'.
     ELSE.
-      mv_spras = 'E'.
+      me->mv_spras = 'E'.
     ENDIF.
 
-    check_sernr_swap( ).
-    get_kddata( ).
-    get_part_data( ).
-    get_error_description( ).
-    get_repair_result( ).
-    get_comment( ).
+    me->check_sernr_swap( ).
+    me->get_kddata( ).
+    me->get_part_data( ).
+    me->get_error_description( ).
+    me->get_repair_result( ).
+    me->get_comment( ).
   ENDMETHOD.
 
   METHOD check_sernr_swap.
