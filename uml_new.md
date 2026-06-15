@@ -20,10 +20,8 @@ classDiagram
         #mt_errors: /CTDI/REPAIR_ERROR_TT
         #mt_comments: STANDARD TABLE OF TLINE
         #mt_custom_form_params: ABAP_FUNC_PARMBIND_TAB
-        -mt_config_buffer
-        -mt_project_buffer
         +factory(iv_repair_id, iv_sernr)$ REF TO /CTDI/CL_PRINT_DRIVER_BASE
-        +execute(iv_save_as_pdf)
+        +execute(iv_save_as_pdf, io_data)
         #read_data(io_data)
         #render_form(iv_save_as_pdf)
         #register_custom_parameter(iv_name, ir_data, iv_kind)
@@ -34,7 +32,6 @@ classDiagram
         #execute_adobeform(iv_save_as_pdf)
         #download_pdf(iv_pdf_data)
         #get_user_print_defaults()
-        #fm_has_parameter(iv_funcname, iv_paramname)
     }
 
     class `/CTDI/CL_PRINT_CUST_ENGINE` {
@@ -70,7 +67,6 @@ classDiagram
         +mt_legacy_error: STANDARD TABLE
         +mt_comment_lines: STANDARD TABLE
         +read_data(iv_aufnr, iv_sernr)
-        +set_global_parameters(...)
         #get_repair_result()
         -get_kddata()
         -get_part_data()

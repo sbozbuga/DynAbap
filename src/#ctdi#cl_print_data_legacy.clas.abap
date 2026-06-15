@@ -194,17 +194,17 @@ CLASS /ctdi/cl_print_data_legacy IMPLEMENTATION.
       mv_time_thisdate = sy-uzeit.
 
       CLEAR lf_po_nr.
-      SELECT SINGLE bstkd FROM vbkd 
+      SELECT SINGLE bstkd FROM vbkd
         WHERE vbeln = @lf_kdauf AND posnr = @lf_kdpos INTO @lf_po_nr.
       mv_po_nr = lf_po_nr.
 
       CLEAR: lf_qmnum, lf_kvgr1.
-      SELECT SINGLE kvgr1, qmnum FROM vbak 
+      SELECT SINGLE kvgr1, qmnum FROM vbak
         WHERE vbeln = @lf_kdauf INTO ( @lf_kvgr1, @lf_qmnum ).
       mv_qmnum = lf_qmnum.
 
       CLEAR: lf_fenum, lf_po_pos.
-      SELECT SINGLE /cellag/fenum, posex FROM vbap 
+      SELECT SINGLE /cellag/fenum, posex FROM vbap
         WHERE vbeln = @lf_kdauf AND posnr = @lf_kdpos INTO ( @lf_fenum, @lf_po_pos ).
       mv_fenum = lf_fenum.
       mv_po_pos = lf_po_pos.
@@ -223,15 +223,15 @@ CLASS /ctdi/cl_print_data_legacy IMPLEMENTATION.
       SELECT SINGLE qmart  FROM qmel WHERE qmnum = @mv_qmnum INTO @lv_qmart.
 
       IF lv_qmart = co_zx_qmart.
-        SELECT SINGLE ebeln, ebelp FROM qmfe 
+        SELECT SINGLE ebeln, ebelp FROM qmfe
           WHERE qmnum = @mv_qmnum AND fenum = @mv_fenum INTO ( @lv_ebeln_u, @lv_ebelp_u ).
 
         CLEAR: mv_qmnum, mv_fenum.
-        SELECT SINGLE aufnr FROM ekkn 
+        SELECT SINGLE aufnr FROM ekkn
           WHERE ebeln = @lv_ebeln_u AND ebelp = @lv_ebelp_u INTO @lv_aufnr.
 
         IF lv_aufnr IS NOT INITIAL.
-          SELECT SINGLE kdauf, kdpos FROM aufk 
+          SELECT SINGLE kdauf, kdpos FROM aufk
             WHERE aufnr = @lv_aufnr INTO ( @lv_kdauf_u, @lv_kdpos_u ).
 
           SELECT SINGLE /cellag/qmnum, /cellag/fenum, posex FROM vbap
@@ -241,7 +241,7 @@ CLASS /ctdi/cl_print_data_legacy IMPLEMENTATION.
           mv_fenum = lv_fenum_u.
           mv_qmnum = lv_qmnum_u.
 
-          SELECT SINGLE bstkd FROM vbkd 
+          SELECT SINGLE bstkd FROM vbkd
             WHERE vbeln = @lv_kdauf_u AND posnr = @lv_kdpos_u INTO @lv_bstkd_u.
 
           CLEAR: mv_po_nr, mv_po_pos.
@@ -561,11 +561,11 @@ CLASS /ctdi/cl_print_data_legacy IMPLEMENTATION.
       ms_legacy-old_part_no   = lf_oldpartnr.
       ms_legacy-new_part_no   = lf_newpartnr.
     ELSE.
-      MESSAGE e024(/CELLAG/CS01) WITH lv_p_sernr.
+      MESSAGE e024(/cellag/cs01) WITH lv_p_sernr.
     ENDIF.
 
     DATA lf_eqktx TYPE ktx01.
-    SELECT SINGLE eqktx FROM eqkt 
+    SELECT SINGLE eqktx FROM eqkt
       WHERE equnr = @lf_equnr AND spras = @mv_spras INTO @lf_eqktx.
     ms_legacy-model = lf_eqktx.
 
@@ -608,7 +608,7 @@ CLASS /ctdi/cl_print_data_legacy IMPLEMENTATION.
           lt_error           TYPE TABLE OF /cellag/alcarep_error,
           ls_error           LIKE LINE OF lt_error.
 
-    SELECT SINGLE qmnum, qmcod FROM qmel 
+    SELECT SINGLE qmnum, qmcod FROM qmel
       WHERE aufnr = @mv_aufnr AND qmart = @co_qmart INTO ( @lf_qmnum, @lf_qmcod ).
 
     IF sy-subrc = 0.
@@ -631,20 +631,20 @@ CLASS /ctdi/cl_print_data_legacy IMPLEMENTATION.
           ENDIF.
 
           IF mv_katalogart = 'Z'.
-            SELECT SINGLE kurztext FROM qpgt 
+            SELECT SINGLE kurztext FROM qpgt
                     WHERE katalogart  = @mv_katalogart AND
                           codegruppe  = @ls_error-otgrp AND
                           sprache     = @mv_spras INTO @ls_error-otgrp_ktxt.
           ENDIF.
 
-          SELECT SINGLE kurztext FROM qpct 
+          SELECT SINGLE kurztext FROM qpct
                     WHERE katalogart  = @mv_katalogart AND
                           codegruppe  = @ls_error-otgrp AND
                           code        = @ls_error-oteil AND
                           sprache     = @mv_spras INTO @ls_error-oteil_ktxt.
 
           IF mv_katalogart = 'Z'.
-            SELECT SINGLE kurztext FROM qpgt 
+            SELECT SINGLE kurztext FROM qpgt
                     WHERE katalogart  = @mv_katalogart AND
                           codegruppe  = @ls_error-fegrp AND
                           sprache     = @mv_spras INTO @ls_error-fegrp_ktxt.
@@ -654,7 +654,7 @@ CLASS /ctdi/cl_print_data_legacy IMPLEMENTATION.
             mv_katalogart = 'Z'.
           ENDIF.
 
-          SELECT SINGLE kurztext FROM qpct 
+          SELECT SINGLE kurztext FROM qpct
                     WHERE katalogart  = @mv_katalogart AND
                           codegruppe  = @ls_error-fegrp AND
                           code        = @ls_error-fecod AND
@@ -684,7 +684,7 @@ CLASS /ctdi/cl_print_data_legacy IMPLEMENTATION.
              WHERE bemot = 'RE'
                AND akz   = '' INTO ( @lf_repres, @lf_repres_txt ).
     ELSE.
-      SELECT bemot, stokz, stzhl FROM afru 
+      SELECT bemot, stokz, stzhl FROM afru
         WHERE aufnr = @mv_aufnr
           AND vornr = '9010' INTO ( @lv_bemot, @lv_stokz, @lv_stzhl ).
         IF lv_stokz = ' ' AND lv_stzhl = '00000000'.
@@ -723,7 +723,7 @@ CLASS /ctdi/cl_print_data_legacy IMPLEMENTATION.
 
     lf_name = lf_qmnum_conv.
 
-    SELECT SINGLE tdspras FROM stxh 
+    SELECT SINGLE tdspras FROM stxh
       WHERE tdobject = 'QMEL'
         AND tdname   = @lf_name
         AND tdid     = 'LTXT' INTO @lf_spras.
@@ -759,13 +759,13 @@ CLASS /ctdi/cl_print_data_legacy IMPLEMENTATION.
 
       IF ls_jcds IS NOT INITIAL.
         IF ls_jcds-inact IS NOT INITIAL.
-          MESSAGE e029(/CELLAG/CS01) WITH mv_aufnr.
+          MESSAGE e029(/cellag/cs01) WITH mv_aufnr.
         ENDIF.
         ev_wfer_date  = ls_jcds-udate.
         ev_wfer_time  = ls_jcds-utime.
       ENDIF.
     ELSE.
-      MESSAGE e028(/CELLAG/CS01) WITH mv_aufnr.
+      MESSAGE e028(/cellag/cs01) WITH mv_aufnr.
     ENDIF.
   ENDMETHOD.
 
@@ -807,101 +807,4 @@ CLASS /ctdi/cl_print_data_legacy IMPLEMENTATION.
     CONVERT DATE iv_date TIME iv_time
     INTO TIME STAMP rv_tstamp TIME ZONE sy-zonlo.
   ENDMETHOD.
-
-  " --- LEGACY CODE (Commented for reference) ---
-*  METHOD get_last_record.
-*    DATA: lf_udate           TYPE cddatum,
-*          lf_utime           TYPE cduzeit,
-*          ls_cdhdr           TYPE cdhdr,
-*          ls_cdpos           TYPE cdpos,
-*          lt_cdhdr           TYPE STANDARD TABLE OF cdhdr,
-*          lf_tstamp_changed  TYPE timestamp.
-*
-*    lt_cdhdr = it_cdhdr.
-*
-*    SORT lt_cdhdr DESCENDING BY udate utime DESCENDING.
-*
-*    CLEAR: ls_cdhdr, lf_udate, lf_utime.
-*    READ TABLE lt_cdhdr INTO ls_cdhdr INDEX 1.
-*    IF sy-subrc = 0.
-*      lf_udate = ls_cdhdr-udate.
-*      lf_utime = ls_cdhdr-utime.
-*
-*      lf_tstamp_changed = convert_to_timestamp(
-*        iv_date = lf_udate
-*        iv_time = lf_utime ).
-*
-*      IF iv_tstamp_received <= lf_tstamp_changed AND lf_tstamp_changed <= iv_tstamp_repaired.
-*        CLEAR: ls_cdpos.
-*        SELECT SINGLE * FROM cdpos INTO @ls_cdpos
-*            WHERE objectclas = 'EQUI' AND objectid = @iv_equnr AND changenr = @ls_cdhdr-changenr AND fname = @iv_fname.
-*        ev_old_val = ls_cdpos-value_old.
-*        ev_new_val = ls_cdpos-value_new.
-*      ENDIF.
-*    ENDIF.
-*  ENDMETHOD.
-
-  METHOD set_global_parameters.
-    IF is_legacy IS SUPPLIED.
-      ms_legacy = is_legacy.
-    ENDIF.
-    IF it_legacy_error IS SUPPLIED.
-      mt_legacy_error = it_legacy_error.
-    ENDIF.
-    IF it_comment_lines IS SUPPLIED.
-      mt_comment_lines = it_comment_lines.
-    ENDIF.
-    IF iv_aufnr IS SUPPLIED.
-      mv_aufnr = iv_aufnr.
-    ENDIF.
-    IF iv_qmcod IS SUPPLIED.
-      mv_qmcod = iv_qmcod.
-    ENDIF.
-    IF iv_kdauf IS SUPPLIED.
-      mv_kdauf = iv_kdauf.
-    ENDIF.
-    IF iv_swap_flag IS SUPPLIED.
-      mv_swap_flag = iv_swap_flag.
-    ENDIF.
-    IF iv_sernr IS SUPPLIED.
-      mv_sernr = iv_sernr.
-    ENDIF.
-    IF iv_po_nr IS SUPPLIED.
-      mv_po_nr = iv_po_nr.
-    ENDIF.
-    IF iv_po_pos IS SUPPLIED.
-      mv_po_pos = iv_po_pos.
-    ENDIF.
-    IF iv_ctdi_odernr IS SUPPLIED.
-      mv_ctdi_odernr = iv_ctdi_odernr.
-    ENDIF.
-    IF iv_qmnum IS SUPPLIED.
-      mv_qmnum = iv_qmnum.
-    ENDIF.
-    IF iv_fenum IS SUPPLIED.
-      mv_fenum = iv_fenum.
-    ENDIF.
-    IF iv_time_received IS SUPPLIED.
-      mv_time_received = iv_time_received.
-    ENDIF.
-    IF iv_time_repaired IS SUPPLIED.
-      mv_time_repaired = iv_time_repaired.
-    ENDIF.
-    IF iv_time_thisdate IS SUPPLIED.
-      mv_time_thisdate = iv_time_thisdate.
-    ENDIF.
-    IF iv_spras IS SUPPLIED.
-      mv_spras = iv_spras.
-    ENDIF.
-    IF iv_retlief_nr IS SUPPLIED.
-      mv_retlief_nr = iv_retlief_nr.
-    ENDIF.
-    IF iv_equnr_retlief IS SUPPLIED.
-      mv_equnr_retlief = iv_equnr_retlief.
-    ENDIF.
-    IF iv_katalogart IS SUPPLIED.
-      mv_katalogart = iv_katalogart.
-    ENDIF.
-  ENDMETHOD.
-
 ENDCLASS.
