@@ -172,12 +172,8 @@ CLASS /ctdi/cl_print_driver_base IMPLEMENTATION.
     DATA(lv_aufnr) = |{ iv_repair_id ALPHA = IN }|.
     CLEAR: ev_contract_id, ev_skz, ev_akz.
 
-    SELECT SINGLE
-           v~/cellag/vbeln_vl
+    SELECT SINGLE kdauf
       FROM aufk AS a
-      LEFT OUTER JOIN vbap AS v
-        ON v~vbeln = a~kdauf
-       AND v~posnr = a~kdpos
       WHERE a~aufnr = @lv_aufnr
       INTO @DATA(lv_order_id).
 
