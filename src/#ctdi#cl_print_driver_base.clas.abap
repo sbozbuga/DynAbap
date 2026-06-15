@@ -145,9 +145,9 @@ CLASS /ctdi/cl_print_driver_base IMPLEMENTATION.
                 ev_class_name = lv_class_name
                 es_project    = ls_project_db ).
 
-    IF lv_form_name = '/CELLAG/ALCAREP'.
-      RAISE EXCEPTION TYPE /ctdi/cx_no_config_found.
-    ENDIF.
+    "IF lv_form_name = '/CELLAG/ALCAREP'.
+    "  RAISE EXCEPTION TYPE /ctdi/cx_no_config_found.
+    "ENDIF.
 
     TRY.
         CREATE OBJECT ro_driver TYPE (lv_class_name).
