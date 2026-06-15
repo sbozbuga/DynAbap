@@ -271,18 +271,6 @@ CLASS /ctdi/cl_print_driver_base IMPLEMENTATION.
     DATA: lt_steps TYPE TABLE OF ty_query_step.
 
     IF ev_form_name IS SUPPLIED OR ev_class_name IS SUPPLIED.
-      SELECT SINGLE form_name, class_name
-        FROM /ctdi/rep_forms
-              WHERE vbeln = ''
-                AND skz   = ''
-                AND akz   = ''
-        INTO @DATA(ls_dconf).
-      IF sy-subrc EQ 0.
-        ev_form_name = ls_dconf-form_name.
-        ev_class_name = ls_dconf-class_name.
-      ELSE.
-        RAISE EXCEPTION TYPE /ctdi/cx_print_driver_error.
-      ENDIF.
 
       resolve_contract( EXPORTING iv_repair_id    = iv_repair_id
                         IMPORTING ev_contract_id  = lv_contract
@@ -321,6 +309,9 @@ CLASS /ctdi/cl_print_driver_base IMPLEMENTATION.
         IF lv_akz IS NOT INITIAL.
           APPEND VALUE #( vbeln = '' skz = '' akz = lv_akz ) TO lt_steps.
         ENDIF.
+        
+        " Global fallback (Empty Keys)
+        APPEND VALUE #( vbeln = '' skz = '' akz = '' ) TO lt_steps.
 
         IF lt_steps IS NOT INITIAL.
 
@@ -344,6 +335,11 @@ CLASS /ctdi/cl_print_driver_base IMPLEMENTATION.
           INSERT ls_config INTO TABLE mt_config_buffer.
           ev_form_name  = ls_config-form_name.
           ev_class_name = ls_config-class_name.
+        ELSE.
+          RAISE EXCEPTION TYPE /ctdi/cx_print_driver_error
+            EXPORTING
+              repair_id = CONV aufnr( iv_repair_id )
+              message   = |No configuration found in /CTDI/REP_FORMS (including default fallback).|.
         ENDIF.
       ENDIF.
       /ctdi/cl_print_driver_log=>log_info(
