@@ -33,6 +33,25 @@
             border-radius: 8px;
             overflow-x: auto;
         }
+        .note-callout {
+            background-color: #eef9fd;
+            border-left: 4px solid #0969da;
+            padding: 15px;
+            margin: 15px 0;
+            border-radius: 4px;
+        }
+        .note-callout strong {
+            color: #0969da;
+        }
+        .note-callout ul {
+            margin-top: 10px;
+            margin-bottom: 0;
+        }
+        .note-callout code {
+            background: #e5f1f6;
+            padding: 2px 5px;
+            border-radius: 3px;
+        }
     </style>
     <script type="module">
         import mermaid from 'https://cdn.jsdelivr.net/npm/mermaid@10/dist/mermaid.esm.min.mjs';
@@ -45,6 +64,15 @@
     <h1>Print Driver Architecture - NEW (Simplified)</h1>
 
     <h2>Class Diagram</h2>
+    <div class="note-callout">
+        <strong>UML Visibility Notation Guide (ABAP Equivalents)</strong>
+        <ul>
+            <li><code>+</code> <strong>Public</strong> (<code>PUBLIC SECTION</code>): Accessible from anywhere.</li>
+            <li><code>#</code> <strong>Protected</strong> (<code>PROTECTED SECTION</code>): Accessible within the class and its subclasses.</li>
+            <li><code>-</code> <strong>Private</strong> (<code>PRIVATE SECTION</code>): Accessible only within the class itself.</li>
+            <li><code>$</code> <strong>Static</strong> (<code>CLASS-METHODS</code> / <code>CLASS-DATA</code>): Indicated at the end of the method/attribute.</li>
+        </ul>
+    </div>
     <div class="diagram">
         <pre class="mermaid">
 classDiagram
