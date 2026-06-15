@@ -98,7 +98,7 @@ CLASS /ctdi/cl_print_driver_base DEFINITION
     METHODS fm_has_parameter
       IMPORTING
         !iv_funcname  TYPE rs38l_fnam
-        !iv_paramname TYPE string
+        !iv_paramname TYPE abap_func_parmname
       RETURNING
         VALUE(rv_has) TYPE abap_bool.
 
@@ -169,7 +169,7 @@ CLASS /ctdi/cl_print_driver_base IMPLEMENTATION.
         RAISE EXCEPTION TYPE /ctdi/cx_print_driver_error
           EXPORTING
             repair_id = iv_repair_id
-            message   = |Cannot instantiate class { lv_class }|
+            message   = |Cannot instantiate class { lv_class_name }|
             previous  = lx_create.
     ENDTRY.
   ENDMETHOD.
@@ -279,11 +279,7 @@ CLASS /ctdi/cl_print_driver_base IMPLEMENTATION.
         INTO @DATA(ls_dconf).
       IF sy-subrc EQ 0.
         ev_form_name = ls_dconf-form_name.
-        IF ls_dconf-class_name IS INITIAL.
-          ev_class_name = /ctdi/cl_print_cust_engine=>gc_base_class.
-        ELSE.
-          ev_class_name = ls_dconf-class_name.
-        ENDIF.
+        ev_class_name = ls_dconf-class_name.
       ELSE.
         RAISE EXCEPTION TYPE /ctdi/cx_print_driver_error.
       ENDIF.
@@ -301,7 +297,7 @@ CLASS /ctdi/cl_print_driver_base IMPLEMENTATION.
 
       IF sy-subrc = 0.
         ev_form_name  = ls_config-form_name.
-        ev_class_name = resolve_class_name( ls_config-class_name ).
+        ev_class_name = ls_config-class_name.
       ELSE.
         IF lv_contract IS NOT INITIAL.
           IF lv_skz IS NOT INITIAL AND lv_akz IS NOT INITIAL.
@@ -347,7 +343,7 @@ CLASS /ctdi/cl_print_driver_base IMPLEMENTATION.
         IF ls_config IS NOT INITIAL.
           INSERT ls_config INTO TABLE mt_config_buffer.
           ev_form_name  = ls_config-form_name.
-          ev_class_name = resolve_class_name( ls_config-class_name ).
+          ev_class_name = ls_config-class_name.
         ENDIF.
       ENDIF.
       /ctdi/cl_print_driver_log=>log_info(
