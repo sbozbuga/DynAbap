@@ -330,7 +330,7 @@ CLASS /ctdi/cl_print_driver_base IMPLEMENTATION.
         ELSE.
           RAISE EXCEPTION TYPE /ctdi/cx_print_driver_error
             EXPORTING
-              repair_id = CONV aufnr( iv_repair_id )
+              repair_id = iv_repair_id
               message   = |No configuration found in /CTDI/REP_FORMS (including default fallback).|.
         ENDIF.
       ENDIF.
