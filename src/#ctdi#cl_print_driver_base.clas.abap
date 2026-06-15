@@ -98,7 +98,7 @@ CLASS /ctdi/cl_print_driver_base DEFINITION
     METHODS fm_has_parameter
       IMPORTING
         !iv_funcname  TYPE rs38l_fnam
-        !iv_paramname TYPE abap_func_parmname
+        !iv_paramname TYPE abap_parmname
       RETURNING
         VALUE(rv_has) TYPE abap_bool.
 

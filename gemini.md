@@ -40,3 +40,6 @@ Key implementations bridging these requirements include:
   - **Password**: `ABAPtr2023#00`
 - **Docker Integration**: Managed via `docker-compose.yaml` exposing necessary ports.
 - **CLI Tooling**: `vsp.exe` is configured via the `.env` file (Tool Mode: `hyperfocused`, Transports Enabled) to interact with the local ABAP environment.
+
+## AI Development Workflow & Rules
+- **Function Module Signatures**: Always check the MCP server (e.g., using `abap-mcp-server` tools like `sap_get_object_details` or `sap_search_objects`) to verify the exact signatures, definitions, and types of standard SAP Function Modules before assuming them. This prevents type mismatch errors and ensures robust integrations.
