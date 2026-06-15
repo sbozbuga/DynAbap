@@ -24,14 +24,13 @@ FORM 01_before_save.
       ls_rep_forms = <ls_total>.
 
       " 2. Apply your custom logic
-      ls_rep_forms-changed_by = sy-uname.
-      GET TIME FIELD ls_rep_forms-changed_on.
-
-      " Normalize short class names (e.g. 'CTDI' -> '/CTDI/CL_PRINT_DRIVER_CTDI')
-      ls_rep_forms-class_name = /ctdi/cl_print_cust_engine=>normalize_class_name( ls_rep_forms-class_name ).
+      
+      " Create a temporary entry for validation so we can keep the short name in the database
+      DATA(ls_validation_entry) = ls_rep_forms.
+      ls_validation_entry-class_name = /ctdi/cl_print_cust_engine=>normalize_class_name( ls_validation_entry-class_name ).
 
       TRY.
-          /ctdi/cl_print_cust_engine=>validate_entry( is_entry = ls_rep_forms ).
+          /ctdi/cl_print_cust_engine=>validate_entry( is_entry = ls_validation_entry ).
         CATCH /ctdi/cx_print_error INTO DATA(lx_print_error).
           " Signal TMG framework to abort the save
           vim_abort_saving = abap_true.

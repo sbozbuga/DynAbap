@@ -213,27 +213,7 @@ CLASS /CTDI/CL_PRINT_CUST_ENGINE IMPLEMENTATION.
               message   = lv_interface_err.
         ENDIF.
 
-        " 4. Validate Method existence in Class Components (SEOCOMPO)
-        IF is_entry-method_name IS NOT INITIAL.
-          SELECT SINGLE cmpname FROM seocompo
-            WHERE clsname = @lv_class_name
-              AND cmpname = @is_entry-method_name
-            INTO @DATA(lv_method_exists).
-          IF sy-subrc <> 0.
-            " If not found, check in base class /CTDI/CL_PRINT_DRIVER_BASE
-            SELECT SINGLE cmpname FROM seocompo
-              WHERE clsname = @gc_base_class
-                AND cmpname = @is_entry-method_name
-              INTO @lv_method_exists.
-            IF sy-subrc <> 0.
-              DATA(lv_method_err) = |Method { is_entry-method_name } does not exist in class { is_entry-class_name } or its base class|.
-              RAISE EXCEPTION TYPE /ctdi/cx_print_error
-                EXPORTING
-                  repair_id = CONV aufnr( is_entry-vbeln )
-                  message   = lv_method_err.
-            ENDIF.
-          ENDIF.
-        ENDIF.
+        " Method_name validation removed as field no longer exists
 
       ENDIF." select seoclass
     ENDIF. "NE gc_form_alcatel.
