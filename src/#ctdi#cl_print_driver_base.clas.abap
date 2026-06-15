@@ -4,11 +4,7 @@ CLASS /ctdi/cl_print_driver_base DEFINITION
 
   PUBLIC SECTION.
 
-    TYPES:
-      tt_config_buffer TYPE HASHED TABLE OF /ctdi/rep_forms WITH UNIQUE KEY vbeln skz akz.
-      
-    CLASS-DATA mt_config_buffer TYPE tt_config_buffer.
-    CLASS-DATA mt_project_buffer TYPE HASHED TABLE OF /ctdi/rep_projec WITH UNIQUE KEY vbeln.
+
 
     "! Static factory to determine and instantiate the correct driver
     CLASS-METHODS factory
@@ -250,88 +246,69 @@ CLASS /ctdi/cl_print_driver_base IMPLEMENTATION.
                                   ev_skz          = lv_skz
                                   ev_akz          = lv_akz ).
 
-      READ TABLE mt_config_buffer WITH TABLE KEY
-        vbeln = lv_contract
-        skz   = lv_skz
-        akz   = lv_akz
-        INTO ls_config.
+      IF lv_contract IS NOT INITIAL.
+        IF lv_skz IS NOT INITIAL AND lv_akz IS NOT INITIAL.
+          APPEND VALUE #( vbeln = lv_contract skz = lv_skz akz = lv_akz ) TO lt_steps.
+        ENDIF.
+        IF lv_skz IS NOT INITIAL.
+          APPEND VALUE #( vbeln = lv_contract skz = lv_skz akz = '' ) TO lt_steps.
+        ENDIF.
+        IF lv_akz IS NOT INITIAL.
+          APPEND VALUE #( vbeln = lv_contract skz = '' akz = lv_akz ) TO lt_steps.
+        ENDIF.
+        APPEND VALUE #( vbeln = lv_contract skz = '' akz = '' ) TO lt_steps.
+      ENDIF.
 
-      IF sy-subrc = 0.
+      IF lv_skz IS NOT INITIAL AND lv_akz IS NOT INITIAL.
+        APPEND VALUE #( vbeln = '' skz = lv_skz akz = lv_akz ) TO lt_steps.
+      ENDIF.
+      IF lv_skz IS NOT INITIAL.
+        APPEND VALUE #( vbeln = '' skz = lv_skz akz = '' ) TO lt_steps.
+      ENDIF.
+      IF lv_akz IS NOT INITIAL.
+        APPEND VALUE #( vbeln = '' skz = '' akz = lv_akz ) TO lt_steps.
+      ENDIF.
+      
+      " Global fallback (Empty Keys)
+      APPEND VALUE #( vbeln = '' skz = '' akz = '' ) TO lt_steps.
+
+      IF lt_steps IS NOT INITIAL.
+
+        SELECT * FROM /ctdi/rep_forms "#EC CI_ALL_FIELDS_NEEDED
+          WHERE vbeln = @lv_contract OR vbeln =  ''
+          ORDER BY PRIMARY KEY ##SUBRC_OK
+          INTO TABLE @DATA(lt_forms).
+
+        LOOP AT lt_steps ASSIGNING FIELD-SYMBOL(<ls_step>).
+          READ TABLE lt_forms INTO ls_config WITH KEY
+            vbeln = <ls_step>-vbeln
+            skz   = <ls_step>-skz
+            akz   = <ls_step>-akz.
+          IF sy-subrc = 0.
+            EXIT.
+          ENDIF.
+        ENDLOOP.
+      ENDIF.
+
+      IF ls_config IS NOT INITIAL.
         ev_form_name  = ls_config-form_name.
         ev_class_name = /ctdi/cl_print_cust_engine=>normalize_class_name( ls_config-class_name ).
       ELSE.
-        IF lv_contract IS NOT INITIAL.
-          IF lv_skz IS NOT INITIAL AND lv_akz IS NOT INITIAL.
-            APPEND VALUE #( vbeln = lv_contract skz = lv_skz akz = lv_akz ) TO lt_steps.
-          ENDIF.
-          IF lv_skz IS NOT INITIAL.
-            APPEND VALUE #( vbeln = lv_contract skz = lv_skz akz = '' ) TO lt_steps.
-          ENDIF.
-          IF lv_akz IS NOT INITIAL.
-            APPEND VALUE #( vbeln = lv_contract skz = '' akz = lv_akz ) TO lt_steps.
-          ENDIF.
-          APPEND VALUE #( vbeln = lv_contract skz = '' akz = '' ) TO lt_steps.
-        ENDIF.
-
-        IF lv_skz IS NOT INITIAL AND lv_akz IS NOT INITIAL.
-          APPEND VALUE #( vbeln = '' skz = lv_skz akz = lv_akz ) TO lt_steps.
-        ENDIF.
-        IF lv_skz IS NOT INITIAL.
-          APPEND VALUE #( vbeln = '' skz = lv_skz akz = '' ) TO lt_steps.
-        ENDIF.
-        IF lv_akz IS NOT INITIAL.
-          APPEND VALUE #( vbeln = '' skz = '' akz = lv_akz ) TO lt_steps.
-        ENDIF.
-        
-        " Global fallback (Empty Keys)
-        APPEND VALUE #( vbeln = '' skz = '' akz = '' ) TO lt_steps.
-
-        IF lt_steps IS NOT INITIAL.
-
-          SELECT * FROM /ctdi/rep_forms "#EC CI_ALL_FIELDS_NEEDED
-            WHERE vbeln = @lv_contract OR vbeln =  ''
-            ORDER BY PRIMARY KEY ##SUBRC_OK
-            INTO TABLE @DATA(lt_forms).
-
-          LOOP AT lt_steps ASSIGNING FIELD-SYMBOL(<ls_step>).
-            READ TABLE lt_forms INTO ls_config WITH KEY
-              vbeln = <ls_step>-vbeln
-              skz   = <ls_step>-skz
-              akz   = <ls_step>-akz.
-            IF sy-subrc = 0.
-              EXIT.
-            ENDIF.
-          ENDLOOP.
-        ENDIF.
-
-        IF ls_config IS NOT INITIAL.
-          INSERT ls_config INTO TABLE mt_config_buffer.
-          ev_form_name  = ls_config-form_name.
-          ev_class_name = /ctdi/cl_print_cust_engine=>normalize_class_name( ls_config-class_name ).
-        ELSE.
-          RAISE EXCEPTION TYPE /ctdi/cx_print_driver_error
-            EXPORTING
-              repair_id = iv_repair_id
-              message   = |No configuration found in /CTDI/REP_FORMS (including default fallback).|.
-        ENDIF.
+        RAISE EXCEPTION TYPE /ctdi/cx_print_driver_error
+          EXPORTING
+            repair_id = iv_repair_id
+            message   = |No configuration found in /CTDI/REP_FORMS (including default fallback).|.
       ENDIF.
+
       /ctdi/cl_print_driver_log=>log_info(
-        |Config resolved and cached — Contract: { lv_contract }, | &&
+        |Config resolved — Contract: { lv_contract }, | &&
         |SKZ: { lv_skz }, AKZ: { lv_akz }, Form: { ev_form_name }, Class: { ev_class_name }| ).
     ENDIF.
 
-    READ TABLE mt_project_buffer INTO es_project WITH TABLE KEY vbeln = lv_contract.
-
-    IF sy-subrc <> 0.
-      SELECT SINGLE *
-        FROM /ctdi/rep_projec "#EC CI_ALL_FIELDS_NEEDED
-        WHERE vbeln = @lv_contract ##SUBRC_OK
-        INTO @es_project.
-
-      IF es_project IS NOT INITIAL.
-        INSERT es_project INTO TABLE mt_project_buffer.
-      ENDIF.
-    ENDIF.
+    SELECT SINGLE *
+      FROM /ctdi/rep_projec "#EC CI_ALL_FIELDS_NEEDED
+      WHERE vbeln = @lv_contract ##SUBRC_OK
+      INTO @es_project.
   ENDMETHOD.
 
 
