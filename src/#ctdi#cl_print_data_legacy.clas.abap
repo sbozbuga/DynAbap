@@ -684,14 +684,21 @@ CLASS /ctdi/cl_print_data_legacy IMPLEMENTATION.
              WHERE bemot = 'RE'
                AND akz   = '' INTO ( @lf_repres, @lf_repres_txt ).
     ELSE.
+      " ⚡ Bolt: Replaced SELECT...ENDSELECT loop with bulk array fetch INTO TABLE
+      " to minimize database round-trips and improve performance.
       SELECT bemot, stokz, stzhl FROM afru
         WHERE aufnr = @mv_aufnr
-          AND vornr = '9010' INTO ( @lv_bemot, @lv_stokz, @lv_stzhl ).
-        IF lv_stokz = ' ' AND lv_stzhl = '00000000'.
-          EXIT.
-        ENDIF.
-      ENDSELECT.
+          AND vornr = '9010'
+        INTO TABLE @DATA(lt_afru).
       IF sy-subrc = 0.
+        LOOP AT lt_afru INTO DATA(ls_afru).
+          lv_bemot = ls_afru-bemot.
+          lv_stokz = ls_afru-stokz.
+          lv_stzhl = ls_afru-stzhl.
+          IF lv_stokz = ' ' AND lv_stzhl = '00000000'.
+            EXIT.
+          ENDIF.
+        ENDLOOP.
         SELECT SINGLE repres_barc, repres_txt FROM zalca_rep_result
            
            WHERE bemot = @lv_bemot
