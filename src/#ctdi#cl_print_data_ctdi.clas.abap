@@ -12,9 +12,9 @@ CLASS /ctdi/cl_print_data_ctdi DEFINITION
     DATA mt_comments     TYPE STANDARD TABLE OF tline.
 
     METHODS map_legacy_data.
+    METHODS read_data REDEFINITION.
 
   PROTECTED SECTION.
-    METHODS read_data REDEFINITION.
 
     "! <summary>Redefined repair result retrieval</summary>
     "! <desc>First fetches the contract (vgbel) from VBAK. Then reads operation 9010
