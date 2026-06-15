@@ -61,7 +61,19 @@ classDiagram
     class `/CTDI/CL_PRINT_DATA_LEGACY` {
         +ms_legacy: /CELLAG/ALCAREP
         +mt_legacy_error: STANDARD TABLE
+        +mt_comment_lines: STANDARD TABLE
         +read_data(iv_aufnr, iv_sernr)
+        +set_global_parameters(...)
+        #get_repair_result()
+        -get_kddata()
+        -get_part_data()
+        -get_error_description()
+        -get_comment()
+        -check_sernr_swap()
+        -get_astatus_data(iv_objnr)
+        -get_rlf_wedate(iv_vbeln_vl)
+        -get_retlief()
+        -convert_to_timestamp(iv_date, iv_time)
     }
 
     class `/CTDI/CL_PRINT_DATA_CTDI` {
