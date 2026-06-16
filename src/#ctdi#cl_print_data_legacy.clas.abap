@@ -143,6 +143,10 @@ CLASS /ctdi/cl_print_data_legacy IMPLEMENTATION.
     IF sy-subrc = 0.
       mv_retlief_nr = ls_order_sn-vbeln_vl.
       lt_snx_tab = ls_order_sn-snx_tab.
+      
+      "send lines with empty ral_equnr to the end of the list
+      SORT lt_snx_tab BY ral_equnr DESCENDING.
+
       READ TABLE lt_snx_tab INTO ls_snx_tab INDEX 1.
       IF sy-subrc = 0.
         mv_equnr_retlief = ls_snx_tab-ral_equnr.
