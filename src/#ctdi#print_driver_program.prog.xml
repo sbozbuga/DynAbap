@@ -41,6 +41,11 @@
      <LENGTH>75</LENGTH>
     </item>
     <item>
+     <ID>R</ID>
+     <ENTRY>Repair Printouts</ENTRY>
+     <LENGTH>16</LENGTH>
+    </item>
+    <item>
      <ID>S</ID>
      <KEY>P_AUFNR</KEY>
      <ENTRY>Repair / Order ID</ENTRY>

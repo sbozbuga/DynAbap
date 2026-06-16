@@ -1,32 +1,54 @@
 *&---------------------------------------------------------------------*
-*& Report /CTDI/PRINT_DRIVER_PROGRAM (Template for /CELLAG/ALCAREP02)
+*& Report /CTDI/PRINT_DRIVER_PROGRAM (new /CELLAG/ALCAREP02)
 *&---------------------------------------------------------------------*
-*& Ultimate drop-in replacement for the legacy print program.
-*& Supports both standalone UI execution and NACE subroutine execution
-*& (entry_sf and entry_pdf).
 *&---------------------------------------------------------------------*
+*----------------------------------------------------------------------*
+* Report  /CTDI/PRINT_DRIVER_PROGRAM
+*
+*----------------------------------------------------------------------*
+* Transaktion                                                          *
+* Datum           16.06.2026                                           *
+*----------------------------------------------------------------------*
+* Firma               CTDI GmbH Malsch Headquarter
+*
+* Beschreibung:  1.) Repair Printouts
+*                2.)
+*                3.)
+*----------------------------------------------------------------------*
+* Anforderer: Felix
+* Ticket....: 2508-077
+* Konzept...: MZ
+* Betreuung.: MZ
+*----------------------------------------------------------------------*
+* Entwickler...: nhs003381 - sbozbuga                                  *
+*                                                                      *
+*----------------------------------------------------------------------*
+
+************************************************************************
+******************** !!!ACHTUNG BITTE BEACHTEN!!! **********************
+************************************************************************
+* !!!      Keine Korrekturen oder Erweiterungen ohne Absprache     !!! *
+* !!!      mit der Anwendungsentwicklung                           !!! *
+*----------------------------------------------------------------------*
+* !!! Keine Korrekturen/Erweiterung ohne Dokumentation in Historie !!! *
+************************************************************************
+* Änderungshistorie                                                    *
+*                                                                      *
+* Datum      Entwickler  Bemerkung                                     *
+* xx.xx.xxxx ???         ???
+*----------------------------------------------------------------------*
 REPORT /ctdi/print_driver_program.
 
-*&---------------------------------------------------------------------*
-*& Selection Screen (Standalone Mode)
-*&---------------------------------------------------------------------*
 SELECTION-SCREEN BEGIN OF BLOCK b1 WITH FRAME TITLE TEXT-002.
-PARAMETERS: p_aufnr TYPE aufk-aufnr OBLIGATORY,      " Repair / Order ID
-            p_sernr TYPE equi-sernr,                 " Serial number (optional)
-            p_sf    TYPE sap_bool NO-DISPLAY.        " Save as PDF (Legacy naming for external callers)
+PARAMETERS: p_aufnr TYPE aufk-aufnr OBLIGATORY, " Repair / Order ID
+            p_sernr TYPE equi-sernr,           " Serial number (optional)
+            p_sf    TYPE sap_bool NO-DISPLAY.  " Save as PDF
 SELECTION-SCREEN END OF BLOCK b1.
 
-*&---------------------------------------------------------------------*
-*& START-OF-SELECTION (Standalone UI Execution)
-*&---------------------------------------------------------------------*
 START-OF-SELECTION.
   PERFORM entry.
 
-*&---------------------------------------------------------------------*
-*& Form ENTRY
-*&---------------------------------------------------------------------*
-* NACE / Standalone Entry point
-*----------------------------------------------------------------------*
+*--------------------------------------------------------------------*
 FORM entry.
   TRY.
       DATA(lr_driver) = /ctdi/cl_print_driver_base=>factory(

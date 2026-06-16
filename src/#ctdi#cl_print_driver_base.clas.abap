@@ -100,7 +100,7 @@ CLASS /ctdi/cl_print_driver_base DEFINITION
         !ev_akz TYPE char4
       RAISING
         /ctdi/cx_print_driver_error.
-        
+
     CLASS-METHODS get_config_from_db
       IMPORTING
         !iv_repair_id TYPE aufnr
@@ -111,7 +111,7 @@ CLASS /ctdi/cl_print_driver_base DEFINITION
       RAISING
         /ctdi/cx_print_driver_error
         /ctdi/cx_no_config_found.
-        
+
 ENDCLASS.
 
 CLASS /ctdi/cl_print_driver_base IMPLEMENTATION.
@@ -191,7 +191,7 @@ CLASS /ctdi/cl_print_driver_base IMPLEMENTATION.
           sy-subrc = 4. " Force failure flag
         ENDIF.
       ENDIF.
-        
+
       IF sy-subrc NE 0.
         DATA(lv_err1) = |Could not find a Contract for Order { lv_order_id }|.
         /ctdi/cl_print_driver_log=>log_error( lv_err1 ).
@@ -280,7 +280,7 @@ CLASS /ctdi/cl_print_driver_base IMPLEMENTATION.
       IF lv_akz IS NOT INITIAL.
         APPEND VALUE #( vbeln = '' skz = '' akz = lv_akz ) TO lt_steps.
       ENDIF.
-      
+
       " Global fallback (Empty Keys)
       APPEND VALUE #( vbeln = '' skz = '' akz = '' ) TO lt_steps.
 

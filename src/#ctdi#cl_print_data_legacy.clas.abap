@@ -90,28 +90,9 @@ CLASS /ctdi/cl_print_data_legacy DEFINITION
 ENDCLASS.
 
 
-CLASS /ctdi/cl_print_data_legacy IMPLEMENTATION.
 
-  METHOD read_data.
-    CLEAR: me->ms_legacy, me->mt_legacy_error, me->mt_comment_lines.
+CLASS /CTDI/CL_PRINT_DATA_LEGACY IMPLEMENTATION.
 
-    me->mv_aufnr = iv_aufnr.
-    me->mv_sernr = iv_sernr.
-
-    " set language
-    IF sy-langu = 'D'.
-      me->mv_spras = 'D'.
-    ELSE.
-      me->mv_spras = 'E'.
-    ENDIF.
-
-    me->check_sernr_swap( ).
-    me->get_kddata( ).
-    me->get_part_data( ).
-    me->get_error_description( ).
-    me->get_repair_result( ).
-    me->get_comment( ).
-  ENDMETHOD.
 
   METHOD check_sernr_swap.
     DATA: lf_rmanr     TYPE vbap-vbeln,
@@ -126,7 +107,7 @@ CLASS /ctdi/cl_print_data_legacy IMPLEMENTATION.
 
     SELECT SINGLE rmanr, posnv_rma, posnr_rma
       FROM afko
-      
+
       WHERE aufnr = @mv_aufnr INTO ( @lf_rmanr, @lf_posnv_rma, @lf_posnr_rma ).
 
     CALL FUNCTION '/CELLAG/SDPOS_RALMENGE_GET'
@@ -143,7 +124,7 @@ CLASS /ctdi/cl_print_data_legacy IMPLEMENTATION.
     IF sy-subrc = 0.
       mv_retlief_nr = ls_order_sn-vbeln_vl.
       lt_snx_tab = ls_order_sn-snx_tab.
-      
+
       "send lines with empty ral_equnr to the end of the list
       SORT lt_snx_tab BY ral_equnr DESCENDING.
 
@@ -154,6 +135,146 @@ CLASS /ctdi/cl_print_data_legacy IMPLEMENTATION.
       ENDIF.
     ENDIF.
   ENDMETHOD.
+
+
+  METHOD convert_to_timestamp.
+    CONVERT DATE iv_date TIME iv_time
+    INTO TIME STAMP rv_tstamp TIME ZONE sy-zonlo.
+  ENDMETHOD.
+
+
+  METHOD get_astatus_data.
+    DATA: ls_jcds  TYPE jcds,
+          lt_jcds  TYPE TABLE OF jcds.
+
+    SELECT objnr, stat, chgnr, udate, utime, inact FROM jcds  WHERE objnr = @iv_objnr AND stat = @co_wfer_stat INTO CORRESPONDING FIELDS OF TABLE @lt_jcds.
+
+    IF lt_jcds IS NOT INITIAL.
+      SORT lt_jcds DESCENDING BY udate utime DESCENDING.
+      CLEAR: ls_jcds.
+      READ TABLE lt_jcds INTO ls_jcds INDEX 1.
+
+      IF ls_jcds IS NOT INITIAL.
+        IF ls_jcds-inact IS NOT INITIAL.
+          MESSAGE e029(/cellag/cs01) WITH mv_aufnr.
+        ENDIF.
+        ev_wfer_date  = ls_jcds-udate.
+        ev_wfer_time  = ls_jcds-utime.
+      ENDIF.
+    ELSE.
+      MESSAGE e028(/cellag/cs01) WITH mv_aufnr.
+    ENDIF.
+  ENDMETHOD.
+
+
+  METHOD get_comment.
+    DATA: lt_lines      TYPE TABLE OF tline,
+          lf_qmnum_conv TYPE qmel-qmnum,
+          lf_name       TYPE thead-tdname,
+          lf_spras      TYPE sy-langu.
+
+    CALL FUNCTION 'CONVERSION_EXIT_ALPHA_INPUT'
+      EXPORTING
+        input  = mv_qmnum
+      IMPORTING
+        output = lf_qmnum_conv.
+
+    lf_name = lf_qmnum_conv.
+
+    SELECT SINGLE tdspras FROM stxh
+      WHERE tdobject = 'QMEL'
+        AND tdname   = @lf_name
+        AND tdid     = 'LTXT' INTO @lf_spras.
+    IF sy-subrc <> 0.
+      lf_spras = mv_spras.
+    ENDIF.
+
+    CLEAR lt_lines.
+    CALL FUNCTION 'READ_TEXT'
+      EXPORTING
+        id                      = 'LTXT'
+        language                = lf_spras
+        name                    = lf_name
+        object                  = 'QMEL'
+      TABLES
+        lines                   = lt_lines
+      EXCEPTIONS
+        OTHERS                  = 8. "#EC CI_SUBRC
+
+    mt_comment_lines = lt_lines.
+  ENDMETHOD.
+
+
+  METHOD get_error_description.
+    DATA: lf_qmnum           TYPE qmnum,
+          lf_qmcod           TYPE qmel-qmcod,
+          lf_besz_string(30) TYPE c,
+          lf_besz            TYPE string,
+          lt_error           TYPE TABLE OF /cellag/alcarep_error,
+          ls_error           LIKE LINE OF lt_error.
+
+    SELECT SINGLE qmnum, qmcod FROM qmel
+      WHERE aufnr = @mv_aufnr AND qmart = @co_qmart INTO ( @lf_qmnum, @lf_qmcod ).
+
+    IF sy-subrc = 0.
+      mv_qmnum = lf_qmnum.
+      mv_qmcod = lf_qmcod.
+
+      SELECT otgrp, oteil, fegrp, fecod, besz  FROM qmfe
+        WHERE qmnum = @lf_qmnum
+        ORDER BY PRIMARY KEY INTO CORRESPONDING FIELDS OF TABLE @lt_error.
+
+      IF lt_error IS NOT INITIAL.
+        LOOP AT lt_error INTO ls_error.
+          lf_besz_string = ls_error-besz.
+          CONCATENATE lf_besz lf_besz_string '; ' INTO lf_besz.
+
+          IF ms_legacy-kvgr1 = '0SU'.
+            mv_katalogart = 'E'.
+          ELSE.
+            mv_katalogart = 'Z'.
+          ENDIF.
+
+          IF mv_katalogart = 'Z'.
+            SELECT SINGLE kurztext FROM qpgt
+                    WHERE katalogart  = @mv_katalogart AND
+                          codegruppe  = @ls_error-otgrp AND
+                          sprache     = @mv_spras INTO @ls_error-otgrp_ktxt.
+          ENDIF.
+
+          SELECT SINGLE kurztext FROM qpct
+                    WHERE katalogart  = @mv_katalogart AND
+                          codegruppe  = @ls_error-otgrp AND
+                          code        = @ls_error-oteil AND
+                          sprache     = @mv_spras INTO @ls_error-oteil_ktxt.
+
+          IF mv_katalogart = 'Z'.
+            SELECT SINGLE kurztext FROM qpgt
+                    WHERE katalogart  = @mv_katalogart AND
+                          codegruppe  = @ls_error-fegrp AND
+                          sprache     = @mv_spras INTO @ls_error-fegrp_ktxt.
+          ENDIF.
+
+          IF mv_katalogart = 'E'.
+            mv_katalogart = 'Z'.
+          ENDIF.
+
+          SELECT SINGLE kurztext FROM qpct
+                    WHERE katalogart  = @mv_katalogart AND
+                          codegruppe  = @ls_error-fegrp AND
+                          code        = @ls_error-fecod AND
+                          sprache     = @mv_spras INTO @ls_error-fecod_ktxt.
+
+          APPEND ls_error TO mt_legacy_error.
+          CLEAR ls_error.
+        ENDLOOP.
+      ENDIF.
+    ENDIF.
+
+    SHIFT lf_besz RIGHT DELETING TRAILING ';'.
+    ms_legacy-besz_cld = lf_besz.
+  ENDMETHOD.
+
 
   METHOD get_kddata.
     DATA: lf_kdauf       TYPE aufk-kdauf,
@@ -177,7 +298,7 @@ CLASS /ctdi/cl_print_data_legacy IMPLEMENTATION.
 
     SELECT SINGLE kdauf, kdpos, erdat, idat2, erfzeit, aezeit, objnr
       FROM aufk
-      
+
       WHERE aufnr = @mv_aufnr INTO ( @lf_kdauf, @lf_kdpos, @lf_erdat, @lf_tabg_status, @lf_erfzeit, @lf_aezeit, @lf_objnr ).
 
     IF sy-subrc = 0.
@@ -239,7 +360,7 @@ CLASS /ctdi/cl_print_data_legacy IMPLEMENTATION.
             WHERE aufnr = @lv_aufnr INTO ( @lv_kdauf_u, @lv_kdpos_u ).
 
           SELECT SINGLE /cellag/qmnum, /cellag/fenum, posex FROM vbap
-            
+
             WHERE vbeln = @lv_kdauf_u AND posnr = @lv_kdpos_u INTO ( @lv_qmnum_u, @lv_fenum_u, @lv_posex_u ).
 
           mv_fenum = lv_fenum_u.
@@ -267,6 +388,7 @@ CLASS /ctdi/cl_print_data_legacy IMPLEMENTATION.
     ms_legacy-date_current    = sy-datum.
     ms_legacy-kvgr1           = lf_kvgr1.
   ENDMETHOD.
+
 
   METHOD get_part_data.
     DATA: lf_oldpartnr   TYPE itob-mapar,
@@ -316,12 +438,12 @@ CLASS /ctdi/cl_print_data_legacy IMPLEMENTATION.
     IF lf_equnr IS NOT INITIAL.
       IF mv_swap_flag IS NOT INITIAL.
         SELECT SINGLE serge, matnr
-           FROM equi 
+           FROM equi
            WHERE equnr = @lf_equnr INTO ( @lf_newserialnr, @lv_newmatnr ).
         SELECT SINGLE mapar FROM equz  WHERE equnr = @lf_equnr INTO @lf_newpartnr.
 
         SELECT SINGLE serge, matnr
-           FROM equi 
+           FROM equi
            WHERE equnr = @mv_equnr_retlief INTO ( @lf_oldserialnr, @lv_oldmatnr ).
         SELECT SINGLE mapar FROM equz  WHERE equnr = @mv_equnr_retlief INTO @lf_oldpartnr.
       ELSE.
@@ -341,7 +463,7 @@ CLASS /ctdi/cl_print_data_legacy IMPLEMENTATION.
         lf_tstamp_repaired = convert_to_timestamp( iv_date = ms_legacy-date_repaired iv_time = mv_time_repaired ).
 
         SELECT changenr, udate, utime FROM cdhdr
-          
+
           WHERE objectclas = 'EQUI' AND objectid = @lf_equnr INTO CORRESPONDING FIELDS OF TABLE @lt_cdhdr.
 
         IF lt_cdhdr IS NOT INITIAL.
@@ -351,7 +473,7 @@ CLASS /ctdi/cl_print_data_legacy IMPLEMENTATION.
 
           " Fetch all relevant CDPOS records in one go
           SELECT changenr, tabname, fname, value_old, value_new FROM cdpos
-            
+
             WHERE objectclas = 'EQUI'
               AND objectid   = @lf_equnr
               AND changenr   IN @lr_changenr INTO TABLE @DATA(lt_cdpos_all).
@@ -604,75 +726,6 @@ CLASS /ctdi/cl_print_data_legacy IMPLEMENTATION.
     ENDIF.
   ENDMETHOD.
 
-  METHOD get_error_description.
-    DATA: lf_qmnum           TYPE qmnum,
-          lf_qmcod           TYPE qmel-qmcod,
-          lf_besz_string(30) TYPE c,
-          lf_besz            TYPE string,
-          lt_error           TYPE TABLE OF /cellag/alcarep_error,
-          ls_error           LIKE LINE OF lt_error.
-
-    SELECT SINGLE qmnum, qmcod FROM qmel
-      WHERE aufnr = @mv_aufnr AND qmart = @co_qmart INTO ( @lf_qmnum, @lf_qmcod ).
-
-    IF sy-subrc = 0.
-      mv_qmnum = lf_qmnum.
-      mv_qmcod = lf_qmcod.
-
-      SELECT otgrp, oteil, fegrp, fecod, besz  FROM qmfe
-        WHERE qmnum = @lf_qmnum
-        ORDER BY PRIMARY KEY INTO CORRESPONDING FIELDS OF TABLE @lt_error.
-
-      IF lt_error IS NOT INITIAL.
-        LOOP AT lt_error INTO ls_error.
-          lf_besz_string = ls_error-besz.
-          CONCATENATE lf_besz lf_besz_string '; ' INTO lf_besz.
-
-          IF ms_legacy-kvgr1 = '0SU'.
-            mv_katalogart = 'E'.
-          ELSE.
-            mv_katalogart = 'Z'.
-          ENDIF.
-
-          IF mv_katalogart = 'Z'.
-            SELECT SINGLE kurztext FROM qpgt
-                    WHERE katalogart  = @mv_katalogart AND
-                          codegruppe  = @ls_error-otgrp AND
-                          sprache     = @mv_spras INTO @ls_error-otgrp_ktxt.
-          ENDIF.
-
-          SELECT SINGLE kurztext FROM qpct
-                    WHERE katalogart  = @mv_katalogart AND
-                          codegruppe  = @ls_error-otgrp AND
-                          code        = @ls_error-oteil AND
-                          sprache     = @mv_spras INTO @ls_error-oteil_ktxt.
-
-          IF mv_katalogart = 'Z'.
-            SELECT SINGLE kurztext FROM qpgt
-                    WHERE katalogart  = @mv_katalogart AND
-                          codegruppe  = @ls_error-fegrp AND
-                          sprache     = @mv_spras INTO @ls_error-fegrp_ktxt.
-          ENDIF.
-
-          IF mv_katalogart = 'E'.
-            mv_katalogart = 'Z'.
-          ENDIF.
-
-          SELECT SINGLE kurztext FROM qpct
-                    WHERE katalogart  = @mv_katalogart AND
-                          codegruppe  = @ls_error-fegrp AND
-                          code        = @ls_error-fecod AND
-                          sprache     = @mv_spras INTO @ls_error-fecod_ktxt.
-
-          APPEND ls_error TO mt_legacy_error.
-          CLEAR ls_error.
-        ENDLOOP.
-      ENDIF.
-    ENDIF.
-
-    SHIFT lf_besz RIGHT DELETING TRAILING ';'.
-    ms_legacy-besz_cld = lf_besz.
-  ENDMETHOD.
 
   METHOD get_repair_result.
     DATA: lf_repres     TYPE /cellag/repair_result,
@@ -684,7 +737,7 @@ CLASS /ctdi/cl_print_data_legacy IMPLEMENTATION.
 
     IF ms_legacy-old_serial_no IS NOT INITIAL AND ms_legacy-old_serial_no <> ms_legacy-new_serial_no.
       SELECT SINGLE repres_barc, repres_txt FROM zalca_rep_result
-             
+
              WHERE bemot = 'RE'
                AND akz   = '' INTO ( @lf_repres, @lf_repres_txt ).
     ELSE.
@@ -710,12 +763,12 @@ CLASS /ctdi/cl_print_data_legacy IMPLEMENTATION.
 
       IF lv_subrc = 0.
         SELECT SINGLE repres_barc, repres_txt FROM zalca_rep_result
-           
+
            WHERE bemot = @lv_bemot
              AND akz   = @mv_qmcod INTO ( @lf_repres, @lf_repres_txt ).
         IF sy-subrc <> 0.
           SELECT SINGLE repres_barc, repres_txt FROM zalca_rep_result
-           
+
            WHERE bemot = @lv_bemot
              AND akz   = '' INTO ( @lf_repres, @lf_repres_txt ).
         ENDIF.
@@ -726,69 +779,6 @@ CLASS /ctdi/cl_print_data_legacy IMPLEMENTATION.
     ms_legacy-repair_result_txt = lf_repres_txt.
   ENDMETHOD.
 
-  METHOD get_comment.
-    DATA: lt_lines      TYPE TABLE OF tline,
-          lf_qmnum_conv TYPE qmel-qmnum,
-          lf_name       TYPE thead-tdname,
-          lf_spras      TYPE sy-langu.
-
-    CALL FUNCTION 'CONVERSION_EXIT_ALPHA_INPUT'
-      EXPORTING
-        input  = mv_qmnum
-      IMPORTING
-        output = lf_qmnum_conv.
-
-    lf_name = lf_qmnum_conv.
-
-    SELECT SINGLE tdspras FROM stxh
-      WHERE tdobject = 'QMEL'
-        AND tdname   = @lf_name
-        AND tdid     = 'LTXT' INTO @lf_spras.
-    IF sy-subrc <> 0.
-      lf_spras = mv_spras.
-    ENDIF.
-
-    CLEAR lt_lines.
-    CALL FUNCTION 'READ_TEXT'
-      EXPORTING
-        id                      = 'LTXT'
-        language                = lf_spras
-        name                    = lf_name
-        object                  = 'QMEL'
-      TABLES
-        lines                   = lt_lines
-      EXCEPTIONS
-        OTHERS                  = 8. "#EC CI_SUBRC
-
-    mt_comment_lines = lt_lines.
-  ENDMETHOD.
-
-  METHOD get_astatus_data.
-    DATA: ls_jcds  TYPE jcds,
-          lt_jcds  TYPE TABLE OF jcds.
-
-    SELECT objnr, stat, chgnr, udate, utime, inact FROM jcds  WHERE objnr = @iv_objnr AND stat = @co_wfer_stat INTO CORRESPONDING FIELDS OF TABLE @lt_jcds.
-
-    IF lt_jcds IS NOT INITIAL.
-      SORT lt_jcds DESCENDING BY udate utime DESCENDING.
-      CLEAR: ls_jcds.
-      READ TABLE lt_jcds INTO ls_jcds INDEX 1.
-
-      IF ls_jcds IS NOT INITIAL.
-        IF ls_jcds-inact IS NOT INITIAL.
-          MESSAGE e029(/cellag/cs01) WITH mv_aufnr.
-        ENDIF.
-        ev_wfer_date  = ls_jcds-udate.
-        ev_wfer_time  = ls_jcds-utime.
-      ENDIF.
-    ELSE.
-      MESSAGE e028(/cellag/cs01) WITH mv_aufnr.
-    ENDIF.
-  ENDMETHOD.
-
-  METHOD get_rlf_wedate.
-    SELECT SINGLE erdat, erzet FROM likp  WHERE vbeln = @iv_vbeln_vl INTO ( @ev_vl_erdat, @ev_vl_zeit ).
-  ENDMETHOD.
 
   METHOD get_retlief.
     DATA: lf_rmanr     TYPE vbap-vbeln,
@@ -799,7 +789,7 @@ CLASS /ctdi/cl_print_data_legacy IMPLEMENTATION.
           ls_vbfa_rl   TYPE vbfa.
 
     SELECT SINGLE rmanr, posnr_rma, posnv_rma FROM afko
-      
+
       WHERE aufnr = @mv_aufnr INTO ( @lf_rmanr, @lf_posnr_rma, @lf_posnv_rma ).
     ls_comwa-vbeln = lf_rmanr.
     ls_comwa-posnr = lf_posnv_rma.
@@ -820,8 +810,30 @@ CLASS /ctdi/cl_print_data_legacy IMPLEMENTATION.
     ev_vbfa_rl = ls_vbfa_rl-vbeln.
   ENDMETHOD.
 
-  METHOD convert_to_timestamp.
-    CONVERT DATE iv_date TIME iv_time
-    INTO TIME STAMP rv_tstamp TIME ZONE sy-zonlo.
+
+  METHOD get_rlf_wedate.
+    SELECT SINGLE erdat, erzet FROM likp  WHERE vbeln = @iv_vbeln_vl INTO ( @ev_vl_erdat, @ev_vl_zeit ).
+  ENDMETHOD.
+
+
+  METHOD read_data.
+    CLEAR: me->ms_legacy, me->mt_legacy_error, me->mt_comment_lines.
+
+    me->mv_aufnr = iv_aufnr.
+    me->mv_sernr = iv_sernr.
+
+    " set language
+    IF sy-langu = 'D'.
+      me->mv_spras = 'D'.
+    ELSE.
+      me->mv_spras = 'E'.
+    ENDIF.
+
+    me->check_sernr_swap( ).
+    me->get_kddata( ).
+    me->get_part_data( ).
+    me->get_error_description( ).
+    me->get_repair_result( ).
+    me->get_comment( ).
   ENDMETHOD.
 ENDCLASS.

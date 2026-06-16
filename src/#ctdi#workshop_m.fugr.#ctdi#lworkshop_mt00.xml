@@ -5,7 +5,7 @@
    <PROGDIR>
     <NAME>/CTDI/LWORKSHOP_MT00</NAME>
     <SUBC>I</SUBC>
-    <RLOAD>D</RLOAD>
+    <RLOAD>E</RLOAD>
    </PROGDIR>
   </asx:values>
  </asx:abap>

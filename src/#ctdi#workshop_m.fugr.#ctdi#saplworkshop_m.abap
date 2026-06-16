@@ -19,4 +19,4 @@
   INCLUDE LSVIMOXX                                . " PBO modules
   INCLUDE LSVIMIXX                                . " PAI modules
 
-INCLUDE /ctdi/lworkshop_mf02.
+INCLUDE /ctdi/lworkshop_mf03.

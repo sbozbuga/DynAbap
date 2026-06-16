@@ -6,7 +6,7 @@
     <NAME>/CTDI/LWORKSHOP_MI00</NAME>
     <SQLX>X</SQLX>
     <SUBC>I</SUBC>
-    <RLOAD>D</RLOAD>
+    <RLOAD>E</RLOAD>
    </PROGDIR>
   </asx:values>
  </asx:abap>

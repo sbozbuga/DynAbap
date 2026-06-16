@@ -100,7 +100,7 @@ CLASS /ctdi/cl_print_driver_log IMPLEMENTATION.
           lv_msg_num   TYPE i.
 
     CHECK iv_text IS NOT INITIAL.
-    
+
     " 0. Check log level
     CASE gv_log_level.
       WHEN 'I'. lv_level_num = 1.
@@ -171,7 +171,7 @@ CLASS /ctdi/cl_print_driver_log IMPLEMENTATION.
         OTHERS       = 1.
     IF sy-subrc = 0.
       gv_has_unsaved_logs = abap_true.
-      
+
       " Give visual feedback to the user on long-running processes (like CL_BAL_LOGGER does)
       IF sy-batch = abap_false.
         CALL FUNCTION 'SAPGUI_PROGRESS_INDICATOR'

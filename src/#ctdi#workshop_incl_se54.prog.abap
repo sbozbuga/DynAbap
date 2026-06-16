@@ -24,7 +24,7 @@ FORM 01_before_save.
       ls_rep_forms = <ls_total>.
 
       " 2. Apply your custom logic
-      
+
       " Create a temporary entry for validation so we can keep the short name in the database
       DATA(ls_validation_entry) = ls_rep_forms.
       ls_validation_entry-class_name = /ctdi/cl_print_cust_engine=>normalize_class_name( ls_validation_entry-class_name ).
@@ -44,7 +44,7 @@ FORM 01_before_save.
 
           " Use type 'S' DISPLAY LIKE 'E' to show red error without freezing the screen
           MESSAGE s001(00) WITH sy-msgv1 sy-msgv2 sy-msgv3 sy-msgv4 DISPLAY LIKE 'E'.
-          
+
           EXIT. " Prevent spamming multiple errors
       ENDTRY.
 
