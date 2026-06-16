@@ -2,7 +2,7 @@
 *&  Include           /CTDI/WORKSHOP_INCL_SE54
 *&---------------------------------------------------------------------*
 
-FORM new_entry.
+FORM 05_new_entry.
 *  BREAK-POINT.
   CALL METHOD /ctdi/cl_print_cust_engine=>on_new_entry
     CHANGING
