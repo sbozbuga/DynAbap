@@ -4,7 +4,7 @@ CLASS /ctdi/cl_print_driver_log DEFINITION
   CREATE PUBLIC.
 
   PUBLIC SECTION.
-    CLASS-DATA gv_log_level TYPE char1 VALUE 'W'.
+    CLASS-DATA gv_log_level TYPE char1 VALUE 'I'.
 
     CLASS-METHODS set_log_level
       IMPORTING
