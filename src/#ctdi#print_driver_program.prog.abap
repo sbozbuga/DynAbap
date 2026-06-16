@@ -29,7 +29,7 @@ START-OF-SELECTION.
 *----------------------------------------------------------------------*
 FORM entry.
   TRY.
-      DATA(lr_driver) = /ctdi/cl_print_driver_base=>factory( 
+      DATA(lr_driver) = /ctdi/cl_print_driver_base=>factory(
                           iv_repair_id = p_aufnr
                           iv_sernr     = p_sernr ).
 
@@ -55,6 +55,6 @@ FORM entry.
     CATCH cx_root INTO DATA(lx_root).
       /ctdi/cl_print_driver_log=>log_exception( lx_root ).
       /ctdi/cl_print_driver_log=>save_log( ).
-      MESSAGE lx_root->get_text( ) TYPE 'E'.
+      MESSAGE 'An unexpected system error occurred' TYPE 'E'.
   ENDTRY.
 ENDFORM.

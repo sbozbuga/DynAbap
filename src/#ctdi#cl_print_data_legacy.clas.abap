@@ -684,14 +684,27 @@ CLASS /ctdi/cl_print_data_legacy IMPLEMENTATION.
              WHERE bemot = 'RE'
                AND akz   = '' INTO ( @lf_repres, @lf_repres_txt ).
     ELSE.
-      SELECT bemot, stokz, stzhl FROM afru
+      " ⚡ Bolt: Removed SELECT...ENDSELECT in favor of SELECT INTO TABLE
+      DATA: lv_subrc TYPE sysubrc.
+
+      SELECT bemot, stokz, stzhl
+        FROM afru
         WHERE aufnr = @mv_aufnr
-          AND vornr = '9010' INTO ( @lv_bemot, @lv_stokz, @lv_stzhl ).
+          AND vornr = '9010'
+        INTO TABLE @DATA(lt_afru_skz).
+
+      lv_subrc = sy-subrc.
+
+      LOOP AT lt_afru_skz INTO DATA(ls_afru_skz).
+        lv_bemot = ls_afru_skz-bemot.
+        lv_stokz = ls_afru_skz-stokz.
+        lv_stzhl = ls_afru_skz-stzhl.
         IF lv_stokz = ' ' AND lv_stzhl = '00000000'.
           EXIT.
         ENDIF.
-      ENDSELECT.
-      IF sy-subrc = 0.
+      ENDLOOP.
+
+      IF lv_subrc = 0.
         SELECT SINGLE repres_barc, repres_txt FROM zalca_rep_result
            
            WHERE bemot = @lv_bemot
