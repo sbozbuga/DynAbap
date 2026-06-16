@@ -169,6 +169,13 @@ CLASS /ctdi/cl_print_driver_log IMPLEMENTATION.
         OTHERS       = 1.
     IF sy-subrc = 0.
       gv_has_unsaved_logs = abap_true.
+      
+      " Give visual feedback to the user on long-running processes (like CL_BAL_LOGGER does)
+      IF sy-batch = abap_false.
+        CALL FUNCTION 'SAPGUI_PROGRESS_INDICATOR'
+          EXPORTING
+            text = iv_text.
+      ENDIF.
     ENDIF.
   ENDMETHOD.
 
@@ -186,6 +193,15 @@ CLASS /ctdi/cl_print_driver_log IMPLEMENTATION.
         EXCEPTIONS
           OTHERS           = 1.
       IF sy-subrc = 0.
+        " Link log to background job in SM37 if running in batch (learned from CL_BAL_LOGGER)
+        IF sy-batch = abap_true.
+          CALL FUNCTION 'BP_ADD_APPL_LOG_HANDLE'
+            EXPORTING
+              loghandle = gv_log_handle
+            EXCEPTIONS
+              OTHERS    = 0.
+        ENDIF.
+
         gv_has_unsaved_logs = abap_false.
         CLEAR gv_log_handle. " Allow a fresh log header to be created for the next run
       ENDIF.
