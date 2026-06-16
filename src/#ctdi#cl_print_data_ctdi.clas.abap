@@ -56,14 +56,23 @@ CLASS /ctdi/cl_print_data_ctdi IMPLEMENTATION.
           lv_stzhl TYPE afru-stzhl.
 
     " Always get SKZ from AFRU for operation 9010
+    " ⚡ Bolt: Replaced SELECT...ENDSELECT loop with bulk array fetch INTO TABLE
+    " to minimize database round-trips and improve performance.
     SELECT bemot, stokz, stzhl FROM afru
       WHERE aufnr = @mv_aufnr
         AND vornr = '9010'
-      INTO ( @lv_bemot, @lv_stokz, @lv_stzhl ).
-      IF lv_stokz = ' ' AND lv_stzhl = '00000000'.
-        EXIT.
-      ENDIF.
-    ENDSELECT.
+      INTO TABLE @DATA(lt_afru).
+
+    IF sy-subrc = 0.
+      LOOP AT lt_afru INTO DATA(ls_afru).
+        lv_bemot = ls_afru-bemot.
+        lv_stokz = ls_afru-stokz.
+        lv_stzhl = ls_afru-stzhl.
+        IF lv_stokz = ' ' AND lv_stzhl = '00000000'.
+          EXIT.
+        ENDIF.
+      ENDLOOP.
+    ENDIF.
 
     " Access Sequences for /ctdi/rep_result
     TYPES: BEGIN OF ty_query_step,
