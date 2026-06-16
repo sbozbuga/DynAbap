@@ -65,6 +65,8 @@ FORM entry.
     CATCH /ctdi/cx_print_driver_error INTO DATA(lx_driver_err).
       lv_emsg = lx_driver_err->message.
     CATCH cx_root INTO DATA(lx_root).
+      " SECURITY: Do not expose raw exception text to the UI to prevent info leakage
+      /ctdi/cl_print_driver_log=>log_exception( lx_root ).
       MESSAGE e001(00) WITH 'An unexpected system error occurred'
                        INTO lv_emsg.
   ENDTRY.

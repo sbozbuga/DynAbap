@@ -40,7 +40,9 @@ CLASS /ctdi/cl_print_driver_legacy IMPLEMENTATION.
           /ctdi/cl_print_driver_log=>log_info(
             |Legacy Print Driver successfully read data from DB for Repair { mv_repair_order }| ).
         CATCH cx_root INTO DATA(lx_root).
-          lv_err = |Error reading data from DB for { mv_repair_order }: { lx_root->get_text( ) }|.
+          " SECURITY: Do not expose raw exception text to the UI to prevent info leakage
+          /ctdi/cl_print_driver_log=>log_exception( lx_root ).
+          lv_err = |Error reading data from DB for { mv_repair_order }|.
           /ctdi/cl_print_driver_log=>log_error( lv_err ).
           RAISE EXCEPTION TYPE /ctdi/cx_print_driver_error
             EXPORTING
