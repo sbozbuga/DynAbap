@@ -49,6 +49,6 @@ FORM entry.
 
     CATCH cx_root INTO DATA(lx_root).
       /ctdi/cl_print_driver_log=>log_exception( lx_root ).
-      MESSAGE lx_root->get_text( ) TYPE 'E'.
+      MESSAGE 'An unexpected system error occurred' TYPE 'E'.
   ENDTRY.
 ENDFORM.
