@@ -1,9 +1,6 @@
 *&---------------------------------------------------------------------*
-*& Report /CTDI/PRINT_DRIVER_PROGRAM (new /CELLAG/ALCAREP02)
-*&---------------------------------------------------------------------*
-*&---------------------------------------------------------------------*
 *----------------------------------------------------------------------*
-* Report  /CTDI/PRINT_DRIVER_PROGRAM
+* Report  /CTDI/PRINT_REPAIR
 *
 *----------------------------------------------------------------------*
 * Transaktion                                                          *
@@ -37,7 +34,7 @@
 * Datum      Entwickler  Bemerkung                                     *
 * xx.xx.xxxx ???         ???
 *----------------------------------------------------------------------*
-REPORT /ctdi/print_driver_program.
+REPORT /ctdi/print_repair.
 
 SELECTION-SCREEN BEGIN OF BLOCK b1 WITH FRAME TITLE TEXT-002.
 PARAMETERS: p_aufnr TYPE aufk-aufnr OBLIGATORY, " Repair / Order ID
