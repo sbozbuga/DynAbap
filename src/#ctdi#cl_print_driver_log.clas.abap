@@ -123,7 +123,11 @@ CLASS /ctdi/cl_print_driver_log IMPLEMENTATION.
       ls_log-object    = iv_object.
       ls_log-subobject = iv_subobject.
       ls_log-aluser    = sy-uname.
-      ls_log-alprog    = sy-repid.
+      ls_log-alprog    = sy-cprog. " Main executing program instead of class pool
+
+      " Enhance log with execution context (TCode, Mode)
+      DATA(lv_mode) = COND string( WHEN sy-batch = abap_true THEN 'BATCH' ELSE 'DIALOG' ).
+      ls_log-extnumber = |[{ lv_mode }] TCode: { sy-tcode } Prog: { sy-cprog }|.
 
       CALL FUNCTION 'BAL_LOG_CREATE'
         EXPORTING
