@@ -1471,4 +1471,8 @@ FORM print_new USING    iv_save_as_pdf TYPE abap_bool
       /ctdi/cl_print_driver_log=>log_exception( lx_root ).
       cv_fail = abap_true.
   ENDTRY.
+
+  " Ensure any logs collected during the execution or exception handling are saved
+  /ctdi/cl_print_driver_log=>save_log( ).
+
 ENDFORM.                    "print_new

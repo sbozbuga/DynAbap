@@ -38,8 +38,13 @@ CLASS /ctdi/cl_print_driver_log DEFINITION
         !iv_object     TYPE balobj_d DEFAULT '/CTDI/PRINT'
         !iv_subobject  TYPE balsubobj DEFAULT 'DRIVER'.
 
+    CLASS-METHODS save_log.
+
   PROTECTED SECTION.
   PRIVATE SECTION.
+    CLASS-DATA gv_log_handle TYPE balloghndl.
+    CLASS-DATA gv_has_unsaved_logs TYPE abap_bool.
+
     CLASS-METHODS add_to_log
       IMPORTING
         !iv_text      TYPE string
@@ -113,25 +118,26 @@ CLASS /ctdi/cl_print_driver_log IMPLEMENTATION.
       RETURN.
     ENDIF.
 
-    " 1. Define log header
-    ls_log-object    = iv_object.
-    ls_log-subobject = iv_subobject.
-    ls_log-aluser    = sy-uname.
-    ls_log-alprog    = sy-repid.
+    " 1. Create log header if not yet created
+    IF gv_log_handle IS INITIAL.
+      ls_log-object    = iv_object.
+      ls_log-subobject = iv_subobject.
+      ls_log-aluser    = sy-uname.
+      ls_log-alprog    = sy-repid.
 
-    " 2. Create log
-    CALL FUNCTION 'BAL_LOG_CREATE'
-      EXPORTING
-        i_s_log      = ls_log
-      IMPORTING
-        e_log_handle = lv_handle
-      EXCEPTIONS
-        OTHERS       = 1.
-    IF sy-subrc <> 0.
-      RETURN.
+      CALL FUNCTION 'BAL_LOG_CREATE'
+        EXPORTING
+          i_s_log      = ls_log
+        IMPORTING
+          e_log_handle = gv_log_handle
+        EXCEPTIONS
+          OTHERS       = 1.
+      IF sy-subrc <> 0.
+        RETURN.
+      ENDIF.
     ENDIF.
 
-    " 3. Map free-text to BAL message (message 00 398: &1&2&3&4)
+    " 2. Map free-text to BAL message (message 00 398: &1&2&3&4)
     ls_msg-msgty = iv_msgty.
     ls_msg-msgid = '00'.
     ls_msg-msgno = '398'.
@@ -150,26 +156,35 @@ CLASS /ctdi/cl_print_driver_log IMPLEMENTATION.
       ls_msg-msgv4 = substring( val = iv_text off = 150 len = nmin( val1 = 50 val2 = lv_len - 150 ) ).
     ENDIF.
 
-    " 4. Add message to log
+    " 3. Add message to log
     CALL FUNCTION 'BAL_LOG_MSG_ADD'
       EXPORTING
-        i_log_handle = lv_handle
+        i_log_handle = gv_log_handle
         i_s_msg      = ls_msg
       EXCEPTIONS
         OTHERS       = 1.
-    IF sy-subrc <> 0.
-      RETURN.
+    IF sy-subrc = 0.
+      gv_has_unsaved_logs = abap_true.
     ENDIF.
+  ENDMETHOD.
 
-    " 5. Save log to database
-    INSERT lv_handle INTO TABLE lt_handles.
-    CALL FUNCTION 'BAL_DB_SAVE'
-      EXPORTING
-        i_t_log_handle = lt_handles
-      EXCEPTIONS
-        OTHERS         = 1.
-    IF sy-subrc <> 0.
-      RETURN.
+  METHOD save_log.
+    DATA: lt_handles TYPE bal_t_logh.
+
+    IF gv_log_handle IS NOT INITIAL AND gv_has_unsaved_logs = abap_true.
+      INSERT gv_log_handle INTO TABLE lt_handles.
+
+      " Use update task to ensure log is saved safely alongside main transactions
+      " or directly if outside update task context.
+      CALL FUNCTION 'BAL_DB_SAVE'
+        EXPORTING
+          i_t_log_handle   = lt_handles
+        EXCEPTIONS
+          OTHERS           = 1.
+      IF sy-subrc = 0.
+        gv_has_unsaved_logs = abap_false.
+        CLEAR gv_log_handle. " Allow a fresh log header to be created for the next run
+      ENDIF.
     ENDIF.
   ENDMETHOD.
 
