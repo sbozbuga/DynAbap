@@ -99,6 +99,8 @@ CLASS /ctdi/cl_print_driver_log IMPLEMENTATION.
           lv_level_num TYPE i,
           lv_msg_num   TYPE i.
 
+    CHECK iv_text IS NOT INITIAL.
+    
     " 0. Check log level
     CASE gv_log_level.
       WHEN 'I'. lv_level_num = 1.
