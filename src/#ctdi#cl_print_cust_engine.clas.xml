@@ -5,7 +5,7 @@
    <VSEOCLASS>
     <CLSNAME>/CTDI/CL_PRINT_CUST_ENGINE</CLSNAME>
     <LANGU>E</LANGU>
-    <DESCRIPT>Sales Repair Configuration and Validation Engine</DESCRIPT>
+    <DESCRIPT>Repair Configuration and Validation Engine</DESCRIPT>
     <STATE>1</STATE>
     <CLSCCINCL>X</CLSCCINCL>
     <FIXPT>X</FIXPT>
@@ -21,7 +21,7 @@
    <DESCRIPTIONS_SUB>
     <SEOSUBCOTX>
      <LANGU>D</LANGU>
-     <DESCRIPT>Verkaufsreparatur Customizing- und Validierungs-Engine</DESCRIPT>
+     <DESCRIPT>Reparatur Customizing- und Validierungs-Engine</DESCRIPT>
     </SEOSUBCOTX>
     <SEOSUBCOTX>
      <CMPNAME>NORMALIZE_CLASS_NAME</CMPNAME>

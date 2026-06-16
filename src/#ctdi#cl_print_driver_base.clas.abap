@@ -3,13 +3,8 @@ CLASS /ctdi/cl_print_driver_base DEFINITION
   CREATE PUBLIC.
 
   PUBLIC SECTION.
-    CONSTANTS gc_base_class TYPE seoclsname VALUE '/CTDI/CL_PRINT_DRIVER_BASE'.
 
-    TYPES:
-      tt_config_buffer TYPE HASHED TABLE OF /ctdi/rep_forms WITH UNIQUE KEY vbeln skz akz.
-      
-    CLASS-DATA mt_config_buffer TYPE tt_config_buffer.
-    CLASS-DATA mt_project_buffer TYPE HASHED TABLE OF /ctdi/rep_projec WITH UNIQUE KEY vbeln.
+
 
     "! Static factory to determine and instantiate the correct driver
     CLASS-METHODS factory
@@ -95,14 +90,6 @@ CLASS /ctdi/cl_print_driver_base DEFINITION
         !ev_immed   TYPE c
         !ev_delete  TYPE c.
 
-    "! Checks if a generated function module accepts a given parameter.
-    METHODS fm_has_parameter
-      IMPORTING
-        !iv_funcname  TYPE rs38l_fnam
-        !iv_paramname TYPE string
-      RETURNING
-        VALUE(rv_has) TYPE abap_bool.
-
   PRIVATE SECTION.
     CLASS-METHODS resolve_contract
       IMPORTING
@@ -110,7 +97,9 @@ CLASS /ctdi/cl_print_driver_base DEFINITION
       EXPORTING
         !ev_contract_id TYPE vbeln_va
         !ev_skz TYPE bemot
-        !ev_akz TYPE char4.
+        !ev_akz TYPE char4
+      RAISING
+        /ctdi/cx_print_driver_error.
         
     CLASS-METHODS get_config_from_db
       IMPORTING
@@ -156,9 +145,9 @@ CLASS /ctdi/cl_print_driver_base IMPLEMENTATION.
                 ev_class_name = lv_class_name
                 es_project    = ls_project_db ).
 
-    IF lv_form_name = '/CELLAG/ALCAREP'.
-      RAISE EXCEPTION TYPE /ctdi/cx_no_config_found.
-    ENDIF.
+    "IF lv_form_name = '/CELLAG/ALCAREP'.
+    "  RAISE EXCEPTION TYPE /ctdi/cx_no_config_found.
+    "ENDIF.
 
     TRY.
         CREATE OBJECT ro_driver TYPE (lv_class_name).
@@ -170,35 +159,46 @@ CLASS /ctdi/cl_print_driver_base IMPLEMENTATION.
         RAISE EXCEPTION TYPE /ctdi/cx_print_driver_error
           EXPORTING
             repair_id = iv_repair_id
-            message   = |Cannot instantiate class { lv_class }|
+            message   = |Cannot instantiate class { lv_class_name }|
             previous  = lx_create.
     ENDTRY.
   ENDMETHOD.
-
-
 
   METHOD resolve_contract.
     DATA(lv_aufnr) = |{ iv_repair_id ALPHA = IN }|.
     CLEAR: ev_contract_id, ev_skz, ev_akz.
 
-    SELECT SINGLE
-           v~/cellag/vbeln_vl
+    SELECT SINGLE kdauf
       FROM aufk AS a
-      LEFT OUTER JOIN vbap AS v
-        ON v~vbeln = a~kdauf
-       AND v~posnr = a~kdpos
       WHERE a~aufnr = @lv_aufnr
       INTO @DATA(lv_order_id).
 
-    IF sy-subrc = 0 AND ev_contract_id IS NOT INITIAL.
+    IF sy-subrc = 0 AND lv_order_id IS NOT INITIAL.
       SELECT SINGLE vgbel
-       FROM vbak
-      WHERE vbeln = @lv_order_id
+        FROM vbak
+       WHERE vbeln = @lv_order_id
         INTO @ev_contract_id.
+
+      IF sy-subrc = 0 AND ev_contract_id IS NOT INITIAL.
+        " Verify the linked document is actually a contract (vbtyp = 'G')
+        SELECT SINGLE vbtyp
+          FROM vbak
+         WHERE vbeln = @ev_contract_id
+          INTO @DATA(lv_vbtyp).
+
+        IF lv_vbtyp NE 'G'.
+          CLEAR ev_contract_id.
+          sy-subrc = 4. " Force failure flag
+        ENDIF.
+      ENDIF.
+        
       IF sy-subrc NE 0.
-        /ctdi/cl_print_driver_log=>log_info(
-           |Could not find a Contract for Order { lv_order_id }| ).
-        RETURN.
+        DATA(lv_err1) = |Could not find a Contract for Order { lv_order_id }|.
+        /ctdi/cl_print_driver_log=>log_error( lv_err1 ).
+        RAISE EXCEPTION TYPE /ctdi/cx_print_driver_error
+          EXPORTING
+            repair_id = iv_repair_id
+            message   = lv_err1.
       ENDIF.
 
       SELECT bemot, stokz, stzhl
@@ -227,35 +227,15 @@ CLASS /ctdi/cl_print_driver_base IMPLEMENTATION.
 
       /ctdi/cl_print_driver_log=>log_info(
         |Resolved Order { iv_repair_id } -> Contract { ev_contract_id }, SKZ { ev_skz }, AKZ { ev_akz }| ).
-      RETURN.
+
+    ELSE.
+      DATA(lv_err2) = |Could not resolve Contract for Repair Order { iv_repair_id }|.
+      /ctdi/cl_print_driver_log=>log_error( lv_err2 ).
+      RAISE EXCEPTION TYPE /ctdi/cx_print_driver_error
+        EXPORTING
+          repair_id = iv_repair_id
+          message   = lv_err2.
     ENDIF.
-
-    SELECT SINGLE kdauf
-      FROM aufk
-      WHERE aufnr = @lv_aufnr
-        AND kdauf <> @space
-      INTO @ev_contract_id.
-
-    IF sy-subrc = 0 AND ev_contract_id IS NOT INITIAL.
-      /ctdi/cl_print_driver_log=>log_info(
-        |Resolved Order { iv_repair_id } -> Contract { ev_contract_id } via KDAUF fallback| ).
-      RETURN.
-    ENDIF.
-
-    SELECT SINGLE vbeln
-      FROM vbak
-      WHERE vbeln = @lv_aufnr
-      INTO @ev_contract_id.
-
-    IF sy-subrc = 0.
-      /ctdi/cl_print_driver_log=>log_info(
-        |Using Repair { iv_repair_id } directly as Contract VBELN| ).
-      RETURN.
-    ENDIF.
-
-    ev_contract_id = lv_aufnr.
-    /ctdi/cl_print_driver_log=>log_warning(
-      |Could not resolve Contract for Order { iv_repair_id } — using as-is| ).
   ENDMETHOD.
 
   METHOD get_config_from_db.
@@ -272,102 +252,73 @@ CLASS /ctdi/cl_print_driver_base IMPLEMENTATION.
     DATA: lt_steps TYPE TABLE OF ty_query_step.
 
     IF ev_form_name IS SUPPLIED OR ev_class_name IS SUPPLIED.
-      SELECT SINGLE form_name, class_name
-        FROM /ctdi/rep_forms
-              WHERE vbeln = ''
-                AND skz   = ''
-                AND akz   = ''
-        INTO @DATA(ls_dconf).
-      IF sy-subrc EQ 0.
-        ev_form_name = ls_dconf-form_name.
-        IF ls_dconf-class_name IS INITIAL.
-          ev_class_name = gc_base_class.
-        ELSE.
-          ev_class_name = ls_dconf-class_name.
-        ENDIF.
-      ELSE.
-        RAISE EXCEPTION TYPE /ctdi/cx_print_driver_error.
-      ENDIF.
 
       resolve_contract( EXPORTING iv_repair_id    = iv_repair_id
                         IMPORTING ev_contract_id  = lv_contract
                                   ev_skz          = lv_skz
                                   ev_akz          = lv_akz ).
 
-      READ TABLE mt_config_buffer WITH TABLE KEY
-        vbeln = lv_contract
-        skz   = lv_skz
-        akz   = lv_akz
-        INTO ls_config.
-
-      IF sy-subrc = 0.
-        ev_form_name  = ls_config-form_name.
-        ev_class_name = resolve_class_name( ls_config-class_name ).
-      ELSE.
-        IF lv_contract IS NOT INITIAL.
-          IF lv_skz IS NOT INITIAL AND lv_akz IS NOT INITIAL.
-            APPEND VALUE #( vbeln = lv_contract skz = lv_skz akz = lv_akz ) TO lt_steps.
-          ENDIF.
-          IF lv_skz IS NOT INITIAL.
-            APPEND VALUE #( vbeln = lv_contract skz = lv_skz akz = '' ) TO lt_steps.
-          ENDIF.
-          IF lv_akz IS NOT INITIAL.
-            APPEND VALUE #( vbeln = lv_contract skz = '' akz = lv_akz ) TO lt_steps.
-          ENDIF.
-          APPEND VALUE #( vbeln = lv_contract skz = '' akz = '' ) TO lt_steps.
-        ENDIF.
-
+      IF lv_contract IS NOT INITIAL.
         IF lv_skz IS NOT INITIAL AND lv_akz IS NOT INITIAL.
-          APPEND VALUE #( vbeln = '' skz = lv_skz akz = lv_akz ) TO lt_steps.
+          APPEND VALUE #( vbeln = lv_contract skz = lv_skz akz = lv_akz ) TO lt_steps.
         ENDIF.
         IF lv_skz IS NOT INITIAL.
-          APPEND VALUE #( vbeln = '' skz = lv_skz akz = '' ) TO lt_steps.
+          APPEND VALUE #( vbeln = lv_contract skz = lv_skz akz = '' ) TO lt_steps.
         ENDIF.
         IF lv_akz IS NOT INITIAL.
-          APPEND VALUE #( vbeln = '' skz = '' akz = lv_akz ) TO lt_steps.
+          APPEND VALUE #( vbeln = lv_contract skz = '' akz = lv_akz ) TO lt_steps.
         ENDIF.
-
-        IF lt_steps IS NOT INITIAL.
-
-          SELECT * FROM /ctdi/rep_forms "#EC CI_ALL_FIELDS_NEEDED
-            WHERE vbeln = @lv_contract OR vbeln =  ''
-            ORDER BY PRIMARY KEY ##SUBRC_OK
-            INTO TABLE @DATA(lt_forms).
-
-          LOOP AT lt_steps ASSIGNING FIELD-SYMBOL(<ls_step>).
-            READ TABLE lt_forms INTO ls_config WITH KEY
-              vbeln = <ls_step>-vbeln
-              skz   = <ls_step>-skz
-              akz   = <ls_step>-akz.
-            IF sy-subrc = 0.
-              EXIT.
-            ENDIF.
-          ENDLOOP.
-        ENDIF.
-
-        IF ls_config IS NOT INITIAL.
-          INSERT ls_config INTO TABLE mt_config_buffer.
-          ev_form_name  = ls_config-form_name.
-          ev_class_name = resolve_class_name( ls_config-class_name ).
-        ENDIF.
+        APPEND VALUE #( vbeln = lv_contract skz = '' akz = '' ) TO lt_steps.
       ENDIF.
+
+      IF lv_skz IS NOT INITIAL AND lv_akz IS NOT INITIAL.
+        APPEND VALUE #( vbeln = '' skz = lv_skz akz = lv_akz ) TO lt_steps.
+      ENDIF.
+      IF lv_skz IS NOT INITIAL.
+        APPEND VALUE #( vbeln = '' skz = lv_skz akz = '' ) TO lt_steps.
+      ENDIF.
+      IF lv_akz IS NOT INITIAL.
+        APPEND VALUE #( vbeln = '' skz = '' akz = lv_akz ) TO lt_steps.
+      ENDIF.
+      
+      " Global fallback (Empty Keys)
+      APPEND VALUE #( vbeln = '' skz = '' akz = '' ) TO lt_steps.
+
+      SELECT * FROM /ctdi/rep_forms "#EC CI_ALL_FIELDS_NEEDED
+        WHERE vbeln = @lv_contract OR vbeln =  ''
+        ORDER BY PRIMARY KEY ##SUBRC_OK
+        INTO TABLE @DATA(lt_forms).
+
+      CLEAR ls_config.
+      LOOP AT lt_steps ASSIGNING FIELD-SYMBOL(<ls_step>).
+        READ TABLE lt_forms INTO ls_config WITH KEY
+          vbeln = <ls_step>-vbeln
+          skz   = <ls_step>-skz
+          akz   = <ls_step>-akz.
+        IF sy-subrc = 0.
+          EXIT.
+        ENDIF.
+      ENDLOOP.
+
+      IF ls_config IS NOT INITIAL.
+        ev_form_name  = ls_config-form_name.
+        ev_class_name = /ctdi/cl_print_cust_engine=>normalize_class_name( ls_config-class_name ).
+      ELSE.
+        RAISE EXCEPTION TYPE /ctdi/cx_print_driver_error
+          EXPORTING
+            repair_id = iv_repair_id
+            message   = |No configuration found in /CTDI/REP_FORMS (including default fallback).|.
+      ENDIF.
+
       /ctdi/cl_print_driver_log=>log_info(
-        |Config resolved and cached — Contract: { lv_contract }, | &&
+        |Config resolved — Contract: { lv_contract }, | &&
         |SKZ: { lv_skz }, AKZ: { lv_akz }, Form: { ev_form_name }, Class: { ev_class_name }| ).
     ENDIF.
 
-    READ TABLE mt_project_buffer INTO es_project WITH TABLE KEY vbeln = lv_contract.
-
-    IF sy-subrc <> 0.
-      SELECT SINGLE *
-        FROM /ctdi/rep_projec "#EC CI_ALL_FIELDS_NEEDED
-        WHERE vbeln = @lv_contract ##SUBRC_OK
-        INTO @es_project.
-
-      IF es_project IS NOT INITIAL.
-        INSERT es_project INTO TABLE mt_project_buffer.
-      ENDIF.
-    ENDIF.
+    SELECT SINGLE *
+      FROM /ctdi/rep_projec "#EC CI_ALL_FIELDS_NEEDED
+      WHERE vbeln = @lv_contract ##SUBRC_OK
+      INTO @es_project.
   ENDMETHOD.
 
 
@@ -493,9 +444,15 @@ CLASS /ctdi/cl_print_driver_base IMPLEMENTATION.
     INSERT ls_ptab INTO TABLE lt_ptab.
 
 
-    " Inject any dynamically registered custom parameters
+    " Fetch all valid parameters for the generated function module to prevent dumps
+    SELECT parameter FROM fupararef
+      WHERE funcname = @lv_fm_name
+      INTO TABLE @DATA(lt_valid_params_sf).
+
+    " Inject any dynamically registered custom parameters if they exist in the form
     LOOP AT mt_custom_form_params INTO DATA(ls_custom_param_sf).
-      IF fm_has_parameter( iv_funcname = lv_fm_name iv_paramname = ls_custom_param_sf-name ) = abap_true.
+      READ TABLE lt_valid_params_sf WITH KEY parameter = ls_custom_param_sf-name TRANSPORTING NO FIELDS.
+      IF sy-subrc = 0.
         INSERT ls_custom_param_sf INTO TABLE lt_ptab.
       ENDIF.
     ENDLOOP.
@@ -654,9 +611,19 @@ CLASS /ctdi/cl_print_driver_base IMPLEMENTATION.
 
 
 
-    " Inject any dynamically registered custom parameters
+    " Fetch all valid parameters for the generated function module to prevent dumps
+    SELECT parameter FROM fupararef
+      WHERE funcname = @lv_fm_name
+      INTO TABLE @DATA(lt_valid_params_af).
+
+    " Inject any dynamically registered custom parameters if they exist in the form
     LOOP AT mt_custom_form_params INTO DATA(ls_custom_param_af).
-      IF fm_has_parameter( iv_funcname = lv_fm_name iv_paramname = ls_custom_param_af-name ) = abap_true.
+      READ TABLE lt_valid_params_af WITH KEY parameter = ls_custom_param_af-name TRANSPORTING NO FIELDS.
+      IF sy-subrc = 0.
+        " Adobe Forms do not have a TABLES interface, they expect tables as EXPORTING
+        IF ls_custom_param_af-kind = abap_func_tables.
+          ls_custom_param_af-kind = abap_func_exporting.
+        ENDIF.
         INSERT ls_custom_param_af INTO TABLE lt_ptab.
       ENDIF.
     ENDLOOP.
@@ -716,12 +683,14 @@ CLASS /ctdi/cl_print_driver_base IMPLEMENTATION.
 
 
   METHOD download_pdf.
-    DATA: lt_filetab TYPE filetable,
-          lv_rc      TYPE i,
-          lv_action  TYPE i,
-          lv_path    TYPE string,
+    DATA: lt_filetab  TYPE filetable,
+          lv_rc       TYPE i,
+          lv_action   TYPE i,
+          lv_path     TYPE string,
           lv_filename TYPE string,
-          lt_data    TYPE solix_tab.
+          lv_fpath    TYPE string,
+          lv_filesize TYPE i,
+          lt_data     TYPE solix_tab.
 
     IF iv_pdf_data IS INITIAL.
       RETURN.
@@ -755,7 +724,7 @@ CLASS /ctdi/cl_print_driver_base IMPLEMENTATION.
       CHANGING
         filename             = lv_filename
         path                 = lv_path
-        fullpath             = lv_path
+        fullpath             = lv_fpath
         user_action          = lv_action
       EXCEPTIONS
         OTHERS               = 1 ).
@@ -763,12 +732,14 @@ CLASS /ctdi/cl_print_driver_base IMPLEMENTATION.
       DATA(lv_subrc_dialog) = sy-subrc.
     ENDIF.
 
-    IF lv_action = cl_gui_frontend_services=>action_ok AND lv_path IS NOT INITIAL.
+    IF lv_action = cl_gui_frontend_services=>action_ok AND lv_fpath IS NOT INITIAL.
+      lv_filesize = xstrlen( iv_pdf_data ).
+
       cl_gui_frontend_services=>gui_download(
         EXPORTING
-          filename                  = lv_path
+          filename                  = lv_fpath
           filetype                  = 'BIN'
-          bin_filesize              = xstrlen( iv_pdf_data )
+          bin_filesize              = lv_filesize
         CHANGING
           data_tab                  = lt_data
         EXCEPTIONS
@@ -833,13 +804,6 @@ CLASS /ctdi/cl_print_driver_base IMPLEMENTATION.
   ENDMETHOD.
 
 
-  METHOD fm_has_parameter.
-    SELECT SINGLE parameter FROM fupararef
-      WHERE funcname  = @iv_funcname
-        AND parameter = @iv_paramname
-      INTO @DATA(lv_dummy).
-    rv_has = xsdbool( sy-subrc = 0 ).
-  ENDMETHOD.
 
   METHOD register_custom_parameter.
     DATA: ls_param TYPE abap_func_parmbind.

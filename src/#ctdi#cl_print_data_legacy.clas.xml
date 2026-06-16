@@ -5,7 +5,7 @@
    <VSEOCLASS>
     <CLSNAME>/CTDI/CL_PRINT_DATA_LEGACY</CLSNAME>
     <LANGU>E</LANGU>
-    <DESCRIPT>Alcatel Repair Data Provider</DESCRIPT>
+    <DESCRIPT>Legacy Data Provider</DESCRIPT>
     <STATE>1</STATE>
     <CLSCCINCL>X</CLSCCINCL>
     <FIXPT>X</FIXPT>

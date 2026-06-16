@@ -12,9 +12,9 @@ CLASS /ctdi/cl_print_data_ctdi DEFINITION
     DATA mt_comments     TYPE STANDARD TABLE OF tline.
 
     METHODS map_legacy_data.
+    METHODS read_data REDEFINITION.
 
   PROTECTED SECTION.
-    METHODS read_data REDEFINITION.
 
     "! <summary>Redefined repair result retrieval</summary>
     "! <desc>First fetches the contract (vgbel) from VBAK. Then reads operation 9010
@@ -83,9 +83,13 @@ CLASS /ctdi/cl_print_data_ctdi IMPLEMENTATION.
     DATA: lv_contract TYPE vbak-vgbel.
 
     IF mv_kdauf IS NOT INITIAL.
-      SELECT SINGLE vgbel FROM vbak INTO @lv_contract WHERE vbeln = @mv_kdauf and vbtyp = 'G'.
-      IF sy-subrc <> 0.
-        RETURN.
+      SELECT SINGLE vgbel FROM vbak WHERE vbeln = @mv_kdauf INTO @lv_contract.
+      IF sy-subrc = 0 AND lv_contract IS NOT INITIAL.
+        " Verify the linked document is actually a contract (vbtyp = 'G')
+        SELECT SINGLE vbtyp FROM vbak WHERE vbeln = @lv_contract INTO @DATA(lv_vbtyp).
+        IF lv_vbtyp <> 'G'.
+          CLEAR lv_contract.
+        ENDIF.
       ENDIF.
     ENDIF.
 
@@ -117,9 +121,9 @@ CLASS /ctdi/cl_print_data_ctdi IMPLEMENTATION.
 
     " Read all config for the current contract or empty contract records
     SELECT * FROM /ctdi/rep_result
-      INTO TABLE @DATA(lt_results)
       WHERE vbeln = @lv_contract
-         OR vbeln = @space.
+         OR vbeln = @space
+      INTO TABLE @DATA(lt_results).
 
     IF lt_results IS NOT INITIAL AND lt_steps IS NOT INITIAL.
       LOOP AT lt_steps INTO DATA(ls_step).

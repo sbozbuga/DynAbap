@@ -18,7 +18,7 @@ Key implementations bridging these requirements include:
 
 ## Architecture & Refactoring
 - **Base Class Inheritance Pattern**: Shifted the print framework architecture to an inheritance model extending `/CTDI/CL_PRINT_DRIVER_BASE` rather than a flat interface model.
-- **Global Constants**: Replaced hardcoded class name strings with a centralized `gc_base_class` constant in the base class to improve maintainability.
+- **Global Constants**: Replaced hardcoded class name strings with a centralized `gc_base_class` constant in the Customizing Engine class to improve maintainability.
 - **Custom Parameter Registration**: 
   - Overhauled how custom form data is passed to dynamic Smart Forms and Adobe Forms. 
   - Added an explicit `iv_kind` parameter (`abap_func_exporting`, `abap_func_tables`, etc.) to the `register_custom_parameter` method. This offloads the responsibility of defining the parameter type to the subclass, completely removing the need for slow, dynamic `FUPARAREF` database lookups at runtime.
@@ -26,7 +26,6 @@ Key implementations bridging these requirements include:
 
 ## Performance & DB Optimizations
 - **In-Memory Configuration Resolution**: Refactored `get_config_from_db` to select all potential `/ctdi/rep_forms` fallback hierarchies into an internal table at once. It now resolves the correct hierarchy (Contract -> SKZ -> AKZ) via in-memory `READ TABLE` lookups instead of executing multiple `SELECT` queries.
-- **Inheritance Tree Caching**: Replaced a sequential `SELECT SINGLE` database hit inside a `WHILE` loop in the `check_generation_allowed` engine logic. It now calls standard SAP function `SEO_CLASS_GET_SUPERCLASSES` to fetch the entire inheritance tree into a buffer in a single, highly optimized hit.
 
 ## Modernization & Strict SQL Compliance (ABAP 7.50)
 - **Strict SQL OpenSQL**: Modernized all OpenSQL queries across `/CTDI/CL_PRINT_DRIVER_BASE` and `/CTDI/CL_PRINT_CUST_ENGINE`. Moved all `INTO` and `INTO TABLE` clauses to the absolute end of the `SELECT` statements, guaranteeing forward compatibility with strict-SQL ABAP environments while maintaining 100% data integrity.
@@ -41,3 +40,6 @@ Key implementations bridging these requirements include:
   - **Password**: `ABAPtr2023#00`
 - **Docker Integration**: Managed via `docker-compose.yaml` exposing necessary ports.
 - **CLI Tooling**: `vsp.exe` is configured via the `.env` file (Tool Mode: `hyperfocused`, Transports Enabled) to interact with the local ABAP environment.
+
+## AI Development Workflow & Rules
+- **Function Module Signatures**: Always check the MCP server (e.g., using `abap-mcp-server` tools like `sap_get_object_details` or `sap_search_objects`) to verify the exact signatures, definitions, and types of standard SAP Function Modules before assuming them. This prevents type mismatch errors and ensures robust integrations.

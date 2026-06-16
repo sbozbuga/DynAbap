@@ -1,15 +1,80 @@
-# Print Driver Architecture - NEW (Simplified)
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Print Driver Architecture UML</title>
+    <style>
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background-color: #f4f4f9;
+            color: #333;
+            margin: 0;
+            padding: 20px;
+        }
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+            background: #fff;
+            padding: 20px 40px;
+            border-radius: 8px;
+            box-shadow: 0 4px 10px rgba(0,0,0,0.1);
+        }
+        h1, h2 {
+            color: #2c3e50;
+            border-bottom: 2px solid #eee;
+            padding-bottom: 10px;
+        }
+        .diagram {
+            margin: 20px 0 40px 0;
+            padding: 20px;
+            background: #fafafa;
+            border: 1px solid #ddd;
+            border-radius: 8px;
+            overflow-x: auto;
+        }
+        .note-callout {
+            background-color: #eef9fd;
+            border-left: 4px solid #0969da;
+            padding: 15px;
+            margin: 15px 0;
+            border-radius: 4px;
+        }
+        .note-callout strong {
+            color: #0969da;
+        }
+        .note-callout ul {
+            margin-top: 10px;
+            margin-bottom: 0;
+        }
+        .note-callout code {
+            background: #e5f1f6;
+            padding: 2px 5px;
+            border-radius: 3px;
+        }
+    </style>
+    <script type="module">
+        import mermaid from 'https://cdn.jsdelivr.net/npm/mermaid@10/dist/mermaid.esm.min.mjs';
+        mermaid.initialize({ startOnLoad: true, theme: 'default' });
+    </script>
+</head>
+<body>
 
-## Class Diagram
+<div class="container">
+    <h1>Print Driver Architecture - NEW (Simplified)</h1>
 
-> [!NOTE]
-> **UML Visibility Notation Guide (ABAP Equivalents)**
-> - `+` **Public** (`PUBLIC SECTION`): Accessible from anywhere.
-> - `#` **Protected** (`PROTECTED SECTION`): Accessible within the class and its subclasses.
-> - `-` **Private** (`PRIVATE SECTION`): Accessible only within the class itself.
-> - `$` **Static** (`CLASS-METHODS` / `CLASS-DATA`): Indicated at the end of the method/attribute.
-
-```mermaid
+    <h2>Class Diagram</h2>
+    <div class="note-callout">
+        <strong>UML Visibility Notation Guide (ABAP Equivalents)</strong>
+        <ul>
+            <li><code>+</code> <strong>Public</strong> (<code>PUBLIC SECTION</code>): Accessible from anywhere.</li>
+            <li><code>#</code> <strong>Protected</strong> (<code>PROTECTED SECTION</code>): Accessible within the class and its subclasses.</li>
+            <li><code>-</code> <strong>Private</strong> (<code>PRIVATE SECTION</code>): Accessible only within the class itself.</li>
+            <li><code>$</code> <strong>Static</strong> (<code>CLASS-METHODS</code> / <code>CLASS-DATA</code>): Indicated at the end of the method/attribute.</li>
+        </ul>
+    </div>
+    <div class="diagram">
+        <pre class="mermaid">
 classDiagram
     class `/CTDI/CL_PRINT_DRIVER_BASE` {
         #mv_repair_order: AUFNR
@@ -101,11 +166,12 @@ classDiagram
     `/CTDI/CL_PRINT_DRIVER_LEGACY` ..> `/CTDI/CL_PRINT_DATA_LEGACY` : Uses Data Provider
     `/CTDI/CL_PRINT_DRIVER_CTDI` ..> `/CTDI/CL_PRINT_DATA_CTDI` : Uses Data Provider
     `/CTDI/CL_PRINT_DRIVER_FUTURE` ..> `/CTDI/CL_PRINT_DATA_FUTURE` : Uses Data Provider
-```
+        </pre>
+    </div>
 
-## Sequence Diagram (Execution Flow)
-
-```mermaid
+    <h2>Sequence Diagram (Execution Flow)</h2>
+    <div class="diagram">
+        <pre class="mermaid">
 sequenceDiagram
     autonumber
     actor Caller
@@ -163,4 +229,9 @@ sequenceDiagram
 
     Base-->>Caller: Process Completed
     deactivate Base
-```
+        </pre>
+    </div>
+</div>
+
+</body>
+</html>
