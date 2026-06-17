@@ -114,7 +114,108 @@ CLASS /ctdi/cl_print_driver_base DEFINITION
 
 ENDCLASS.
 
-CLASS /ctdi/cl_print_driver_base IMPLEMENTATION.
+
+
+CLASS /CTDI/CL_PRINT_DRIVER_BASE IMPLEMENTATION.
+
+
+  METHOD detect_form_type.
+    SELECT SINGLE formname FROM stxfadm
+      WHERE formname = @mv_form_name
+      INTO @DATA(lv_ssf_name).
+    IF sy-subrc = 0.
+      rv_type = 'S'.          " Smart Form exists in STXFADM
+    ELSE.
+      rv_type = 'A'.          " Default to Adobe Form
+    ENDIF.
+  ENDMETHOD.
+
+
+  METHOD download_pdf.
+    DATA: lt_filetab  TYPE filetable,
+          lv_rc       TYPE i,
+          lv_action   TYPE i,
+          lv_path     TYPE string,
+          lv_filename TYPE string,
+          lv_fpath    TYPE string,
+          lv_filesize TYPE i,
+          lt_data     TYPE solix_tab.
+
+    IF iv_pdf_data IS INITIAL.
+      RETURN.
+    ENDIF.
+
+    " Guard: batch mode — frontend services are unavailable
+    IF sy-batch IS NOT INITIAL.
+      /ctdi/cl_print_driver_log=>log_warning(
+        |PDF download skipped for Repair { mv_repair_order } in batch mode| ).
+      RETURN.
+    ENDIF.
+
+    " Convert XSTRING to binary table
+    CALL FUNCTION 'SCMS_XSTRING_TO_BINARY'
+      EXPORTING
+        buffer     = iv_pdf_data
+      TABLES
+        binary_tab = lt_data
+      EXCEPTIONS
+        OTHERS     = 1.
+    IF sy-subrc <> 0.
+      RETURN.
+    ENDIF.
+
+    " Show file-save dialog
+    cl_gui_frontend_services=>file_save_dialog(
+      EXPORTING
+        default_file_name    = |Repair_{ mv_repair_order }.pdf|
+        default_extension    = 'pdf'
+        file_filter          = 'PDF Files (*.pdf)|*.pdf'
+      CHANGING
+        filename             = lv_filename
+        path                 = lv_path
+        fullpath             = lv_fpath
+        user_action          = lv_action
+      EXCEPTIONS
+        OTHERS               = 1 ).
+    IF sy-subrc <> 0.
+      DATA(lv_subrc_dialog) = sy-subrc.
+    ENDIF.
+
+    IF lv_action = cl_gui_frontend_services=>action_ok AND lv_fpath IS NOT INITIAL.
+      lv_filesize = xstrlen( iv_pdf_data ).
+
+      cl_gui_frontend_services=>gui_download(
+        EXPORTING
+          filename                  = lv_fpath
+          filetype                  = 'BIN'
+          bin_filesize              = lv_filesize
+        CHANGING
+          data_tab                  = lt_data
+        EXCEPTIONS
+          file_write_error          = 1
+          no_batch                  = 2
+          gui_refuse_filetransfer   = 3
+          invalid_type              = 4
+          no_authority              = 5
+          unknown_error             = 6
+          header_not_allowed        = 7
+          separator_not_allowed     = 8
+          filesize_not_allowed      = 9
+          header_too_long           = 10
+          access_denied             = 12
+          dp_out_of_memory          = 13
+          disk_full                 = 14
+          dp_timeout                = 15
+          file_not_found            = 16
+          dataprovider_exception    = 17
+          control_flush_error       = 18
+          OTHERS                    = 19 ).
+      IF sy-subrc <> 0.
+        DATA(lv_subrc_download) = sy-subrc.
+      ENDIF.
+    ENDIF.
+  ENDMETHOD.
+
 
   METHOD execute.
     /ctdi/cl_print_driver_log=>log_info(
@@ -129,396 +230,6 @@ CLASS /ctdi/cl_print_driver_base IMPLEMENTATION.
 
     /ctdi/cl_print_driver_log=>log_info(
       |Print driver completed successfully for Repair { mv_repair_order }| ).
-  ENDMETHOD.
-
-  METHOD factory.
-    DATA: lv_form_name  TYPE fpname,
-          lv_class_name TYPE seoclsname,
-          ls_project_db TYPE /ctdi/rep_projec.
-
-    /ctdi/cl_print_driver_log=>log_info(
-      |Print driver factory invoked for Repair { iv_repair_id }, Sernr { iv_sernr }| ).
-
-    get_config_from_db(
-      EXPORTING iv_repair_id  = iv_repair_id
-      IMPORTING ev_form_name  = lv_form_name
-                ev_class_name = lv_class_name
-                es_project    = ls_project_db ).
-
-    "IF lv_form_name = '/CELLAG/ALCAREP'.
-    "  RAISE EXCEPTION TYPE /ctdi/cx_no_config_found.
-    "ENDIF.
-
-    TRY.
-        CREATE OBJECT ro_driver TYPE (lv_class_name).
-        ro_driver->mv_repair_order = iv_repair_id.
-        ro_driver->mv_sernr        = iv_sernr.
-        ro_driver->mv_form_name = lv_form_name.
-        ro_driver->ms_project   = ls_project_db.
-      CATCH cx_sy_create_object_error INTO DATA(lx_create).
-        RAISE EXCEPTION TYPE /ctdi/cx_print_driver_error
-          EXPORTING
-            repair_id = iv_repair_id
-            message   = |Cannot instantiate class { lv_class_name }|
-            previous  = lx_create.
-    ENDTRY.
-  ENDMETHOD.
-
-  METHOD resolve_contract.
-    DATA(lv_aufnr) = |{ iv_repair_id ALPHA = IN }|.
-    CLEAR: ev_contract_id, ev_skz, ev_akz.
-
-    SELECT SINGLE kdauf
-      FROM aufk AS a
-      WHERE a~aufnr = @lv_aufnr
-      INTO @DATA(lv_order_id).
-
-    IF sy-subrc = 0 AND lv_order_id IS NOT INITIAL.
-      SELECT SINGLE vgbel
-        FROM vbak
-       WHERE vbeln = @lv_order_id
-        INTO @ev_contract_id.
-
-      IF sy-subrc = 0 AND ev_contract_id IS NOT INITIAL.
-        " Verify the linked document is actually a contract (vbtyp = 'G')
-        SELECT SINGLE vbtyp
-          FROM vbak
-         WHERE vbeln = @ev_contract_id
-          INTO @DATA(lv_vbtyp).
-
-        IF lv_vbtyp NE 'G'.
-          CLEAR ev_contract_id.
-          sy-subrc = 4. " Force failure flag
-        ENDIF.
-      ENDIF.
-
-      IF sy-subrc NE 0.
-        DATA(lv_err1) = |Could not find a Contract for Order { lv_order_id }|.
-        /ctdi/cl_print_driver_log=>log_error( lv_err1 ).
-        RAISE EXCEPTION TYPE /ctdi/cx_print_driver_error
-          EXPORTING
-            repair_id = iv_repair_id
-            message   = lv_err1.
-      ENDIF.
-
-      SELECT bemot, stokz, stzhl
-        FROM afru
-        WHERE aufnr = @lv_aufnr
-          AND vornr = '9010'
-        INTO TABLE @DATA(lt_afru).
-
-      IF sy-subrc = 0.
-        LOOP AT lt_afru ASSIGNING FIELD-SYMBOL(<ls_afru>).
-          IF <ls_afru>-stokz = space AND <ls_afru>-stzhl = '00000000'.
-            ev_skz = <ls_afru>-bemot.
-            EXIT.
-          ENDIF.
-        ENDLOOP.
-      ENDIF.
-
-      SELECT SINGLE qmcod
-        FROM qmel
-        WHERE aufnr = @lv_aufnr
-          AND qmart = 'Z2'
-        INTO @ev_akz.
-      IF sy-subrc <> 0.
-        " Ignore
-      ENDIF.
-
-      /ctdi/cl_print_driver_log=>log_info(
-        |Resolved Order { iv_repair_id } -> Contract { ev_contract_id }, SKZ { ev_skz }, AKZ { ev_akz }| ).
-
-    ELSE.
-      DATA(lv_err2) = |Could not resolve Contract for Repair Order { iv_repair_id }|.
-      /ctdi/cl_print_driver_log=>log_error( lv_err2 ).
-      RAISE EXCEPTION TYPE /ctdi/cx_print_driver_error
-        EXPORTING
-          repair_id = iv_repair_id
-          message   = lv_err2.
-    ENDIF.
-  ENDMETHOD.
-
-  METHOD get_config_from_db.
-    DATA: lv_contract TYPE vbeln_va,
-          lv_skz      TYPE bemot,
-          lv_akz      TYPE char4,
-          ls_config   TYPE /ctdi/rep_forms.
-
-    TYPES: BEGIN OF ty_query_step,
-             vbeln TYPE vbeln_va,
-             skz   TYPE bemot,
-             akz   TYPE char4,
-           END OF ty_query_step.
-    DATA: lt_steps TYPE TABLE OF ty_query_step.
-
-    IF ev_form_name IS SUPPLIED OR ev_class_name IS SUPPLIED.
-
-      resolve_contract( EXPORTING iv_repair_id    = iv_repair_id
-                        IMPORTING ev_contract_id  = lv_contract
-                                  ev_skz          = lv_skz
-                                  ev_akz          = lv_akz ).
-
-      IF lv_contract IS NOT INITIAL.
-        IF lv_skz IS NOT INITIAL AND lv_akz IS NOT INITIAL.
-          APPEND VALUE #( vbeln = lv_contract skz = lv_skz akz = lv_akz ) TO lt_steps.
-        ENDIF.
-        IF lv_skz IS NOT INITIAL.
-          APPEND VALUE #( vbeln = lv_contract skz = lv_skz akz = '' ) TO lt_steps.
-        ENDIF.
-        IF lv_akz IS NOT INITIAL.
-          APPEND VALUE #( vbeln = lv_contract skz = '' akz = lv_akz ) TO lt_steps.
-        ENDIF.
-        APPEND VALUE #( vbeln = lv_contract skz = '' akz = '' ) TO lt_steps.
-      ENDIF.
-
-      IF lv_skz IS NOT INITIAL AND lv_akz IS NOT INITIAL.
-        APPEND VALUE #( vbeln = '' skz = lv_skz akz = lv_akz ) TO lt_steps.
-      ENDIF.
-      IF lv_skz IS NOT INITIAL.
-        APPEND VALUE #( vbeln = '' skz = lv_skz akz = '' ) TO lt_steps.
-      ENDIF.
-      IF lv_akz IS NOT INITIAL.
-        APPEND VALUE #( vbeln = '' skz = '' akz = lv_akz ) TO lt_steps.
-      ENDIF.
-
-      " Global fallback (Empty Keys)
-      APPEND VALUE #( vbeln = '' skz = '' akz = '' ) TO lt_steps.
-
-      SELECT * FROM /ctdi/rep_forms "#EC CI_ALL_FIELDS_NEEDED
-        WHERE vbeln = @lv_contract OR vbeln =  ''
-        ORDER BY PRIMARY KEY ##SUBRC_OK
-        INTO TABLE @DATA(lt_forms).
-
-      CLEAR ls_config.
-      LOOP AT lt_steps ASSIGNING FIELD-SYMBOL(<ls_step>).
-        READ TABLE lt_forms INTO ls_config WITH KEY
-          vbeln = <ls_step>-vbeln
-          skz   = <ls_step>-skz
-          akz   = <ls_step>-akz.
-        IF sy-subrc = 0.
-          EXIT.
-        ENDIF.
-      ENDLOOP.
-
-      IF ls_config IS NOT INITIAL.
-        ev_form_name  = ls_config-form_name.
-        ev_class_name = /ctdi/cl_print_cust_engine=>normalize_class_name( ls_config-class_name ).
-      ELSE.
-        RAISE EXCEPTION TYPE /ctdi/cx_print_driver_error
-          EXPORTING
-            repair_id = iv_repair_id
-            message   = |No configuration found in /CTDI/REP_FORMS (including default fallback).|.
-      ENDIF.
-
-      /ctdi/cl_print_driver_log=>log_info(
-        |Config resolved — Contract: { lv_contract }, | &&
-        |SKZ: { lv_skz }, AKZ: { lv_akz }, Form: { ev_form_name }, Class: { ev_class_name }| ).
-    ENDIF.
-
-    SELECT SINGLE *
-      FROM /ctdi/rep_projec "#EC CI_ALL_FIELDS_NEEDED
-      WHERE vbeln = @lv_contract ##SUBRC_OK
-      INTO @es_project.
-  ENDMETHOD.
-
-
-  METHOD read_data.
-    " Default: no-op. Subclasses override this to populate ms_repair
-    " from database tables based on mv_repair_order.
-    /ctdi/cl_print_driver_log=>log_info(
-      |Default read_data invoked for Repair { mv_repair_order } — no data loaded| ).
-  ENDMETHOD.
-
-  METHOD render_form.
-    " Ensure passed repair header is valid
-    IF ms_repair IS INITIAL.
-      /ctdi/cl_print_driver_log=>log_warning(
-        |Repair data reference is empty - | &&
-        |Print execution bypassed for Repair ID { mv_repair_order }| ).
-      RETURN.
-    ENDIF.
-
-    DATA(lv_form_type) = detect_form_type( ).
-
-    IF lv_form_type = 'S'.
-      /ctdi/cl_print_driver_log=>log_info(
-        |Form { mv_form_name } detected as Smart Form| ).
-      execute_smartform( iv_save_as_pdf = iv_save_as_pdf ).
-    ELSE.
-      /ctdi/cl_print_driver_log=>log_info(
-        |Form { mv_form_name } detected as Adobe Form| ).
-      execute_adobeform( iv_save_as_pdf = iv_save_as_pdf ).
-    ENDIF.
-  ENDMETHOD.
-
-  METHOD detect_form_type.
-    SELECT SINGLE formname FROM stxfadm
-      WHERE formname = @mv_form_name
-      INTO @DATA(lv_ssf_name).
-    IF sy-subrc = 0.
-      rv_type = 'S'.          " Smart Form exists in STXFADM
-    ELSE.
-      rv_type = 'A'.          " Default to Adobe Form
-    ENDIF.
-  ENDMETHOD.
-
-
-  METHOD execute_smartform.
-    DATA: lv_fm_name          TYPE rs38l_fnam,
-          ls_control_params   TYPE ssfctrlop,
-          ls_output_options   TYPE ssfcompop,
-          ls_job_output       TYPE ssfcrescl,
-          lt_otf              TYPE TABLE OF itcoo,
-          lv_pdf_xstring      TYPE xstring,
-          lt_pdf_lines        TYPE TABLE OF tline,
-          lv_printer          TYPE rspopname,
-          lv_immed            TYPE c,
-          lv_delete           TYPE c,
-          lv_err              TYPE string.
-
-    " Resolve generated function module name
-    CALL FUNCTION 'SSF_FUNCTION_MODULE_NAME'
-      EXPORTING
-        formname           = mv_form_name
-      IMPORTING
-        fm_name            = lv_fm_name
-      EXCEPTIONS
-        no_form            = 1
-        no_function_module = 2
-        OTHERS             = 3.
-    IF sy-subrc <> 0.
-      lv_err = |Smart Form FM resolution failed for { mv_form_name } (subrc={ sy-subrc })|.
-      /ctdi/cl_print_driver_log=>log_error( lv_err ).
-      RAISE EXCEPTION TYPE /ctdi/cx_print_driver_error
-        EXPORTING repair_id = mv_repair_order
-                  message   = lv_err.
-    ENDIF.
-
-    " Apply user print defaults
-    get_user_print_defaults(
-      IMPORTING ev_printer = lv_printer
-                ev_immed   = lv_immed
-                ev_delete  = lv_delete ).
-
-    ls_output_options-tddest   = lv_printer.
-    ls_output_options-tdcopies = 1.
-    ls_output_options-tdimmed  = lv_immed.
-    ls_output_options-tddelete = lv_delete.
-    ls_output_options-tdnewid  = abap_true.
-
-    " Dynamic device type based on logon language
-    DATA: lv_devtype TYPE rspoptype.
-    CALL FUNCTION 'SSF_GET_DEVICE_TYPE'
-      EXPORTING
-        i_language    = sy-langu
-      IMPORTING
-        e_devtype     = lv_devtype
-      EXCEPTIONS
-        OTHERS        = 1.
-    IF sy-subrc <> 0.
-      lv_devtype = 'YPDF'.
-    ENDIF.
-    ls_output_options-tdprinter = lv_devtype.
-
-    " PDF mode: intercept OTF data
-    IF iv_save_as_pdf = abap_true.
-      ls_control_params-getotf    = abap_true.
-      ls_control_params-no_dialog = abap_true.
-    ENDIF.
-
-    DATA: lv_subrc_fm TYPE sysubrc.
-
-    DATA: lt_ptab TYPE abap_func_parmbind_tab,
-          ls_ptab TYPE abap_func_parmbind,
-          lt_etab TYPE abap_func_excpbind_tab,
-          ls_etab TYPE abap_func_excpbind.
-
-    ls_ptab-name = 'CONTROL_PARAMETERS'.
-    ls_ptab-kind = abap_func_exporting.
-    GET REFERENCE OF ls_control_params INTO ls_ptab-value.
-    INSERT ls_ptab INTO TABLE lt_ptab.
-
-    ls_ptab-name = 'OUTPUT_OPTIONS'.
-    ls_ptab-kind = abap_func_exporting.
-    GET REFERENCE OF ls_output_options INTO ls_ptab-value.
-    INSERT ls_ptab INTO TABLE lt_ptab.
-
-
-    " Fetch all valid parameters for the generated function module to prevent dumps
-    SELECT parameter FROM fupararef
-      WHERE funcname = @lv_fm_name
-      INTO TABLE @DATA(lt_valid_params_sf).
-
-    " Inject any dynamically registered custom parameters if they exist in the form
-    LOOP AT mt_custom_form_params INTO DATA(ls_custom_param_sf).
-      READ TABLE lt_valid_params_sf WITH KEY parameter = ls_custom_param_sf-name TRANSPORTING NO FIELDS.
-      IF sy-subrc = 0.
-        INSERT ls_custom_param_sf INTO TABLE lt_ptab.
-      ENDIF.
-    ENDLOOP.
-
-    ls_ptab-name = 'JOB_OUTPUT_INFO'.
-    ls_ptab-kind = abap_func_importing.
-    GET REFERENCE OF ls_job_output INTO ls_ptab-value.
-    INSERT ls_ptab INTO TABLE lt_ptab.
-
-    ls_etab-name = 'FORMATTING_ERROR'. ls_etab-value = 1. INSERT ls_etab INTO TABLE lt_etab.
-    ls_etab-name = 'INTERNAL_ERROR'.   ls_etab-value = 2. INSERT ls_etab INTO TABLE lt_etab.
-    ls_etab-name = 'SEND_ERROR'.       ls_etab-value = 3. INSERT ls_etab INTO TABLE lt_etab.
-    ls_etab-name = 'USER_CANCELED'.    ls_etab-value = 4. INSERT ls_etab INTO TABLE lt_etab.
-    ls_etab-name = 'OTHERS'.           ls_etab-value = 5. INSERT ls_etab INTO TABLE lt_etab.
-
-    TRY.
-        CALL FUNCTION lv_fm_name
-          PARAMETER-TABLE lt_ptab
-          EXCEPTION-TABLE lt_etab.
-        lv_subrc_fm = sy-subrc.
-      CATCH cx_sy_dyn_call_error INTO DATA(lx_dyn_call).
-        lv_err = |Dynamic call error for { mv_form_name }: { lx_dyn_call->get_text( ) }|.
-        /ctdi/cl_print_driver_log=>log_error( lv_err ).
-        RAISE EXCEPTION TYPE /ctdi/cx_print_driver_error
-          EXPORTING repair_id = mv_repair_order
-                    message   = lv_err.
-    ENDTRY.
-
-    IF lv_subrc_fm <> 0.
-      lv_err = |Smart Form { mv_form_name } execution failed (subrc={ lv_subrc_fm })|.
-      /ctdi/cl_print_driver_log=>log_error( lv_err ).
-      RAISE EXCEPTION TYPE /ctdi/cx_print_driver_error
-        EXPORTING repair_id = mv_repair_order
-                  message   = lv_err.
-    ENDIF.
-
-    /ctdi/cl_print_driver_log=>log_info(
-      |Smart Form { mv_form_name } executed successfully| ).
-
-    " PDF conversion if requested
-    IF iv_save_as_pdf = abap_true.
-      lt_otf = ls_job_output-otfdata.
-      CALL FUNCTION 'CONVERT_OTF'
-        EXPORTING
-          format                = 'PDF'
-        IMPORTING
-          bin_file              = lv_pdf_xstring
-        TABLES
-          otf                   = lt_otf
-          lines                 = lt_pdf_lines
-        EXCEPTIONS
-          err_max_linewidth     = 1
-          err_format            = 2
-          err_conv_not_possible = 3
-          err_bad_otf           = 4
-          OTHERS                = 5.
-      IF sy-subrc <> 0.
-        lv_err = |CONVERT_OTF failed for { mv_form_name } (subrc={ sy-subrc })|.
-        /ctdi/cl_print_driver_log=>log_error( lv_err ).
-        RAISE EXCEPTION TYPE /ctdi/cx_print_driver_error
-          EXPORTING repair_id = mv_repair_order
-                    message   = lv_err.
-      ENDIF.
-
-      download_pdf( iv_pdf_data = lv_pdf_xstring ).
-    ENDIF.
   ENDMETHOD.
 
 
@@ -682,89 +393,281 @@ CLASS /ctdi/cl_print_driver_base IMPLEMENTATION.
   ENDMETHOD.
 
 
-  METHOD download_pdf.
-    DATA: lt_filetab  TYPE filetable,
-          lv_rc       TYPE i,
-          lv_action   TYPE i,
-          lv_path     TYPE string,
-          lv_filename TYPE string,
-          lv_fpath    TYPE string,
-          lv_filesize TYPE i,
-          lt_data     TYPE solix_tab.
+  METHOD execute_smartform.
+    DATA: lv_fm_name          TYPE rs38l_fnam,
+          ls_control_params   TYPE ssfctrlop,
+          ls_output_options   TYPE ssfcompop,
+          ls_job_output       TYPE ssfcrescl,
+          lt_otf              TYPE TABLE OF itcoo,
+          lv_pdf_xstring      TYPE xstring,
+          lt_pdf_lines        TYPE TABLE OF tline,
+          lv_printer          TYPE rspopname,
+          lv_immed            TYPE c,
+          lv_delete           TYPE c,
+          lv_err              TYPE string.
 
-    IF iv_pdf_data IS INITIAL.
-      RETURN.
-    ENDIF.
-
-    " Guard: batch mode — frontend services are unavailable
-    IF sy-batch IS NOT INITIAL.
-      /ctdi/cl_print_driver_log=>log_warning(
-        |PDF download skipped for Repair { mv_repair_order } in batch mode| ).
-      RETURN.
-    ENDIF.
-
-    " Convert XSTRING to binary table
-    CALL FUNCTION 'SCMS_XSTRING_TO_BINARY'
+    " Resolve generated function module name
+    CALL FUNCTION 'SSF_FUNCTION_MODULE_NAME'
       EXPORTING
-        buffer     = iv_pdf_data
-      TABLES
-        binary_tab = lt_data
+        formname           = mv_form_name
+      IMPORTING
+        fm_name            = lv_fm_name
       EXCEPTIONS
-        OTHERS     = 1.
+        no_form            = 1
+        no_function_module = 2
+        OTHERS             = 3.
     IF sy-subrc <> 0.
-      RETURN.
+      lv_err = |Smart Form FM resolution failed for { mv_form_name } (subrc={ sy-subrc })|.
+      /ctdi/cl_print_driver_log=>log_error( lv_err ).
+      RAISE EXCEPTION TYPE /ctdi/cx_print_driver_error
+        EXPORTING repair_id = mv_repair_order
+                  message   = lv_err.
     ENDIF.
 
-    " Show file-save dialog
-    cl_gui_frontend_services=>file_save_dialog(
+    " Apply user print defaults
+    get_user_print_defaults(
+      IMPORTING ev_printer = lv_printer
+                ev_immed   = lv_immed
+                ev_delete  = lv_delete ).
+
+    ls_output_options-tddest   = lv_printer.
+    ls_output_options-tdcopies = 1.
+    ls_output_options-tdimmed  = lv_immed.
+    ls_output_options-tddelete = lv_delete.
+    ls_output_options-tdnewid  = abap_true.
+
+    " Dynamic device type based on logon language
+    DATA: lv_devtype TYPE rspoptype.
+    CALL FUNCTION 'SSF_GET_DEVICE_TYPE'
       EXPORTING
-        default_file_name    = |Repair_{ mv_repair_order }.pdf|
-        default_extension    = 'pdf'
-        file_filter          = 'PDF Files (*.pdf)|*.pdf'
-      CHANGING
-        filename             = lv_filename
-        path                 = lv_path
-        fullpath             = lv_fpath
-        user_action          = lv_action
+        i_language    = sy-langu
+      IMPORTING
+        e_devtype     = lv_devtype
       EXCEPTIONS
-        OTHERS               = 1 ).
+        OTHERS        = 1.
     IF sy-subrc <> 0.
-      DATA(lv_subrc_dialog) = sy-subrc.
+      lv_devtype = 'YPDF'.
+    ENDIF.
+    ls_output_options-tdprinter = lv_devtype.
+
+    " PDF mode: intercept OTF data
+    IF iv_save_as_pdf = abap_true.
+      ls_control_params-getotf    = abap_true.
+      ls_control_params-no_dialog = abap_true.
     ENDIF.
 
-    IF lv_action = cl_gui_frontend_services=>action_ok AND lv_fpath IS NOT INITIAL.
-      lv_filesize = xstrlen( iv_pdf_data ).
+    DATA: lv_subrc_fm TYPE sysubrc.
 
-      cl_gui_frontend_services=>gui_download(
-        EXPORTING
-          filename                  = lv_fpath
-          filetype                  = 'BIN'
-          bin_filesize              = lv_filesize
-        CHANGING
-          data_tab                  = lt_data
-        EXCEPTIONS
-          file_write_error          = 1
-          no_batch                  = 2
-          gui_refuse_filetransfer   = 3
-          invalid_type              = 4
-          no_authority              = 5
-          unknown_error             = 6
-          header_not_allowed        = 7
-          separator_not_allowed     = 8
-          filesize_not_allowed      = 9
-          header_too_long           = 10
-          access_denied             = 12
-          dp_out_of_memory          = 13
-          disk_full                 = 14
-          dp_timeout                = 15
-          file_not_found            = 16
-          dataprovider_exception    = 17
-          control_flush_error       = 18
-          OTHERS                    = 19 ).
-      IF sy-subrc <> 0.
-        DATA(lv_subrc_download) = sy-subrc.
+    DATA: lt_ptab TYPE abap_func_parmbind_tab,
+          ls_ptab TYPE abap_func_parmbind,
+          lt_etab TYPE abap_func_excpbind_tab,
+          ls_etab TYPE abap_func_excpbind.
+
+    ls_ptab-name = 'CONTROL_PARAMETERS'.
+    ls_ptab-kind = abap_func_exporting.
+    GET REFERENCE OF ls_control_params INTO ls_ptab-value.
+    INSERT ls_ptab INTO TABLE lt_ptab.
+
+    ls_ptab-name = 'OUTPUT_OPTIONS'.
+    ls_ptab-kind = abap_func_exporting.
+    GET REFERENCE OF ls_output_options INTO ls_ptab-value.
+    INSERT ls_ptab INTO TABLE lt_ptab.
+
+
+    " Fetch all valid parameters for the generated function module to prevent dumps
+    SELECT parameter FROM fupararef
+      WHERE funcname = @lv_fm_name
+      INTO TABLE @DATA(lt_valid_params_sf).
+
+    " Inject any dynamically registered custom parameters if they exist in the form
+    LOOP AT mt_custom_form_params INTO DATA(ls_custom_param_sf).
+      READ TABLE lt_valid_params_sf WITH KEY parameter = ls_custom_param_sf-name TRANSPORTING NO FIELDS.
+      IF sy-subrc = 0.
+        INSERT ls_custom_param_sf INTO TABLE lt_ptab.
       ENDIF.
+    ENDLOOP.
+
+    ls_ptab-name = 'JOB_OUTPUT_INFO'.
+    ls_ptab-kind = abap_func_importing.
+    GET REFERENCE OF ls_job_output INTO ls_ptab-value.
+    INSERT ls_ptab INTO TABLE lt_ptab.
+
+    ls_etab-name = 'FORMATTING_ERROR'. ls_etab-value = 1. INSERT ls_etab INTO TABLE lt_etab.
+    ls_etab-name = 'INTERNAL_ERROR'.   ls_etab-value = 2. INSERT ls_etab INTO TABLE lt_etab.
+    ls_etab-name = 'SEND_ERROR'.       ls_etab-value = 3. INSERT ls_etab INTO TABLE lt_etab.
+    ls_etab-name = 'USER_CANCELED'.    ls_etab-value = 4. INSERT ls_etab INTO TABLE lt_etab.
+    ls_etab-name = 'OTHERS'.           ls_etab-value = 5. INSERT ls_etab INTO TABLE lt_etab.
+
+    TRY.
+        CALL FUNCTION lv_fm_name
+          PARAMETER-TABLE lt_ptab
+          EXCEPTION-TABLE lt_etab.
+        lv_subrc_fm = sy-subrc.
+      CATCH cx_sy_dyn_call_error INTO DATA(lx_dyn_call).
+        lv_err = |Dynamic call error for { mv_form_name }: { lx_dyn_call->get_text( ) }|.
+        /ctdi/cl_print_driver_log=>log_error( lv_err ).
+        RAISE EXCEPTION TYPE /ctdi/cx_print_driver_error
+          EXPORTING repair_id = mv_repair_order
+                    message   = lv_err.
+    ENDTRY.
+
+    IF lv_subrc_fm <> 0.
+      lv_err = |Smart Form { mv_form_name } execution failed (subrc={ lv_subrc_fm })|.
+      /ctdi/cl_print_driver_log=>log_error( lv_err ).
+      RAISE EXCEPTION TYPE /ctdi/cx_print_driver_error
+        EXPORTING repair_id = mv_repair_order
+                  message   = lv_err.
     ENDIF.
+
+    /ctdi/cl_print_driver_log=>log_info(
+      |Smart Form { mv_form_name } executed successfully| ).
+
+    " PDF conversion if requested
+    IF iv_save_as_pdf = abap_true.
+      lt_otf = ls_job_output-otfdata.
+      CALL FUNCTION 'CONVERT_OTF'
+        EXPORTING
+          format                = 'PDF'
+        IMPORTING
+          bin_file              = lv_pdf_xstring
+        TABLES
+          otf                   = lt_otf
+          lines                 = lt_pdf_lines
+        EXCEPTIONS
+          err_max_linewidth     = 1
+          err_format            = 2
+          err_conv_not_possible = 3
+          err_bad_otf           = 4
+          OTHERS                = 5.
+      IF sy-subrc <> 0.
+        lv_err = |CONVERT_OTF failed for { mv_form_name } (subrc={ sy-subrc })|.
+        /ctdi/cl_print_driver_log=>log_error( lv_err ).
+        RAISE EXCEPTION TYPE /ctdi/cx_print_driver_error
+          EXPORTING repair_id = mv_repair_order
+                    message   = lv_err.
+      ENDIF.
+
+      download_pdf( iv_pdf_data = lv_pdf_xstring ).
+    ENDIF.
+  ENDMETHOD.
+
+
+  METHOD factory.
+    DATA: lv_form_name  TYPE fpname,
+          lv_class_name TYPE seoclsname,
+          ls_project_db TYPE /ctdi/rep_projec.
+
+    /ctdi/cl_print_driver_log=>log_info(
+      |Print driver factory invoked for Repair { iv_repair_id }, Sernr { iv_sernr }| ).
+
+    get_config_from_db(
+      EXPORTING iv_repair_id  = iv_repair_id
+      IMPORTING ev_form_name  = lv_form_name
+                ev_class_name = lv_class_name
+                es_project    = ls_project_db ).
+
+    "IF lv_form_name = '/CELLAG/ALCAREP'.
+    "  RAISE EXCEPTION TYPE /ctdi/cx_no_config_found.
+    "ENDIF.
+
+    TRY.
+        CREATE OBJECT ro_driver TYPE (lv_class_name).
+        ro_driver->mv_repair_order = iv_repair_id.
+        ro_driver->mv_sernr        = iv_sernr.
+        ro_driver->mv_form_name = lv_form_name.
+        ro_driver->ms_project   = ls_project_db.
+      CATCH cx_sy_create_object_error INTO DATA(lx_create).
+        RAISE EXCEPTION TYPE /ctdi/cx_print_driver_error
+          EXPORTING
+            repair_id = iv_repair_id
+            message   = |Cannot instantiate class { lv_class_name }|
+            previous  = lx_create.
+    ENDTRY.
+  ENDMETHOD.
+
+
+  METHOD get_config_from_db.
+    DATA: lv_contract TYPE vbeln_va,
+          lv_skz      TYPE bemot,
+          lv_akz      TYPE char4,
+          ls_config   TYPE /ctdi/rep_forms.
+
+    TYPES: BEGIN OF ty_query_step,
+             vbeln TYPE vbeln_va,
+             skz   TYPE bemot,
+             akz   TYPE char4,
+           END OF ty_query_step.
+    DATA: lt_steps TYPE TABLE OF ty_query_step.
+
+    IF ev_form_name IS SUPPLIED OR ev_class_name IS SUPPLIED.
+
+      resolve_contract( EXPORTING iv_repair_id    = iv_repair_id
+                        IMPORTING ev_contract_id  = lv_contract
+                                  ev_skz          = lv_skz
+                                  ev_akz          = lv_akz ).
+
+      IF lv_contract IS NOT INITIAL.
+        IF lv_skz IS NOT INITIAL AND lv_akz IS NOT INITIAL.
+          APPEND VALUE #( vbeln = lv_contract skz = lv_skz akz = lv_akz ) TO lt_steps.
+        ENDIF.
+        IF lv_skz IS NOT INITIAL.
+          APPEND VALUE #( vbeln = lv_contract skz = lv_skz akz = '' ) TO lt_steps.
+        ENDIF.
+        IF lv_akz IS NOT INITIAL.
+          APPEND VALUE #( vbeln = lv_contract skz = '' akz = lv_akz ) TO lt_steps.
+        ENDIF.
+        APPEND VALUE #( vbeln = lv_contract skz = '' akz = '' ) TO lt_steps.
+      ENDIF.
+
+      IF lv_skz IS NOT INITIAL AND lv_akz IS NOT INITIAL.
+        APPEND VALUE #( vbeln = '' skz = lv_skz akz = lv_akz ) TO lt_steps.
+      ENDIF.
+      IF lv_skz IS NOT INITIAL.
+        APPEND VALUE #( vbeln = '' skz = lv_skz akz = '' ) TO lt_steps.
+      ENDIF.
+      IF lv_akz IS NOT INITIAL.
+        APPEND VALUE #( vbeln = '' skz = '' akz = lv_akz ) TO lt_steps.
+      ENDIF.
+
+      " Global fallback (Empty Keys)
+      APPEND VALUE #( vbeln = '' skz = '' akz = '' ) TO lt_steps.
+
+      SELECT * FROM /ctdi/rep_forms "#EC CI_ALL_FIELDS_NEEDED
+        WHERE vbeln = @lv_contract OR vbeln =  ''
+        ORDER BY PRIMARY KEY ##SUBRC_OK
+        INTO TABLE @DATA(lt_forms).
+
+      CLEAR ls_config.
+      LOOP AT lt_steps ASSIGNING FIELD-SYMBOL(<ls_step>).
+        READ TABLE lt_forms INTO ls_config WITH KEY
+          vbeln = <ls_step>-vbeln
+          skz   = <ls_step>-skz
+          akz   = <ls_step>-akz.
+        IF sy-subrc = 0.
+          EXIT.
+        ENDIF.
+      ENDLOOP.
+
+      IF ls_config IS NOT INITIAL.
+        ev_form_name  = ls_config-form_name.
+        ev_class_name = /ctdi/cl_print_cust_engine=>normalize_class_name( ls_config-class_name ).
+      ELSE.
+        RAISE EXCEPTION TYPE /ctdi/cx_print_driver_error
+          EXPORTING
+            repair_id = iv_repair_id
+            message   = |No configuration found in /CTDI/REP_FORMS (including default fallback).|.
+      ENDIF.
+
+      /ctdi/cl_print_driver_log=>log_info(
+        |Config resolved — Contract: { lv_contract }, | &&
+        |SKZ: { lv_skz }, AKZ: { lv_akz }, Form: { ev_form_name }, Class: { ev_class_name }| ).
+    ENDIF.
+
+    SELECT SINGLE *
+      FROM /ctdi/rep_projec "#EC CI_ALL_FIELDS_NEEDED
+      WHERE vbeln = @lv_contract ##SUBRC_OK
+      INTO @es_project.
+
   ENDMETHOD.
 
 
@@ -804,6 +707,13 @@ CLASS /ctdi/cl_print_driver_base IMPLEMENTATION.
   ENDMETHOD.
 
 
+  METHOD read_data.
+    " Default: no-op. Subclasses override this to populate ms_repair
+    " from database tables based on mv_repair_order.
+    /ctdi/cl_print_driver_log=>log_info(
+      |Default read_data invoked for Repair { mv_repair_order } — no data loaded| ).
+  ENDMETHOD.
+
 
   METHOD register_custom_parameter.
     DATA: ls_param TYPE abap_func_parmbind.
@@ -813,4 +723,101 @@ CLASS /ctdi/cl_print_driver_base IMPLEMENTATION.
     INSERT ls_param INTO TABLE mt_custom_form_params.
   ENDMETHOD.
 
+
+  METHOD render_form.
+    " Ensure passed repair header is valid
+    IF ms_repair IS INITIAL.
+      /ctdi/cl_print_driver_log=>log_warning(
+        |Repair data reference is empty - | &&
+        |Print execution bypassed for Repair ID { mv_repair_order }| ).
+      RETURN.
+    ENDIF.
+
+    DATA(lv_form_type) = detect_form_type( ).
+
+    IF lv_form_type = 'S'.
+      /ctdi/cl_print_driver_log=>log_info(
+        |Form { mv_form_name } detected as Smart Form| ).
+      execute_smartform( iv_save_as_pdf = iv_save_as_pdf ).
+    ELSE.
+      /ctdi/cl_print_driver_log=>log_info(
+        |Form { mv_form_name } detected as Adobe Form| ).
+      execute_adobeform( iv_save_as_pdf = iv_save_as_pdf ).
+    ENDIF.
+  ENDMETHOD.
+
+
+  METHOD resolve_contract.
+    DATA(lv_aufnr) = |{ iv_repair_id ALPHA = IN }|.
+    CLEAR: ev_contract_id, ev_skz, ev_akz.
+
+    SELECT SINGLE kdauf
+      FROM aufk AS a
+      WHERE a~aufnr = @lv_aufnr
+      INTO @DATA(lv_order_id).
+
+    IF sy-subrc = 0 AND lv_order_id IS NOT INITIAL.
+      SELECT SINGLE vgbel
+        FROM vbak
+       WHERE vbeln = @lv_order_id
+        INTO @ev_contract_id.
+
+      IF sy-subrc = 0 AND ev_contract_id IS NOT INITIAL.
+        " Verify the linked document is actually a contract (vbtyp = 'G')
+        SELECT SINGLE vbtyp
+          FROM vbak
+         WHERE vbeln = @ev_contract_id
+          INTO @DATA(lv_vbtyp).
+
+        IF lv_vbtyp NE 'G'.
+          CLEAR ev_contract_id.
+          sy-subrc = 4. " Force failure flag
+        ENDIF.
+      ENDIF.
+
+      IF sy-subrc NE 0.
+        DATA(lv_err1) = |Could not find a Contract for Order { lv_order_id }|.
+        /ctdi/cl_print_driver_log=>log_error( lv_err1 ).
+        RAISE EXCEPTION TYPE /ctdi/cx_print_driver_error
+          EXPORTING
+            repair_id = iv_repair_id
+            message   = lv_err1.
+      ENDIF.
+
+      SELECT bemot, stokz, stzhl
+        FROM afru
+        WHERE aufnr = @lv_aufnr
+          AND vornr = '9010'
+        INTO TABLE @DATA(lt_afru).
+
+      IF sy-subrc = 0.
+        LOOP AT lt_afru ASSIGNING FIELD-SYMBOL(<ls_afru>).
+          IF <ls_afru>-stokz = space AND <ls_afru>-stzhl = '00000000'.
+            ev_skz = <ls_afru>-bemot.
+            EXIT.
+          ENDIF.
+        ENDLOOP.
+      ENDIF.
+
+      SELECT SINGLE qmcod
+        FROM qmel
+        WHERE aufnr = @lv_aufnr
+          AND qmart = 'Z2'
+        INTO @ev_akz.
+      IF sy-subrc <> 0.
+        " Ignore
+      ENDIF.
+
+      /ctdi/cl_print_driver_log=>log_info(
+        |Resolved Order { iv_repair_id } -> Contract { ev_contract_id }, SKZ { ev_skz }, AKZ { ev_akz }| ).
+
+    ELSE.
+      DATA(lv_err2) = |Could not resolve Contract for Repair Order { iv_repair_id }|.
+      /ctdi/cl_print_driver_log=>log_error( lv_err2 ).
+      RAISE EXCEPTION TYPE /ctdi/cx_print_driver_error
+        EXPORTING
+          repair_id = iv_repair_id
+          message   = lv_err2.
+    ENDIF.
+  ENDMETHOD.
 ENDCLASS.
