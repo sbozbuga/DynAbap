@@ -74,5 +74,7 @@ FORM entry.
 
   IF lv_emsg IS NOT INITIAL.
     MESSAGE lv_emsg TYPE 'E'.
+  ELSE.
+    MESSAGE 'Printout generated successfully' TYPE 'S'.
   ENDIF.
 ENDFORM.
