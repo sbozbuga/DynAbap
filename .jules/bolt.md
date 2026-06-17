@@ -6,3 +6,6 @@
 ## 2024-06-15 - SELECT...ENDSELECT vs INTO TABLE Optimization
 **Learning:** Legacy ABAP `SELECT...ENDSELECT` loops lead to significant N+1-like performance issues due to excessive database round-trips. Replacing them with bulk array fetches using `SELECT ... INTO TABLE ...` and `LOOP AT ...` minimizes DB communication overhead.
 **Action:** Always refactor `SELECT...ENDSELECT` constructs to `SELECT ... INTO TABLE` combined with `LOOP AT` when performance tuning ABAP codebases, especially when iterating through results inside an application logic loop.
+## 2024-06-16 - Replacing SELECT SINGLE inside loops with bulk fetching
+**Learning:** Performing `SELECT SINGLE` queries inside an ABAP `LOOP AT` block for things like fetching texts (`qpgt`, `qpct`) leads to N+1 query performance issues, especially when iterating through items like repair results/errors.
+**Action:** Extract loop variables into range tables (`RANGE OF`), perform a single `SELECT ... INTO TABLE ...` before the loop, and use `READ TABLE` inside the loop to fetch data from memory. Sort and remove duplicates from range tables for optimal DB fetching.
