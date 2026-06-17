@@ -212,6 +212,8 @@ CLASS /CTDI/CL_PRINT_DRIVER_BASE IMPLEMENTATION.
           OTHERS                    = 19 ).
       IF sy-subrc <> 0.
         DATA(lv_subrc_download) = sy-subrc.
+      ELSE.
+        MESSAGE 'PDF downloaded successfully' TYPE 'S'.
       ENDIF.
     ENDIF.
   ENDMETHOD.
