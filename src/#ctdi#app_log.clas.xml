@@ -1,0 +1,330 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<abapGit version="v1.0.0" serializer="LCL_OBJECT_CLAS" serializer_version="v1.0.0">
+ <asx:abap xmlns:asx="http://www.sap.com/abapxml" version="1.0">
+  <asx:values>
+   <VSEOCLASS>
+    <CLSNAME>/CTDI/APP_LOG</CLSNAME>
+    <LANGU>E</LANGU>
+    <DESCRIPT>Klasse für Application Log</DESCRIPT>
+    <STATE>1</STATE>
+    <CLSCCINCL>X</CLSCCINCL>
+    <FIXPT>X</FIXPT>
+    <UNICODE>X</UNICODE>
+    <RSTAT>K</RSTAT>
+   </VSEOCLASS>
+   <DESCRIPTIONS>
+    <SEOCOMPOTX>
+     <CMPNAME>ADD_BAL_MESSAGE</CMPNAME>
+     <LANGU>E</LANGU>
+     <DESCRIPT>Message im Format BAL_S_MSG hinzufügen</DESCRIPT>
+    </SEOCOMPOTX>
+    <SEOCOMPOTX>
+     <CMPNAME>ADD_BAPIRET2_MESSAGE</CMPNAME>
+     <LANGU>E</LANGU>
+     <DESCRIPT>Message aus BAPIRET2 übernehmen</DESCRIPT>
+    </SEOCOMPOTX>
+    <SEOCOMPOTX>
+     <CMPNAME>ADD_SINGLE_MESSAGE</CMPNAME>
+     <LANGU>E</LANGU>
+     <DESCRIPT>Add text message to log</DESCRIPT>
+    </SEOCOMPOTX>
+    <SEOCOMPOTX>
+     <CMPNAME>ADD_SYS_MESSAGE</CMPNAME>
+     <LANGU>E</LANGU>
+     <DESCRIPT>Message aus SYST übernehmen</DESCRIPT>
+    </SEOCOMPOTX>
+    <SEOCOMPOTX>
+     <CMPNAME>CHANGE_HEADER</CMPNAME>
+     <LANGU>E</LANGU>
+     <DESCRIPT>Change log header</DESCRIPT>
+    </SEOCOMPOTX>
+    <SEOCOMPOTX>
+     <CMPNAME>CONSTRUCTOR</CMPNAME>
+     <LANGU>E</LANGU>
+     <DESCRIPT>CONSTRUCTOR</DESCRIPT>
+    </SEOCOMPOTX>
+    <SEOCOMPOTX>
+     <CMPNAME>CURR_HANDLE</CMPNAME>
+     <LANGU>E</LANGU>
+     <DESCRIPT>Anwendungs-Log: Tabelle mit Protokoll-Handles</DESCRIPT>
+    </SEOCOMPOTX>
+    <SEOCOMPOTX>
+     <CMPNAME>CURR_HEADER</CMPNAME>
+     <LANGU>E</LANGU>
+     <DESCRIPT>Nachrichtentyp</DESCRIPT>
+    </SEOCOMPOTX>
+    <SEOCOMPOTX>
+     <CMPNAME>C_MESSAGE_INFO</CMPNAME>
+     <LANGU>E</LANGU>
+     <DESCRIPT>Anwendungs-Log: Handle eines Protokolls</DESCRIPT>
+    </SEOCOMPOTX>
+    <SEOCOMPOTX>
+     <CMPNAME>C_PROBCLASS_HIGH</CMPNAME>
+     <LANGU>E</LANGU>
+     <DESCRIPT>Problemklasse Hoch</DESCRIPT>
+    </SEOCOMPOTX>
+    <SEOCOMPOTX>
+     <CMPNAME>C_PROBCLASS_LOW</CMPNAME>
+     <LANGU>E</LANGU>
+     <DESCRIPT>Problemklasse Niedrig</DESCRIPT>
+    </SEOCOMPOTX>
+    <SEOCOMPOTX>
+     <CMPNAME>C_PROBCLASS_MEDIUM</CMPNAME>
+     <LANGU>E</LANGU>
+     <DESCRIPT>Problemklasse &apos;Mittel&apos;</DESCRIPT>
+    </SEOCOMPOTX>
+    <SEOCOMPOTX>
+     <CMPNAME>C_PROBCLASS_NONE</CMPNAME>
+     <LANGU>E</LANGU>
+     <DESCRIPT>Keine Problemklasse</DESCRIPT>
+    </SEOCOMPOTX>
+    <SEOCOMPOTX>
+     <CMPNAME>C_PROBCLASS_VHIGH</CMPNAME>
+     <LANGU>E</LANGU>
+     <DESCRIPT>Problemklasse Sehr Hoch</DESCRIPT>
+    </SEOCOMPOTX>
+    <SEOCOMPOTX>
+     <CMPNAME>DISPLAY</CMPNAME>
+     <LANGU>E</LANGU>
+     <DESCRIPT>Display log</DESCRIPT>
+    </SEOCOMPOTX>
+    <SEOCOMPOTX>
+     <CMPNAME>DISPLAY_PROFILE</CMPNAME>
+     <LANGU>E</LANGU>
+     <DESCRIPT>Displayprofil für Anzeige aufbereitet</DESCRIPT>
+    </SEOCOMPOTX>
+    <SEOCOMPOTX>
+     <CMPNAME>DUMMY</CMPNAME>
+     <LANGU>E</LANGU>
+     <DESCRIPT>Anwendungs-Log: Daten des Protokollkopfes</DESCRIPT>
+    </SEOCOMPOTX>
+    <SEOCOMPOTX>
+     <CMPNAME>GET_BAPIRET2_MSG_BAL</CMPNAME>
+     <LANGU>E</LANGU>
+     <DESCRIPT>Returns bal_s_msg with content from bapiret2 message</DESCRIPT>
+    </SEOCOMPOTX>
+    <SEOCOMPOTX>
+     <CMPNAME>GET_CALLER</CMPNAME>
+     <LANGU>E</LANGU>
+     <DESCRIPT>Get caller name (Program)</DESCRIPT>
+    </SEOCOMPOTX>
+    <SEOCOMPOTX>
+     <CMPNAME>GET_MESSAGES</CMPNAME>
+     <LANGU>E</LANGU>
+     <DESCRIPT>Return all stored Messages</DESCRIPT>
+    </SEOCOMPOTX>
+    <SEOCOMPOTX>
+     <CMPNAME>GET_SYS_MSG_BAL</CMPNAME>
+     <LANGU>E</LANGU>
+     <DESCRIPT>Returns bal_s_msg with content from the last message in syst</DESCRIPT>
+    </SEOCOMPOTX>
+    <SEOCOMPOTX>
+     <CMPNAME>GET_SYS_MSG_BAPIRET2</CMPNAME>
+     <LANGU>E</LANGU>
+     <DESCRIPT>Get message from syst into bapiret2</DESCRIPT>
+    </SEOCOMPOTX>
+    <SEOCOMPOTX>
+     <CMPNAME>GET_TYPE_FROM_MESSAGE</CMPNAME>
+     <LANGU>E</LANGU>
+     <DESCRIPT>Get Message type from messages (1. &quot;E&quot;, 2. &quot;W&quot;, 3. &quot;I&quot;)</DESCRIPT>
+    </SEOCOMPOTX>
+    <SEOCOMPOTX>
+     <CMPNAME>PROBLEM_CLASS_GET</CMPNAME>
+     <LANGU>E</LANGU>
+     <DESCRIPT>Derive problem class from message type</DESCRIPT>
+    </SEOCOMPOTX>
+    <SEOCOMPOTX>
+     <CMPNAME>SET_CONTEXT</CMPNAME>
+     <LANGU>E</LANGU>
+     <DESCRIPT>Set context for messages</DESCRIPT>
+    </SEOCOMPOTX>
+    <SEOCOMPOTX>
+     <CMPNAME>S_CONTEXT</CMPNAME>
+     <LANGU>E</LANGU>
+     <DESCRIPT>Dummy for MESSAGE ... INTO calls</DESCRIPT>
+    </SEOCOMPOTX>
+    <SEOCOMPOTX>
+     <CMPNAME>T_HANDLES</CMPNAME>
+     <LANGU>E</LANGU>
+     <DESCRIPT>Anwendungs-Log: Kontext</DESCRIPT>
+    </SEOCOMPOTX>
+   </DESCRIPTIONS>
+   <DESCRIPTIONS_SUB>
+    <SEOSUBCOTX>
+     <CMPNAME>ADD_BAL_MESSAGE</CMPNAME>
+     <SCONAME>IS_MSG</SCONAME>
+     <LANGU>E</LANGU>
+     <DESCRIPT>Anwendungs-Log: Daten einer Meldung</DESCRIPT>
+    </SEOSUBCOTX>
+    <SEOSUBCOTX>
+     <CMPNAME>ADD_BAPIRET2_MESSAGE</CMPNAME>
+     <SCONAME>IT_BAPIRET2</SCONAME>
+     <LANGU>E</LANGU>
+     <DESCRIPT>Returntabelle</DESCRIPT>
+    </SEOSUBCOTX>
+    <SEOSUBCOTX>
+     <CMPNAME>ADD_SINGLE_MESSAGE</CMPNAME>
+     <SCONAME>IV_MSG</SCONAME>
+     <LANGU>E</LANGU>
+     <DESCRIPT>Message</DESCRIPT>
+    </SEOSUBCOTX>
+    <SEOSUBCOTX>
+     <CMPNAME>ADD_SINGLE_MESSAGE</CMPNAME>
+     <SCONAME>IV_MSGTY</SCONAME>
+     <LANGU>E</LANGU>
+     <DESCRIPT>Messageart</DESCRIPT>
+    </SEOSUBCOTX>
+    <SEOSUBCOTX>
+     <CMPNAME>CHANGE_HEADER</CMPNAME>
+     <SCONAME>ERROR</SCONAME>
+     <LANGU>E</LANGU>
+     <DESCRIPT>Log header change failed</DESCRIPT>
+    </SEOSUBCOTX>
+    <SEOSUBCOTX>
+     <CMPNAME>CHANGE_HEADER</CMPNAME>
+     <SCONAME>IV_CATEGORY</SCONAME>
+     <LANGU>E</LANGU>
+     <DESCRIPT>Anwendungs-Log: Objektname (Applikationskürzel)</DESCRIPT>
+    </SEOSUBCOTX>
+    <SEOSUBCOTX>
+     <CMPNAME>CHANGE_HEADER</CMPNAME>
+     <SCONAME>IV_EXTID</SCONAME>
+     <LANGU>E</LANGU>
+     <DESCRIPT>Anwendungs-Log: Externe Identifikation</DESCRIPT>
+    </SEOSUBCOTX>
+    <SEOSUBCOTX>
+     <CMPNAME>CHANGE_HEADER</CMPNAME>
+     <SCONAME>IV_KEEP_DAYS</SCONAME>
+     <LANGU>E</LANGU>
+     <DESCRIPT>Anzahl Tage die das Log ausbewahrt wird</DESCRIPT>
+    </SEOSUBCOTX>
+    <SEOSUBCOTX>
+     <CMPNAME>CHANGE_HEADER</CMPNAME>
+     <SCONAME>IV_SUBCATEGORY</SCONAME>
+     <LANGU>E</LANGU>
+     <DESCRIPT>Anwendungs-Log: Unterobjekt</DESCRIPT>
+    </SEOSUBCOTX>
+    <SEOSUBCOTX>
+     <CMPNAME>CONSTRUCTOR</CMPNAME>
+     <SCONAME>IV_CATEGORY</SCONAME>
+     <LANGU>E</LANGU>
+     <DESCRIPT>Anwendungs-Log: Objektname (Applikationskürzel)</DESCRIPT>
+    </SEOSUBCOTX>
+    <SEOSUBCOTX>
+     <CMPNAME>CONSTRUCTOR</CMPNAME>
+     <SCONAME>IV_EXTID</SCONAME>
+     <LANGU>E</LANGU>
+     <DESCRIPT>Anwendungs-Log: Externe Identifikation</DESCRIPT>
+    </SEOSUBCOTX>
+    <SEOSUBCOTX>
+     <CMPNAME>CONSTRUCTOR</CMPNAME>
+     <SCONAME>IV_KEEP_DAYS</SCONAME>
+     <LANGU>E</LANGU>
+     <DESCRIPT>Anzahl Tage die das Log ausbewahrt wird</DESCRIPT>
+    </SEOSUBCOTX>
+    <SEOSUBCOTX>
+     <CMPNAME>CONSTRUCTOR</CMPNAME>
+     <SCONAME>IV_SUBCATEGORY</SCONAME>
+     <LANGU>E</LANGU>
+     <DESCRIPT>Anwendungs-Log: Unterobjekt</DESCRIPT>
+    </SEOSUBCOTX>
+    <SEOSUBCOTX>
+     <CMPNAME>DISPLAY</CMPNAME>
+     <SCONAME>IV_POPUP</SCONAME>
+     <LANGU>E</LANGU>
+     <DESCRIPT>Ausgabe als Popup?</DESCRIPT>
+    </SEOSUBCOTX>
+    <SEOSUBCOTX>
+     <CMPNAME>DISPLAY</CMPNAME>
+     <SCONAME>IV_USE_GRID</SCONAME>
+     <LANGU>E</LANGU>
+     <DESCRIPT>Ausgabe als ALV-Grid?</DESCRIPT>
+    </SEOSUBCOTX>
+    <SEOSUBCOTX>
+     <CMPNAME>DISPLAY_PROFILE</CMPNAME>
+     <SCONAME>R_DISP_PROF</SCONAME>
+     <LANGU>E</LANGU>
+     <DESCRIPT>Anwendungs-Log: Aufbereitungs-Profil für Protokollausgabe</DESCRIPT>
+    </SEOSUBCOTX>
+    <SEOSUBCOTX>
+     <CMPNAME>GET_BAPIRET2_MSG_BAL</CMPNAME>
+     <SCONAME>IS_RETURN</SCONAME>
+     <LANGU>E</LANGU>
+     <DESCRIPT>Returnparameter</DESCRIPT>
+    </SEOSUBCOTX>
+    <SEOSUBCOTX>
+     <CMPNAME>GET_BAPIRET2_MSG_BAL</CMPNAME>
+     <SCONAME>RS_MSG</SCONAME>
+     <LANGU>E</LANGU>
+     <DESCRIPT>Anwendungs-Log: Daten einer Meldung</DESCRIPT>
+    </SEOSUBCOTX>
+    <SEOSUBCOTX>
+     <CMPNAME>GET_CALLER</CMPNAME>
+     <SCONAME>RV_ALPROG</SCONAME>
+     <LANGU>E</LANGU>
+     <DESCRIPT>Anwendungs-Log: Programmname</DESCRIPT>
+    </SEOSUBCOTX>
+    <SEOSUBCOTX>
+     <CMPNAME>GET_MESSAGES</CMPNAME>
+     <SCONAME>IV_LANGU</SCONAME>
+     <LANGU>E</LANGU>
+     <DESCRIPT>Sprachenschlüssel der aktuellen Textumgebung</DESCRIPT>
+    </SEOSUBCOTX>
+    <SEOSUBCOTX>
+     <CMPNAME>GET_MESSAGES</CMPNAME>
+     <SCONAME>RT_MSG</SCONAME>
+     <LANGU>E</LANGU>
+     <DESCRIPT>Anwendungs-Log: Tabelle mit Messages</DESCRIPT>
+    </SEOSUBCOTX>
+    <SEOSUBCOTX>
+     <CMPNAME>GET_SYS_MSG_BAL</CMPNAME>
+     <SCONAME>RS_MSG</SCONAME>
+     <LANGU>E</LANGU>
+     <DESCRIPT>Anwendungs-Log: Daten einer Meldung</DESCRIPT>
+    </SEOSUBCOTX>
+    <SEOSUBCOTX>
+     <CMPNAME>GET_SYS_MSG_BAPIRET2</CMPNAME>
+     <SCONAME>CS_BAPIRET2</SCONAME>
+     <LANGU>E</LANGU>
+     <DESCRIPT>Returnparameter</DESCRIPT>
+    </SEOSUBCOTX>
+    <SEOSUBCOTX>
+     <CMPNAME>GET_SYS_MSG_BAPIRET2</CMPNAME>
+     <SCONAME>CT_BAPIRET2</SCONAME>
+     <LANGU>E</LANGU>
+     <DESCRIPT>Tabelle mit BAPI Return Informationen</DESCRIPT>
+    </SEOSUBCOTX>
+    <SEOSUBCOTX>
+     <CMPNAME>GET_TYPE_FROM_MESSAGE</CMPNAME>
+     <SCONAME>RV_MSGTY</SCONAME>
+     <LANGU>E</LANGU>
+     <DESCRIPT>Messageart</DESCRIPT>
+    </SEOSUBCOTX>
+    <SEOSUBCOTX>
+     <CMPNAME>PROBLEM_CLASS_GET</CMPNAME>
+     <SCONAME>IV_MSGTY</SCONAME>
+     <LANGU>E</LANGU>
+     <DESCRIPT>Nachrichtentyp</DESCRIPT>
+    </SEOSUBCOTX>
+    <SEOSUBCOTX>
+     <CMPNAME>PROBLEM_CLASS_GET</CMPNAME>
+     <SCONAME>IV_PROBCLASS</SCONAME>
+     <LANGU>E</LANGU>
+     <DESCRIPT>Anwendungs-Log: Problemklasse einer Meldung</DESCRIPT>
+    </SEOSUBCOTX>
+    <SEOSUBCOTX>
+     <CMPNAME>PROBLEM_CLASS_GET</CMPNAME>
+     <SCONAME>RV_PROBCLASS</SCONAME>
+     <LANGU>E</LANGU>
+     <DESCRIPT>Anwendungs-Log: Problemklasse einer Meldung</DESCRIPT>
+    </SEOSUBCOTX>
+    <SEOSUBCOTX>
+     <CMPNAME>SET_CONTEXT</CMPNAME>
+     <SCONAME>IV_CONTEXT</SCONAME>
+     <LANGU>E</LANGU>
+     <DESCRIPT>Anwendungs-Log: Kontext</DESCRIPT>
+    </SEOSUBCOTX>
+   </DESCRIPTIONS_SUB>
+  </asx:values>
+ </asx:abap>
+</abapGit>
