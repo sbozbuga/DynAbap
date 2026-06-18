@@ -218,9 +218,9 @@ CLASS /CTDI/CL_PRINT_DRIVER_BASE IMPLEMENTATION.
 
 
   METHOD execute.
-    /ctdi/cl_print_driver_log=>log_info(
-      |Print driver started | &&
-      |Repair: { mv_repair_order }, Form: { mv_form_name }, Save PDF: { iv_save_as_pdf }| ).
+    MESSAGE i001(/ctdi/print_repair) WITH mv_repair_order mv_form_name iv_save_as_pdf
+                                     INTO DATA(lv_msg_started).
+    /ctdi/cl_print_driver_log=>log_info( lv_msg_started ).
 
     " Step 1: Read business data
     read_data( io_data = io_data ).
@@ -228,8 +228,9 @@ CLASS /CTDI/CL_PRINT_DRIVER_BASE IMPLEMENTATION.
     " Step 2: Render the form (SmartForm or Adobe)
     render_form( iv_save_as_pdf = iv_save_as_pdf ).
 
-    /ctdi/cl_print_driver_log=>log_info(
-      |Print driver completed successfully for Repair { mv_repair_order }| ).
+    MESSAGE i002(/ctdi/print_repair) WITH mv_repair_order
+                                     INTO DATA(lv_msg_completed).
+    /ctdi/cl_print_driver_log=>log_info( lv_msg_completed ).
   ENDMETHOD.
 
 
