@@ -43,8 +43,17 @@ CLASS /ctdi/cl_print_driver_log DEFINITION
 
   PROTECTED SECTION.
   PRIVATE SECTION.
-    CLASS-DATA gv_log_handle TYPE balloghndl.
-    CLASS-DATA gv_has_unsaved_logs TYPE abap_bool.
+    CLASS-DATA go_app_log           TYPE REF TO /ctdi/app_log.
+    CLASS-DATA gv_current_object    TYPE balobj_d.
+    CLASS-DATA gv_current_subobject TYPE balsubobj.
+    CLASS-DATA gv_has_unsaved_logs  TYPE abap_bool.
+
+    CLASS-METHODS get_app_log
+      IMPORTING
+        !iv_object     TYPE balobj_d
+        !iv_subobject  TYPE balsubobj
+      RETURNING
+        VALUE(ro_log)  TYPE REF TO /ctdi/app_log.
 
     CLASS-METHODS add_to_log
       IMPORTING
@@ -84,25 +93,48 @@ CLASS /ctdi/cl_print_driver_log IMPLEMENTATION.
   ENDMETHOD.
 
   METHOD log_exception.
-    DATA(lv_text) = ix_exception->get_text( ).
-    add_to_log( iv_text      = lv_text
-                iv_msgty     = 'E'
-                iv_object    = iv_object
-                iv_subobject = iv_subobject ).
+    DATA(lo_log) = get_app_log( iv_object = iv_object iv_subobject = iv_subobject ).
+    IF lo_log IS BOUND.
+      lo_log->add_exception( i_exception = ix_exception ).
+      gv_has_unsaved_logs = abap_true.
+    ENDIF.
+  ENDMETHOD.
+
+  METHOD get_app_log.
+    IF go_app_log IS INITIAL.
+      " Enhance log with execution context (TCode, Mode)
+      DATA(lv_mode) = COND string( WHEN sy-batch = abap_true THEN 'BATCH' ELSE 'DIALOG' ).
+      DATA(lv_extid) = |[{ lv_mode }] TCode: { sy-tcode } Prog: { sy-cprog }|.
+
+      CREATE OBJECT go_app_log
+        EXPORTING
+          iv_category    = iv_object
+          iv_subcategory = iv_subobject
+          iv_extid       = conv #( lv_extid ).
+      gv_current_object = iv_object.
+      gv_current_subobject = iv_subobject.
+    ELSEIF gv_current_object <> iv_object OR gv_current_subobject <> iv_subobject.
+      go_app_log->change_header(
+        EXPORTING
+          iv_category    = iv_object
+          iv_subcategory = iv_subobject
+        EXCEPTIONS
+          OTHERS         = 1 ).
+      IF sy-subrc = 0.
+        gv_current_object = iv_object.
+        gv_current_subobject = iv_subobject.
+      ENDIF.
+    ENDIF.
+    ro_log = go_app_log.
   ENDMETHOD.
 
   METHOD add_to_log.
-    DATA: ls_log      TYPE bal_s_log,
-          lv_handle   TYPE balloghndl,
-          ls_msg      TYPE bal_s_msg,
-          lv_len      TYPE i,
-          lt_handles  TYPE bal_t_logh,
-          lv_level_num TYPE i,
-          lv_msg_num   TYPE i.
-
     CHECK iv_text IS NOT INITIAL.
 
     " 0. Check log level
+    DATA: lv_level_num TYPE i,
+          lv_msg_num   TYPE i.
+
     CASE gv_log_level.
       WHEN 'I'. lv_level_num = 1.
       WHEN 'W'. lv_level_num = 2.
@@ -121,59 +153,12 @@ CLASS /ctdi/cl_print_driver_log IMPLEMENTATION.
       RETURN.
     ENDIF.
 
-    " 1. Create log header if not yet created
-    IF gv_log_handle IS INITIAL.
-      ls_log-object    = iv_object.
-      ls_log-subobject = iv_subobject.
-      ls_log-aluser    = sy-uname.
-      ls_log-alprog    = sy-cprog. " Main executing program instead of class pool
-
-      " Enhance log with execution context (TCode, Mode)
-      DATA(lv_mode) = COND string( WHEN sy-batch = abap_true THEN 'BATCH' ELSE 'DIALOG' ).
-      ls_log-extnumber = |[{ lv_mode }] TCode: { sy-tcode } Prog: { sy-cprog }|.
-
-      CALL FUNCTION 'BAL_LOG_CREATE'
-        EXPORTING
-          i_s_log      = ls_log
-        IMPORTING
-          e_log_handle = gv_log_handle
-        EXCEPTIONS
-          OTHERS       = 1.
-      IF sy-subrc <> 0.
-        RETURN.
-      ENDIF.
-    ENDIF.
-
-    " 2. Map free-text to BAL message (message 00 398: &1&2&3&4)
-    ls_msg-msgty = iv_msgty.
-    ls_msg-msgid = '00'.
-    ls_msg-msgno = '398'.
-
-    lv_len = strlen( iv_text ).
-    IF lv_len > 0.
-      ls_msg-msgv1 = substring( val = iv_text off = 0 len = nmin( val1 = 50 val2 = lv_len ) ).
-    ENDIF.
-    IF lv_len > 50.
-      ls_msg-msgv2 = substring( val = iv_text off = 50 len = nmin( val1 = 50 val2 = lv_len - 50 ) ).
-    ENDIF.
-    IF lv_len > 100.
-      ls_msg-msgv3 = substring( val = iv_text off = 100 len = nmin( val1 = 50 val2 = lv_len - 100 ) ).
-    ENDIF.
-    IF lv_len > 150.
-      ls_msg-msgv4 = substring( val = iv_text off = 150 len = nmin( val1 = 50 val2 = lv_len - 150 ) ).
-    ENDIF.
-
-    " 3. Add message to log
-    CALL FUNCTION 'BAL_LOG_MSG_ADD'
-      EXPORTING
-        i_log_handle = gv_log_handle
-        i_s_msg      = ls_msg
-      EXCEPTIONS
-        OTHERS       = 1.
-    IF sy-subrc = 0.
+    DATA(lo_log) = get_app_log( iv_object = iv_object iv_subobject = iv_subobject ).
+    IF lo_log IS BOUND.
+      lo_log->add_single_message( iv_msgty = iv_msgty iv_msg = iv_text ).
       gv_has_unsaved_logs = abap_true.
 
-      " Give visual feedback to the user on long-running processes (like CL_BAL_LOGGER does)
+      " Give visual feedback to the user on long-running processes
       IF sy-batch = abap_false.
         CALL FUNCTION 'SAPGUI_PROGRESS_INDICATOR'
           EXPORTING
@@ -183,60 +168,22 @@ CLASS /ctdi/cl_print_driver_log IMPLEMENTATION.
   ENDMETHOD.
 
   METHOD save_log.
-    DATA: lt_handles TYPE bal_t_logh.
-
-    IF gv_log_handle IS NOT INITIAL AND gv_has_unsaved_logs = abap_true.
-      INSERT gv_log_handle INTO TABLE lt_handles.
-
-      " Use update task to ensure log is saved safely alongside main transactions
-      " or directly if outside update task context.
-      CALL FUNCTION 'BAL_DB_SAVE'
-        EXPORTING
-          i_t_log_handle   = lt_handles
-        EXCEPTIONS
-          OTHERS           = 1.
-      IF sy-subrc = 0.
-        " Link log to background job in SM37 if running in batch (learned from CL_BAL_LOGGER)
-        IF sy-batch = abap_true.
-          CALL FUNCTION 'BP_ADD_APPL_LOG_HANDLE'
-            EXPORTING
-              loghandle = gv_log_handle
-            EXCEPTIONS
-              OTHERS    = 0.
-        ENDIF.
-
-        gv_has_unsaved_logs = abap_false.
-        CLEAR gv_log_handle. " Allow a fresh log header to be created for the next run
-      ENDIF.
+    IF go_app_log IS BOUND AND gv_has_unsaved_logs = abap_true.
+      go_app_log->finalize( ).
+      gv_has_unsaved_logs = abap_false.
+      CLEAR go_app_log.
+      CLEAR gv_current_object.
+      CLEAR gv_current_subobject.
     ENDIF.
   ENDMETHOD.
 
   METHOD show_log.
-    DATA: lt_handles         TYPE bal_t_logh,
-          ls_display_profile TYPE bal_s_prof.
-
-    IF gv_log_handle IS NOT INITIAL AND gv_has_unsaved_logs = abap_true.
-      INSERT gv_log_handle INTO TABLE lt_handles.
-
-      " Get standard popup profile to display log without leaving the screen
-      CALL FUNCTION 'BAL_DSP_PROFILE_POPUP_GET'
-        IMPORTING
-          e_s_display_profile = ls_display_profile
-        EXCEPTIONS
-          OTHERS              = 1.
-
-      IF sy-subrc = 0.
-        CALL FUNCTION 'BAL_DSP_LOG_DISPLAY'
-          EXPORTING
-            i_s_display_profile = ls_display_profile
-            i_t_log_handle      = lt_handles
-          EXCEPTIONS
-            OTHERS              = 1.
-      ENDIF.
-
-      " Clear the log handle after displaying so it acts similarly to save_log
+    IF go_app_log IS BOUND AND gv_has_unsaved_logs = abap_true.
+      go_app_log->display( iv_popup = abap_true ).
       gv_has_unsaved_logs = abap_false.
-      CLEAR gv_log_handle.
+      CLEAR go_app_log.
+      CLEAR gv_current_object.
+      CLEAR gv_current_subobject.
     ENDIF.
   ENDMETHOD.
 

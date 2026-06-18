@@ -27,6 +27,11 @@ Key implementations bridging these requirements include:
   - Extracted duplicated business logic, error handling, and logging boilerplate from the subclass `read_data` methods into a centralized template method in the base class `/CTDI/CL_PRINT_DRIVER_BASE`.
   - Introduced three protected, parameter-less action hooks (`unpack_io_data`, `fetch_data_from_db`, and `map_and_register_data`) to decouple subclass-specific state/provider instantiation from the base class execution flow.
   - Refactored `/CTDI/CL_PRINT_DRIVER_CTDI`, `/CTDI/CL_PRINT_DRIVER_LEGACY`, and `/CTDI/CL_PRINT_DRIVER_TEMPLATE` to redefine and implement the new action hooks.
+- **Unified Logger Migration (2026-06-18)**:
+  - Migrated `/ctdi/cl_print_driver_log` to internally wrap the new `/CTDI/APP_LOG` class.
+  - Kept all static APIs (`log_info`, `log_error`, etc.) intact to avoid changing any calling code in the print drivers.
+  - Replaced text-only exception logging with proper object/stack trace logging using standard `BAL_LOG_EXC_ADD` under the hood.
+
 
 ## Performance & DB Optimizations
 - **In-Memory Configuration Resolution**: Refactored `get_config_from_db` to select all potential `/ctdi/rep_forms` fallback hierarchies into an internal table at once. It now resolves the correct hierarchy (Contract -> SKZ -> AKZ) via in-memory `READ TABLE` lookups instead of executing multiple `SELECT` queries.
