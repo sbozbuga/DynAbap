@@ -1456,6 +1456,7 @@ FORM print_new USING    iv_save_as_pdf TYPE abap_bool
 
       " If it completes without cx_no_config_found, the new print was successful
       cv_fail = abap_false.
+      MESSAGE 'Printout generated successfully' TYPE 'S'.
 
     CATCH /ctdi/cx_no_config_found INTO lx_no_config.
       " No customizing found for the new print driver - fallback to old print
