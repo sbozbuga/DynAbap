@@ -319,7 +319,9 @@ CLASS /CTDI/CL_PRINT_DRIVER_BASE IMPLEMENTATION.
         IF sy-subrc <> 0.
           DATA(lv_subrc_close_err) = sy-subrc.
         ENDIF.
-        lv_err = |Adobe Form FM resolution failed for { mv_form_name }: { lx_fp->get_text( ) }|.
+        " SECURITY: Do not expose raw exception text to the UI to prevent info leakage
+        /ctdi/cl_print_driver_log=>log_exception( lx_fp ).
+        lv_err = |Adobe Form FM resolution failed for { mv_form_name }|.
         /ctdi/cl_print_driver_log=>log_error( lv_err ).
         RAISE EXCEPTION TYPE /ctdi/cx_print_driver_error
           EXPORTING repair_id = mv_repair_order
@@ -376,11 +378,14 @@ CLASS /CTDI/CL_PRINT_DRIVER_BASE IMPLEMENTATION.
           EXCEPTION-TABLE lt_etab.
         lv_subrc = sy-subrc.
       CATCH cx_sy_dyn_call_error INTO DATA(lx_dyn_call).
-        lv_err = |Dynamic call error for { mv_form_name }: { lx_dyn_call->get_text( ) }|.
+        " SECURITY: Do not expose raw exception text to the UI to prevent info leakage
+        /ctdi/cl_print_driver_log=>log_exception( lx_dyn_call ).
+        lv_err = |Dynamic call error for { mv_form_name }|.
         /ctdi/cl_print_driver_log=>log_error( lv_err ).
         RAISE EXCEPTION TYPE /ctdi/cx_print_driver_error
           EXPORTING repair_id = mv_repair_order
-                    message   = lv_err.
+                    message   = lv_err
+                    previous  = lx_dyn_call.
     ENDTRY.
 
     " Close the print job
@@ -525,11 +530,14 @@ CLASS /CTDI/CL_PRINT_DRIVER_BASE IMPLEMENTATION.
           EXCEPTION-TABLE lt_etab.
         lv_subrc_fm = sy-subrc.
       CATCH cx_sy_dyn_call_error INTO DATA(lx_dyn_call).
-        lv_err = |Dynamic call error for { mv_form_name }: { lx_dyn_call->get_text( ) }|.
+        " SECURITY: Do not expose raw exception text to the UI to prevent info leakage
+        /ctdi/cl_print_driver_log=>log_exception( lx_dyn_call ).
+        lv_err = |Dynamic call error for { mv_form_name }|.
         /ctdi/cl_print_driver_log=>log_error( lv_err ).
         RAISE EXCEPTION TYPE /ctdi/cx_print_driver_error
           EXPORTING repair_id = mv_repair_order
-                    message   = lv_err.
+                    message   = lv_err
+                    previous  = lx_dyn_call.
     ENDTRY.
 
     IF lv_subrc_fm <> 0.
