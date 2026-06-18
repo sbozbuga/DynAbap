@@ -62,7 +62,8 @@ CLASS /ctdi/cl_print_driver_base DEFINITION
     "! Subclasses instantiate their provider and call read_data, or perform direct SELECTs.
     METHODS fetch_data_from_db
       RAISING
-        cx_root.
+        cx_static_check
+        cx_dynamic_check.
 
     "! Hook: Maps loaded data to base attributes and registers form parameters.
     METHODS map_and_register_data

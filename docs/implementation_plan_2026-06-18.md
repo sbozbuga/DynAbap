@@ -24,7 +24,8 @@ METHODS unpack_io_data
 "! Hook: Fetches business data directly from the DB.
 "! Subclasses instantiate their provider and call read_data, or perform direct SELECTs.
 METHODS fetch_data_from_db
-  RAISING cx_root.
+  RAISING cx_static_check
+          cx_dynamic_check.
 
 "! Hook: Maps loaded data to base attributes and registers form parameters.
 METHODS map_and_register_data
