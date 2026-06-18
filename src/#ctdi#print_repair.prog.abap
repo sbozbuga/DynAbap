@@ -37,9 +37,10 @@
 REPORT /ctdi/print_repair.
 
 SELECTION-SCREEN BEGIN OF BLOCK b1 WITH FRAME TITLE TEXT-002.
-PARAMETERS: p_aufnr TYPE aufk-aufnr OBLIGATORY, " Repair / Order ID
-            p_sernr TYPE equi-sernr,           " Serial number (optional)
-            p_sf    TYPE sap_bool NO-DISPLAY.  " Save as PDF
+PARAMETERS: p_aufnr  TYPE aufk-aufnr OBLIGATORY, " Repair / Order ID
+            p_sernr  TYPE equi-sernr,           " Serial number (optional)
+            p_shwlog TYPE sap_bool AS CHECKBOX, " Show logs
+            p_sf     TYPE sap_bool NO-DISPLAY.  " Save as PDF
 SELECTION-SCREEN END OF BLOCK b1.
 
 START-OF-SELECTION.
@@ -60,23 +61,26 @@ FORM entry.
       lr_driver->execute( iv_save_as_pdf = lv_save_as_pdf ).
 
     CATCH /ctdi/cx_no_config_found INTO DATA(lx_noconf).
-      MESSAGE e001(00) WITH 'No configuration found in /CTDI/REP_FORMS for Order' p_aufnr
+      MESSAGE e001(00) WITH TEXT-005 p_aufnr
                        INTO DATA(lv_emsg) .
     CATCH /ctdi/cx_print_driver_error INTO DATA(lx_driver_err).
       lv_emsg = lx_driver_err->message.
     CATCH cx_root INTO DATA(lx_root).
       " SECURITY: Do not expose raw exception text to the UI to prevent info leakage
       /ctdi/cl_print_driver_log=>log_exception( lx_root ).
-      MESSAGE e001(00) WITH 'An unexpected system error occurred'
+      MESSAGE e001(00) WITH TEXT-007
                        INTO lv_emsg.
   ENDTRY.
 
   /ctdi/cl_print_driver_log=>log_error( lv_emsg ).
-  /ctdi/cl_print_driver_log=>save_log( ).
+
+  IF p_shwlog = abap_true.
+    /ctdi/cl_print_driver_log=>show_log( ).
+  ENDIF.
 
   IF lv_emsg IS NOT INITIAL.
     MESSAGE lv_emsg TYPE 'E'.
   ELSE.
-    MESSAGE 'Printout generated successfully' TYPE 'S'.
+    MESSAGE TEXT-008 TYPE 'S'.
   ENDIF.
 ENDFORM.

@@ -39,6 +39,7 @@ CLASS /ctdi/cl_print_driver_log DEFINITION
         !iv_subobject  TYPE balsubobj DEFAULT 'DRIVER'.
 
     CLASS-METHODS save_log.
+    CLASS-METHODS show_log.
 
   PROTECTED SECTION.
   PRIVATE SECTION.
@@ -207,6 +208,35 @@ CLASS /ctdi/cl_print_driver_log IMPLEMENTATION.
         gv_has_unsaved_logs = abap_false.
         CLEAR gv_log_handle. " Allow a fresh log header to be created for the next run
       ENDIF.
+    ENDIF.
+  ENDMETHOD.
+
+  METHOD show_log.
+    DATA: lt_handles         TYPE bal_t_logh,
+          ls_display_profile TYPE bal_s_prof.
+
+    IF gv_log_handle IS NOT INITIAL AND gv_has_unsaved_logs = abap_true.
+      INSERT gv_log_handle INTO TABLE lt_handles.
+
+      " Get standard popup profile to display log without leaving the screen
+      CALL FUNCTION 'BAL_DSP_PROFILE_POPUP_GET'
+        IMPORTING
+          e_s_display_profile = ls_display_profile
+        EXCEPTIONS
+          OTHERS              = 1.
+
+      IF sy-subrc = 0.
+        CALL FUNCTION 'BAL_DSP_LOG_DISPLAY'
+          EXPORTING
+            i_s_display_profile = ls_display_profile
+            i_t_log_handle      = lt_handles
+          EXCEPTIONS
+            OTHERS              = 1.
+      ENDIF.
+
+      " Clear the log handle after displaying so it acts similarly to save_log
+      gv_has_unsaved_logs = abap_false.
+      CLEAR gv_log_handle.
     ENDIF.
   ENDMETHOD.
 

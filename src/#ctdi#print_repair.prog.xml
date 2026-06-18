@@ -1,4 +1,4 @@
-﻿<?xml version="1.0" encoding="utf-8"?>
+<?xml version="1.0" encoding="utf-8"?>
 <abapGit version="v1.0.0" serializer="LCL_OBJECT_PROG" serializer_version="v1.0.0">
  <asx:abap xmlns:asx="http://www.sap.com/abapxml" version="1.0">
   <asx:values>
@@ -36,9 +36,27 @@
     </item>
     <item>
      <ID>I</ID>
+     <KEY>005</KEY>
+     <ENTRY>No config found in /CTDI/REP_FORMS for Order</ENTRY>
+     <LENGTH>44</LENGTH>
+    </item>
+    <item>
+     <ID>I</ID>
      <KEY>006</KEY>
      <ENTRY>Executing legacy printing routine (print_old) for repair &amp;1</ENTRY>
      <LENGTH>75</LENGTH>
+    </item>
+    <item>
+     <ID>I</ID>
+     <KEY>007</KEY>
+     <ENTRY>An unexpected system error occurred</ENTRY>
+     <LENGTH>35</LENGTH>
+    </item>
+    <item>
+     <ID>I</ID>
+     <KEY>008</KEY>
+     <ENTRY>Printout generated successfully</ENTRY>
+     <LENGTH>31</LENGTH>
     </item>
     <item>
      <ID>R</ID>
@@ -53,21 +71,15 @@
     </item>
     <item>
      <ID>S</ID>
-     <KEY>P_CLASS</KEY>
-     <ENTRY>Class name (optional)</ENTRY>
-     <LENGTH>30</LENGTH>
-    </item>
-    <item>
-     <ID>S</ID>
-     <KEY>P_FORM</KEY>
-     <ENTRY>Form name (optional)</ENTRY>
-     <LENGTH>30</LENGTH>
-    </item>
-    <item>
-     <ID>S</ID>
-     <KEY>P_PDF</KEY>
+     <KEY>P_SF</KEY>
      <ENTRY>Save as PDF</ENTRY>
      <LENGTH>20</LENGTH>
+    </item>
+    <item>
+     <ID>S</ID>
+     <KEY>P_SHWLOG</KEY>
+     <ENTRY>Show logs</ENTRY>
+     <LENGTH>17</LENGTH>
     </item>
     <item>
      <ID>S</ID>
@@ -106,9 +118,27 @@
       </item>
       <item>
        <ID>I</ID>
+       <KEY>005</KEY>
+       <ENTRY>Keine Konfig. in /CTDI/REP_FORMS für Auftrag</ENTRY>
+       <LENGTH>44</LENGTH>
+      </item>
+      <item>
+       <ID>I</ID>
        <KEY>006</KEY>
        <ENTRY>Legacy-Druckroutine (print_old) für Reparatur &amp;1 wird ausgeführt</ENTRY>
        <LENGTH>75</LENGTH>
+      </item>
+      <item>
+       <ID>I</ID>
+       <KEY>007</KEY>
+       <ENTRY>Ein unerwarteter Systemfehler ist aufgetreten</ENTRY>
+       <LENGTH>45</LENGTH>
+      </item>
+      <item>
+       <ID>I</ID>
+       <KEY>008</KEY>
+       <ENTRY>Ausdruck erfolgreich erstellt</ENTRY>
+       <LENGTH>29</LENGTH>
       </item>
       <item>
        <ID>S</ID>
@@ -124,21 +154,15 @@
       </item>
       <item>
        <ID>S</ID>
-       <KEY>P_FORM</KEY>
-       <ENTRY>Formularname</ENTRY>
-       <LENGTH>20</LENGTH>
-      </item>
-      <item>
-       <ID>S</ID>
-       <KEY>P_CLASS</KEY>
-       <ENTRY>Klassenname</ENTRY>
-       <LENGTH>20</LENGTH>
-      </item>
-      <item>
-       <ID>S</ID>
-       <KEY>P_PDF</KEY>
+       <KEY>P_SF</KEY>
        <ENTRY>Als PDF speichern</ENTRY>
        <LENGTH>25</LENGTH>
+      </item>
+      <item>
+       <ID>S</ID>
+       <KEY>P_SHWLOG</KEY>
+       <ENTRY>Protokolle anzeigen</ENTRY>
+       <LENGTH>27</LENGTH>
       </item>
      </TEXTPOOL>
     </item>
