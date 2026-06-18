@@ -23,6 +23,10 @@ Key implementations bridging these requirements include:
   - Overhauled how custom form data is passed to dynamic Smart Forms and Adobe Forms. 
   - Added an explicit `iv_kind` parameter (`abap_func_exporting`, `abap_func_tables`, etc.) to the `register_custom_parameter` method. This offloads the responsibility of defining the parameter type to the subclass, completely removing the need for slow, dynamic `FUPARAREF` database lookups at runtime.
 - **Device Type Fallback**: Updated the `SSF_GET_DEVICE_TYPE` fallback logic to default to the system standard PDF device `YPDF` instead of the non-existent `SAPDEFAULT` if resolution fails.
+- **Template Method and Decoupled Action Hooks (2026-06-18)**:
+  - Extracted duplicated business logic, error handling, and logging boilerplate from the subclass `read_data` methods into a centralized template method in the base class `/CTDI/CL_PRINT_DRIVER_BASE`.
+  - Introduced three protected, parameter-less action hooks (`unpack_io_data`, `fetch_data_from_db`, and `map_and_register_data`) to decouple subclass-specific state/provider instantiation from the base class execution flow.
+  - Refactored `/CTDI/CL_PRINT_DRIVER_CTDI`, `/CTDI/CL_PRINT_DRIVER_LEGACY`, and `/CTDI/CL_PRINT_DRIVER_TEMPLATE` to redefine and implement the new action hooks.
 
 ## Performance & DB Optimizations
 - **In-Memory Configuration Resolution**: Refactored `get_config_from_db` to select all potential `/ctdi/rep_forms` fallback hierarchies into an internal table at once. It now resolves the correct hierarchy (Contract -> SKZ -> AKZ) via in-memory `READ TABLE` lookups instead of executing multiple `SELECT` queries.
