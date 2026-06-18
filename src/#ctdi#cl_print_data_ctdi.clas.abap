@@ -55,7 +55,7 @@ CLASS /ctdi/cl_print_data_ctdi IMPLEMENTATION.
           lv_stokz TYPE afru-stokz,
           lv_stzhl TYPE afru-stzhl.
 
-    " ⚡ Bolt: Removed SELECT...ENDSELECT in favor of SELECT INTO TABLE
+    " Removed SELECT...ENDSELECT in favor of SELECT INTO TABLE
     " Always get SKZ from AFRU for operation 9010
     SELECT bemot, stokz, stzhl
       FROM afru
