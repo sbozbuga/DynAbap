@@ -49,6 +49,26 @@ CLASS /ctdi/cl_print_driver_base DEFINITION
       RAISING
         /ctdi/cx_print_driver_error.
 
+    "! Hook: Unpacks a pre-loaded data object (io_data).
+    "! Subclasses should CAST io_data to their specific provider type.
+    METHODS unpack_io_data
+      IMPORTING
+        !io_data TYPE REF TO object
+      RAISING
+        cx_sy_move_cast_error
+        /ctdi/cx_print_driver_error.
+
+    "! Hook: Fetches business data directly from the DB.
+    "! Subclasses instantiate their provider and call read_data, or perform direct SELECTs.
+    METHODS fetch_data_from_db
+      RAISING
+        cx_root.
+
+    "! Hook: Maps loaded data to base attributes and registers form parameters.
+    METHODS map_and_register_data
+      RAISING
+        /ctdi/cx_print_driver_error.
+
     "! Renders the form (SmartForm or Adobe) and optionally saves as PDF.
     METHODS render_form
       IMPORTING
@@ -706,10 +726,49 @@ CLASS /CTDI/CL_PRINT_DRIVER_BASE IMPLEMENTATION.
 
 
   METHOD read_data.
-    " Default: no-op. Subclasses override this to populate ms_repair
-    " from database tables based on mv_repair_order.
-    /ctdi/cl_print_driver_log=>log_info(
-      |Default read_data invoked for Repair { mv_repair_order } — no data loaded| ).
+    " 1. Initialize data state
+    IF io_data IS BOUND.
+      TRY.
+          unpack_io_data( io_data ).
+          /ctdi/cl_print_driver_log=>log_info( |Unpacked io_data for Repair { mv_repair_order }| ).
+        CATCH cx_sy_move_cast_error INTO DATA(lx_cast).
+          DATA(lv_cast_err) = |Invalid data object passed to Print Driver for { mv_repair_order }|.
+          /ctdi/cl_print_driver_log=>log_error( lv_cast_err ).
+          RAISE EXCEPTION TYPE /ctdi/cx_print_driver_error
+            EXPORTING message  = lv_cast_err
+                      previous = lx_cast.
+      ENDTRY.
+    ELSE.
+      TRY.
+          fetch_data_from_db( ).
+          /ctdi/cl_print_driver_log=>log_info( |Read data from DB for Repair { mv_repair_order }| ).
+        CATCH cx_root INTO DATA(lx_root).
+          /ctdi/cl_print_driver_log=>log_exception( lx_root ).
+          DATA(lv_err) = |Error reading data from DB for { mv_repair_order }|.
+          /ctdi/cl_print_driver_log=>log_error( lv_err ).
+          RAISE EXCEPTION TYPE /ctdi/cx_print_driver_error
+            EXPORTING message  = lv_err
+                      previous = lx_root.
+      ENDTRY.
+    ENDIF.
+
+    " 2. Map structures and register
+    map_and_register_data( ).
+  ENDMETHOD.
+
+
+  METHOD unpack_io_data.
+    " Default: no-op. Subclasses redefine this to unpack custom objects.
+  ENDMETHOD.
+
+
+  METHOD fetch_data_from_db.
+    " Default: no-op. Subclasses redefine this to load data from database.
+  ENDMETHOD.
+
+
+  METHOD map_and_register_data.
+    " Default: no-op. Subclasses redefine this to map data structures.
   ENDMETHOD.
 
 

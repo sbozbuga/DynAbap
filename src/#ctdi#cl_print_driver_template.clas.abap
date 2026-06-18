@@ -5,8 +5,14 @@ CLASS /ctdi/cl_print_driver_template DEFINITION
 
   PUBLIC SECTION.
   PROTECTED SECTION.
-    "! Redefines base method to load custom business data for a new process.
-    METHODS read_data REDEFINITION.
+    "! Hook: Unpacks a pre-loaded data object (io_data).
+    METHODS unpack_io_data REDEFINITION.
+
+    "! Hook: Fetches business data directly from the DB.
+    METHODS fetch_data_from_db REDEFINITION.
+
+    "! Hook: Maps loaded data to base attributes and registers form parameters.
+    METHODS map_and_register_data REDEFINITION.
 
     "! Redefines base method to customize form routing, add pre/post
     "! processing around form execution, or bypass form rendering entirely.
@@ -19,19 +25,29 @@ ENDCLASS.
 
 CLASS /ctdi/cl_print_driver_template IMPLEMENTATION.
 
-  METHOD read_data.
+  METHOD unpack_io_data.
     " =========================================================================
-    " TEMPLATE METHOD: read_data
+    " ACTION HOOK: unpack_io_data
+    " =========================================================================
+    " Subclasses redefine this to unpack custom objects passed via execution.
+    " If this template driver does not support pre-loaded data objects, you
+    " can leave this method empty or raise an exception.
+    " =========================================================================
+  ENDMETHOD.
+
+
+  METHOD fetch_data_from_db.
+    " =========================================================================
+    " ACTION HOOK: fetch_data_from_db
     " =========================================================================
     " Subclasses should redefine this method to supply custom business data
-    " for a new process. The business data should be allocated and loaded into
-    " mr_repair, mr_errors, and mr_comments.
+    " for a new process by reading from database tables.
     " =========================================================================
 
     DATA(lv_repair_id) = |{ mv_repair_order ALPHA = IN }|.
 
     /ctdi/cl_print_driver_log=>log_info(
-      |Template read_data started for Repair ID: { mv_repair_order } (internal format: { lv_repair_id })| ).
+      |Template fetch_data_from_db started for Repair ID: { mv_repair_order } (internal format: { lv_repair_id })| ).
 
     " Example 1: Select header data into ms_repair structure.
     " SELECT SINGLE *
@@ -59,16 +75,26 @@ CLASS /ctdi/cl_print_driver_template IMPLEMENTATION.
     "
     " /ctdi/cl_print_driver_log=>log_info(
     "   |Loaded { lines( mt_errors ) } error/defect lines for Repair { mv_repair_order }| ).
+  ENDMETHOD.
 
-    " Example 3: Enriching comments or custom long texts.
+
+  METHOD map_and_register_data.
+    " =========================================================================
+    " ACTION HOOK: map_and_register_data
+    " =========================================================================
+    " Subclasses redefine this to map data structures and register parameters
+    " for Smart Forms or Adobe Forms.
+    " =========================================================================
+
+    " Example 1: Enriching comments or custom long texts.
     " APPEND INITIAL LINE TO mt_comments ASSIGNING FIELD-SYMBOL(<ls_comment>).
     " ...
 
-    " Example 4: Injecting completely custom data structures for specific forms.
+    " Example 2: Injecting completely custom data structures for specific forms.
     " If your form expects a parameter NOT in the base class (e.g., 'CUST_DATA'),
     " you can register it dynamically here. The Base class will inject it for you.
     " DATA ls_cust_data TYPE zcust_data.
-    " SELECT SINGLE * FROM zcust_table INTO ls_cust_data WHERE aufnr = lv_repair_id.
+    " SELECT SINGLE * FROM zcust_table INTO ls_cust_data WHERE aufnr = lv_repair_order.
     " register_custom_parameter( iv_name = 'CUST_DATA' ir_data = REF #( ls_cust_data ) ).
 
     " --- STANDARD BINDING ---
