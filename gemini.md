@@ -28,9 +28,11 @@ Key implementations bridging these requirements include:
   - Introduced three protected, parameter-less action hooks (`unpack_io_data`, `fetch_data_from_db`, and `map_and_register_data`) to decouple subclass-specific state/provider instantiation from the base class execution flow.
   - Refactored `/CTDI/CL_PRINT_DRIVER_CTDI`, `/CTDI/CL_PRINT_DRIVER_LEGACY`, and `/CTDI/CL_PRINT_DRIVER_TEMPLATE` to redefine and implement the new action hooks.
 - **Unified Logger Migration (2026-06-18)**:
-  - Migrated `/ctdi/cl_print_driver_log` to internally wrap the new `/CTDI/APP_LOG` class.
+  - Migrated `/ctdi/cl_print_driver_log` to internally wrap the system standard `/HPC/CL_UAPPL_LOG` class.
+  - Deleted the redundant copy class `/CTDI/APP_LOG` to keep the codebase dry and clean.
   - Kept all static APIs (`log_info`, `log_error`, etc.) intact to avoid changing any calling code in the print drivers.
   - Replaced text-only exception logging with proper object/stack trace logging using standard `BAL_LOG_EXC_ADD` under the hood.
+
 
 
 ## Performance & DB Optimizations

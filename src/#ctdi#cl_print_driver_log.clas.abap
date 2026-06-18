@@ -43,7 +43,7 @@ CLASS /ctdi/cl_print_driver_log DEFINITION
 
   PROTECTED SECTION.
   PRIVATE SECTION.
-    CLASS-DATA go_app_log           TYPE REF TO /ctdi/app_log.
+    CLASS-DATA go_app_log           TYPE REF TO /hpc/cl_uappl_log.
     CLASS-DATA gv_current_object    TYPE balobj_d.
     CLASS-DATA gv_current_subobject TYPE balsubobj.
     CLASS-DATA gv_has_unsaved_logs  TYPE abap_bool.
@@ -53,7 +53,7 @@ CLASS /ctdi/cl_print_driver_log DEFINITION
         !iv_object     TYPE balobj_d
         !iv_subobject  TYPE balsubobj
       RETURNING
-        VALUE(ro_log)  TYPE REF TO /ctdi/app_log.
+        VALUE(ro_log)  TYPE REF TO /hpc/cl_uappl_log.
 
     CLASS-METHODS add_to_log
       IMPORTING
