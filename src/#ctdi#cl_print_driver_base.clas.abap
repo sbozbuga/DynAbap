@@ -3,8 +3,7 @@ CLASS /ctdi/cl_print_driver_base DEFINITION
   CREATE PUBLIC.
 
   PUBLIC SECTION.
-
-
+    CONSTANTS gc_operation_wfer TYPE vornr VALUE '9010'.
 
     "! Static factory to determine and instantiate the correct driver
     CLASS-METHODS factory
@@ -309,7 +308,7 @@ CLASS /CTDI/CL_PRINT_DRIVER_BASE IMPLEMENTATION.
 
     " Document parameters
     ls_docparams-langu   = sy-langu.
-    ls_docparams-country = 'US'.
+    ls_docparams-country = 'DE'.
 
     DATA: lt_ptab TYPE abap_func_parmbind_tab,
           ls_ptab TYPE abap_func_parmbind,
@@ -567,9 +566,7 @@ CLASS /CTDI/CL_PRINT_DRIVER_BASE IMPLEMENTATION.
                 ev_class_name = lv_class_name
                 es_project    = ls_project_db ).
 
-    "IF lv_form_name = '/CELLAG/ALCAREP'.
-    "  RAISE EXCEPTION TYPE /ctdi/cx_no_config_found.
-    "ENDIF.
+
 
     TRY.
         CREATE OBJECT ro_driver TYPE (lv_class_name).
@@ -788,7 +785,7 @@ CLASS /CTDI/CL_PRINT_DRIVER_BASE IMPLEMENTATION.
       SELECT bemot, stokz, stzhl
         FROM afru
         WHERE aufnr = @lv_aufnr
-          AND vornr = '9010'
+          AND vornr = @gc_operation_wfer
         INTO TABLE @DATA(lt_afru).
 
       IF sy-subrc = 0.

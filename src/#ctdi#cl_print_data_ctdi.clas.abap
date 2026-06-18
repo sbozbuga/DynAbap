@@ -60,7 +60,7 @@ CLASS /ctdi/cl_print_data_ctdi IMPLEMENTATION.
     SELECT bemot, stokz, stzhl
       FROM afru
       WHERE aufnr = @mv_aufnr
-        AND vornr = '9010'
+        AND vornr = @/ctdi/cl_print_driver_base=>gc_operation_wfer
       INTO TABLE @DATA(lt_afru_skz).
 
     LOOP AT lt_afru_skz INTO DATA(ls_afru_skz).

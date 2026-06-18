@@ -43,44 +43,55 @@ PARAMETERS: p_aufnr  TYPE aufk-aufnr OBLIGATORY, " Repair / Order ID
             p_sf     TYPE sap_bool NO-DISPLAY.  " Save as PDF
 SELECTION-SCREEN END OF BLOCK b1.
 
-START-OF-SELECTION.
-  PERFORM entry.
-
 *--------------------------------------------------------------------*
-FORM entry.
-  TRY.
-      DATA(lr_driver) = /ctdi/cl_print_driver_base=>factory(
-                          iv_repair_id = p_aufnr
-                          iv_sernr     = p_sernr ).
+CLASS lcl_app DEFINITION FINAL.
+  PUBLIC SECTION.
+    CLASS-METHODS run.
+ENDCLASS.
 
-      " In legacy ALCAREP02, p_sf = 'X' means "Spool mode" (do NOT download PDF).
-      " Also, if called from transaction IW42, it defaults to Spool mode.
-      " Therefore, save_as_pdf is TRUE only if p_sf is empty AND tcode is not IW42.
-      DATA(lv_save_as_pdf) = xsdbool( p_sf = abap_false AND sy-tcode <> 'IW42' ).
+CLASS lcl_app IMPLEMENTATION.
+  METHOD run.
+    DATA lv_emsg TYPE string.
 
-      lr_driver->execute( iv_save_as_pdf = lv_save_as_pdf ).
+    TRY.
+        DATA(lr_driver) = /ctdi/cl_print_driver_base=>factory(
+                            iv_repair_id = p_aufnr
+                            iv_sernr     = p_sernr ).
 
-    CATCH /ctdi/cx_no_config_found INTO DATA(lx_noconf).
-      MESSAGE e001(00) WITH TEXT-005 p_aufnr
-                       INTO DATA(lv_emsg) .
-    CATCH /ctdi/cx_print_driver_error INTO DATA(lx_driver_err).
-      lv_emsg = lx_driver_err->message.
-    CATCH cx_root INTO DATA(lx_root).
-      " SECURITY: Do not expose raw exception text to the UI to prevent info leakage
-      /ctdi/cl_print_driver_log=>log_exception( lx_root ).
-      MESSAGE e001(00) WITH TEXT-007
-                       INTO lv_emsg.
-  ENDTRY.
+        " In legacy ALCAREP02, p_sf = 'X' means "Spool mode" (do NOT download PDF).
+        " Also, if called from transaction IW42, it defaults to Spool mode.
+        " Therefore, save_as_pdf is TRUE only if p_sf is empty AND tcode is not IW42.
+        DATA(lv_save_as_pdf) = xsdbool( p_sf = abap_false AND sy-tcode <> 'IW42' ).
 
-  /ctdi/cl_print_driver_log=>log_error( lv_emsg ).
+        lr_driver->execute( iv_save_as_pdf = lv_save_as_pdf ).
 
-  IF p_shwlog = abap_true.
-    /ctdi/cl_print_driver_log=>show_log( ).
-  ENDIF.
+      CATCH /ctdi/cx_no_config_found INTO DATA(lx_noconf).
+        MESSAGE e001(00) WITH TEXT-005 p_aufnr
+                         INTO lv_emsg.
+      CATCH /ctdi/cx_print_driver_error INTO DATA(lx_driver_err).
+        lv_emsg = lx_driver_err->message.
+      CATCH cx_root INTO DATA(lx_root).
+        " SECURITY: Do not expose raw exception text to the UI to prevent info leakage
+        /ctdi/cl_print_driver_log=>log_exception( lx_root ).
+        MESSAGE e001(00) WITH TEXT-007
+                         INTO lv_emsg.
+    ENDTRY.
 
-  IF lv_emsg IS NOT INITIAL.
-    MESSAGE lv_emsg TYPE 'E'.
-  ELSE.
-    MESSAGE TEXT-008 TYPE 'S'.
-  ENDIF.
-ENDFORM.
+    IF lv_emsg IS NOT INITIAL.
+      /ctdi/cl_print_driver_log=>log_error( lv_emsg ).
+    ENDIF.
+
+    IF p_shwlog = abap_true.
+      /ctdi/cl_print_driver_log=>show_log( ).
+    ELSE.
+      IF lv_emsg IS NOT INITIAL.
+        MESSAGE lv_emsg TYPE 'E'.
+      ELSE.
+        MESSAGE TEXT-008 TYPE 'S'.
+      ENDIF.
+    ENDIF.
+  ENDMETHOD.
+ENDCLASS.
+
+START-OF-SELECTION.
+  lcl_app=>run( ).

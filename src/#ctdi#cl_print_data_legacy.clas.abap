@@ -76,17 +76,6 @@ CLASS /ctdi/cl_print_data_legacy DEFINITION
       RETURNING
         VALUE(rv_tstamp) TYPE timestamp.
 
-    " --- LEGACY CODE (Commented for reference) ---
-*    METHODS get_last_record
-*      IMPORTING
-*        !it_cdhdr          TYPE STANDARD TABLE
-*        !iv_equnr          TYPE equnr
-*        !iv_tstamp_received TYPE timestamp
-*        !iv_tstamp_repaired TYPE timestamp
-*        !iv_fname          TYPE csequence
-*      EXPORTING
-*        !ev_old_val        TYPE any
-*        !ev_new_val        TYPE any.
 ENDCLASS.
 
 
@@ -554,146 +543,6 @@ CLASS /CTDI/CL_PRINT_DATA_LEGACY IMPLEMENTATION.
         ENDIF.
       ENDIF.
 
-      " --- LEGACY CODE (Commented for reference) ---
-*        SELECT changenr, udate, utime FROM cdhdr INTO CORRESPONDING FIELDS OF TABLE @lt_cdhdr WHERE objectclas = 'EQUI' AND objectid = @lf_equnr.
-*
-*        IF lt_cdhdr IS NOT INITIAL.
-*          lv_lines = lines( lt_cdhdr ).
-*
-*          lf_tstamp_received = convert_to_timestamp(
-*            iv_date = ms_legacy-date_received
-*            iv_time = mv_time_received ).
-*
-*          lf_tstamp_repaired = convert_to_timestamp(
-*            iv_date = ms_legacy-date_repaired
-*            iv_time = mv_time_repaired ).
-*
-*          lf_tstamp_thisdate = convert_to_timestamp(
-*            iv_date = ms_legacy-date_current
-*            iv_time = mv_time_thisdate ).
-*
-*          IF lv_lines > 1.
-*            IF lt_cdhdr IS NOT INITIAL.
-*              SELECT changenr, tabname, fname
-*                FROM cdpos
-*                INTO TABLE @DATA(lt_cdpos_opt)
-*                FOR ALL ENTRIES IN @lt_cdhdr
-*                WHERE objectclas = 'EQUI'
-*                  AND objectid   = @lf_equnr
-*                  AND changenr   = @lt_cdhdr-changenr
-*                  AND ( ( tabname = 'EQUI' AND fname = 'SERGE' ) OR
-*                        ( tabname = 'EQUZ' AND fname = 'MAPAR' ) ).
-*              SORT lt_cdpos_opt BY changenr tabname fname.
-*            ENDIF.
-*
-*            LOOP AT lt_cdhdr INTO ls_cdhdr.
-*              READ TABLE lt_cdpos_opt TRANSPORTING NO FIELDS
-*                WITH KEY changenr = ls_cdhdr-changenr
-*                         tabname  = 'EQUI'
-*                         fname    = 'SERGE'
-*                BINARY SEARCH.
-*              IF sy-subrc = 0.
-*                APPEND ls_cdhdr TO lt_cdhdr_serge.
-*              ENDIF.
-*
-*              READ TABLE lt_cdpos_opt TRANSPORTING NO FIELDS
-*                WITH KEY changenr = ls_cdhdr-changenr
-*                         tabname  = 'EQUZ'
-*                         fname    = 'MAPAR'
-*                BINARY SEARCH.
-*              IF sy-subrc = 0.
-*                APPEND ls_cdhdr TO lt_cdhdr_mapar.
-*              ENDIF.
-*            ENDLOOP.
-*
-*            IF lt_cdhdr_serge IS NOT INITIAL.
-*              get_last_record(
-*                EXPORTING it_cdhdr = lt_cdhdr_serge
-*                          iv_equnr = lf_equnr
-*                          iv_tstamp_received = lf_tstamp_received
-*                          iv_tstamp_repaired = lf_tstamp_repaired
-*                          iv_fname = 'SERGE'
-*                IMPORTING ev_old_val = lf_oldserialnr
-*                          ev_new_val = lf_newserialnr ).
-*            ELSE.
-*              SELECT SINGLE serge FROM equi INTO @lf_newserialnr WHERE equnr = @lf_equnr.
-*              lf_oldserialnr = lf_newserialnr.
-*            ENDIF.
-*
-*            IF lt_cdhdr_mapar IS NOT INITIAL.
-*              get_last_record(
-*                EXPORTING it_cdhdr = lt_cdhdr_mapar
-*                          iv_equnr = lf_equnr
-*                          iv_tstamp_received = lf_tstamp_received
-*                          iv_tstamp_repaired = lf_tstamp_repaired
-*                          iv_fname = 'MAPAR'
-*                IMPORTING ev_old_val = lf_oldpartnr
-*                          ev_new_val = lf_newpartnr ).
-*            ELSE.
-*              SELECT SINGLE mapar FROM equz INTO @lf_newpartnr WHERE equnr = @lf_equnr.
-*              lf_oldpartnr = lf_newpartnr.
-*            ENDIF.
-*
-*          ELSEIF lv_lines = 1.
-*            CLEAR: ls_cdhdr, lf_udate, lf_utime.
-*            READ TABLE lt_cdhdr INTO ls_cdhdr INDEX 1.
-*            lf_udate = ls_cdhdr-udate.
-*            lf_utime = ls_cdhdr-utime.
-*
-*            lf_tstamp_changed = convert_to_timestamp(
-*              iv_date = lf_udate
-*              iv_time = lf_utime ).
-*
-*            IF lf_tstamp_received <= lf_tstamp_changed AND lf_tstamp_changed <= lf_tstamp_repaired.
-*              SELECT tabname, fname, value_old, value_new FROM cdpos
-*                INTO TABLE @DATA(lt_cdpos_single)
-*                WHERE objectclas = 'EQUI' AND objectid = @lf_equnr AND changenr = @ls_cdhdr-changenr
-*                  AND ( ( tabname = 'EQUI' AND fname = 'SERGE' ) OR
-*                        ( tabname = 'EQUZ' AND fname = 'MAPAR' ) ).
-*
-*              READ TABLE lt_cdpos_single INTO DATA(ls_serge) WITH KEY tabname = 'EQUI' fname = 'SERGE'.
-*              IF sy-subrc = 0.
-*                lf_oldserialnr = ls_serge-value_old.
-*                lf_newserialnr = ls_serge-value_new.
-*              ELSE.
-*                SELECT SINGLE serge FROM equi INTO @lf_newserialnr WHERE equnr = @lf_equnr.
-*                lf_oldserialnr = lf_newserialnr.
-*              ENDIF.
-*
-*              READ TABLE lt_cdpos_single INTO DATA(ls_mapar) WITH KEY tabname = 'EQUZ' fname = 'MAPAR'.
-*              IF sy-subrc = 0.
-*                lf_oldpartnr = ls_mapar-value_old.
-*                lf_newpartnr = ls_mapar-value_new.
-*              ELSE.
-*                SELECT SINGLE mapar FROM equz INTO @lf_newpartnr WHERE equnr = @lf_equnr.
-*                lf_oldpartnr = lf_newpartnr.
-*              ENDIF.
-*            ENDIF.
-*          ENDIF.
-*
-*        ELSE.
-*          SELECT SINGLE serge, matnr
-*            FROM equi INTO ( @lf_newserialnr, @lv_newmatnr )
-*            WHERE equnr = @lf_equnr.
-*          lf_oldserialnr = lf_newserialnr.
-*
-*          SELECT SINGLE mapar FROM equz INTO @lf_newpartnr WHERE equnr = @lf_equnr.
-*          lf_oldpartnr = lf_newpartnr.
-*        ENDIF.
-*      ENDIF.
-*
-*      IF lf_newserialnr IS INITIAL.
-*        SELECT SINGLE serge, matnr
-*          FROM equi INTO ( @lf_newserialnr, @lv_newmatnr )
-*          WHERE equnr = @lf_equnr.
-*        lf_oldserialnr = lf_newserialnr.
-*      ENDIF.
-*
-*      IF lf_newpartnr IS INITIAL.
-*        SELECT SINGLE mapar FROM equz INTO @lf_newpartnr WHERE equnr = @lf_equnr.
-*        lf_oldpartnr = lf_newpartnr.
-*      ENDIF.
-
       IF lf_newpartnr IS INITIAL.
         IF lv_newmatnr IS INITIAL.
           SELECT SINGLE matnr FROM equi  WHERE equnr = @lf_equnr INTO @lv_newmatnr.
@@ -778,7 +627,7 @@ CLASS /CTDI/CL_PRINT_DATA_LEGACY IMPLEMENTATION.
       SELECT bemot, stokz, stzhl
         FROM afru
         WHERE aufnr = @mv_aufnr
-          AND vornr = '9010'
+          AND vornr = @/ctdi/cl_print_driver_base=>gc_operation_wfer
         INTO TABLE @DATA(lt_afru_skz).
 
       lv_subrc = sy-subrc.
