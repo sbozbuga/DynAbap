@@ -213,6 +213,57 @@ CLASS /CTDI/CL_PRINT_DATA_LEGACY IMPLEMENTATION.
         ORDER BY PRIMARY KEY INTO CORRESPONDING FIELDS OF TABLE @lt_error.
 
       IF lt_error IS NOT INITIAL.
+        TYPES: BEGIN OF ty_qpgt,
+                 katalogart TYPE qpgt-katalogart,
+                 codegruppe TYPE qpgt-codegruppe,
+                 kurztext   TYPE qpgt-kurztext,
+               END OF ty_qpgt,
+               BEGIN OF ty_qpct,
+                 katalogart TYPE qpct-katalogart,
+                 codegruppe TYPE qpct-codegruppe,
+                 code       TYPE qpct-code,
+                 kurztext   TYPE qpct-kurztext,
+               END OF ty_qpct.
+
+        DATA: lt_qpgt TYPE TABLE OF ty_qpgt,
+              lt_qpct TYPE TABLE OF ty_qpct,
+              ls_qpgt TYPE ty_qpgt,
+              ls_qpct TYPE ty_qpct.
+
+        SELECT katalogart, codegruppe, kurztext
+          FROM qpgt
+          FOR ALL ENTRIES IN @lt_error
+          WHERE codegruppe = @lt_error-otgrp
+            AND sprache    = @mv_spras
+          INTO TABLE @lt_qpgt.
+
+        SELECT katalogart, codegruppe, kurztext
+          FROM qpgt
+          FOR ALL ENTRIES IN @lt_error
+          WHERE codegruppe = @lt_error-fegrp
+            AND sprache    = @mv_spras
+          APPENDING TABLE @lt_qpgt.
+        SORT lt_qpgt BY katalogart codegruppe.
+        DELETE ADJACENT DUPLICATES FROM lt_qpgt COMPARING katalogart codegruppe.
+
+        SELECT katalogart, codegruppe, code, kurztext
+          FROM qpct
+          FOR ALL ENTRIES IN @lt_error
+          WHERE codegruppe = @lt_error-otgrp
+            AND code       = @lt_error-oteil
+            AND sprache    = @mv_spras
+          INTO TABLE @lt_qpct.
+
+        SELECT katalogart, codegruppe, code, kurztext
+          FROM qpct
+          FOR ALL ENTRIES IN @lt_error
+          WHERE codegruppe = @lt_error-fegrp
+            AND code       = @lt_error-fecod
+            AND sprache    = @mv_spras
+          APPENDING TABLE @lt_qpct.
+        SORT lt_qpct BY katalogart codegruppe code.
+        DELETE ADJACENT DUPLICATES FROM lt_qpct COMPARING katalogart codegruppe code.
+
         LOOP AT lt_error INTO ls_error.
           lf_besz_string = ls_error-besz.
           CONCATENATE lf_besz lf_besz_string '; ' INTO lf_besz.
@@ -224,34 +275,32 @@ CLASS /CTDI/CL_PRINT_DATA_LEGACY IMPLEMENTATION.
           ENDIF.
 
           IF mv_katalogart = 'Z'.
-            SELECT SINGLE kurztext FROM qpgt
-                    WHERE katalogart  = @mv_katalogart AND
-                          codegruppe  = @ls_error-otgrp AND
-                          sprache     = @mv_spras INTO @ls_error-otgrp_ktxt.
+            READ TABLE lt_qpgt INTO ls_qpgt WITH KEY katalogart = mv_katalogart codegruppe = ls_error-otgrp BINARY SEARCH.
+            IF sy-subrc = 0.
+              ls_error-otgrp_ktxt = ls_qpgt-kurztext.
+            ENDIF.
           ENDIF.
 
-          SELECT SINGLE kurztext FROM qpct
-                    WHERE katalogart  = @mv_katalogart AND
-                          codegruppe  = @ls_error-otgrp AND
-                          code        = @ls_error-oteil AND
-                          sprache     = @mv_spras INTO @ls_error-oteil_ktxt.
+          READ TABLE lt_qpct INTO ls_qpct WITH KEY katalogart = mv_katalogart codegruppe = ls_error-otgrp code = ls_error-oteil BINARY SEARCH.
+          IF sy-subrc = 0.
+            ls_error-oteil_ktxt = ls_qpct-kurztext.
+          ENDIF.
 
           IF mv_katalogart = 'Z'.
-            SELECT SINGLE kurztext FROM qpgt
-                    WHERE katalogart  = @mv_katalogart AND
-                          codegruppe  = @ls_error-fegrp AND
-                          sprache     = @mv_spras INTO @ls_error-fegrp_ktxt.
+            READ TABLE lt_qpgt INTO ls_qpgt WITH KEY katalogart = mv_katalogart codegruppe = ls_error-fegrp BINARY SEARCH.
+            IF sy-subrc = 0.
+              ls_error-fegrp_ktxt = ls_qpgt-kurztext.
+            ENDIF.
           ENDIF.
 
           IF mv_katalogart = 'E'.
             mv_katalogart = 'Z'.
           ENDIF.
 
-          SELECT SINGLE kurztext FROM qpct
-                    WHERE katalogart  = @mv_katalogart AND
-                          codegruppe  = @ls_error-fegrp AND
-                          code        = @ls_error-fecod AND
-                          sprache     = @mv_spras INTO @ls_error-fecod_ktxt.
+          READ TABLE lt_qpct INTO ls_qpct WITH KEY katalogart = mv_katalogart codegruppe = ls_error-fegrp code = ls_error-fecod BINARY SEARCH.
+          IF sy-subrc = 0.
+            ls_error-fecod_ktxt = ls_qpct-kurztext.
+          ENDIF.
 
           APPEND ls_error TO mt_legacy_error.
           CLEAR ls_error.
