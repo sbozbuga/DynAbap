@@ -6,3 +6,6 @@
 ## 2024-06-15 - SELECT...ENDSELECT vs INTO TABLE Optimization
 **Learning:** Legacy ABAP `SELECT...ENDSELECT` loops lead to significant N+1-like performance issues due to excessive database round-trips. Replacing them with bulk array fetches using `SELECT ... INTO TABLE ...` and `LOOP AT ...` minimizes DB communication overhead.
 **Action:** Always refactor `SELECT...ENDSELECT` constructs to `SELECT ... INTO TABLE` combined with `LOOP AT` when performance tuning ABAP codebases, especially when iterating through results inside an application logic loop.
+## 2024-06-16 - Pre-fetching Texts to Prevent N+1 Loops
+**Learning:** Legacy ABAP code frequently loops over an internal table and issues multiple `SELECT SINGLE` statements (e.g., fetching texts from `qpgt` and `qpct`) for every iteration, causing an N+1 problem.
+**Action:** Extract the required keys into internal tables before the loop, sort and delete duplicates, then use `FOR ALL ENTRIES IN` to pre-fetch the data into standard tables. Inside the loop, replace the `SELECT SINGLE` queries with `READ TABLE ... BINARY SEARCH` to significantly improve DB performance. Be sure to check `IS NOT INITIAL` on the key tables before executing `FOR ALL ENTRIES` to avoid full table scans.
