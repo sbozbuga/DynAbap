@@ -86,9 +86,12 @@ CLASS lcl_app IMPLEMENTATION.
 
     IF p_shwlog = abap_true.
       /ctdi/cl_print_driver_log=>show_log( ).
+      IF lv_emsg IS INITIAL.
+        MESSAGE TEXT-008 TYPE 'S'.
+      ENDIF.
     ELSE.
       IF lv_emsg IS NOT INITIAL.
-        MESSAGE lv_emsg TYPE 'E'.
+        MESSAGE lv_emsg TYPE 'S' DISPLAY LIKE 'E'.
       ELSE.
         MESSAGE TEXT-008 TYPE 'S'.
       ENDIF.
