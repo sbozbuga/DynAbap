@@ -664,13 +664,15 @@ CLASS /CTDI/CL_PRINT_DRIVER_BASE IMPLEMENTATION.
         ORDER BY PRIMARY KEY ##SUBRC_OK
         INTO TABLE @DATA(lt_forms).
 
+      SORT lt_forms BY vbeln skz akz.
       CLEAR ls_config.
       LOOP AT lt_steps ASSIGNING FIELD-SYMBOL(<ls_step>).
-        READ TABLE lt_forms INTO ls_config WITH KEY
+        READ TABLE lt_forms ASSIGNING FIELD-SYMBOL(<ls_form>) WITH KEY
           vbeln = <ls_step>-vbeln
           skz   = <ls_step>-skz
-          akz   = <ls_step>-akz.
+          akz   = <ls_step>-akz BINARY SEARCH.
         IF sy-subrc = 0.
+          ls_config = <ls_form>.
           EXIT.
         ENDIF.
       ENDLOOP.
