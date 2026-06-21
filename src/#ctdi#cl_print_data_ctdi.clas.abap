@@ -127,14 +127,14 @@ CLASS /ctdi/cl_print_data_ctdi IMPLEMENTATION.
 
     IF lt_results IS NOT INITIAL AND lt_steps IS NOT INITIAL.
       SORT lt_results BY vbeln bemot akz tauschfall.
-      LOOP AT lt_steps INTO DATA(ls_step).
-        READ TABLE lt_results INTO DATA(ls_result) WITH KEY
-          vbeln      = ls_step-vbeln
-          bemot      = ls_step-bemot
-          akz        = ls_step-akz
-          tauschfall = ls_step-tauschfall BINARY SEARCH.
+      LOOP AT lt_steps ASSIGNING FIELD-SYMBOL(<ls_step>).
+        READ TABLE lt_results ASSIGNING FIELD-SYMBOL(<ls_result>) WITH KEY
+          vbeln      = <ls_step>-vbeln
+          bemot      = <ls_step>-bemot
+          akz        = <ls_step>-akz
+          tauschfall = <ls_step>-tauschfall BINARY SEARCH.
         IF sy-subrc = 0.
-          lf_repres_txt = ls_result-repres_txt.
+          lf_repres_txt = <ls_result>-repres_txt.
           EXIT.
         ENDIF.
       ENDLOOP.

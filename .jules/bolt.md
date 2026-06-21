@@ -13,3 +13,7 @@
 ## $(date +%Y-%m-%d) - Prevent O(N*M) nested loop lookups with BINARY SEARCH
 **Learning:** Found multiple instances where `READ TABLE` was executed inside a `LOOP AT` without utilizing `BINARY SEARCH`. In ABAP, internal table lookups without `BINARY SEARCH` result in a sequential O(N) scan. When nested inside an O(M) loop, this balloons into a major O(N*M) performance bottleneck, especially as result sets scale up.
 **Action:** Always ensure the target internal table is sorted correctly by the lookup keys and append the `BINARY SEARCH` addition to `READ TABLE` statements occurring inside loops to reduce the lookup time to O(log N).
+
+## 2024-05-15 - Prefer field symbols over work areas in loops
+**Learning:** Found instances where large loops were copying entire table structures into variables (`INTO DATA(...)`) instead of simply pointing to memory. In ABAP, assigning a field symbol is functionally passing by reference, preventing a heavy memory copy operation on each loop iteration.
+**Action:** When iterating over or reading internal tables in ABAP, always prefer using inline declarations with field symbols (`ASSIGNING FIELD-SYMBOL(<ls_row>)`) to minimize overhead.
