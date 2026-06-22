@@ -53,8 +53,11 @@ FORM on_before_save.
         " Delegate all class, form, and method validations to customizing engine class
         /ctdi/cl_print_cust_engine=>validate_entry( ls_entry ).
       CATCH /ctdi/cx_print_error INTO DATA(lx_err).
+        " SECURITY: Do not expose raw exception text to the UI to prevent info leakage
+        /ctdi/cl_print_driver_log=>log_exception( lx_err ).
+
         " Issue warning message in SM30
-        MESSAGE lx_err->message TYPE 'W'.
+        MESSAGE 'Validation failed due to an error. See log.' TYPE 'W'.
     ENDTRY.
 
     " Copy updated entry back to total and update structure
