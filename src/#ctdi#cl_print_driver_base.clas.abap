@@ -350,15 +350,18 @@ CLASS /CTDI/CL_PRINT_DRIVER_BASE IMPLEMENTATION.
       WHERE funcname = @lv_fm_name
       INTO TABLE @DATA(lt_valid_params_af).
 
+    SORT lt_valid_params_af BY parameter.
+
     " Inject any dynamically registered custom parameters if they exist in the form
-    LOOP AT mt_custom_form_params INTO DATA(ls_custom_param_af).
-      READ TABLE lt_valid_params_af WITH KEY parameter = ls_custom_param_af-name TRANSPORTING NO FIELDS.
+    LOOP AT mt_custom_form_params ASSIGNING FIELD-SYMBOL(<ls_custom_param_af>).
+      READ TABLE lt_valid_params_af WITH KEY parameter = <ls_custom_param_af>-name BINARY SEARCH TRANSPORTING NO FIELDS.
       IF sy-subrc = 0.
+        DATA(ls_insert_af) = <ls_custom_param_af>.
         " Adobe Forms do not have a TABLES interface, they expect tables as EXPORTING
-        IF ls_custom_param_af-kind = abap_func_tables.
-          ls_custom_param_af-kind = abap_func_exporting.
+        IF ls_insert_af-kind = abap_func_tables.
+          ls_insert_af-kind = abap_func_exporting.
         ENDIF.
-        INSERT ls_custom_param_af INTO TABLE lt_ptab.
+        INSERT ls_insert_af INTO TABLE lt_ptab.
       ENDIF.
     ENDLOOP.
 
@@ -505,11 +508,13 @@ CLASS /CTDI/CL_PRINT_DRIVER_BASE IMPLEMENTATION.
       WHERE funcname = @lv_fm_name
       INTO TABLE @DATA(lt_valid_params_sf).
 
+    SORT lt_valid_params_sf BY parameter.
+
     " Inject any dynamically registered custom parameters if they exist in the form
-    LOOP AT mt_custom_form_params INTO DATA(ls_custom_param_sf).
-      READ TABLE lt_valid_params_sf WITH KEY parameter = ls_custom_param_sf-name TRANSPORTING NO FIELDS.
+    LOOP AT mt_custom_form_params ASSIGNING FIELD-SYMBOL(<ls_custom_param_sf>).
+      READ TABLE lt_valid_params_sf WITH KEY parameter = <ls_custom_param_sf>-name BINARY SEARCH TRANSPORTING NO FIELDS.
       IF sy-subrc = 0.
-        INSERT ls_custom_param_sf INTO TABLE lt_ptab.
+        INSERT <ls_custom_param_sf> INTO TABLE lt_ptab.
       ENDIF.
     ENDLOOP.
 
