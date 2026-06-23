@@ -39,9 +39,9 @@ CLASS /ctdi/cl_print_data_ctdi IMPLEMENTATION.
 
     MOVE-CORRESPONDING ms_legacy TO ms_repair.
 
-    LOOP AT mt_legacy_error INTO DATA(ls_error).
+    LOOP AT mt_legacy_error ASSIGNING FIELD-SYMBOL(<ls_error>).
       APPEND INITIAL LINE TO mt_repair_error ASSIGNING FIELD-SYMBOL(<ls_repair_error>).
-      MOVE-CORRESPONDING ls_error TO <ls_repair_error>.
+      MOVE-CORRESPONDING <ls_error> TO <ls_repair_error>.
     ENDLOOP.
 
     mt_comments = mt_comment_lines.
@@ -63,10 +63,10 @@ CLASS /ctdi/cl_print_data_ctdi IMPLEMENTATION.
         AND vornr = @/ctdi/cl_print_driver_base=>gc_operation_wfer
       INTO TABLE @DATA(lt_afru_skz).
 
-    LOOP AT lt_afru_skz INTO DATA(ls_afru_skz).
-      lv_bemot = ls_afru_skz-bemot.
-      lv_stokz = ls_afru_skz-stokz.
-      lv_stzhl = ls_afru_skz-stzhl.
+    LOOP AT lt_afru_skz ASSIGNING FIELD-SYMBOL(<ls_afru_skz>).
+      lv_bemot = <ls_afru_skz>-bemot.
+      lv_stokz = <ls_afru_skz>-stokz.
+      lv_stzhl = <ls_afru_skz>-stzhl.
       IF lv_stokz = ' ' AND lv_stzhl = '00000000'.
         EXIT.
       ENDIF.

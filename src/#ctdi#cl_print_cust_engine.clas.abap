@@ -396,8 +396,8 @@ CLASS /CTDI/CL_PRINT_CUST_ENGINE IMPLEMENTATION.
     ENDIF.
 
     " 3. Filter out standard/framework parameters
-    LOOP AT lt_mandatory_params INTO DATA(ls_param).
-      DATA(lv_param) = to_upper( ls_param-parameter ).
+    LOOP AT lt_mandatory_params ASSIGNING FIELD-SYMBOL(<ls_param>).
+      DATA(lv_param) = to_upper( <ls_param>-parameter ).
 
       IF lv_form_type = 'S'. " Smart Form
         IF lv_param = 'CONTROL_PARAMETERS' OR
@@ -420,7 +420,7 @@ CLASS /CTDI/CL_PRINT_CUST_ENGINE IMPLEMENTATION.
       " If we reach here, we found a custom mandatory parameter!
       " If the base class is configured, it will dump because it cannot supply this parameter.
       IF iv_class_name = gc_base_class.
-        DATA(lv_err_msg) = |Form { iv_form_name } requires custom mandatory parameter { ls_param-parameter } which standard base class does not support.|.
+        DATA(lv_err_msg) = |Form { iv_form_name } requires custom mandatory parameter { <ls_param>-parameter } which standard base class does not support.|.
         RAISE EXCEPTION TYPE /ctdi/cx_print_error
           EXPORTING
             repair_id = CONV aufnr( iv_vbeln )

@@ -681,10 +681,10 @@ CLASS /CTDI/CL_PRINT_DATA_LEGACY IMPLEMENTATION.
 
       lv_subrc = sy-subrc.
 
-      LOOP AT lt_afru_skz INTO DATA(ls_afru_skz).
-        lv_bemot = ls_afru_skz-bemot.
-        lv_stokz = ls_afru_skz-stokz.
-        lv_stzhl = ls_afru_skz-stzhl.
+      LOOP AT lt_afru_skz ASSIGNING FIELD-SYMBOL(<ls_afru_skz>).
+        lv_bemot = <ls_afru_skz>-bemot.
+        lv_stokz = <ls_afru_skz>-stokz.
+        lv_stzhl = <ls_afru_skz>-stzhl.
         IF lv_stokz = ' ' AND lv_stzhl = '00000000'.
           EXIT.
         ENDIF.
