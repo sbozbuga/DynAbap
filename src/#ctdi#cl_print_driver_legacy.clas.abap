@@ -35,9 +35,9 @@ CLASS /ctdi/cl_print_driver_legacy IMPLEMENTATION.
 
       MOVE-CORRESPONDING ms_alcarep_legacy TO ms_repair.
 
-      LOOP AT mt_alcarep_error INTO DATA(ls_err).
+      LOOP AT mt_alcarep_error ASSIGNING FIELD-SYMBOL(<ls_err>).
         APPEND INITIAL LINE TO mt_errors ASSIGNING FIELD-SYMBOL(<ls_target_err>).
-        MOVE-CORRESPONDING ls_err TO <ls_target_err>.
+        MOVE-CORRESPONDING <ls_err> TO <ls_target_err>.
       ENDLOOP.
 
       " Register legacy structures for dynamic Smart Form parameter injection

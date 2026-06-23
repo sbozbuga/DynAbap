@@ -20,3 +20,7 @@
 ## 2026-06-22 - Safe FIELD-SYMBOL substitution inside loops
 **Learning:** When using `ASSIGNING FIELD-SYMBOL(<...>)` in ABAP `LOOP AT` statements to prevent expensive memory copying, any modifications made to the field symbol will mutate the original internal table. If the logic requires changing values (e.g., updating a parameter `kind` attribute before passing to another function) but the original source table must remain unaltered, modifying the field symbol directly is dangerous and causes side effects.
 **Action:** When replacing `INTO DATA()` with `ASSIGNING FIELD-SYMBOL()` in loops where data modification is necessary, introduce a local copy (e.g., `DATA(ls_insert) = <fs>`) *inside* the loop, ideally only after validation conditions (like a successful `READ TABLE`) are met. This maximizes performance by avoiding copies for rejected rows while preserving the safety of the source data.
+
+## 2026-06-23 - Optimize LOOP AT memory allocation overhead
+**Learning:** Found multiple instances where large internal tables were iterated over using `LOOP AT ... INTO DATA(...)`, which unnecessarily copies the data of each row into a new work area on every iteration, leading to increased memory allocation and CPU overhead.
+**Action:** When iterating over internal tables in ABAP without the need to modify a separate copy of the data, always prefer using `LOOP AT ... ASSIGNING FIELD-SYMBOL(<...>)` to iterate via references, completely eliminating the copying overhead.
