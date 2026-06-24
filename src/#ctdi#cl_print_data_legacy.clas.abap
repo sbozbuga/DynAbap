@@ -82,7 +82,6 @@ ENDCLASS.
 
 CLASS /CTDI/CL_PRINT_DATA_LEGACY IMPLEMENTATION.
 
-
   METHOD check_sernr_swap.
     DATA: lf_rmanr     TYPE vbap-vbeln,
           lf_posnv_rma TYPE posnr,
@@ -192,124 +191,120 @@ CLASS /CTDI/CL_PRINT_DATA_LEGACY IMPLEMENTATION.
     mt_comment_lines = lt_lines.
   ENDMETHOD.
 
-
   METHOD get_error_description.
-    DATA: lf_qmnum           TYPE qmnum,
-          lf_qmcod           TYPE qmel-qmcod,
-          lf_besz_string(30) TYPE c,
-          lf_besz            TYPE string,
-          lt_error           TYPE TABLE OF /cellag/alcarep_error,
-          ls_error           LIKE LINE OF lt_error.
+      DATA: lf_qmnum TYPE qmnum,
+          lf_qmcod TYPE qmel-qmcod.
+*--------------------------------------------------------------------*
+    TYPES: BEGIN OF ty_qpgt,
+             katalogart TYPE qpgt-katalogart,
+             codegruppe TYPE qpgt-codegruppe,
+             kurztext   TYPE qpgt-kurztext,
+           END OF ty_qpgt,
+           BEGIN OF ty_qpct,
+             katalogart TYPE qpct-katalogart,
+             codegruppe TYPE qpct-codegruppe,
+             code       TYPE qpct-code,
+             kurztext   TYPE qpct-kurztext,
+           END OF ty_qpct.
+
+    DATA: lt_qpgt TYPE SORTED TABLE OF ty_qpgt WITH NON-UNIQUE KEY katalogart codegruppe,
+          lt_qpct TYPE SORTED TABLE OF ty_qpct WITH NON-UNIQUE KEY katalogart codegruppe code.
+
+    DATA: lt_katalogart TYPE SORTED TABLE OF qkatart   WITH UNIQUE KEY table_line,
+          lt_codegruppe TYPE SORTED TABLE OF qcodegrp  WITH UNIQUE KEY table_line,
+          lt_code       TYPE SORTED TABLE OF qcode     WITH UNIQUE KEY table_line.
+
+    DATA: lr_katalogart TYPE RANGE OF qkatart,
+          lr_codegruppe TYPE RANGE OF qcodegrp,
+          lr_code       TYPE RANGE OF qcode.
+*--------------------------------------------------------------------*
 
     SELECT SINGLE qmnum, qmcod FROM qmel
-      WHERE aufnr = @mv_aufnr AND qmart = @co_qmart INTO ( @lf_qmnum, @lf_qmcod ).
+      WHERE aufnr = @mv_aufnr
+        AND qmart = @co_qmart INTO ( @lf_qmnum, @lf_qmcod ).
 
     IF sy-subrc = 0.
       mv_qmnum = lf_qmnum.
       mv_qmcod = lf_qmcod.
 
-      SELECT otgrp, oteil, fegrp, fecod, besz  FROM qmfe
+      SELECT otkat, otgrp, oteil,
+             fekat, fegrp, fecod  FROM qmfe
         WHERE qmnum = @lf_qmnum
-        ORDER BY PRIMARY KEY INTO CORRESPONDING FIELDS OF TABLE @lt_error.
+        INTO TABLE @DATA(lt_fe).
 
-      IF lt_error IS NOT INITIAL.
-        TYPES: BEGIN OF ty_qpgt,
-                 katalogart TYPE qpgt-katalogart,
-                 codegruppe TYPE qpgt-codegruppe,
-                 kurztext   TYPE qpgt-kurztext,
-               END OF ty_qpgt,
-               BEGIN OF ty_qpct,
-                 katalogart TYPE qpct-katalogart,
-                 codegruppe TYPE qpct-codegruppe,
-                 code       TYPE qpct-code,
-                 kurztext   TYPE qpct-kurztext,
-               END OF ty_qpct.
+      "If exactly repeated , remove
+      SORT lt_fe BY table_line.
+      DELETE ADJACENT DUPLICATES FROM lt_fe COMPARING ALL FIELDS.
 
-        DATA: lt_qpgt TYPE TABLE OF ty_qpgt,
-              lt_qpct TYPE TABLE OF ty_qpct,
-              ls_qpgt TYPE ty_qpgt,
-              ls_qpct TYPE ty_qpct.
+      IF lt_fe IS NOT INITIAL.
+*--------------------------------------------------------------------*
+        lt_katalogart = VALUE #( FOR <e> IN lt_fe ( <e>-otkat )
+                                                  ( <e>-fekat ) ).
+        lt_codegruppe = VALUE #( FOR <e> IN lt_fe ( <e>-otgrp )
+                                                  ( <e>-fegrp ) ).
+        lt_code =       VALUE #( FOR <e> IN lt_fe ( <e>-oteil )
+                                                  ( <e>-fecod ) ).
 
-        SELECT katalogart, codegruppe, kurztext
+        lr_katalogart = VALUE #( FOR <a> IN lt_katalogart
+                                 ( sign = 'I' option = 'EQ' low = <a> ) ).
+        lr_codegruppe = VALUE #( FOR <g> IN lt_codegruppe
+                                 ( sign = 'I' option = 'EQ' low = <g> ) ).
+        lr_code =       VALUE #( FOR <c> IN lt_code
+                                 ( sign = 'I' option = 'EQ' low = <c> ) ).
+*--------------------------------------------------------------------*
+        SELECT katalogart, codegruppe, kurztext         "#EC CI_GENBUFF
           FROM qpgt
-          FOR ALL ENTRIES IN @lt_error
-          WHERE codegruppe = @lt_error-otgrp
-            AND sprache    = @mv_spras
+          WHERE katalogart IN @lr_katalogart
+            AND codegruppe IN @lr_codegruppe
+            AND sprache    EQ @mv_spras
           INTO TABLE @lt_qpgt.
 
-        SELECT katalogart, codegruppe, kurztext
-          FROM qpgt
-          FOR ALL ENTRIES IN @lt_error
-          WHERE codegruppe = @lt_error-fegrp
-            AND sprache    = @mv_spras
-          APPENDING TABLE @lt_qpgt.
-        SORT lt_qpgt BY katalogart codegruppe.
+        SELECT katalogart, codegruppe, code, kurztext   "#EC CI_GENBUFF
+          FROM qpct
+          WHERE katalogart IN @lr_katalogart
+            AND codegruppe IN @lr_codegruppe
+            AND code       IN @lr_code
+            AND sprache    EQ @mv_spras
+            AND version    EQ '000001'
+            INTO TABLE @lt_qpct.
+
         DELETE ADJACENT DUPLICATES FROM lt_qpgt COMPARING katalogart codegruppe.
-
-        SELECT katalogart, codegruppe, code, kurztext
-          FROM qpct
-          FOR ALL ENTRIES IN @lt_error
-          WHERE codegruppe = @lt_error-otgrp
-            AND code       = @lt_error-oteil
-            AND sprache    = @mv_spras
-          INTO TABLE @lt_qpct.
-
-        SELECT katalogart, codegruppe, code, kurztext
-          FROM qpct
-          FOR ALL ENTRIES IN @lt_error
-          WHERE codegruppe = @lt_error-fegrp
-            AND code       = @lt_error-fecod
-            AND sprache    = @mv_spras
-          APPENDING TABLE @lt_qpct.
-        SORT lt_qpct BY katalogart codegruppe code.
         DELETE ADJACENT DUPLICATES FROM lt_qpct COMPARING katalogart codegruppe code.
 
-        LOOP AT lt_error INTO ls_error.
-          lf_besz_string = ls_error-besz.
-          CONCATENATE lf_besz lf_besz_string '; ' INTO lf_besz.
+        LOOP AT lt_fe ASSIGNING FIELD-SYMBOL(<fe>).
 
-          IF ms_legacy-kvgr1 = '0SU'.
-            mv_katalogart = 'E'.
-          ELSE.
-            mv_katalogart = 'Z'.
-          ENDIF.
+          APPEND INITIAL LINE TO mt_legacy_error ASSIGNING FIELD-SYMBOL(<le>).
+          MOVE-CORRESPONDING <fe> TO <le>.
+          <le>-qmnum = lf_qmnum.
 
-          IF mv_katalogart = 'Z'.
-            READ TABLE lt_qpgt INTO ls_qpgt WITH KEY katalogart = mv_katalogart codegruppe = ls_error-otgrp BINARY SEARCH.
-            IF sy-subrc = 0.
-              ls_error-otgrp_ktxt = ls_qpgt-kurztext.
-            ENDIF.
-          ENDIF.
-
-          READ TABLE lt_qpct INTO ls_qpct WITH KEY katalogart = mv_katalogart codegruppe = ls_error-otgrp code = ls_error-oteil BINARY SEARCH.
+          READ TABLE lt_qpgt ASSIGNING FIELD-SYMBOL(<gt>)
+               WITH KEY katalogart = <fe>-otkat codegruppe = <fe>-otgrp .
           IF sy-subrc = 0.
-            ls_error-oteil_ktxt = ls_qpct-kurztext.
+            <le>-otgrp_ktxt = <gt>-kurztext.
           ENDIF.
 
-          IF mv_katalogart = 'Z'.
-            READ TABLE lt_qpgt INTO ls_qpgt WITH KEY katalogart = mv_katalogart codegruppe = ls_error-fegrp BINARY SEARCH.
-            IF sy-subrc = 0.
-              ls_error-fegrp_ktxt = ls_qpgt-kurztext.
-            ENDIF.
-          ENDIF.
-
-          IF mv_katalogart = 'E'.
-            mv_katalogart = 'Z'.
-          ENDIF.
-
-          READ TABLE lt_qpct INTO ls_qpct WITH KEY katalogart = mv_katalogart codegruppe = ls_error-fegrp code = ls_error-fecod BINARY SEARCH.
+          READ TABLE lt_qpgt ASSIGNING <gt>
+               WITH KEY katalogart = <fe>-fekat codegruppe = <fe>-fegrp .
           IF sy-subrc = 0.
-            ls_error-fecod_ktxt = ls_qpct-kurztext.
+            <le>-fegrp_ktxt = <gt>-kurztext.
           ENDIF.
 
-          APPEND ls_error TO mt_legacy_error.
-          CLEAR ls_error.
+          READ TABLE lt_qpct ASSIGNING FIELD-SYMBOL(<ct>)
+               WITH KEY katalogart = <fe>-otkat codegruppe = <fe>-otgrp code = <fe>-oteil.
+          IF sy-subrc = 0.
+            <le>-oteil_ktxt = <ct>-kurztext.
+          ENDIF.
+
+          READ TABLE lt_qpct ASSIGNING <ct>
+               WITH KEY katalogart = <fe>-fekat codegruppe = <fe>-fegrp code = <fe>-fecod.
+          IF sy-subrc = 0.
+            <le>-fecod_ktxt = <ct>-kurztext.
+          ENDIF.
+
         ENDLOOP.
       ENDIF.
     ENDIF.
-
-    SHIFT lf_besz RIGHT DELETING TRAILING ';'.
-    ms_legacy-besz_cld = lf_besz.
+ 
   ENDMETHOD.
 
 
