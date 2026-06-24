@@ -548,35 +548,35 @@ CLASS /CTDI/CL_PRINT_DATA_LEGACY IMPLEMENTATION.
             DATA: lv_serge_found TYPE abap_bool VALUE abap_false,
                   lv_mapar_found TYPE abap_bool VALUE abap_false.
 
-            LOOP AT lt_cdhdr INTO ls_cdhdr.
+            LOOP AT lt_cdhdr ASSIGNING FIELD-SYMBOL(<ls_cdhdr>).
               " Stop if we found both
               IF lv_serge_found = abap_true AND lv_mapar_found = abap_true.
                 EXIT.
               ENDIF.
 
-              lf_tstamp_changed = convert_to_timestamp( iv_date = ls_cdhdr-udate iv_time = ls_cdhdr-utime ).
+              lf_tstamp_changed = convert_to_timestamp( iv_date = <ls_cdhdr>-udate iv_time = <ls_cdhdr>-utime ).
 
               " Only consider changes within the repair window
               IF lf_tstamp_changed >= lf_tstamp_received AND lf_tstamp_changed <= lf_tstamp_repaired.
 
                 " Check for SERGE change
                 IF lv_serge_found = abap_false.
-                  READ TABLE lt_cdpos_all INTO DATA(ls_pos_serge)
-                  WITH KEY changenr = ls_cdhdr-changenr tabname = 'EQUI' fname = 'SERGE' BINARY SEARCH.
+                  READ TABLE lt_cdpos_all ASSIGNING FIELD-SYMBOL(<ls_pos_serge>)
+                  WITH KEY changenr = <ls_cdhdr>-changenr tabname = 'EQUI' fname = 'SERGE' BINARY SEARCH.
                   IF sy-subrc = 0.
-                    lf_oldserialnr = ls_pos_serge-value_old.
-                    lf_newserialnr = ls_pos_serge-value_new.
+                    lf_oldserialnr = <ls_pos_serge>-value_old.
+                    lf_newserialnr = <ls_pos_serge>-value_new.
                     lv_serge_found = abap_true.
                   ENDIF.
                 ENDIF.
 
                 " Check for MAPAR change
                 IF lv_mapar_found = abap_false.
-                  READ TABLE lt_cdpos_all INTO DATA(ls_pos_mapar)
-                  WITH KEY changenr = ls_cdhdr-changenr tabname = 'EQUZ' fname = 'MAPAR' BINARY SEARCH.
+                  READ TABLE lt_cdpos_all ASSIGNING FIELD-SYMBOL(<ls_pos_mapar>)
+                  WITH KEY changenr = <ls_cdhdr>-changenr tabname = 'EQUZ' fname = 'MAPAR' BINARY SEARCH.
                   IF sy-subrc = 0.
-                    lf_oldpartnr = ls_pos_mapar-value_old.
-                    lf_newpartnr = ls_pos_mapar-value_new.
+                    lf_oldpartnr = <ls_pos_mapar>-value_old.
+                    lf_newpartnr = <ls_pos_mapar>-value_new.
                     lv_mapar_found = abap_true.
                   ENDIF.
                 ENDIF.
