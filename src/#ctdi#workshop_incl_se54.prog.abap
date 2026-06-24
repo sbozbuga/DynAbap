@@ -35,7 +35,6 @@ FORM 01_before_save.
           " Signal TMG framework to abort the save
           vim_abort_saving = abap_true.
 
-          " SECURITY: Do not expose raw exception text to the UI to prevent info leakage
           /ctdi/cl_print_driver_log=>log_exception( lx_print_error ).
 
           " Format message string into 50-char blocks for standard SAP message
