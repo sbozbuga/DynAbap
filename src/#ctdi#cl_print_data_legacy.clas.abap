@@ -268,7 +268,11 @@ CLASS /CTDI/CL_PRINT_DATA_LEGACY IMPLEMENTATION.
             AND version    EQ '000001'
             INTO TABLE @lt_qpct.
 
+        " ⚡ Bolt: Sort tables for binary search and correctly deduplicate
+        SORT lt_qpgt BY katalogart codegruppe.
         DELETE ADJACENT DUPLICATES FROM lt_qpgt COMPARING katalogart codegruppe.
+
+        SORT lt_qpct BY katalogart codegruppe code.
         DELETE ADJACENT DUPLICATES FROM lt_qpct COMPARING katalogart codegruppe code.
 
         LOOP AT lt_fe ASSIGNING FIELD-SYMBOL(<fe>).
@@ -277,26 +281,27 @@ CLASS /CTDI/CL_PRINT_DATA_LEGACY IMPLEMENTATION.
           MOVE-CORRESPONDING <fe> TO <le>.
           <le>-qmnum = lf_qmnum.
 
+          " ⚡ Bolt: Added BINARY SEARCH to prevent O(N*M) nested loop lookups
           READ TABLE lt_qpgt ASSIGNING FIELD-SYMBOL(<gt>)
-               WITH KEY katalogart = <fe>-otkat codegruppe = <fe>-otgrp .
+               WITH KEY katalogart = <fe>-otkat codegruppe = <fe>-otgrp BINARY SEARCH.
           IF sy-subrc = 0.
             <le>-otgrp_ktxt = <gt>-kurztext.
           ENDIF.
 
           READ TABLE lt_qpgt ASSIGNING <gt>
-               WITH KEY katalogart = <fe>-fekat codegruppe = <fe>-fegrp .
+               WITH KEY katalogart = <fe>-fekat codegruppe = <fe>-fegrp BINARY SEARCH.
           IF sy-subrc = 0.
             <le>-fegrp_ktxt = <gt>-kurztext.
           ENDIF.
 
           READ TABLE lt_qpct ASSIGNING FIELD-SYMBOL(<ct>)
-               WITH KEY katalogart = <fe>-otkat codegruppe = <fe>-otgrp code = <fe>-oteil.
+               WITH KEY katalogart = <fe>-otkat codegruppe = <fe>-otgrp code = <fe>-oteil BINARY SEARCH.
           IF sy-subrc = 0.
             <le>-oteil_ktxt = <ct>-kurztext.
           ENDIF.
 
           READ TABLE lt_qpct ASSIGNING <ct>
-               WITH KEY katalogart = <fe>-fekat codegruppe = <fe>-fegrp code = <fe>-fecod.
+               WITH KEY katalogart = <fe>-fekat codegruppe = <fe>-fegrp code = <fe>-fecod BINARY SEARCH.
           IF sy-subrc = 0.
             <le>-fecod_ktxt = <ct>-kurztext.
           ENDIF.
