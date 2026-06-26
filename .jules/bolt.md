@@ -24,3 +24,7 @@
 ## 2026-06-23 - Optimize LOOP AT memory allocation overhead
 **Learning:** Found multiple instances where large internal tables were iterated over using `LOOP AT ... INTO DATA(...)`, which unnecessarily copies the data of each row into a new work area on every iteration, leading to increased memory allocation and CPU overhead.
 **Action:** When iterating over internal tables in ABAP without the need to modify a separate copy of the data, always prefer using `LOOP AT ... ASSIGNING FIELD-SYMBOL(<...>)` to iterate via references, completely eliminating the copying overhead.
+
+## 2026-06-23 - Push SORT and LIMIT down to DB for change tracking tables
+**Learning:** Legacy code often fetches an entire history of changes (e.g. from `jcds` or `cdpos`) into an internal table, then sorts it and reads `INDEX 1` to find the latest record. This causes excessive data transfer and high memory usage.
+**Action:** Always shift this logic to the database level using `ORDER BY ... DESCENDING` combined with `UP TO 1 ROWS` (into a table, then read index 1) to significantly reduce DB communication overhead and application server memory consumption.
