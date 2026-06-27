@@ -24,3 +24,7 @@
 ## 2026-06-23 - Optimize LOOP AT memory allocation overhead
 **Learning:** Found multiple instances where large internal tables were iterated over using `LOOP AT ... INTO DATA(...)`, which unnecessarily copies the data of each row into a new work area on every iteration, leading to increased memory allocation and CPU overhead.
 **Action:** When iterating over internal tables in ABAP without the need to modify a separate copy of the data, always prefer using `LOOP AT ... ASSIGNING FIELD-SYMBOL(<...>)` to iterate via references, completely eliminating the copying overhead.
+
+## 2026-06-27 - Pushing Ordering and Limitation to Database
+**Learning:** For fetching latest records, using `SELECT ... UP TO 1 ROWS ORDER BY ... DESCENDING` pushes filtering down to the database and is more performant than using `SELECT ... INTO TABLE ...` and sorting the internal table in application server memory.
+**Action:** When only the latest record is needed, add `ORDER BY ... DESCENDING` and `UP TO 1 ROWS` to avoid fetching all history records into an internal table, saving memory and processing overhead. Note that `UP TO 1 ROWS` requires the `INTO` (or `APPENDING`) clause in ABAP, and if it is not `INTO TABLE`, you must ensure either the `SINGLE` keyword is used or `ENDSELECT.` closes the loop. However, modern strict ABAP limits using `ORDER BY` with `SELECT SINGLE`, so the proper method for pulling a single row while explicitly ordering is `SELECT ... UP TO 1 ROWS INTO @DATA(...) ... ENDSELECT.`.
