@@ -134,11 +134,16 @@ CLASS /CTDI/CL_PRINT_DATA_LEGACY IMPLEMENTATION.
     DATA: ls_jcds  TYPE jcds,
           lt_jcds  TYPE TABLE OF jcds.
 
-    SELECT objnr, stat, chgnr, udate, utime, inact FROM jcds  WHERE objnr = @iv_objnr AND stat = @co_wfer_stat INTO CORRESPONDING FIELDS OF TABLE @lt_jcds.
+    " ⚡ Bolt: Pushed SORT and LIMIT down to DB instead of application server for performance
+    SELECT objnr, stat, chgnr, udate, utime, inact
+      FROM jcds
+      WHERE objnr = @iv_objnr
+        AND stat = @co_wfer_stat
+      ORDER BY udate DESCENDING, utime DESCENDING
+      UP TO 1 ROWS
+      INTO CORRESPONDING FIELDS OF TABLE @lt_jcds.
 
     IF lt_jcds IS NOT INITIAL.
-      SORT lt_jcds DESCENDING BY udate utime DESCENDING.
-      CLEAR: ls_jcds.
       READ TABLE lt_jcds INTO ls_jcds INDEX 1.
 
       IF ls_jcds IS NOT INITIAL.
