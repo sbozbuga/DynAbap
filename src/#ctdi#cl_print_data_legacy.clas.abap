@@ -131,18 +131,16 @@ CLASS /CTDI/CL_PRINT_DATA_LEGACY IMPLEMENTATION.
 
 
   METHOD get_astatus_data.
-    DATA ls_jcds TYPE jcds.
+    DATA: ls_jcds  TYPE jcds,
+          lt_jcds  TYPE TABLE OF jcds.
 
-    " ⚡ Bolt: Pushed ordering and limit down to the database to avoid fetching and sorting all historical status changes in memory.
-    SELECT objnr, stat, chgnr, udate, utime, inact
-      FROM jcds
-      WHERE objnr = @iv_objnr AND stat = @co_wfer_stat
-      ORDER BY udate DESCENDING, utime DESCENDING
-      INTO CORRESPONDING FIELDS OF @ls_jcds
-      UP TO 1 ROWS.
-    ENDSELECT.
+    SELECT objnr, stat, chgnr, udate, utime, inact FROM jcds  WHERE objnr = @iv_objnr AND stat = @co_wfer_stat INTO CORRESPONDING FIELDS OF TABLE @lt_jcds.
 
-    IF sy-subrc = 0.
+    IF lt_jcds IS NOT INITIAL.
+      SORT lt_jcds DESCENDING BY udate utime DESCENDING.
+      CLEAR: ls_jcds.
+      READ TABLE lt_jcds INTO ls_jcds INDEX 1.
+
       IF ls_jcds IS NOT INITIAL.
         IF ls_jcds-inact IS NOT INITIAL.
           MESSAGE e029(/cellag/cs01) WITH mv_aufnr.
