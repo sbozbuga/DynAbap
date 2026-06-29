@@ -1,4 +1,4 @@
-﻿<?xml version="1.0" encoding="utf-8"?>
+<?xml version="1.0" encoding="utf-8"?>
 <abapGit version="v1.0.0" serializer="LCL_OBJECT_CLAS" serializer_version="v1.0.0">
  <asx:abap xmlns:asx="http://www.sap.com/abapxml" version="1.0">
   <asx:values>
@@ -17,6 +17,235 @@
      <DESCRIPT>Druckertreiber: Basisklasse (Smart Forms + Adobe Forms)</DESCRIPT>
     </SEOSUBCOTX>
    </DESCRIPTIONS_SUB>
-  </asx:values>
+    <LONGTEXTS>
+     <item>
+      <DOKIL>
+       <ID>CL</ID>
+       <OBJECT>/CTDI/CL_PRINT_DRIVER_BASE</OBJECT>
+       <LANGU>E</LANGU>
+       <TYP>E</TYP>
+       <VERSION>0001</VERSION>
+       <MASTERLANG>X</MASTERLANG>
+       <TXTLINES>00022</TXTLINES>
+       <DOKSTATE>A</DOKSTATE>
+      </DOKIL>
+      <HEAD>
+       <TDOBJECT>DOKU</TDOBJECT>
+       <TDNAME>/CTDI/CL_PRINT_DRIVER_BASE</TDNAME>
+       <TDID>CL</TDID>
+       <TDSPRAS>E</TDSPRAS>
+       <TDFUSER>DEVELOPER</TDFUSER>
+       <TDFRELES>750</TDFRELES>
+       <FUSER>DEVELOPER</FUSER>
+       <FRELES>750</FRELES>
+      </HEAD>
+      <LINES>
+       <item>
+        <TDFORMAT>U1</TDFORMAT>
+        <TDLINE>&amp;FUNCTIONALITY&amp;</TDLINE>
+       </item>
+       <item>
+        <TDFORMAT>AS</TDFORMAT>
+        <TDLINE>The /CTDI/CL_PRINT_DRIVER_BASE class is the central base class for all</TDLINE>
+       </item>
+       <item>
+        <TDFORMAT></TDFORMAT>
+        <TDLINE> print driver subclasses in the dynamic printing framework. It</TDLINE>
+       </item>
+       <item>
+        <TDFORMAT></TDFORMAT>
+        <TDLINE> implements the template method execution flow to decouple the core</TDLINE>
+       </item>
+       <item>
+        <TDFORMAT></TDFORMAT>
+        <TDLINE> processing lifecycle from subclass-specific data logic.</TDLINE>
+       </item>
+       <item>
+        <TDFORMAT>U1</TDFORMAT>
+        <TDLINE>EXECUTION FLOW</TDLINE>
+       </item>
+       <item>
+        <TDFORMAT>AS</TDFORMAT>
+        <TDLINE>The main execution is driven by the final method &quot;execute&quot;, which</TDLINE>
+       </item>
+       <item>
+        <TDFORMAT></TDFORMAT>
+        <TDLINE> performs the following sequential action hooks:</TDLINE>
+       </item>
+       <item>
+        <TDFORMAT>B1</TDFORMAT>
+        <TDLINE>1. unpack_io_data: Extract and unpack parameters.</TDLINE>
+       </item>
+       <item>
+        <TDFORMAT>B1</TDFORMAT>
+        <TDLINE>2. fetch_data_from_db: Retrieve required data from the database.</TDLINE>
+       </item>
+       <item>
+        <TDFORMAT>B1</TDFORMAT>
+        <TDLINE>3. map_and_register_data: Map fields and register parameters.</TDLINE>
+       </item>
+       <item>
+        <TDFORMAT>B1</TDFORMAT>
+        <TDLINE>4. call_form: Resolve technology and render form layout.</TDLINE>
+       </item>
+       <item>
+        <TDFORMAT>U1</TDFORMAT>
+        <TDLINE>HOW TO EXTEND</TDLINE>
+       </item>
+       <item>
+        <TDFORMAT>AS</TDFORMAT>
+        <TDLINE>To implement a new print driver class:</TDLINE>
+       </item>
+       <item>
+        <TDFORMAT>B1</TDFORMAT>
+        <TDLINE>1. Create a subclass inheriting from /CTDI/CL_PRINT_DRIVER_BASE.</TDLINE>
+       </item>
+       <item>
+        <TDFORMAT>B1</TDFORMAT>
+        <TDLINE>2. Redefine and implement the protected hook methods:</TDLINE>
+       </item>
+       <item>
+        <TDFORMAT>B2</TDFORMAT>
+        <TDLINE>- unpack_io_data</TDLINE>
+       </item>
+       <item>
+        <TDFORMAT>B2</TDFORMAT>
+        <TDLINE>- fetch_data_from_db</TDLINE>
+       </item>
+       <item>
+        <TDFORMAT>B2</TDFORMAT>
+        <TDLINE>- map_and_register_data</TDLINE>
+       </item>
+       <item>
+        <TDFORMAT>B1</TDFORMAT>
+        <TDLINE>3. Inside map_and_register_data, register custom parameters using</TDLINE>
+       </item>
+       <item>
+        <TDFORMAT></TDFORMAT>
+        <TDLINE> method register_custom_parameter, passing the explicit kind (e.g.,</TDLINE>
+       </item>
+       <item>
+        <TDFORMAT></TDFORMAT>
+        <TDLINE> abap_func_exporting, abap_func_tables) to avoid runtime DB lookups.</TDLINE>
+       </item>
+      </LINES>
+     </item>
+     <item>
+      <DOKIL>
+       <ID>CL</ID>
+       <OBJECT>/CTDI/CL_PRINT_DRIVER_BASE</OBJECT>
+       <LANGU>D</LANGU>
+       <TYP>E</TYP>
+       <VERSION>0001</VERSION>
+       <TXTLINES>00023</TXTLINES>
+       <DOKSTATE>A</DOKSTATE>
+      </DOKIL>
+      <HEAD>
+       <TDOBJECT>DOKU</TDOBJECT>
+       <TDNAME>/CTDI/CL_PRINT_DRIVER_BASE</TDNAME>
+       <TDID>CL</TDID>
+       <TDSPRAS>D</TDSPRAS>
+       <TDFUSER>DEVELOPER</TDFUSER>
+       <TDFRELES>750</TDFRELES>
+       <FUSER>DEVELOPER</FUSER>
+       <FRELES>750</FRELES>
+      </HEAD>
+      <LINES>
+       <item>
+        <TDFORMAT>U1</TDFORMAT>
+        <TDLINE>&amp;FUNCTIONALITY&amp;</TDLINE>
+       </item>
+       <item>
+        <TDFORMAT>AS</TDFORMAT>
+        <TDLINE>Die Klasse /CTDI/CL_PRINT_DRIVER_BASE ist die zentrale Basisklasse für</TDLINE>
+       </item>
+       <item>
+        <TDFORMAT></TDFORMAT>
+        <TDLINE> alle Druckertreiber im dynamischen Druck-Framework. Sie implementiert</TDLINE>
+       </item>
+       <item>
+        <TDFORMAT></TDFORMAT>
+        <TDLINE> die Ablaufsteuerung (Template-Methode), um die Kernprozesslogik von</TDLINE>
+       </item>
+       <item>
+        <TDFORMAT></TDFORMAT>
+        <TDLINE> der kunden- oder projektspezifischen Datenbeschaffung zu entkoppeln.</TDLINE>
+       </item>
+       <item>
+        <TDFORMAT>U1</TDFORMAT>
+        <TDLINE>ABLAUFSTEUERUNG</TDLINE>
+       </item>
+       <item>
+        <TDFORMAT>AS</TDFORMAT>
+        <TDLINE>Der Hauptablauf wird über die finale Methode &quot;execute&quot; gesteuert, die</TDLINE>
+       </item>
+       <item>
+        <TDFORMAT></TDFORMAT>
+        <TDLINE> folgende Action-Hooks nacheinander aufruft:</TDLINE>
+       </item>
+       <item>
+        <TDFORMAT>B1</TDFORMAT>
+        <TDLINE>1. unpack_io_data: Parameter aus Ausführungskontext entpacken.</TDLINE>
+       </item>
+       <item>
+        <TDFORMAT>B1</TDFORMAT>
+        <TDLINE>2. fetch_data_from_db: Relevante Daten aus der Datenbank selektieren.</TDLINE>
+       </item>
+       <item>
+        <TDFORMAT>B1</TDFORMAT>
+        <TDLINE>3. map_and_register_data: Daten mappen und Formularparameter</TDLINE>
+       </item>
+       <item>
+        <TDFORMAT></TDFORMAT>
+        <TDLINE>   registrieren.</TDLINE>
+       </item>
+       <item>
+        <TDFORMAT>B1</TDFORMAT>
+        <TDLINE>4. call_form: Formular-Technologie ermitteln und Layout rendern.</TDLINE>
+       </item>
+       <item>
+        <TDFORMAT>U1</TDFORMAT>
+        <TDLINE>ERWEITERUNG</TDLINE>
+       </item>
+       <item>
+        <TDFORMAT>AS</TDFORMAT>
+        <TDLINE>Um eine neue Druckertreiber-Unterklasse zu erstellen:</TDLINE>
+       </item>
+       <item>
+        <TDFORMAT>B1</TDFORMAT>
+        <TDLINE>1. Erstellen Sie eine Unterklasse von /CTDI/CL_PRINT_DRIVER_BASE.</TDLINE>
+       </item>
+       <item>
+        <TDFORMAT>B1</TDFORMAT>
+        <TDLINE>2. Überschreiben und implementieren Sie die geschützten Hook-Methoden:</TDLINE>
+       </item>
+       <item>
+        <TDFORMAT>B2</TDFORMAT>
+        <TDLINE>- unpack_io_data</TDLINE>
+       </item>
+       <item>
+        <TDFORMAT>B2</TDFORMAT>
+        <TDLINE>- fetch_data_from_db</TDLINE>
+       </item>
+       <item>
+        <TDFORMAT>B2</TDFORMAT>
+        <TDLINE>- map_and_register_data</TDLINE>
+       </item>
+       <item>
+        <TDFORMAT>B1</TDFORMAT>
+        <TDLINE>3. Registrieren Sie die Formularparameter im Hook map_and_register_data</TDLINE>
+       </item>
+       <item>
+        <TDFORMAT></TDFORMAT>
+        <TDLINE>   mittels register_custom_parameter unter Angabe des expliziten Typs</TDLINE>
+       </item>
+       <item>
+        <TDFORMAT></TDFORMAT>
+        <TDLINE>   (z.B. abap_func_exporting), um DB-Lookups zur Laufzeit zu vermeiden.</TDLINE>
+       </item>
+      </LINES>
+     </item>
+    </LONGTEXTS>
+   </asx:values>
  </asx:abap>
 </abapGit>
