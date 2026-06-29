@@ -1,29 +1,28 @@
-CLASS /ctdi/cl_print_driver_base DEFINITION
-  PUBLIC
-  CREATE PUBLIC.
+class /CTDI/CL_PRINT_DRIVER_BASE definition
+  public
+  create public .
 
-  PUBLIC SECTION.
-    CONSTANTS gc_operation_wfer TYPE vornr VALUE '9010'.
+public section.
+
+  constants GC_OPERATION_WFER type VORNR value '9010' ##NO_TEXT.
 
     "! Static factory to determine and instantiate the correct driver
-    CLASS-METHODS factory
-      IMPORTING
-        !iv_repair_id TYPE aufnr
-        !iv_sernr     TYPE equi-sernr OPTIONAL
-      RETURNING
-        VALUE(ro_driver) TYPE REF TO /ctdi/cl_print_driver_base
-      RAISING
-        /ctdi/cx_print_driver_error
-        /ctdi/cx_no_config_found.
-
+  class-methods FACTORY
+    importing
+      !IV_REPAIR_ID type AUFNR
+      !IV_SERNR type EQUI-SERNR optional
+    returning
+      value(RO_DRIVER) type ref to /CTDI/CL_PRINT_DRIVER_BASE
+    raising
+      /CTDI/CX_PRINT_DRIVER_ERROR
+      /CTDI/CX_NO_CONFIG_FOUND .
     "! Executes the full print pipeline (read data + render form).
-    METHODS execute
-      IMPORTING
-        !iv_save_as_pdf TYPE abap_bool DEFAULT abap_false
-        !io_data        TYPE REF TO object OPTIONAL
-      RAISING
-        /ctdi/cx_print_driver_error.
-
+  methods EXECUTE
+    importing
+      !IV_SAVE_AS_PDF type ABAP_BOOL default ABAP_FALSE
+      !IO_DATA type ref to OBJECT optional
+    raising
+      /CTDI/CX_PRINT_DRIVER_ERROR .
   PROTECTED SECTION.
     DATA: mv_repair_order TYPE aufnr,
           mv_sernr        TYPE equi-sernr,
@@ -618,6 +617,11 @@ CLASS /CTDI/CL_PRINT_DRIVER_BASE IMPLEMENTATION.
   ENDMETHOD.
 
 
+  METHOD fetch_data_from_db.
+    " Default: no-op. Subclasses redefine this to load data from database.
+  ENDMETHOD.
+
+
   METHOD get_config_from_db.
     DATA: lv_contract TYPE vbeln_va,
           lv_skz      TYPE bemot,
@@ -741,6 +745,11 @@ CLASS /CTDI/CL_PRINT_DRIVER_BASE IMPLEMENTATION.
   ENDMETHOD.
 
 
+  METHOD map_and_register_data.
+    " Default: no-op. Subclasses redefine this to map data structures.
+  ENDMETHOD.
+
+
   METHOD read_data.
     " 1. Initialize data state
     IF io_data IS BOUND.
@@ -770,21 +779,6 @@ CLASS /CTDI/CL_PRINT_DRIVER_BASE IMPLEMENTATION.
 
     " 2. Map structures and register
     map_and_register_data( ).
-  ENDMETHOD.
-
-
-  METHOD unpack_io_data.
-    " Default: no-op. Subclasses redefine this to unpack custom objects.
-  ENDMETHOD.
-
-
-  METHOD fetch_data_from_db.
-    " Default: no-op. Subclasses redefine this to load data from database.
-  ENDMETHOD.
-
-
-  METHOD map_and_register_data.
-    " Default: no-op. Subclasses redefine this to map data structures.
   ENDMETHOD.
 
 
@@ -892,5 +886,10 @@ CLASS /CTDI/CL_PRINT_DRIVER_BASE IMPLEMENTATION.
           repair_id = iv_repair_id
           message   = lv_err2.
     ENDIF.
+  ENDMETHOD.
+
+
+  METHOD unpack_io_data.
+    " Default: no-op. Subclasses redefine this to unpack custom objects.
   ENDMETHOD.
 ENDCLASS.

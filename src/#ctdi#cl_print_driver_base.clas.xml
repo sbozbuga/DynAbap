@@ -1,4 +1,4 @@
-<?xml version="1.0" encoding="utf-8"?>
+﻿<?xml version="1.0" encoding="utf-8"?>
 <abapGit version="v1.0.0" serializer="LCL_OBJECT_CLAS" serializer_version="v1.0.0">
  <asx:abap xmlns:asx="http://www.sap.com/abapxml" version="1.0">
   <asx:values>
@@ -12,12 +12,6 @@
     <UNICODE>X</UNICODE>
     <WITH_UNIT_TESTS>X</WITH_UNIT_TESTS>
    </VSEOCLASS>
-   <DESCRIPTIONS_SUB>
-    <SEOSUBCOTX>
-     <LANGU>D</LANGU>
-     <DESCRIPT>Druckertreiber: Basisklasse (Smart Forms + Adobe Forms)</DESCRIPT>
-    </SEOSUBCOTX>
-   </DESCRIPTIONS_SUB>
    <LINES>
     <TLINE>
      <TDFORMAT>U1</TDFORMAT>
@@ -33,7 +27,8 @@
     <TLINE>
      <TDLINE> implements the template method execution flow to decouple the core</TDLINE>
     </TLINE>
-    <TDLINE> processing lifecycle from subclass-specific data logic.</TDLINE>
+    <TLINE>
+     <TDLINE> processing lifecycle from subclass-specific data logic.</TDLINE>
     </TLINE>
     <TLINE>
      <TDFORMAT>U1</TDFORMAT>
@@ -101,198 +96,12 @@
      <TDLINE> abap_func_exporting, abap_func_tables) to avoid runtime DB lookups.</TDLINE>
     </TLINE>
    </LINES>
-   <LONGTEXTS_CO>
-    <item>
-     <DOKIL>
-      <ID>CO</ID>
-      <OBJECT>/CTDI/CL_PRINT_DRIVER_BASE    FACTORY</OBJECT>
-      <LANGU>E</LANGU>
-      <TYP>E</TYP>
-      <VERSION>0001</VERSION>
-      <MASTERLANG>X</MASTERLANG>
-      <TXTLINES>00007</TXTLINES>
-      <DOKSTATE>R</DOKSTATE>
-     </DOKIL>
-     <HEAD>
-      <TDOBJECT>DOKU</TDOBJECT>
-      <TDNAME>/CTDI/CL_PRINT_DRIVER_BASE    FACTORY</TDNAME>
-      <TDID>CO</TDID>
-      <TDSPRAS>E</TDSPRAS>
-      <TDFORM>S_DOCU_SHOW</TDFORM>
-      <TDSTYLE>S_DOCUS1</TDSTYLE>
-      <TDVERSION>00001</TDVERSION>
-      <TDLINESIZE>072</TDLINESIZE>
-     </HEAD>
-     <LINES>
-      <TLINE>
-       <TDFORMAT>U1</TDFORMAT>
-       <TDLINE>&amp;FUNCTIONALITY&amp;</TDLINE>
-      </TLINE>
-      <TLINE>
-       <TDFORMAT>AS</TDFORMAT>
-       <TDLINE>Static factory method to determine and instantiate the correct driver</TDLINE>
-      </TLINE>
-      <TLINE>
-       <TDLINE> class based on the access sequence configuration in /CTDI/REP_FORMS.</TDLINE>
-      </TLINE>
-      <TLINE>
-       <TDFORMAT>U1</TDFORMAT>
-       <TDLINE>&amp;PARAMETERS&amp;</TDLINE>
-      </TLINE>
-      <TLINE>
-       <TDFORMAT>AS</TDFORMAT>
-       <TDLINE>IV_REPAIR_ID: Repair order number (AUFNR)</TDLINE>
-      </TLINE>
-      <TLINE>
-       <TDFORMAT>AS</TDFORMAT>
-       <TDLINE>IV_SERNR: Serial number (optional)</TDLINE>
-      </TLINE>
-      <TLINE>
-       <TDFORMAT>AS</TDFORMAT>
-       <TDLINE>RO_DRIVER: Returned print driver instance</TDLINE>
-      </TLINE>
-     </LINES>
-    </item>
-    <item>
-     <DOKIL>
-      <ID>CO</ID>
-      <OBJECT>/CTDI/CL_PRINT_DRIVER_BASE    EXECUTE</OBJECT>
-      <LANGU>E</LANGU>
-      <TYP>E</TYP>
-      <VERSION>0001</VERSION>
-      <MASTERLANG>X</MASTERLANG>
-      <TXTLINES>00006</TXTLINES>
-      <DOKSTATE>R</DOKSTATE>
-     </DOKIL>
-     <HEAD>
-      <TDOBJECT>DOKU</TDOBJECT>
-      <TDNAME>/CTDI/CL_PRINT_DRIVER_BASE    EXECUTE</TDNAME>
-      <TDID>CO</TDID>
-      <TDSPRAS>E</TDSPRAS>
-      <TDFORM>S_DOCU_SHOW</TDFORM>
-      <TDSTYLE>S_DOCUS1</TDSTYLE>
-      <TDVERSION>00001</TDVERSION>
-      <TDLINESIZE>072</TDLINESIZE>
-     </HEAD>
-     <LINES>
-      <TLINE>
-       <TDFORMAT>U1</TDFORMAT>
-       <TDLINE>&amp;FUNCTIONALITY&amp;</TDLINE>
-      </TLINE>
-      <TLINE>
-       <TDFORMAT>AS</TDFORMAT>
-       <TDLINE>Executes the full printing pipeline, which reads business data</TDLINE>
-      </TLINE>
-      <TLINE>
-       <TDLINE> and then renders the form (Smart Form or Adobe Form).</TDLINE>
-      </TLINE>
-      <TLINE>
-       <TDFORMAT>U1</TDFORMAT>
-       <TDLINE>&amp;PARAMETERS&amp;</TDLINE>
-      </TLINE>
-      <TLINE>
-       <TDFORMAT>AS</TDFORMAT>
-       <TDLINE>IV_SAVE_AS_PDF: Save print output as PDF</TDLINE>
-      </TLINE>
-      <TLINE>
-       <TDFORMAT>AS</TDFORMAT>
-       <TDLINE>IO_DATA: Optional pre-loaded data object</TDLINE>
-      </TLINE>
-     </LINES>
-    </item>
-    <item>
-     <DOKIL>
-      <ID>CO</ID>
-      <OBJECT>/CTDI/CL_PRINT_DRIVER_BASE    REGISTER_CUSTOM_PARAMETER</OBJECT>
-      <LANGU>E</LANGU>
-      <TYP>E</TYP>
-      <VERSION>0001</VERSION>
-      <MASTERLANG>X</MASTERLANG>
-      <TXTLINES>00007</TXTLINES>
-      <DOKSTATE>R</DOKSTATE>
-     </DOKIL>
-     <HEAD>
-      <TDOBJECT>DOKU</TDOBJECT>
-      <TDNAME>/CTDI/CL_PRINT_DRIVER_BASE    REGISTER_CUSTOM_PARAMETER</TDNAME>
-      <TDID>CO</TDID>
-      <TDSPRAS>E</TDSPRAS>
-      <TDFORM>S_DOCU_SHOW</TDFORM>
-      <TDSTYLE>S_DOCUS1</TDSTYLE>
-      <TDVERSION>00001</TDVERSION>
-      <TDLINESIZE>072</TDLINESIZE>
-     </HEAD>
-     <LINES>
-      <TLINE>
-       <TDFORMAT>U1</TDFORMAT>
-       <TDLINE>&amp;FUNCTIONALITY&amp;</TDLINE>
-      </TLINE>
-      <TLINE>
-       <TDFORMAT>AS</TDFORMAT>
-       <TDLINE>Registers a custom form parameter by its name and reference data,</TDLINE>
-      </TLINE>
-      <TLINE>
-       <TDLINE> specifying parameter kind explicitly to avoid database signature lookups.</TDLINE>
-      </TLINE>
-      <TLINE>
-       <TDFORMAT>U1</TDFORMAT>
-       <TDLINE>&amp;PARAMETERS&amp;</TDLINE>
-      </TLINE>
-      <TLINE>
-       <TDFORMAT>AS</TDFORMAT>
-       <TDLINE>IV_NAME: Parameter name in form signature</TDLINE>
-      </TLINE>
-      <TLINE>
-       <TDFORMAT>AS</TDFORMAT>
-       <TDLINE>IR_DATA: Reference to parameter value data</TDLINE>
-      </TLINE>
-      <TLINE>
-       <TDFORMAT>AS</TDFORMAT>
-       <TDLINE>IV_KIND: Parameter direction (exporting, importing, tables, etc.)</TDLINE>
-      </TLINE>
-     </LINES>
-    </item>
-    <item>
-     <DOKIL>
-      <ID>CO</ID>
-      <OBJECT>/CTDI/CL_PRINT_DRIVER_BASE    READ_DATA</OBJECT>
-      <LANGU>E</LANGU>
-      <TYP>E</TYP>
-      <VERSION>0001</VERSION>
-      <MASTERLANG>X</MASTERLANG>
-      <TXTLINES>00006</TXTLINES>
-      <DOKSTATE>R</DOKSTATE>
-     </DOKIL>
-     <HEAD>
-      <TDOBJECT>DOKU</TDOBJECT>
-      <TDNAME>/CTDI/CL_PRINT_DRIVER_BASE    READ_DATA</TDNAME>
-      <TDID>CO</TDID>
-      <TDSPRAS>E</TDSPRAS>
-      <TDFORM>S_DOCU_SHOW</TDFORM>
-      <TDSTYLE>S_DOCUS1</TDSTYLE>
-      <TDVERSION>00001</TDVERSION>
-      <TDLINESIZE>072</TDLINESIZE>
-     </HEAD>
-     <LINES>
-      <TLINE>
-       <TDFORMAT>U1</TDFORMAT>
-       <TDLINE>&amp;FUNCTIONALITY&amp;</TDLINE>
-      </TLINE>
-      <TLINE>
-       <TDFORMAT>AS</TDFORMAT>
-       <TDLINE>Protected template method that manages the execution flow of data</TDLINE>
-      </TLINE>
-      <TDLINE> retrieval by calling standard hooks in sequence.</TDLINE>
-      <TLINE>
-       <TDFORMAT>U1</TDFORMAT>
-       <TDLINE>&amp;PARAMETERS&amp;</TDLINE>
-      </TLINE>
-      <TLINE>
-       <TDFORMAT>AS</TDFORMAT>
-       <TDLINE>IO_DATA: Optional pre-loaded data object</TDLINE>
-      </TLINE>
-     </LINES>
-    </item>
-   </LONGTEXTS_CO>
+   <DESCRIPTIONS_SUB>
+    <SEOSUBCOTX>
+     <LANGU>D</LANGU>
+     <DESCRIPT>Druckertreiber: Basisklasse (Smart Forms + Adobe Forms)</DESCRIPT>
+    </SEOSUBCOTX>
+   </DESCRIPTIONS_SUB>
   </asx:values>
  </asx:abap>
 </abapGit>
