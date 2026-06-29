@@ -267,24 +267,24 @@
        <TDLINE>2. Redefine and implement the protected action hook methods:</TDLINE>
       </item>
       <item>
-       <TDFORMAT>* </TDFORMAT>
-       <TDLINE> - unpack_io_data: Extract input/output parameters from execution</TDLINE>
+       <TDFORMAT>B2</TDFORMAT>
+       <TDLINE>- unpack_io_data: Extract input/output parameters from execution</TDLINE>
       </item>
       <item>
        <TDFORMAT></TDFORMAT>
-       <TDLINE>   context.</TDLINE>
+       <TDLINE>  context.</TDLINE>
       </item>
       <item>
-       <TDFORMAT>* </TDFORMAT>
-       <TDLINE> - fetch_data_from_db: Select necessary data from database tables.</TDLINE>
+       <TDFORMAT>B2</TDFORMAT>
+       <TDLINE>- fetch_data_from_db: Select necessary data from database tables.</TDLINE>
       </item>
       <item>
-       <TDFORMAT>* </TDFORMAT>
-       <TDLINE> - map_and_register_data: Map internal data and register custom</TDLINE>
+       <TDFORMAT>B2</TDFORMAT>
+       <TDLINE>- map_and_register_data: Map internal data and register custom</TDLINE>
       </item>
       <item>
        <TDFORMAT></TDFORMAT>
-       <TDLINE>   parameters.</TDLINE>
+       <TDLINE>  parameters.</TDLINE>
       </item>
       <item>
        <TDFORMAT>B1</TDFORMAT>
@@ -434,20 +434,20 @@
        <TDLINE> Methoden:</TDLINE>
       </item>
       <item>
-       <TDFORMAT>* </TDFORMAT>
-       <TDLINE> - unpack_io_data: Parameter aus dem Ausführungskontext entpacken.</TDLINE>
+       <TDFORMAT>B2</TDFORMAT>
+       <TDLINE>- unpack_io_data: Parameter aus dem Ausführungskontext entpacken.</TDLINE>
       </item>
       <item>
-       <TDFORMAT>* </TDFORMAT>
-       <TDLINE> - fetch_data_from_db: Relevante Daten aus der Datenbank selektieren.</TDLINE>
+       <TDFORMAT>B2</TDFORMAT>
+       <TDLINE>- fetch_data_from_db: Relevante Daten aus der Datenbank selektieren.</TDLINE>
       </item>
       <item>
-       <TDFORMAT>* </TDFORMAT>
-       <TDLINE> - map_and_register_data: Daten mappen und Formularparameter</TDLINE>
+       <TDFORMAT>B2</TDFORMAT>
+       <TDLINE>- map_and_register_data: Daten mappen und Formularparameter</TDLINE>
       </item>
       <item>
        <TDFORMAT></TDFORMAT>
-       <TDLINE>   registrieren.</TDLINE>
+       <TDLINE>  registrieren.</TDLINE>
       </item>
       <item>
        <TDFORMAT>B1</TDFORMAT>
