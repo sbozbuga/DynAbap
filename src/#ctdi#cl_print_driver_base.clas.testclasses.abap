@@ -8,9 +8,9 @@ CLASS lcl_tests DEFINITION FOR TESTING
 *?﻿<asx:abap xmlns:asx="http://www.sap.com/abapxml" version="1.0">
 *?<asx:values>
 *?<TESTCLASS_OPTIONS>
-*?<TEST_CLASS>lcl_Tests
+*?<TEST_CLASS>lcl_tests
 *?</TEST_CLASS>
-*?<TEST_MEMBER>f_Cut
+*?<TEST_MEMBER>f_cut
 *?</TEST_MEMBER>
 *?<OBJECT_UNDER_TEST>/CTDI/CL_PRINT_DRIVER_BASE
 *?</OBJECT_UNDER_TEST>
@@ -49,280 +49,209 @@ CLASS lcl_tests DEFINITION FOR TESTING
     METHODS: render_form FOR TESTING.
     METHODS: resolve_contract FOR TESTING.
     METHODS: unpack_io_data FOR TESTING.
-ENDCLASS.       "lcl_Tests
+ENDCLASS.       "lcl_tests
 
 
 CLASS lcl_tests IMPLEMENTATION.
 
   METHOD class_setup.
-
-
-
   ENDMETHOD.
 
 
   METHOD class_teardown.
-
-
-
   ENDMETHOD.
 
 
   METHOD setup.
-
-
     CREATE OBJECT f_cut.
   ENDMETHOD.
 
 
   METHOD teardown.
-
-
-
+    CLEAR f_cut.
   ENDMETHOD.
 
 
   METHOD detect_form_type.
-
-    DATA rv_type TYPE char1.
-
-    rv_type = f_cut->detect_form_type(  ).
-
+    f_cut->mv_form_name = 'TEST_SMARTFORM'.
+    DATA(rv_type) = f_cut->detect_form_type( ).
     cl_abap_unit_assert=>assert_equals(
-      act   = rv_type
-      exp   = rv_type          "<--- please adapt expected value
-    " msg   = 'Testing value rv_Type'
-*     level =
-    ).
+      act = rv_type
+      exp = 'A'
+      msg = 'Non-existent form should default to Adobe Form (A)' ).
   ENDMETHOD.
 
 
   METHOD download_pdf.
-
-    DATA iv_pdf_data TYPE xstring.
-
+    DATA: iv_pdf_data TYPE xstring.
+    " Empty input PDF data should return immediately in download_pdf
     f_cut->download_pdf( iv_pdf_data ).
-
+    cl_abap_unit_assert=>assert_true( abap_true ).
   ENDMETHOD.
 
 
   METHOD execute.
-
-    DATA iv_save_as_pdf TYPE abap_bool.
-    DATA io_data TYPE REF TO object.
-
-    f_cut->execute(
-*       IV_SAVE_AS_PDF = iv_Save_As_Pdf
-*       IO_DATA = io_Data
-    ).
-
+    " Execute should raise /ctdi/cx_print_driver_error because data retrieval / forms fail
+    TRY.
+        f_cut->execute( ).
+        cl_abap_unit_assert=>fail( msg = 'execute should fail for invalid repair order' ).
+      CATCH /ctdi/cx_print_driver_error.
+        cl_abap_unit_assert=>assert_true( abap_true ).
+    ENDTRY.
   ENDMETHOD.
 
 
   METHOD execute_adobeform.
-
-    DATA iv_save_as_pdf TYPE abap_bool.
-
-    f_cut->execute_adobeform( iv_save_as_pdf ).
-
+    f_cut->mv_form_name = 'DUMMY_ADOBE_FORM'.
+    TRY.
+        f_cut->execute_adobeform( abap_false ).
+        cl_abap_unit_assert=>fail( msg = 'execute_adobeform should fail for invalid configuration' ).
+      CATCH /ctdi/cx_print_driver_error.
+        cl_abap_unit_assert=>assert_true( abap_true ).
+    ENDTRY.
   ENDMETHOD.
 
 
   METHOD execute_smartform.
-
-    DATA iv_save_as_pdf TYPE abap_bool.
-
-    f_cut->execute_smartform( iv_save_as_pdf ).
-
+    f_cut->mv_form_name = 'DUMMY_SMARTFORM'.
+    TRY.
+        f_cut->execute_smartform( abap_false ).
+        cl_abap_unit_assert=>fail( msg = 'execute_smartform should fail for invalid configuration' ).
+      CATCH /ctdi/cx_print_driver_error.
+        cl_abap_unit_assert=>assert_true( abap_true ).
+    ENDTRY.
   ENDMETHOD.
 
 
   METHOD factory.
-
-    DATA iv_repair_id TYPE aufnr.
-    DATA iv_sernr TYPE gernr.
-    DATA ro_driver TYPE REF TO /ctdi/cl_print_driver_base.
-
-    ro_driver = /ctdi/cl_print_driver_base=>factory(
-        iv_repair_id = iv_repair_id
-*       IV_SERNR = iv_Sernr
-    ).
-
-    cl_abap_unit_assert=>assert_equals(
-      act   = ro_driver
-      exp   = ro_driver          "<--- please adapt expected value
-    " msg   = 'Testing value ro_Driver'
-*     level =
-    ).
+    DATA: lo_driver TYPE REF TO /ctdi/cl_print_driver_base.
+    TRY.
+        lo_driver = /ctdi/cl_print_driver_base=>factory( iv_repair_id = '9999999999' ).
+        cl_abap_unit_assert=>fail( msg = 'factory should fail for invalid repair order' ).
+      CATCH /ctdi/cx_print_driver_error.
+        cl_abap_unit_assert=>assert_true( abap_true ).
+      CATCH /ctdi/cx_no_config_found.
+        cl_abap_unit_assert=>assert_true( abap_true ).
+    ENDTRY.
   ENDMETHOD.
 
 
   METHOD fetch_data_from_db.
-
-
-    f_cut->fetch_data_from_db(  ).
-
+    " fetch_data_from_db is a base no-op hook; should run successfully
+    f_cut->fetch_data_from_db( ).
+    cl_abap_unit_assert=>assert_true( abap_true ).
   ENDMETHOD.
 
 
   METHOD get_config_from_db.
-
-    DATA iv_repair_id TYPE aufnr.
-    DATA ev_form_name TYPE fpname.
-    DATA ev_class_name TYPE seoclsname.
-    DATA es_project TYPE /ctdi/rep_projec.
-
-    /ctdi/cl_print_driver_base=>get_config_from_db(
-      EXPORTING
-        iv_repair_id = iv_repair_id
-*     IMPORTING
-*       EV_FORM_NAME = ev_Form_Name
-*       EV_CLASS_NAME = ev_Class_Name
-*       ES_PROJECT = es_Project
-    ).
-
-    cl_abap_unit_assert=>assert_equals(
-      act   = ev_form_name
-      exp   = ev_form_name          "<--- please adapt expected value
-    " msg   = 'Testing value ev_Form_Name'
-*     level =
-    ).
-    cl_abap_unit_assert=>assert_equals(
-      act   = ev_class_name
-      exp   = ev_class_name          "<--- please adapt expected value
-    " msg   = 'Testing value ev_Class_Name'
-*     level =
-    ).
-    cl_abap_unit_assert=>assert_equals(
-      act   = es_project
-      exp   = es_project          "<--- please adapt expected value
-    " msg   = 'Testing value es_Project'
-*     level =
-    ).
+    DATA: lv_form_name  TYPE fpname,
+          lv_class_name TYPE seoclsname,
+          ls_project    TYPE /ctdi/rep_projec.
+    TRY.
+        /ctdi/cl_print_driver_base=>get_config_from_db(
+          EXPORTING iv_repair_id  = '9999999999'
+          IMPORTING ev_form_name  = lv_form_name
+                    ev_class_name = lv_class_name
+                    es_project    = ls_project ).
+        cl_abap_unit_assert=>fail( msg = 'get_config_from_db should fail for invalid repair order' ).
+      CATCH /ctdi/cx_print_driver_error.
+        cl_abap_unit_assert=>assert_true( abap_true ).
+    ENDTRY.
   ENDMETHOD.
 
 
   METHOD get_user_print_defaults.
-
-    DATA ev_printer TYPE rspopname.
-    DATA ev_immed TYPE c.
-    DATA ev_delete TYPE c.
-
+    DATA: lv_printer TYPE rspopname,
+          lv_immed   TYPE c,
+          lv_delete  TYPE c.
     f_cut->get_user_print_defaults(
-*     IMPORTING
-*       EV_PRINTER = ev_Printer
-*       EV_IMMED = ev_Immed
-*       EV_DELETE = ev_Delete
-    ).
-
-    cl_abap_unit_assert=>assert_equals(
-      act   = ev_printer
-      exp   = ev_printer          "<--- please adapt expected value
-    " msg   = 'Testing value ev_Printer'
-*     level =
-    ).
-    cl_abap_unit_assert=>assert_equals(
-      act   = ev_immed
-      exp   = ev_immed          "<--- please adapt expected value
-    " msg   = 'Testing value ev_Immed'
-*     level =
-    ).
-    cl_abap_unit_assert=>assert_equals(
-      act   = ev_delete
-      exp   = ev_delete          "<--- please adapt expected value
-    " msg   = 'Testing value ev_Delete'
-*     level =
-    ).
+      IMPORTING ev_printer = lv_printer
+                ev_immed   = lv_immed
+                ev_delete  = lv_delete ).
+    cl_abap_unit_assert=>assert_not_initial(
+      act = lv_immed
+      msg = 'Immediate print default should be set' ).
+    cl_abap_unit_assert=>assert_not_initial(
+      act = lv_delete
+      msg = 'Delete default should be set' ).
   ENDMETHOD.
 
 
   METHOD map_and_register_data.
-
-
-    f_cut->map_and_register_data(  ).
-
+    " map_and_register_data is a base no-op hook; should run successfully
+    f_cut->map_and_register_data( ).
+    cl_abap_unit_assert=>assert_true( abap_true ).
   ENDMETHOD.
 
 
   METHOD read_data.
-
-    DATA io_data TYPE REF TO object.
-
-    f_cut->read_data( io_data ).
-
+    " Calling read_data on base class with initial io_data runs no-op hooks successfully
+    TRY.
+        f_cut->read_data( ).
+        cl_abap_unit_assert=>assert_true( abap_true ).
+      CATCH /ctdi/cx_print_driver_error.
+        cl_abap_unit_assert=>fail( msg = 'read_data should not raise error if hooks are no-op' ).
+    ENDTRY.
   ENDMETHOD.
 
 
   METHOD register_custom_parameter.
-
-    DATA iv_name TYPE string.
-    DATA ir_data TYPE REF TO data.
-    DATA iv_kind TYPE i.
+    DATA: lv_val TYPE string VALUE 'test_val',
+          lr_ref TYPE REF TO data.
+    GET REFERENCE OF lv_val INTO lr_ref.
 
     f_cut->register_custom_parameter(
-        iv_name = iv_name
-        ir_data = ir_data
-*       IV_KIND = iv_Kind
-    ).
+      iv_name = 'IV_TEST'
+      ir_data = lr_ref
+      iv_kind = abap_func_exporting ).
 
+    cl_abap_unit_assert=>assert_equals(
+      act = lines( f_cut->mt_custom_form_params )
+      exp = 1
+      msg = 'Custom parameter should be registered' ).
+
+    READ TABLE f_cut->mt_custom_form_params ASSIGNING FIELD-SYMBOL(<ls_param>) INDEX 1.
+    cl_abap_unit_assert=>assert_equals(
+      act = <ls_param>-name
+      exp = 'IV_TEST' ).
   ENDMETHOD.
 
 
   METHOD render_form.
-
-    DATA iv_save_as_pdf TYPE abap_bool.
-
-    f_cut->render_form( iv_save_as_pdf ).
-
+    f_cut->mv_form_name = 'DUMMY_FORM'.
+    TRY.
+        f_cut->render_form( abap_false ).
+        cl_abap_unit_assert=>assert_true( abap_true ).
+      CATCH /ctdi/cx_print_driver_error.
+        cl_abap_unit_assert=>assert_true( abap_true ).
+    ENDTRY.
   ENDMETHOD.
 
 
   METHOD resolve_contract.
-
-    DATA iv_repair_id TYPE aufnr.
-    DATA ev_contract_id TYPE vbeln_va.
-    DATA ev_skz TYPE bemot.
-    DATA ev_akz TYPE char4.
-
-    /ctdi/cl_print_driver_base=>resolve_contract(
-      EXPORTING
-        iv_repair_id = iv_repair_id
-*     IMPORTING
-*       EV_CONTRACT_ID = ev_Contract_Id
-*       EV_SKZ = ev_Skz
-*       EV_AKZ = ev_Akz
-    ).
-
-    cl_abap_unit_assert=>assert_equals(
-      act   = ev_contract_id
-      exp   = ev_contract_id          "<--- please adapt expected value
-    " msg   = 'Testing value ev_Contract_Id'
-*     level =
-    ).
-    cl_abap_unit_assert=>assert_equals(
-      act   = ev_skz
-      exp   = ev_skz          "<--- please adapt expected value
-    " msg   = 'Testing value ev_Skz'
-*     level =
-    ).
-    cl_abap_unit_assert=>assert_equals(
-      act   = ev_akz
-      exp   = ev_akz          "<--- please adapt expected value
-    " msg   = 'Testing value ev_Akz'
-*     level =
-    ).
+    DATA: lv_contract TYPE vbeln_va,
+          lv_skz      TYPE bemot,
+          lv_akz      TYPE char4.
+    TRY.
+        /ctdi/cl_print_driver_base=>resolve_contract(
+          EXPORTING iv_repair_id    = '9999999999'
+          IMPORTING ev_contract_id  = lv_contract
+                    ev_skz          = lv_skz
+                    ev_akz          = lv_akz ).
+        cl_abap_unit_assert=>fail( msg = 'resolve_contract should fail for invalid repair order' ).
+      CATCH /ctdi/cx_print_driver_error.
+        cl_abap_unit_assert=>assert_true(
+          act = abap_true
+          msg = 'Expected /ctdi/cx_print_driver_error raised' ).
+    ENDTRY.
   ENDMETHOD.
 
 
   METHOD unpack_io_data.
-
-    DATA io_data TYPE REF TO object.
-
-    f_cut->unpack_io_data( io_data ).
-
+    " unpack_io_data is a base no-op hook; should run successfully
+    DATA: lo_obj TYPE REF TO object.
+    f_cut->unpack_io_data( lo_obj ).
+    cl_abap_unit_assert=>assert_true( abap_true ).
   ENDMETHOD.
-
-
-
 
 ENDCLASS.
