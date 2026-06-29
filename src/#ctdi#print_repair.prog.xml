@@ -176,7 +176,7 @@
       <TYP>E</TYP>
       <VERSION>0001</VERSION>
       <MASTERLANG>X</MASTERLANG>
-      <TXTLINES>00031</TXTLINES>
+      <TXTLINES>00033</TXTLINES>
       <DOKSTATE>A</DOKSTATE>
      </DOKIL>
      <HEAD>
@@ -204,7 +204,11 @@
       </item>
       <item>
        <TDFORMAT></TDFORMAT>
-       <TDLINE> dynamic routing, and execution engine.</TDLINE>
+       <TDLINE> dynamic routing, and execution engine. This program and its framework</TDLINE>
+      </item>
+      <item>
+       <TDFORMAT></TDFORMAT>
+       <TDLINE> infrastructure will eventually replace the legacy /CELLAG/ALCAREP02.</TDLINE>
       </item>
       <item>
        <TDFORMAT>U1</TDFORMAT>
@@ -339,7 +343,7 @@
       <LANGU>D</LANGU>
       <TYP>E</TYP>
       <VERSION>0001</VERSION>
-      <TXTLINES>00033</TXTLINES>
+      <TXTLINES>00034</TXTLINES>
       <DOKSTATE>A</DOKSTATE>
      </DOKIL>
      <HEAD>
@@ -367,7 +371,11 @@
       </item>
       <item>
        <TDFORMAT></TDFORMAT>
-       <TDLINE> und die Ausführung der Drucktreiber.</TDLINE>
+       <TDLINE> und die Ausführung der Drucktreiber. Dieses neue Programm und seine</TDLINE>
+      </item>
+      <item>
+       <TDFORMAT></TDFORMAT>
+       <TDLINE> Infrastruktur werden das Legacy-Programm /CELLAG/ALCAREP02 ersetzen.</TDLINE>
       </item>
       <item>
        <TDFORMAT>U1</TDFORMAT>

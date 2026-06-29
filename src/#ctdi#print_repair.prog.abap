@@ -10,6 +10,8 @@
 *
 * Beschreibung:  Repair Printouts
 *                Dynamic routing and execution orchestrator.
+*                NOTE: This new program and framework infrastructure
+*                will eventually replace the legacy /CELLAG/ALCAREP02.
 *
 *                Routing & Determination Flow:
 *                - Reads customizing from /CTDI/REP_FORMS.
