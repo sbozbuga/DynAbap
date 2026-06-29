@@ -160,6 +160,168 @@
       </item>
       <item>
        <ID>S</ID>
+<?xml version="1.0" encoding="utf-8"?>
+<abapGit version="v1.0.0" serializer="LCL_OBJECT_PROG" serializer_version="v1.0.0">
+ <asx:abap xmlns:asx="http://www.sap.com/abapxml" version="1.0">
+  <asx:values>
+   <PROGDIR>
+    <NAME>/CTDI/PRINT_REPAIR</NAME>
+    <SUBC>1</SUBC>
+    <RLOAD>E</RLOAD>
+    <FIXPT>X</FIXPT>
+    <UCCHECK>X</UCCHECK>
+   </PROGDIR>
+   <TPOOL>
+    <item>
+     <ID>I</ID>
+     <KEY>001</KEY>
+     <ENTRY>Print Driver Output Determination</ENTRY>
+     <LENGTH>35</LENGTH>
+    </item>
+    <item>
+     <ID>I</ID>
+     <KEY>002</KEY>
+     <ENTRY>Print Parameters</ENTRY>
+     <LENGTH>18</LENGTH>
+    </item>
+    <item>
+     <ID>I</ID>
+     <KEY>003</KEY>
+     <ENTRY>Print failed: &amp;1</ENTRY>
+     <LENGTH>50</LENGTH>
+    </item>
+    <item>
+     <ID>I</ID>
+     <KEY>004</KEY>
+     <ENTRY>Unexpected error: &amp;1</ENTRY>
+     <LENGTH>50</LENGTH>
+    </item>
+    <item>
+     <ID>I</ID>
+     <KEY>005</KEY>
+     <ENTRY>No config found in /CTDI/REP_FORMS for Order</ENTRY>
+     <LENGTH>44</LENGTH>
+    </item>
+    <item>
+     <ID>I</ID>
+     <KEY>006</KEY>
+     <ENTRY>Executing legacy printing routine (print_old) for repair &amp;1</ENTRY>
+     <LENGTH>75</LENGTH>
+    </item>
+    <item>
+     <ID>I</ID>
+     <KEY>007</KEY>
+     <ENTRY>An unexpected system error occurred</ENTRY>
+     <LENGTH>35</LENGTH>
+    </item>
+    <item>
+     <ID>I</ID>
+     <KEY>008</KEY>
+     <ENTRY>Printout generated successfully</ENTRY>
+     <LENGTH>31</LENGTH>
+    </item>
+    <item>
+     <ID>R</ID>
+     <ENTRY>Repair Printouts</ENTRY>
+     <LENGTH>16</LENGTH>
+    </item>
+    <item>
+     <ID>S</ID>
+     <KEY>P_AUFNR</KEY>
+     <ENTRY>Repair / Order ID</ENTRY>
+     <LENGTH>25</LENGTH>
+    </item>
+    <item>
+     <ID>S</ID>
+     <KEY>P_SF</KEY>
+     <ENTRY>Save as PDF</ENTRY>
+     <LENGTH>20</LENGTH>
+    </item>
+    <item>
+     <ID>S</ID>
+     <KEY>P_SHWLOG</KEY>
+     <ENTRY>Show logs</ENTRY>
+     <LENGTH>17</LENGTH>
+    </item>
+    <item>
+     <ID>S</ID>
+     <KEY>P_SERNR</KEY>
+     <ENTRY>Serial number (optional)</ENTRY>
+     <LENGTH>32</LENGTH>
+    </item>
+   </TPOOL>
+   <I18N_TPOOL>
+    <item>
+     <LANGUAGE>D</LANGUAGE>
+     <TEXTPOOL>
+      <item>
+       <ID>I</ID>
+       <KEY>001</KEY>
+       <ENTRY>Druckertreiber-Ausgabebestimmung</ENTRY>
+       <LENGTH>35</LENGTH>
+      </item>
+      <item>
+       <ID>I</ID>
+       <KEY>002</KEY>
+       <ENTRY>Druckparameter</ENTRY>
+       <LENGTH>18</LENGTH>
+      </item>
+      <item>
+       <ID>I</ID>
+       <KEY>003</KEY>
+       <ENTRY>Drucken fehlgeschlagen: &amp;1</ENTRY>
+       <LENGTH>50</LENGTH>
+      </item>
+      <item>
+       <ID>I</ID>
+       <KEY>004</KEY>
+       <ENTRY>Unerwarteter Fehler: &amp;1</ENTRY>
+       <LENGTH>50</LENGTH>
+      </item>
+      <item>
+       <ID>I</ID>
+       <KEY>005</KEY>
+       <ENTRY>Keine Konfig. in /CTDI/REP_FORMS für Auftrag</ENTRY>
+       <LENGTH>44</LENGTH>
+      </item>
+      <item>
+       <ID>I</ID>
+       <KEY>006</KEY>
+       <ENTRY>Legacy-Druckroutine (print_old) für Reparatur &amp;1 wird ausgeführt</ENTRY>
+       <LENGTH>75</LENGTH>
+      </item>
+      <item>
+       <ID>I</ID>
+       <KEY>007</KEY>
+       <ENTRY>Ein unerwarteter Systemfehler ist aufgetreten</ENTRY>
+       <LENGTH>45</LENGTH>
+      </item>
+      <item>
+       <ID>I</ID>
+       <KEY>008</KEY>
+       <ENTRY>Ausdruck erfolgreich erstellt</ENTRY>
+       <LENGTH>29</LENGTH>
+      </item>
+      <item>
+       <ID>S</ID>
+       <KEY>P_AUFNR</KEY>
+       <ENTRY>Reparatur- / Auftrags-ID</ENTRY>
+       <LENGTH>32</LENGTH>
+      </item>
+      <item>
+       <ID>S</ID>
+       <KEY>P_SERNR</KEY>
+       <ENTRY>Seriennummer</ENTRY>
+       <LENGTH>20</LENGTH>
+      </item>
+      <item>
+       <ID>S</ID>
+       <KEY>P_SF</KEY>
+       <ENTRY>Als PDF speichern</ENTRY>
+       <LENGTH>25</LENGTH>
+      </item>
+      <item>
+       <ID>S</ID>
        <KEY>P_SHWLOG</KEY>
        <ENTRY>Protokolle anzeigen</ENTRY>
        <LENGTH>27</LENGTH>
@@ -176,7 +338,7 @@
       <TYP>E</TYP>
       <VERSION>0001</VERSION>
       <MASTERLANG>X</MASTERLANG>
-      <TXTLINES>00021</TXTLINES>
+      <TXTLINES>00031</TXTLINES>
       <DOKSTATE>A</DOKSTATE>
      </DOKIL>
      <HEAD>
@@ -196,7 +358,15 @@
       </item>
       <item>
        <TDFORMAT>AS</TDFORMAT>
-       <TDLINE>The /CTDI/PRINT_REPAIR program is the central report for Repair Printouts. It functions as the entry point and determination layer, dynamic routing, and execution engine.</TDLINE>
+       <TDLINE>The /CTDI/PRINT_REPAIR program is the central report for Repair</TDLINE>
+      </item>
+      <item>
+       <TDFORMAT></TDFORMAT>
+       <TDLINE> Printouts. It functions as the entry point, determination layer,</TDLINE>
+      </item>
+      <item>
+       <TDFORMAT></TDFORMAT>
+       <TDLINE> dynamic routing, and execution engine.</TDLINE>
       </item>
       <item>
        <TDFORMAT>U1</TDFORMAT>
@@ -208,15 +378,27 @@
       </item>
       <item>
        <TDFORMAT>B1</TDFORMAT>
-       <TDLINE>Fallback access sequences matching VB/Contract, SKZ, and AKZ to determine print drivers.</TDLINE>
+       <TDLINE>Fallback access sequences matching VB/Contract, SKZ, and AKZ to</TDLINE>
+      </item>
+      <item>
+       <TDFORMAT></TDFORMAT>
+       <TDLINE> determine print drivers.</TDLINE>
       </item>
       <item>
        <TDFORMAT>B1</TDFORMAT>
-       <TDLINE>Backward compatibility with legacy routines (ALCAREP02 / print_old) via exception handling.</TDLINE>
+       <TDLINE>Backward compatibility with legacy routines (ALCAREP02 / print_old)</TDLINE>
+      </item>
+      <item>
+       <TDFORMAT></TDFORMAT>
+       <TDLINE> via exception handling.</TDLINE>
       </item>
       <item>
        <TDFORMAT>B1</TDFORMAT>
-       <TDLINE>Structured logging using the standard application log wrapper /CTDI/CL_PRINT_DRIVER_LOG.</TDLINE>
+       <TDLINE>Structured logging using the standard application log wrapper</TDLINE>
+      </item>
+      <item>
+       <TDFORMAT></TDFORMAT>
+       <TDLINE> /CTDI/CL_PRINT_DRIVER_LOG.</TDLINE>
       </item>
       <item>
        <TDFORMAT>U1</TDFORMAT>
@@ -224,11 +406,19 @@
       </item>
       <item>
        <TDFORMAT>AS</TDFORMAT>
-       <TDLINE>To extend the data retrieval or formatting logic for a specific customer or project:</TDLINE>
+       <TDLINE>To extend the data retrieval or formatting logic for a specific</TDLINE>
+      </item>
+      <item>
+       <TDFORMAT></TDFORMAT>
+       <TDLINE> customer or project:</TDLINE>
       </item>
       <item>
        <TDFORMAT>B1</TDFORMAT>
-       <TDLINE>1. Create a subclass inheriting from base class /CTDI/CL_PRINT_DRIVER_BASE.</TDLINE>
+       <TDLINE>1. Create a subclass inheriting from base class</TDLINE>
+      </item>
+      <item>
+       <TDFORMAT></TDFORMAT>
+       <TDLINE> /CTDI/CL_PRINT_DRIVER_BASE.</TDLINE>
       </item>
       <item>
        <TDFORMAT>B1</TDFORMAT>
@@ -236,23 +426,39 @@
       </item>
       <item>
        <TDFORMAT>* </TDFORMAT>
-       <TDLINE>   - unpack_io_data: Extract input/output parameters from execution context.</TDLINE>
+       <TDLINE> - unpack_io_data: Extract input/output parameters from execution</TDLINE>
+      </item>
+      <item>
+       <TDFORMAT></TDFORMAT>
+       <TDLINE>   context.</TDLINE>
       </item>
       <item>
        <TDFORMAT>* </TDFORMAT>
-       <TDLINE>   - fetch_data_from_db: Select necessary data from database tables.</TDLINE>
+       <TDLINE> - fetch_data_from_db: Select necessary data from database tables.</TDLINE>
       </item>
       <item>
        <TDFORMAT>* </TDFORMAT>
-       <TDLINE>   - map_and_register_data: Map internal data and register custom parameters.</TDLINE>
+       <TDLINE> - map_and_register_data: Map internal data and register custom</TDLINE>
+      </item>
+      <item>
+       <TDFORMAT></TDFORMAT>
+       <TDLINE>   parameters.</TDLINE>
       </item>
       <item>
        <TDFORMAT>B1</TDFORMAT>
-       <TDLINE>3. Register custom form parameters in the hook map_and_register_data using method register_custom_parameter.</TDLINE>
+       <TDLINE>3. Register custom form parameters in the hook map_and_register_data</TDLINE>
+      </item>
+      <item>
+       <TDFORMAT></TDFORMAT>
+       <TDLINE>   using method register_custom_parameter.</TDLINE>
       </item>
       <item>
        <TDFORMAT>AS</TDFORMAT>
-       <TDLINE>Ensure to pass the explicit parameter kind (e.g., abap_func_exporting, abap_func_tables) to avoid runtime DB lookups.</TDLINE>
+       <TDLINE>Ensure to pass the explicit parameter kind (e.g.,</TDLINE>
+      </item>
+      <item>
+       <TDFORMAT></TDFORMAT>
+       <TDLINE> abap_func_exporting, abap_func_tables) to avoid runtime DB lookups.</TDLINE>
       </item>
       <item>
        <TDFORMAT>U1</TDFORMAT>
@@ -264,15 +470,27 @@
       </item>
       <item>
        <TDFORMAT>B1</TDFORMAT>
-       <TDLINE>1. Maintain configuration entries in customizing table /CTDI/REP_FORMS via transaction SM30.</TDLINE>
+       <TDLINE>1. Maintain configuration entries in customizing table /CTDI/REP_FORMS</TDLINE>
+      </item>
+      <item>
+       <TDFORMAT></TDFORMAT>
+       <TDLINE>   via transaction SM30.</TDLINE>
       </item>
       <item>
        <TDFORMAT>B1</TDFORMAT>
-       <TDLINE>2. Define the form layout name (Smart Form or Adobe Form) and map it to your new print driver class.</TDLINE>
+       <TDLINE>2. Define the form layout name (Smart Form or Adobe Form) and map it</TDLINE>
+      </item>
+      <item>
+       <TDFORMAT></TDFORMAT>
+       <TDLINE>   to your new print driver class.</TDLINE>
       </item>
       <item>
        <TDFORMAT>B1</TDFORMAT>
-       <TDLINE>3. Use the class skeleton generator in customizing engine class /CTDI/CL_PRINT_CUST_ENGINE to auto-generate class stubs in DEV environment.</TDLINE>
+       <TDLINE>3. Use the class skeleton generator in customizing engine class</TDLINE>
+      </item>
+      <item>
+       <TDFORMAT></TDFORMAT>
+       <TDLINE> /CTDI/CL_PRINT_CUST_ENGINE to auto-generate class stubs in DEV.</TDLINE>
       </item>
      </LINES>
     </item>
@@ -283,7 +501,7 @@
       <LANGU>D</LANGU>
       <TYP>E</TYP>
       <VERSION>0001</VERSION>
-      <TXTLINES>00021</TXTLINES>
+      <TXTLINES>00033</TXTLINES>
       <DOKSTATE>A</DOKSTATE>
      </DOKIL>
      <HEAD>
@@ -303,7 +521,15 @@
       </item>
       <item>
        <TDFORMAT>AS</TDFORMAT>
-       <TDLINE>Das Programm /CTDI/PRINT_REPAIR dient als zentraler Einstiegspunkt für Reparaturberichte. Es übernimmt die Ermittlung, das dynamische Routing und die Ausführung der Drucktreiber.</TDLINE>
+       <TDLINE>Das Programm /CTDI/PRINT_REPAIR dient als zentraler Einstiegspunkt für</TDLINE>
+      </item>
+      <item>
+       <TDFORMAT></TDFORMAT>
+       <TDLINE> Reparaturberichte. Es übernimmt die Ermittlung, das dynamische Routing</TDLINE>
+      </item>
+      <item>
+       <TDFORMAT></TDFORMAT>
+       <TDLINE> und die Ausführung der Drucktreiber.</TDLINE>
       </item>
       <item>
        <TDFORMAT>U1</TDFORMAT>
@@ -311,19 +537,35 @@
       </item>
       <item>
        <TDFORMAT>B1</TDFORMAT>
-       <TDLINE>Dynamische Ausgabebestimmung über die Customizing-Tabelle /CTDI/REP_FORMS.</TDLINE>
+       <TDLINE>Dynamische Ausgabebestimmung über die Customizing-Tabelle</TDLINE>
+      </item>
+      <item>
+       <TDFORMAT></TDFORMAT>
+       <TDLINE> /CTDI/REP_FORMS.</TDLINE>
       </item>
       <item>
        <TDFORMAT>B1</TDFORMAT>
-       <TDLINE>Suchfolgen-Ermittlung (Vertrag, SKZ, AKZ) zur Zuordnung des passenden Drucktreibers.</TDLINE>
+       <TDLINE>Suchfolgen-Ermittlung (Vertrag, SKZ, AKZ) zur Zuordnung des passenden</TDLINE>
+      </item>
+      <item>
+       <TDFORMAT></TDFORMAT>
+       <TDLINE> Drucktreibers.</TDLINE>
       </item>
       <item>
        <TDFORMAT>B1</TDFORMAT>
-       <TDLINE>Abwärtskompatibilität zur Legacy-Logik (ALCAREP02 / print_old) via Exception-Handling.</TDLINE>
+       <TDLINE>Abwärtskompatibilität zur Legacy-Logik (ALCAREP02 / print_old) via</TDLINE>
+      </item>
+      <item>
+       <TDFORMAT></TDFORMAT>
+       <TDLINE> Exception-Handling.</TDLINE>
       </item>
       <item>
        <TDFORMAT>B1</TDFORMAT>
-       <TDLINE>Zentralisiertes Protokollieren über das standardisierte Anwendungs-Log /CTDI/CL_PRINT_DRIVER_LOG.</TDLINE>
+       <TDLINE>Zentralisiertes Protokollieren über das standardisierte Anwendungs-Log</TDLINE>
+      </item>
+      <item>
+       <TDFORMAT></TDFORMAT>
+       <TDLINE> /CTDI/CL_PRINT_DRIVER_LOG.</TDLINE>
       </item>
       <item>
        <TDFORMAT>U1</TDFORMAT>
@@ -331,7 +573,11 @@
       </item>
       <item>
        <TDFORMAT>AS</TDFORMAT>
-       <TDLINE>Um die Datenbeschaffung oder -aufbereitung für einen Kunden/ein Projekt zu erweitern:</TDLINE>
+       <TDLINE>Um die Datenbeschaffung oder -aufbereitung für einen Kunden/ein Projekt</TDLINE>
+      </item>
+      <item>
+       <TDFORMAT></TDFORMAT>
+       <TDLINE> zu erweitern:</TDLINE>
       </item>
       <item>
        <TDFORMAT>B1</TDFORMAT>
@@ -339,27 +585,47 @@
       </item>
       <item>
        <TDFORMAT>B1</TDFORMAT>
-       <TDLINE>2. Überschreiben und implementieren Sie die geschützten Action-Hook-Methoden:</TDLINE>
+       <TDLINE>2. Überschreiben und implementieren Sie die geschützten Action-Hook-</TDLINE>
+      </item>
+      <item>
+       <TDFORMAT></TDFORMAT>
+       <TDLINE> Methoden:</TDLINE>
       </item>
       <item>
        <TDFORMAT>* </TDFORMAT>
-       <TDLINE>   - unpack_io_data: Parameter aus dem Ausführungskontext entpacken.</TDLINE>
+       <TDLINE> - unpack_io_data: Parameter aus dem Ausführungskontext entpacken.</TDLINE>
       </item>
       <item>
        <TDFORMAT>* </TDFORMAT>
-       <TDLINE>   - fetch_data_from_db: Relevante Daten aus der Datenbank selektieren.</TDLINE>
+       <TDLINE> - fetch_data_from_db: Relevante Daten aus der Datenbank selektieren.</TDLINE>
       </item>
       <item>
        <TDFORMAT>* </TDFORMAT>
-       <TDLINE>   - map_and_register_data: Daten mappen und Formularparameter registrieren.</TDLINE>
+       <TDLINE> - map_and_register_data: Daten mappen und Formularparameter</TDLINE>
+      </item>
+      <item>
+       <TDFORMAT></TDFORMAT>
+       <TDLINE>   registrieren.</TDLINE>
       </item>
       <item>
        <TDFORMAT>B1</TDFORMAT>
-       <TDLINE>3. Registrieren Sie die Formularparameter im Hook map_and_register_data mittels der Methode register_custom_parameter.</TDLINE>
+       <TDLINE>3. Registrieren Sie die Formularparameter im Hook map_and_register_data</TDLINE>
+      </item>
+      <item>
+       <TDFORMAT></TDFORMAT>
+       <TDLINE> mittels der Methode register_custom_parameter.</TDLINE>
       </item>
       <item>
        <TDFORMAT>AS</TDFORMAT>
-       <TDLINE>Geben Sie hierbei den expliziten Parametertyp an (z.B. abap_func_exporting, abap_func_tables), um langsame Datenbank-Lookups zur Laufzeit zu vermeiden.</TDLINE>
+       <TDLINE>Geben Sie hierbei den expliziten Parametertyp an (z.B.</TDLINE>
+      </item>
+      <item>
+       <TDFORMAT></TDFORMAT>
+       <TDLINE> abap_func_exporting, abap_func_tables), um langsame Datenbank-Lookups</TDLINE>
+      </item>
+      <item>
+       <TDFORMAT></TDFORMAT>
+       <TDLINE> zur Laufzeit zu vermeiden.</TDLINE>
       </item>
       <item>
        <TDFORMAT>U1</TDFORMAT>
@@ -371,15 +637,31 @@
       </item>
       <item>
        <TDFORMAT>B1</TDFORMAT>
-       <TDLINE>1. Pflegen Sie die Einträge in der Tabelle /CTDI/REP_FORMS über Transaktion SM30.</TDLINE>
+       <TDLINE>1. Pflegen Sie die Einträge in der Tabelle /CTDI/REP_FORMS über</TDLINE>
+      </item>
+      <item>
+       <TDFORMAT></TDFORMAT>
+       <TDLINE> Transaktion SM30.</TDLINE>
       </item>
       <item>
        <TDFORMAT>B1</TDFORMAT>
-       <TDLINE>2. Weisen Sie dem Layout (Smart Form oder Adobe Form) die entsprechende Drucktreiber-Klasse zu.</TDLINE>
+       <TDLINE>2. Weisen Sie dem Layout (Smart Form oder Adobe Form) die entsprechende</TDLINE>
+      </item>
+      <item>
+       <TDFORMAT></TDFORMAT>
+       <TDLINE> Drucktreiber-Klasse zu.</TDLINE>
       </item>
       <item>
        <TDFORMAT>B1</TDFORMAT>
-       <TDLINE>3. Nutzen Sie den Klassen-Skelettgenerator in der Engine-Klasse /CTDI/CL_PRINT_CUST_ENGINE für die automatische Anlage von Klassen-Stubs.</TDLINE>
+       <TDLINE>3. Nutzen Sie den Klassen-Skelettgenerator in der Engine-Klasse</TDLINE>
+      </item>
+      <item>
+       <TDFORMAT></TDFORMAT>
+       <TDLINE> /CTDI/CL_PRINT_CUST_ENGINE für die automatische Anlage von Klassen-</TDLINE>
+      </item>
+      <item>
+       <TDFORMAT></TDFORMAT>
+       <TDLINE> Stubs.</TDLINE>
       </item>
      </LINES>
     </item>
