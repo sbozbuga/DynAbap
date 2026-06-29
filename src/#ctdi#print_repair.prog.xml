@@ -176,7 +176,7 @@
       <TYP>E</TYP>
       <VERSION>0001</VERSION>
       <MASTERLANG>X</MASTERLANG>
-      <TXTLINES>00035</TXTLINES>
+      <TXTLINES>00036</TXTLINES>
       <DOKSTATE>A</DOKSTATE>
      </DOKIL>
      <HEAD>
@@ -200,19 +200,23 @@
       </item>
       <item>
        <TDFORMAT></TDFORMAT>
-       <TDLINE> orchestrator for Repair Printouts. It is based on the legacy</TDLINE>
+       <TDLINE> orchestrator for Repair Printouts. It is built upon the logic of</TDLINE>
       </item>
       <item>
        <TDFORMAT></TDFORMAT>
-       <TDLINE> /CELLAG/ALCAREP02 report, enhancing it with highly flexible options.</TDLINE>
+       <TDLINE> the legacy /CELLAG/ALCAREP02 report, extending it with flexible</TDLINE>
       </item>
       <item>
        <TDFORMAT></TDFORMAT>
-       <TDLINE> It will eventually replace the legacy report completely after a</TDLINE>
+       <TDLINE> routing capabilities. Once the testing phase is successfully</TDLINE>
       </item>
       <item>
        <TDFORMAT></TDFORMAT>
-       <TDLINE> successful testing phase.</TDLINE>
+       <TDLINE> completed, this framework is intended to replace /CELLAG/ALCAREP02</TDLINE>
+      </item>
+      <item>
+       <TDFORMAT></TDFORMAT>
+       <TDLINE> entirely.</TDLINE>
       </item>
       <item>
        <TDFORMAT>U1</TDFORMAT>
@@ -371,19 +375,19 @@
       </item>
       <item>
        <TDFORMAT></TDFORMAT>
-       <TDLINE> und Routing-Manager für Reparaturberichte. Es basiert auf dem</TDLINE>
+       <TDLINE> und Routing-Manager für Reparaturberichte. Es basiert auf der</TDLINE>
       </item>
       <item>
        <TDFORMAT></TDFORMAT>
-       <TDLINE> aktuellen Report /CELLAG/ALCAREP02, erweitert diesen um flexible</TDLINE>
+       <TDLINE> Logik des Reports /CELLAG/ALCAREP02, erweitert diesen um flexible</TDLINE>
       </item>
       <item>
        <TDFORMAT></TDFORMAT>
-       <TDLINE> Optionen und wird ihn nach erfolgreicher Testphase vollständig</TDLINE>
+       <TDLINE> Routing-Optionen und soll diesen nach erfolgreichem Testbetrieb</TDLINE>
       </item>
       <item>
        <TDFORMAT></TDFORMAT>
-       <TDLINE> ersetzen.</TDLINE>
+       <TDLINE> vollständig ersetzen.</TDLINE>
       </item>
       <item>
        <TDFORMAT>U1</TDFORMAT>

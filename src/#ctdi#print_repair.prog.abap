@@ -10,10 +10,11 @@
 *
 * Beschreibung:  Dynamic Routing and Execution Orchestrator for Repair
 *                Printouts.
-*                NOTE: This program is based on the current legacy
-*                report /CELLAG/ALCAREP02. It enhances it with highly
-*                flexible routing options and will eventually replace it
-*                completely after a successful testing phase.
+*                NOTE: This report is built upon the logic of the legacy
+*                report /CELLAG/ALCAREP02, extending it with flexible
+*                routing capabilities. Once the testing phase is
+*                successfully completed, this framework is intended to
+*                replace /CELLAG/ALCAREP02 entirely.
 *
 *                Routing & Determination Flow:
 *                - Reads customizing configurations from /CTDI/REP_FORMS.
