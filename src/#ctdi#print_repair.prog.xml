@@ -1,4 +1,4 @@
-<?xml version="1.0" encoding="utf-8"?>
+﻿<?xml version="1.0" encoding="utf-8"?>
 <abapGit version="v1.0.0" serializer="LCL_OBJECT_PROG" serializer_version="v1.0.0">
  <asx:abap xmlns:asx="http://www.sap.com/abapxml" version="1.0">
   <asx:values>
@@ -172,178 +172,10 @@
      <DOKIL>
       <ID>RE</ID>
       <OBJECT>/CTDI/PRINT_REPAIR</OBJECT>
-      <LANGU>E</LANGU>
-      <TYP>E</TYP>
-      <VERSION>0001</VERSION>
-      <MASTERLANG>X</MASTERLANG>
-      <TXTLINES>00034</TXTLINES>
-      <DOKSTATE>A</DOKSTATE>
-     </DOKIL>
-     <HEAD>
-      <TDOBJECT>DOKU</TDOBJECT>
-      <TDNAME>/CTDI/PRINT_REPAIR</TDNAME>
-      <TDID>RE</TDID>
-      <TDSPRAS>E</TDSPRAS>
-      <TDFUSER>DEVELOPER</TDFUSER>
-      <TDFRELES>750</TDFRELES>
-      <FUSER>DEVELOPER</FUSER>
-      <FRELES>750</FRELES>
-     </HEAD>
-     <LINES>
-      <item>
-       <TDFORMAT>U1</TDFORMAT>
-       <TDLINE>&amp;PURPOSE&amp;</TDLINE>
-      </item>
-      <item>
-       <TDFORMAT>AS</TDFORMAT>
-       <TDLINE>The /CTDI/PRINT_REPAIR program is the dynamic routing and execution</TDLINE>
-      </item>
-      <item>
-       <TDFORMAT></TDFORMAT>
-       <TDLINE> orchestrator for Repair Printouts. It is built upon the logic of</TDLINE>
-      </item>
-      <item>
-       <TDFORMAT></TDFORMAT>
-       <TDLINE> the legacy /CELLAG/ALCAREP02 report, extending it with flexible</TDLINE>
-      </item>
-      <item>
-       <TDFORMAT></TDFORMAT>
-       <TDLINE> routing capabilities. Once the testing phase is successfully</TDLINE>
-      </item>
-      <item>
-       <TDFORMAT></TDFORMAT>
-       <TDLINE> completed, this framework is intended to replace /CELLAG/ALCAREP02</TDLINE>
-      </item>
-      <item>
-       <TDFORMAT></TDFORMAT>
-       <TDLINE> entirely.</TDLINE>
-      </item>
-      <item>
-       <TDFORMAT>U1</TDFORMAT>
-       <TDLINE>FEATURES</TDLINE>
-      </item>
-      <item>
-       <TDFORMAT>B1</TDFORMAT>
-       <TDLINE>Dynamic output determination based on customizing table /CTDI/REP_FORMS.</TDLINE>
-      </item>
-      <item>
-       <TDFORMAT>B1</TDFORMAT>
-       <TDLINE>Fallback access sequences matching VB/Contract, SKZ, and AKZ to</TDLINE>
-      </item>
-      <item>
-       <TDFORMAT></TDFORMAT>
-       <TDLINE> determine print drivers.</TDLINE>
-      </item>
-      <item>
-       <TDFORMAT>B1</TDFORMAT>
-       <TDLINE>Structured logging using the standard application log wrapper</TDLINE>
-      </item>
-      <item>
-       <TDFORMAT></TDFORMAT>
-       <TDLINE> /CTDI/CL_PRINT_DRIVER_LOG.</TDLINE>
-      </item>
-      <item>
-       <TDFORMAT>U1</TDFORMAT>
-       <TDLINE>HOW TO EXTEND DATA LOGIC</TDLINE>
-      </item>
-      <item>
-       <TDFORMAT>AS</TDFORMAT>
-       <TDLINE>To extend the data retrieval or formatting logic for a specific</TDLINE>
-      </item>
-      <item>
-       <TDFORMAT></TDFORMAT>
-       <TDLINE> customer or project:</TDLINE>
-      </item>
-      <item>
-       <TDFORMAT>B1</TDFORMAT>
-       <TDLINE>1. Create a subclass inheriting from base class</TDLINE>
-      </item>
-      <item>
-       <TDFORMAT></TDFORMAT>
-       <TDLINE> /CTDI/CL_PRINT_DRIVER_BASE.</TDLINE>
-      </item>
-      <item>
-       <TDFORMAT>B1</TDFORMAT>
-       <TDLINE>2. Redefine and implement the protected action hook methods:</TDLINE>
-      </item>
-      <item>
-       <TDFORMAT>B2</TDFORMAT>
-       <TDLINE>- unpack_io_data: Extract input/output parameters from execution</TDLINE>
-      </item>
-      <item>
-       <TDFORMAT></TDFORMAT>
-       <TDLINE>  context.</TDLINE>
-      </item>
-      <item>
-       <TDFORMAT>B2</TDFORMAT>
-       <TDLINE>- fetch_data_from_db: Select necessary data from database tables.</TDLINE>
-      </item>
-      <item>
-       <TDFORMAT>B2</TDFORMAT>
-       <TDLINE>- map_and_register_data: Map internal data and register custom</TDLINE>
-      </item>
-      <item>
-       <TDFORMAT></TDFORMAT>
-       <TDLINE>  parameters.</TDLINE>
-      </item>
-      <item>
-       <TDFORMAT>B1</TDFORMAT>
-       <TDLINE>3. Register custom form parameters in the hook map_and_register_data</TDLINE>
-      </item>
-      <item>
-       <TDFORMAT></TDFORMAT>
-       <TDLINE>   using method register_custom_parameter.</TDLINE>
-      </item>
-      <item>
-       <TDFORMAT>AS</TDFORMAT>
-       <TDLINE>Ensure to pass the explicit parameter kind (e.g.,</TDLINE>
-      </item>
-      <item>
-       <TDFORMAT></TDFORMAT>
-       <TDLINE> abap_func_exporting, abap_func_tables) to avoid runtime DB lookups.</TDLINE>
-      </item>
-      <item>
-       <TDFORMAT>U1</TDFORMAT>
-       <TDLINE>HOW TO EXTEND PROCESS LOGIC</TDLINE>
-      </item>
-      <item>
-       <TDFORMAT>AS</TDFORMAT>
-       <TDLINE>To change or add routing logic:</TDLINE>
-      </item>
-      <item>
-       <TDFORMAT>B1</TDFORMAT>
-       <TDLINE>1. Maintain configuration entries in customizing table /CTDI/REP_FORMS</TDLINE>
-      </item>
-      <item>
-       <TDFORMAT></TDFORMAT>
-       <TDLINE>   via transaction SM30.</TDLINE>
-      </item>
-      <item>
-       <TDFORMAT>B1</TDFORMAT>
-       <TDLINE>2. Define the form layout name (Smart Form or Adobe Form) and map it</TDLINE>
-      </item>
-      <item>
-       <TDFORMAT></TDFORMAT>
-       <TDLINE>   to your new print driver class.</TDLINE>
-      </item>
-      <item>
-       <TDFORMAT>B1</TDFORMAT>
-       <TDLINE>3. Use the class skeleton generator in customizing engine class</TDLINE>
-      </item>
-      <item>
-       <TDFORMAT></TDFORMAT>
-       <TDLINE> /CTDI/CL_PRINT_CUST_ENGINE to auto-generate class stubs in DEV.</TDLINE>
-      </item>
-     </LINES>
-    </item>
-    <item>
-     <DOKIL>
-      <ID>RE</ID>
-      <OBJECT>/CTDI/PRINT_REPAIR</OBJECT>
       <LANGU>D</LANGU>
       <TYP>E</TYP>
       <VERSION>0001</VERSION>
-      <TXTLINES>00034</TXTLINES>
+      <TXTLINES>00036</TXTLINES>
       <DOKSTATE>A</DOKSTATE>
      </DOKIL>
      <HEAD>
@@ -351,160 +183,295 @@
       <TDNAME>/CTDI/PRINT_REPAIR</TDNAME>
       <TDID>RE</TDID>
       <TDSPRAS>D</TDSPRAS>
-      <TDFUSER>DEVELOPER</TDFUSER>
-      <TDFRELES>750</TDFRELES>
-      <FUSER>DEVELOPER</FUSER>
-      <FRELES>750</FRELES>
+      <TDFORM>S_DOCU_SHOW</TDFORM>
+      <TDSTYLE>S_DOCUS1</TDSTYLE>
+      <TDVERSION>00001</TDVERSION>
+      <TDLINESIZE>072</TDLINESIZE>
      </HEAD>
      <LINES>
-      <item>
+      <TLINE>
        <TDFORMAT>U1</TDFORMAT>
        <TDLINE>&amp;PURPOSE&amp;</TDLINE>
-      </item>
-      <item>
+      </TLINE>
+      <TLINE>
        <TDFORMAT>AS</TDFORMAT>
        <TDLINE>Das Programm /CTDI/PRINT_REPAIR dient als dynamischer Einstiegspunkt</TDLINE>
-      </item>
-      <item>
-       <TDFORMAT></TDFORMAT>
+      </TLINE>
+      <TLINE>
        <TDLINE> und Routing-Manager für Reparaturberichte. Es basiert auf der</TDLINE>
-      </item>
-      <item>
-       <TDFORMAT></TDFORMAT>
+      </TLINE>
+      <TLINE>
        <TDLINE> Logik des Reports /CELLAG/ALCAREP02, erweitert diesen um flexible</TDLINE>
-      </item>
-      <item>
-       <TDFORMAT></TDFORMAT>
+      </TLINE>
+      <TLINE>
        <TDLINE> Routing-Optionen und soll diesen nach erfolgreichem Testbetrieb</TDLINE>
-      </item>
-      <item>
-       <TDFORMAT></TDFORMAT>
+      </TLINE>
+      <TLINE>
        <TDLINE> vollständig ersetzen.</TDLINE>
-      </item>
-      <item>
+      </TLINE>
+      <TLINE>
        <TDFORMAT>U1</TDFORMAT>
        <TDLINE>HAUPTMERKMALE</TDLINE>
-      </item>
-      <item>
+      </TLINE>
+      <TLINE>
        <TDFORMAT>B1</TDFORMAT>
        <TDLINE>Dynamische Ausgabebestimmung über die Customizing-Tabelle</TDLINE>
-      </item>
-      <item>
-       <TDFORMAT></TDFORMAT>
+      </TLINE>
+      <TLINE>
        <TDLINE> /CTDI/REP_FORMS.</TDLINE>
-      </item>
-      <item>
+      </TLINE>
+      <TLINE>
        <TDFORMAT>B1</TDFORMAT>
        <TDLINE>Suchfolgen-Ermittlung (Vertrag, SKZ, AKZ) zur Zuordnung des passenden</TDLINE>
-      </item>
-      <item>
-       <TDFORMAT></TDFORMAT>
+      </TLINE>
+      <TLINE>
        <TDLINE> Drucktreibers.</TDLINE>
-      </item>
-      <item>
+      </TLINE>
+      <TLINE>
        <TDFORMAT>B1</TDFORMAT>
        <TDLINE>Zentralisiertes Protokollieren über das standardisierte Anwendungs-Log</TDLINE>
-      </item>
-      <item>
-       <TDFORMAT></TDFORMAT>
+      </TLINE>
+      <TLINE>
        <TDLINE> /CTDI/CL_PRINT_DRIVER_LOG.</TDLINE>
-      </item>
-      <item>
+      </TLINE>
+      <TLINE>
        <TDFORMAT>U1</TDFORMAT>
        <TDLINE>ERWEITERUNG DER DATENLOGIK</TDLINE>
-      </item>
-      <item>
+      </TLINE>
+      <TLINE>
        <TDFORMAT>AS</TDFORMAT>
        <TDLINE>Um die Datenbeschaffung oder -aufbereitung für einen Kunden/ein Projekt</TDLINE>
-      </item>
-      <item>
-       <TDFORMAT></TDFORMAT>
+      </TLINE>
+      <TLINE>
        <TDLINE> zu erweitern:</TDLINE>
-      </item>
-      <item>
+      </TLINE>
+      <TLINE>
        <TDFORMAT>B1</TDFORMAT>
        <TDLINE>1. Erstellen Sie eine Unterklasse von /CTDI/CL_PRINT_DRIVER_BASE.</TDLINE>
-      </item>
-      <item>
+      </TLINE>
+      <TLINE>
        <TDFORMAT>B1</TDFORMAT>
        <TDLINE>2. Überschreiben und implementieren Sie die geschützten Action-Hook-</TDLINE>
-      </item>
-      <item>
-       <TDFORMAT></TDFORMAT>
+      </TLINE>
+      <TLINE>
        <TDLINE> Methoden:</TDLINE>
-      </item>
-      <item>
+      </TLINE>
+      <TLINE>
        <TDFORMAT>B2</TDFORMAT>
        <TDLINE>- unpack_io_data: Parameter aus dem Ausführungskontext entpacken.</TDLINE>
-      </item>
-      <item>
+      </TLINE>
+      <TLINE>
        <TDFORMAT>B2</TDFORMAT>
        <TDLINE>- fetch_data_from_db: Relevante Daten aus der Datenbank selektieren.</TDLINE>
-      </item>
-      <item>
+      </TLINE>
+      <TLINE>
        <TDFORMAT>B2</TDFORMAT>
        <TDLINE>- map_and_register_data: Daten mappen und Formularparameter</TDLINE>
-      </item>
-      <item>
-       <TDFORMAT></TDFORMAT>
+      </TLINE>
+      <TLINE>
        <TDLINE>  registrieren.</TDLINE>
-      </item>
-      <item>
+      </TLINE>
+      <TLINE>
        <TDFORMAT>B1</TDFORMAT>
        <TDLINE>3. Registrieren Sie die Formularparameter im Hook map_and_register_data</TDLINE>
-      </item>
-      <item>
-       <TDFORMAT></TDFORMAT>
+      </TLINE>
+      <TLINE>
        <TDLINE> mittels der Methode register_custom_parameter.</TDLINE>
-      </item>
-      <item>
+      </TLINE>
+      <TLINE>
        <TDFORMAT>AS</TDFORMAT>
        <TDLINE>Geben Sie hierbei den expliziten Parametertyp an (z.B.</TDLINE>
-      </item>
-      <item>
-       <TDFORMAT></TDFORMAT>
+      </TLINE>
+      <TLINE>
        <TDLINE> abap_func_exporting, abap_func_tables), um langsame Datenbank-Lookups</TDLINE>
-      </item>
-      <item>
-       <TDFORMAT></TDFORMAT>
+      </TLINE>
+      <TLINE>
        <TDLINE> zur Laufzeit zu vermeiden.</TDLINE>
-      </item>
-      <item>
+      </TLINE>
+      <TLINE>
        <TDFORMAT>U1</TDFORMAT>
        <TDLINE>ERWEITERUNG DER PROZESSLOGIK</TDLINE>
-      </item>
-      <item>
+      </TLINE>
+      <TLINE>
        <TDFORMAT>AS</TDFORMAT>
        <TDLINE>Um die Ablauf- oder Routing-Logik anzupassen:</TDLINE>
-      </item>
-      <item>
+      </TLINE>
+      <TLINE>
        <TDFORMAT>B1</TDFORMAT>
        <TDLINE>1. Pflegen Sie die Einträge in der Tabelle /CTDI/REP_FORMS über</TDLINE>
-      </item>
-      <item>
-       <TDFORMAT></TDFORMAT>
+      </TLINE>
+      <TLINE>
        <TDLINE> Transaktion SM30.</TDLINE>
-      </item>
-      <item>
+      </TLINE>
+      <TLINE>
        <TDFORMAT>B1</TDFORMAT>
        <TDLINE>2. Weisen Sie dem Layout (Smart Form oder Adobe Form) die entsprechende</TDLINE>
-      </item>
-      <item>
-       <TDFORMAT></TDFORMAT>
+      </TLINE>
+      <TLINE>
        <TDLINE> Drucktreiber-Klasse zu.</TDLINE>
-      </item>
-      <item>
+      </TLINE>
+      <TLINE>
        <TDFORMAT>B1</TDFORMAT>
        <TDLINE>3. Nutzen Sie den Klassen-Skelettgenerator in der Engine-Klasse</TDLINE>
-      </item>
-      <item>
-       <TDFORMAT></TDFORMAT>
+      </TLINE>
+      <TLINE>
        <TDLINE> /CTDI/CL_PRINT_CUST_ENGINE für die automatische Anlage von Klassen-</TDLINE>
-      </item>
-      <item>
-       <TDFORMAT></TDFORMAT>
+      </TLINE>
+      <TLINE>
        <TDLINE> Stubs.</TDLINE>
-      </item>
+      </TLINE>
+     </LINES>
+    </item>
+    <item>
+     <DOKIL>
+      <ID>RE</ID>
+      <OBJECT>/CTDI/PRINT_REPAIR</OBJECT>
+      <LANGU>E</LANGU>
+      <TYP>E</TYP>
+      <VERSION>0001</VERSION>
+      <MASTERLANG>X</MASTERLANG>
+      <TXTLINES>00035</TXTLINES>
+      <DOKSTATE>A</DOKSTATE>
+     </DOKIL>
+     <HEAD>
+      <TDOBJECT>DOKU</TDOBJECT>
+      <TDNAME>/CTDI/PRINT_REPAIR</TDNAME>
+      <TDID>RE</TDID>
+      <TDSPRAS>E</TDSPRAS>
+      <TDFORM>S_DOCU_SHOW</TDFORM>
+      <TDSTYLE>S_DOCUS1</TDSTYLE>
+      <TDVERSION>00001</TDVERSION>
+      <TDLINESIZE>072</TDLINESIZE>
+     </HEAD>
+     <LINES>
+      <TLINE>
+       <TDFORMAT>U1</TDFORMAT>
+       <TDLINE>&amp;PURPOSE&amp;</TDLINE>
+      </TLINE>
+      <TLINE>
+       <TDFORMAT>AS</TDFORMAT>
+       <TDLINE>The /CTDI/PRINT_REPAIR program is the dynamic routing and execution</TDLINE>
+      </TLINE>
+      <TLINE>
+       <TDLINE> orchestrator for Repair Printouts. It is built upon the logic of</TDLINE>
+      </TLINE>
+      <TLINE>
+       <TDLINE> the legacy /CELLAG/ALCAREP02 report, extending it with flexible</TDLINE>
+      </TLINE>
+      <TLINE>
+       <TDLINE> routing capabilities. Once the testing phase is successfully</TDLINE>
+      </TLINE>
+      <TLINE>
+       <TDLINE> completed, this framework is intended to replace /CELLAG/ALCAREP02</TDLINE>
+      </TLINE>
+      <TLINE>
+       <TDLINE> entirely.</TDLINE>
+      </TLINE>
+      <TLINE>
+       <TDFORMAT>U1</TDFORMAT>
+       <TDLINE>FEATURES</TDLINE>
+      </TLINE>
+      <TLINE>
+       <TDFORMAT>B1</TDFORMAT>
+       <TDLINE>Dynamic output determination based on customizing table /CTDI/REP_FORMS.</TDLINE>
+      </TLINE>
+      <TLINE>
+       <TDFORMAT>B1</TDFORMAT>
+       <TDLINE>Fallback access sequences matching VB/Contract, SKZ, and AKZ to</TDLINE>
+      </TLINE>
+      <TLINE>
+       <TDLINE> determine print drivers.</TDLINE>
+      </TLINE>
+      <TLINE>
+       <TDFORMAT>B1</TDFORMAT>
+       <TDLINE>Structured logging using the standard application log wrapper</TDLINE>
+      </TLINE>
+      <TLINE>
+       <TDLINE> /CTDI/CL_PRINT_DRIVER_LOG.</TDLINE>
+      </TLINE>
+      <TLINE>
+       <TDFORMAT>U1</TDFORMAT>
+       <TDLINE>HOW TO EXTEND DATA LOGIC</TDLINE>
+      </TLINE>
+      <TLINE>
+       <TDFORMAT>AS</TDFORMAT>
+       <TDLINE>To extend the data retrieval or formatting logic for a specific</TDLINE>
+      </TLINE>
+      <TLINE>
+       <TDLINE> customer or project:</TDLINE>
+      </TLINE>
+      <TLINE>
+       <TDFORMAT>B1</TDFORMAT>
+       <TDLINE>1. Create a subclass inheriting from base class</TDLINE>
+      </TLINE>
+      <TLINE>
+       <TDLINE> /CTDI/CL_PRINT_DRIVER_BASE.</TDLINE>
+      </TLINE>
+      <TLINE>
+       <TDFORMAT>B1</TDFORMAT>
+       <TDLINE>2. Redefine and implement the protected action hook methods:</TDLINE>
+      </TLINE>
+      <TLINE>
+       <TDFORMAT>B2</TDFORMAT>
+       <TDLINE>- unpack_io_data: Extract input/output parameters from execution</TDLINE>
+      </TLINE>
+      <TLINE>
+       <TDLINE>  context.</TDLINE>
+      </TLINE>
+      <TLINE>
+       <TDFORMAT>B2</TDFORMAT>
+       <TDLINE>- fetch_data_from_db: Select necessary data from database tables.</TDLINE>
+      </TLINE>
+      <TLINE>
+       <TDFORMAT>B2</TDFORMAT>
+       <TDLINE>- map_and_register_data: Map internal data and register custom</TDLINE>
+      </TLINE>
+      <TLINE>
+       <TDLINE>  parameters.</TDLINE>
+      </TLINE>
+      <TLINE>
+       <TDFORMAT>B1</TDFORMAT>
+       <TDLINE>3. Register custom form parameters in the hook map_and_register_data</TDLINE>
+      </TLINE>
+      <TLINE>
+       <TDLINE>   using method register_custom_parameter.</TDLINE>
+      </TLINE>
+      <TLINE>
+       <TDFORMAT>AS</TDFORMAT>
+       <TDLINE>Ensure to pass the explicit parameter kind (e.g.,</TDLINE>
+      </TLINE>
+      <TLINE>
+       <TDLINE> abap_func_exporting, abap_func_tables) to avoid runtime DB lookups.</TDLINE>
+      </TLINE>
+      <TLINE>
+       <TDFORMAT>U1</TDFORMAT>
+       <TDLINE>HOW TO EXTEND PROCESS LOGIC</TDLINE>
+      </TLINE>
+      <TLINE>
+       <TDFORMAT>AS</TDFORMAT>
+       <TDLINE>To change or add routing logic:</TDLINE>
+      </TLINE>
+      <TLINE>
+       <TDFORMAT>B1</TDFORMAT>
+       <TDLINE>1. Maintain configuration entries in customizing table /CTDI/REP_FORMS</TDLINE>
+      </TLINE>
+      <TLINE>
+       <TDLINE>   via transaction SM30.</TDLINE>
+      </TLINE>
+      <TLINE>
+       <TDFORMAT>B1</TDFORMAT>
+       <TDLINE>2. Define the form layout name (Smart Form or Adobe Form) and map it</TDLINE>
+      </TLINE>
+      <TLINE>
+       <TDLINE>   to your new print driver class.</TDLINE>
+      </TLINE>
+      <TLINE>
+       <TDFORMAT>B1</TDFORMAT>
+       <TDLINE>3. Use the class skeleton generator in customizing engine class</TDLINE>
+      </TLINE>
+      <TLINE>
+       <TDLINE> /CTDI/CL_PRINT_CUST_ENGINE to auto-generate class stubs in DEV.</TDLINE>
+      </TLINE>
      </LINES>
     </item>
    </LONGTEXTS>

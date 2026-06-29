@@ -1,39 +1,30 @@
-CLASS /ctdi/cl_print_driver_template DEFINITION
-  PUBLIC
-  INHERITING FROM /ctdi/cl_print_driver_base
-  CREATE PUBLIC.
+class /CTDI/CL_PRINT_DRIVER_TEMPLATE definition
+  public
+  inheriting from /CTDI/CL_PRINT_DRIVER_BASE
+  create public .
 
-  PUBLIC SECTION.
-  PROTECTED SECTION.
-    "! Hook: Unpacks a pre-loaded data object (io_data).
-    METHODS unpack_io_data REDEFINITION.
+public section.
+protected section.
 
     "! Hook: Fetches business data directly from the DB.
-    METHODS fetch_data_from_db REDEFINITION.
-
+  methods FETCH_DATA_FROM_DB
+    redefinition .
     "! Hook: Maps loaded data to base attributes and registers form parameters.
-    METHODS map_and_register_data REDEFINITION.
-
+  methods MAP_AND_REGISTER_DATA
+    redefinition .
     "! Redefines base method to customize form routing, add pre/post
     "! processing around form execution, or bypass form rendering entirely.
-    METHODS render_form REDEFINITION.
-
+  methods RENDER_FORM
+    redefinition .
+    "! Hook: Unpacks a pre-loaded data object (io_data).
+  methods UNPACK_IO_DATA
+    redefinition .
   PRIVATE SECTION.
 ENDCLASS.
 
 
 
-CLASS /ctdi/cl_print_driver_template IMPLEMENTATION.
-
-  METHOD unpack_io_data.
-    " =========================================================================
-    " ACTION HOOK: unpack_io_data
-    " =========================================================================
-    " Subclasses redefine this to unpack custom objects passed via execution.
-    " If this template driver does not support pre-loaded data objects, you
-    " can leave this method empty or raise an exception.
-    " =========================================================================
-  ENDMETHOD.
+CLASS /CTDI/CL_PRINT_DRIVER_TEMPLATE IMPLEMENTATION.
 
 
   METHOD fetch_data_from_db.
@@ -144,4 +135,14 @@ CLASS /ctdi/cl_print_driver_template IMPLEMENTATION.
 
   ENDMETHOD.
 
+
+  METHOD unpack_io_data.
+    " =========================================================================
+    " ACTION HOOK: unpack_io_data
+    " =========================================================================
+    " Subclasses redefine this to unpack custom objects passed via execution.
+    " If this template driver does not support pre-loaded data objects, you
+    " can leave this method empty or raise an exception.
+    " =========================================================================
+  ENDMETHOD.
 ENDCLASS.

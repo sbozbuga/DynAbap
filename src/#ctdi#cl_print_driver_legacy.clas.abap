@@ -1,13 +1,17 @@
-CLASS /ctdi/cl_print_driver_legacy DEFINITION
-  PUBLIC
-  INHERITING FROM /ctdi/cl_print_driver_base
-  CREATE PUBLIC.
+class /CTDI/CL_PRINT_DRIVER_LEGACY definition
+  public
+  inheriting from /CTDI/CL_PRINT_DRIVER_BASE
+  create public .
 
-  PUBLIC SECTION.
-  PROTECTED SECTION.
-    METHODS unpack_io_data        REDEFINITION.
-    METHODS fetch_data_from_db    REDEFINITION.
-    METHODS map_and_register_data REDEFINITION.
+public section.
+protected section.
+
+  methods FETCH_DATA_FROM_DB
+    redefinition .
+  methods MAP_AND_REGISTER_DATA
+    redefinition .
+  methods UNPACK_IO_DATA
+    redefinition .
   PRIVATE SECTION.
     DATA ms_alcarep_legacy TYPE /cellag/alcarep.
     DATA mt_alcarep_error  TYPE STANDARD TABLE OF /cellag/alcarep_error.
@@ -15,17 +19,17 @@ CLASS /ctdi/cl_print_driver_legacy DEFINITION
     DATA mr_provider       TYPE REF TO /ctdi/cl_print_data_legacy.
 ENDCLASS.
 
-CLASS /ctdi/cl_print_driver_legacy IMPLEMENTATION.
 
-  METHOD unpack_io_data.
-    mr_provider = CAST #( io_data ).
-  ENDMETHOD.
+
+CLASS /CTDI/CL_PRINT_DRIVER_LEGACY IMPLEMENTATION.
+
 
   METHOD fetch_data_from_db.
     mr_provider = NEW #( ).
     mr_provider->read_data( iv_aufnr = mv_repair_order
                             iv_sernr = mv_sernr ).
   ENDMETHOD.
+
 
   METHOD map_and_register_data.
     IF mr_provider IS BOUND.
@@ -49,5 +53,7 @@ CLASS /ctdi/cl_print_driver_legacy IMPLEMENTATION.
   ENDMETHOD.
 
 
-
+  METHOD unpack_io_data.
+    mr_provider = CAST #( io_data ).
+  ENDMETHOD.
 ENDCLASS.

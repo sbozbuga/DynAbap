@@ -1,28 +1,32 @@
-CLASS /ctdi/cl_print_driver_ctdi DEFINITION
-  PUBLIC
-  INHERITING FROM /ctdi/cl_print_driver_base
-  CREATE PUBLIC.
+class /CTDI/CL_PRINT_DRIVER_CTDI definition
+  public
+  inheriting from /CTDI/CL_PRINT_DRIVER_BASE
+  create public .
 
-  PUBLIC SECTION.
-  PROTECTED SECTION.
-    METHODS unpack_io_data        REDEFINITION.
-    METHODS fetch_data_from_db    REDEFINITION.
-    METHODS map_and_register_data REDEFINITION.
+public section.
+protected section.
+
+  methods FETCH_DATA_FROM_DB
+    redefinition .
+  methods MAP_AND_REGISTER_DATA
+    redefinition .
+  methods UNPACK_IO_DATA
+    redefinition .
   PRIVATE SECTION.
     DATA mr_provider TYPE REF TO /ctdi/cl_print_data_ctdi.
 ENDCLASS.
 
-CLASS /ctdi/cl_print_driver_ctdi IMPLEMENTATION.
 
-  METHOD unpack_io_data.
-    mr_provider = CAST #( io_data ).
-  ENDMETHOD.
+
+CLASS /CTDI/CL_PRINT_DRIVER_CTDI IMPLEMENTATION.
+
 
   METHOD fetch_data_from_db.
     mr_provider = NEW #( ).
     mr_provider->read_data( iv_aufnr = mv_repair_order
                             iv_sernr = mv_sernr ).
   ENDMETHOD.
+
 
   METHOD map_and_register_data.
     IF mr_provider IS BOUND.
@@ -38,4 +42,8 @@ CLASS /ctdi/cl_print_driver_ctdi IMPLEMENTATION.
     ENDIF.
   ENDMETHOD.
 
+
+  METHOD unpack_io_data.
+    mr_provider = CAST #( io_data ).
+  ENDMETHOD.
 ENDCLASS.

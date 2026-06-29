@@ -24,28 +24,10 @@ CLASS /ctdi/cl_print_data_ctdi DEFINITION
   PRIVATE SECTION.
 ENDCLASS.
 
-CLASS /ctdi/cl_print_data_ctdi IMPLEMENTATION.
 
-  METHOD read_data.
-    " 1. Call super class logic to fetch raw legacy data into ms_legacy, mt_legacy_error, etc.
-    super->read_data( iv_aufnr = iv_aufnr iv_sernr = iv_sernr ).
 
-    " 2. Convert legacy structures to new CTDI structures
-    map_legacy_data( ).
-  ENDMETHOD.
+CLASS /CTDI/CL_PRINT_DATA_CTDI IMPLEMENTATION.
 
-  METHOD map_legacy_data.
-    CLEAR: ms_repair, mt_repair_error, mt_comments.
-
-    MOVE-CORRESPONDING ms_legacy TO ms_repair.
-
-    LOOP AT mt_legacy_error ASSIGNING FIELD-SYMBOL(<ls_error>).
-      APPEND INITIAL LINE TO mt_repair_error ASSIGNING FIELD-SYMBOL(<ls_repair_error>).
-      MOVE-CORRESPONDING <ls_error> TO <ls_repair_error>.
-    ENDLOOP.
-
-    mt_comments = mt_comment_lines.
-  ENDMETHOD.
 
   METHOD get_repair_result.
     DATA: lf_repres     TYPE /cellag/repair_result,
@@ -144,4 +126,26 @@ CLASS /ctdi/cl_print_data_ctdi IMPLEMENTATION.
     ms_legacy-repair_result_txt = lf_repres_txt.
   ENDMETHOD.
 
+
+  METHOD map_legacy_data.
+    CLEAR: ms_repair, mt_repair_error, mt_comments.
+
+    MOVE-CORRESPONDING ms_legacy TO ms_repair.
+
+    LOOP AT mt_legacy_error ASSIGNING FIELD-SYMBOL(<ls_error>).
+      APPEND INITIAL LINE TO mt_repair_error ASSIGNING FIELD-SYMBOL(<ls_repair_error>).
+      MOVE-CORRESPONDING <ls_error> TO <ls_repair_error>.
+    ENDLOOP.
+
+    mt_comments = mt_comment_lines.
+  ENDMETHOD.
+
+
+  METHOD read_data.
+    " 1. Call super class logic to fetch raw legacy data into ms_legacy, mt_legacy_error, etc.
+    super->read_data( iv_aufnr = iv_aufnr iv_sernr = iv_sernr ).
+
+    " 2. Convert legacy structures to new CTDI structures
+    map_legacy_data( ).
+  ENDMETHOD.
 ENDCLASS.

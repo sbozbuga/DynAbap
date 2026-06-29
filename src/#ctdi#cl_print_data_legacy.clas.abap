@@ -82,6 +82,7 @@ ENDCLASS.
 
 CLASS /CTDI/CL_PRINT_DATA_LEGACY IMPLEMENTATION.
 
+
   METHOD check_sernr_swap.
     DATA: lf_rmanr     TYPE vbap-vbeln,
           lf_posnv_rma TYPE posnr,
@@ -131,27 +132,24 @@ CLASS /CTDI/CL_PRINT_DATA_LEGACY IMPLEMENTATION.
 
 
   METHOD get_astatus_data.
-    DATA: ls_jcds  TYPE jcds,
-          lt_jcds  TYPE TABLE OF jcds.
+    DATA: lt_jcds TYPE TABLE OF jcds.
 
-    " ⚡ Bolt: Pushed SORT and LIMIT down to DB instead of application server for performance
     SELECT objnr, stat, chgnr, udate, utime, inact
       FROM jcds
       WHERE objnr = @iv_objnr
         AND stat = @co_wfer_stat
       ORDER BY udate DESCENDING, utime DESCENDING
-      UP TO 1 ROWS
-      INTO CORRESPONDING FIELDS OF TABLE @lt_jcds.
+      INTO CORRESPONDING FIELDS OF TABLE @lt_jcds
+      UP TO 1 ROWS.
 
     IF lt_jcds IS NOT INITIAL.
-      READ TABLE lt_jcds INTO ls_jcds INDEX 1.
-
-      IF ls_jcds IS NOT INITIAL.
-        IF ls_jcds-inact IS NOT INITIAL.
+      READ TABLE lt_jcds ASSIGNING FIELD-SYMBOL(<ls_jcds>) INDEX 1.
+      IF <ls_jcds> IS ASSIGNED.
+        IF <ls_jcds>-inact IS NOT INITIAL.
           MESSAGE e029(/cellag/cs01) WITH mv_aufnr.
         ENDIF.
-        ev_wfer_date  = ls_jcds-udate.
-        ev_wfer_time  = ls_jcds-utime.
+        ev_wfer_date  = <ls_jcds>-udate.
+        ev_wfer_time  = <ls_jcds>-utime.
       ENDIF.
     ELSE.
       MESSAGE e028(/cellag/cs01) WITH mv_aufnr.
@@ -196,8 +194,9 @@ CLASS /CTDI/CL_PRINT_DATA_LEGACY IMPLEMENTATION.
     mt_comment_lines = lt_lines.
   ENDMETHOD.
 
+
   METHOD get_error_description.
-      DATA: lf_qmnum TYPE qmnum,
+    DATA: lf_qmnum TYPE qmnum,
           lf_qmcod TYPE qmel-qmcod.
 *--------------------------------------------------------------------*
     TYPES: BEGIN OF ty_qpgt,
@@ -273,11 +272,8 @@ CLASS /CTDI/CL_PRINT_DATA_LEGACY IMPLEMENTATION.
             AND version    EQ '000001'
             INTO TABLE @lt_qpct.
 
-        " ⚡ Bolt: Sort tables for binary search and correctly deduplicate
-        SORT lt_qpgt BY katalogart codegruppe.
         DELETE ADJACENT DUPLICATES FROM lt_qpgt COMPARING katalogart codegruppe.
 
-        SORT lt_qpct BY katalogart codegruppe code.
         DELETE ADJACENT DUPLICATES FROM lt_qpct COMPARING katalogart codegruppe code.
 
         LOOP AT lt_fe ASSIGNING FIELD-SYMBOL(<fe>).
@@ -286,7 +282,7 @@ CLASS /CTDI/CL_PRINT_DATA_LEGACY IMPLEMENTATION.
           MOVE-CORRESPONDING <fe> TO <le>.
           <le>-qmnum = lf_qmnum.
 
-          " ⚡ Bolt: Added BINARY SEARCH to prevent O(N*M) nested loop lookups
+          " Added BINARY SEARCH to prevent O(N*M) nested loop lookups
           READ TABLE lt_qpgt ASSIGNING FIELD-SYMBOL(<gt>)
                WITH KEY katalogart = <fe>-otkat codegruppe = <fe>-otgrp BINARY SEARCH.
           IF sy-subrc = 0.
@@ -314,7 +310,7 @@ CLASS /CTDI/CL_PRINT_DATA_LEGACY IMPLEMENTATION.
         ENDLOOP.
       ENDIF.
     ENDIF.
- 
+
   ENDMETHOD.
 
 
