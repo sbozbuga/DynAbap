@@ -8,9 +8,29 @@
 *----------------------------------------------------------------------*
 * Firma               CTDI GmbH Malsch Headquarter
 *
-* Beschreibung:  1.) Repair Printouts
-*                2.)
-*                3.)
+* Beschreibung:  Repair Printouts
+*                Dynamic routing and execution orchestrator.
+*
+*                Routing & Determination Flow:
+*                - Reads customizing from /CTDI/REP_FORMS.
+*                - Resolves form layout and print driver class via a
+*                  fallback access sequence.
+*                - If no config is found, falls back to legacy printing
+*                  (print_old in /CELLAG/ALCAREP02).
+*
+*                How to Extend Data Logic:
+*                1. Create a subclass inheriting from base class
+*                   /CTDI/CL_PRINT_DRIVER_BASE.
+*                2. Implement/redefine protected action hook methods:
+*                   - unpack_io_data: Extract parameters.
+*                   - fetch_data_from_db: Select database data.
+*                   - map_and_register_data: Map fields & register
+*                     parameters.
+*                3. Register form parameters via register_custom_parameter.
+*
+*                How to Extend Process Logic:
+*                1. Maintain configurations in /CTDI/REP_FORMS via SM30.
+*                2. Define layout name and assign your new driver class.
 *----------------------------------------------------------------------*
 * Anforderer: Felix
 * Ticket....: 2508-077
@@ -35,36 +55,6 @@
 * xx.xx.xxxx ???         ???
 *----------------------------------------------------------------------*
 REPORT /ctdi/print_repair.
-
-"! <h1>Repair Printout Orchestrator</h1>
-"! <p>This report serves as the entry point and routing manager for repair reports.</p>
-"!
-"! <h2>Routing &amp; Determination Flow</h2>
-"! <ul>
-"!   <li>Reads customizing from <code>/CTDI/REP_FORMS</code>.</li>
-"!   <li>Determines the form layout and dynamic print driver class using a fallback sequence.</li>
-"!   <li>Instantiates the resolved class and executes its print routine.</li>
-"!   <li>If no configuration is found, falls back to legacy printing (<code>print_old</code> in <code>/CELLAG/ALCAREP02</code>).</li>
-"! </ul>
-"!
-"! <h2>How to Extend Data Logic</h2>
-"! <ol>
-"!   <li>Create a new print driver class inheriting from <code>/CTDI/CL_PRINT_DRIVER_BASE</code>.</li>
-"!   <li>Implement/redefine action hook methods:
-"!     <ul>
-"!       <li><code>unpack_io_data</code>: Unpack input parameters.</li>
-"!       <li><code>fetch_data_from_db</code>: Retrieve data from tables.</li>
-"!       <li><code>map_and_register_data</code>: Map data and register form parameters.</li>
-"!     </ul>
-"!   </li>
-"!   <li>Register form parameters using <code>register_custom_parameter</code>, specifying the parameter kind (e.g. <code>abap_func_exporting</code>).</li>
-"! </ol>
-"!
-"! <h2>How to Extend Process Logic</h2>
-"! <ol>
-"!   <li>Add/modify customizing entries in <code>/CTDI/REP_FORMS</code> via <code>SM30</code>.</li>
-"!   <li>Define layout name (Smart Form / Adobe Form) and assign your driver class.</li>
-"! </ol>
 
 SELECTION-SCREEN BEGIN OF BLOCK b1 WITH FRAME TITLE TEXT-002.
 PARAMETERS: p_aufnr  TYPE aufk-aufnr OBLIGATORY, " Repair / Order ID
