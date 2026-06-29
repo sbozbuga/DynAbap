@@ -1,4 +1,4 @@
-﻿<?xml version="1.0" encoding="utf-8"?>
+<?xml version="1.0" encoding="utf-8"?>
 <abapGit version="v1.0.0" serializer="LCL_OBJECT_CLAS" serializer_version="v1.0.0">
  <asx:abap xmlns:asx="http://www.sap.com/abapxml" version="1.0">
   <asx:values>
@@ -72,6 +72,47 @@
      <DESCRIPT>Object Type Name</DESCRIPT>
     </SEOSUBCOTX>
    </DESCRIPTIONS_SUB>
+   <LINES>
+    <TLINE>
+     <TDFORMAT>U1</TDFORMAT>
+     <TDLINE>&amp;FUNCTIONALITY&amp;</TDLINE>
+    </TLINE>
+    <TLINE>
+     <TDFORMAT>AS</TDFORMAT>
+     <TDLINE>The /CTDI/CL_PRINT_CUST_ENGINE class is the central configuration and</TDLINE>
+    </TLINE>
+    <TLINE>
+     <TDLINE> validation engine for the dynamic repair printing framework. It resolves</TDLINE>
+    </TLINE>
+    <TLINE>
+     <TDLINE> customizing definitions and manages development environment tasks.</TDLINE>
+    </TLINE>
+    <TLINE>
+     <TDFORMAT>U1</TDFORMAT>
+     <TDLINE>FEATURES</TDLINE>
+    </TLINE>
+    <TLINE>
+     <TDFORMAT>AS</TDFORMAT>
+     <TDLINE>This class contains key operations to:</TDLINE>
+    </TLINE>
+    <TLINE>
+     <TDFORMAT>B1</TDFORMAT>
+     <TDLINE>- Resolve custom print drivers via an in-memory buffer, matching</TDLINE>
+    </TLINE>
+    <TLINE>
+     <TDLINE>  Contract, SKZ, and AKZ fallbacks in /CTDI/REP_FORMS.</TDLINE>
+    </TLINE>
+    <TLINE>
+     <TDFORMAT>B1</TDFORMAT>
+     <TDLINE>- Gated SE24 print subclass skeleton generator that checks client</TDLINE>
+    </TLINE>
+    <TLINE>
+     <TDLINE>  modifiability (TR_SYS_PARAMS) and authority S_DEVELOP before stubs</TDLINE>
+    </TLINE>
+    <TLINE>
+     <TDLINE>  are generated in DEV.</TDLINE>
+    </TLINE>
+   </LINES>
   </asx:values>
  </asx:abap>
 </abapGit>

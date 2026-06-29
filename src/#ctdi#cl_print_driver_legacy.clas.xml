@@ -1,4 +1,4 @@
-﻿<?xml version="1.0" encoding="utf-8"?>
+<?xml version="1.0" encoding="utf-8"?>
 <abapGit version="v1.0.0" serializer="LCL_OBJECT_CLAS" serializer_version="v1.0.0">
  <asx:abap xmlns:asx="http://www.sap.com/abapxml" version="1.0">
   <asx:values>
@@ -17,6 +17,48 @@
      <DESCRIPT>Druckertreiber: Legacy Provider</DESCRIPT>
     </SEOSUBCOTX>
    </DESCRIPTIONS_SUB>
+   <LINES>
+    <TLINE>
+     <TDFORMAT>U1</TDFORMAT>
+     <TDLINE>&amp;FUNCTIONALITY&amp;</TDLINE>
+    </TLINE>
+    <TLINE>
+     <TDFORMAT>AS</TDFORMAT>
+     <TDLINE>The /CTDI/CL_PRINT_DRIVER_LEGACY class is the subclass responsible for</TDLINE>
+    </TLINE>
+    <TLINE>
+     <TDLINE> executing legacy printing logic. It executes the print_old subroutine</TDLINE>
+    </TLINE>
+    <TLINE>
+     <TDLINE> inside /CELLAG/ALCAREP02 if a legacy layout name is configured.</TDLINE>
+    </TLINE>
+    <TLINE>
+     <TDFORMAT>U1</TDFORMAT>
+     <TDLINE>IMPLEMENTATION DETAILS</TDLINE>
+    </TLINE>
+    <TLINE>
+     <TDFORMAT>AS</TDFORMAT>
+     <TDLINE>This class redefines the protected action hooks to:</TDLINE>
+    </TLINE>
+    <TLINE>
+     <TDFORMAT>B1</TDFORMAT>
+     <TDLINE>- unpack_io_data: Retrieve generic print execution parameters.</TDLINE>
+    </TLINE>
+    <TLINE>
+     <TDFORMAT>B1</TDFORMAT>
+     <TDLINE>- fetch_data_from_db: Select legacy repair/order data via the legacy</TDLINE>
+    </TLINE>
+    <TLINE>
+     <TDLINE>  data provider /CTDI/CL_PRINT_DATA_LEGACY.</TDLINE>
+    </TLINE>
+    <TLINE>
+     <TDFORMAT>B1</TDFORMAT>
+     <TDLINE>- map_and_register_data: Map standard parameters and register data</TDLINE>
+    </TLINE>
+    <TLINE>
+     <TDLINE>  structures for legacy Smart Forms rendering.</TDLINE>
+    </TLINE>
+   </LINES>
   </asx:values>
  </asx:abap>
 </abapGit>

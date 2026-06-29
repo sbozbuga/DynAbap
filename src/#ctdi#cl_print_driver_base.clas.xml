@@ -1,4 +1,4 @@
-﻿<?xml version="1.0" encoding="utf-8"?>
+<?xml version="1.0" encoding="utf-8"?>
 <abapGit version="v1.0.0" serializer="LCL_OBJECT_CLAS" serializer_version="v1.0.0">
  <asx:abap xmlns:asx="http://www.sap.com/abapxml" version="1.0">
   <asx:values>
@@ -17,6 +17,90 @@
      <DESCRIPT>Druckertreiber: Basisklasse (Smart Forms + Adobe Forms)</DESCRIPT>
     </SEOSUBCOTX>
    </DESCRIPTIONS_SUB>
+   <LINES>
+    <TLINE>
+     <TDFORMAT>U1</TDFORMAT>
+     <TDLINE>&amp;FUNCTIONALITY&amp;</TDLINE>
+    </TLINE>
+    <TLINE>
+     <TDFORMAT>AS</TDFORMAT>
+     <TDLINE>The /CTDI/CL_PRINT_DRIVER_BASE class is the central base class for all</TDLINE>
+    </TLINE>
+    <TLINE>
+     <TDLINE> print driver subclasses in the dynamic printing framework. It</TDLINE>
+    </TLINE>
+    <TLINE>
+     <TDLINE> implements the template method execution flow to decouple the core</TDLINE>
+    </TLINE>
+    <TLINE>
+     <TDLINE> processing lifecycle from subclass-specific data logic.</TDLINE>
+    </TLINE>
+    <TLINE>
+     <TDFORMAT>U1</TDFORMAT>
+     <TDLINE>EXECUTION FLOW</TDLINE>
+    </TLINE>
+    <TLINE>
+     <TDFORMAT>AS</TDFORMAT>
+     <TDLINE>The main execution is driven by the final method &quot;execute&quot;, which</TDLINE>
+    </TLINE>
+    <TLINE>
+     <TDLINE> performs the following sequential action hooks:</TDLINE>
+    </TLINE>
+    <TLINE>
+     <TDFORMAT>B1</TDFORMAT>
+     <TDLINE>1. unpack_io_data: Extract and unpack parameters.</TDLINE>
+    </TLINE>
+    <TLINE>
+     <TDFORMAT>B1</TDFORMAT>
+     <TDLINE>2. fetch_data_from_db: Retrieve required data from the database.</TDLINE>
+    </TLINE>
+    <TLINE>
+     <TDFORMAT>B1</TDFORMAT>
+     <TDLINE>3. map_and_register_data: Map fields and register parameters.</TDLINE>
+    </TLINE>
+    <TLINE>
+     <TDFORMAT>B1</TDFORMAT>
+     <TDLINE>4. call_form: Resolve technology and render form layout.</TDLINE>
+    </TLINE>
+    <TLINE>
+     <TDFORMAT>U1</TDFORMAT>
+     <TDLINE>HOW TO EXTEND</TDLINE>
+    </TLINE>
+    <TLINE>
+     <TDFORMAT>AS</TDFORMAT>
+     <TDLINE>To implement a new print driver class:</TDLINE>
+    </TLINE>
+    <TLINE>
+     <TDFORMAT>B1</TDFORMAT>
+     <TDLINE>1. Create a subclass inheriting from /CTDI/CL_PRINT_DRIVER_BASE.</TDLINE>
+    </TLINE>
+    <TLINE>
+     <TDFORMAT>B1</TDFORMAT>
+     <TDLINE>2. Redefine and implement the protected hook methods:</TDLINE>
+    </TLINE>
+    <TLINE>
+     <TDFORMAT>B2</TDFORMAT>
+     <TDLINE>- unpack_io_data</TDLINE>
+    </TLINE>
+    <TLINE>
+     <TDFORMAT>B2</TDFORMAT>
+     <TDLINE>- fetch_data_from_db</TDLINE>
+    </TLINE>
+    <TLINE>
+     <TDFORMAT>B2</TDFORMAT>
+     <TDLINE>- map_and_register_data</TDLINE>
+    </TLINE>
+    <TLINE>
+     <TDFORMAT>B1</TDFORMAT>
+     <TDLINE>3. Inside map_and_register_data, register custom parameters using</TDLINE>
+    </TLINE>
+    <TLINE>
+     <TDLINE> method register_custom_parameter, passing the explicit kind (e.g.,</TDLINE>
+    </TLINE>
+    <TLINE>
+     <TDLINE> abap_func_exporting, abap_func_tables) to avoid runtime DB lookups.</TDLINE>
+    </TLINE>
+   </LINES>
   </asx:values>
  </asx:abap>
 </abapGit>

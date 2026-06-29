@@ -1,4 +1,4 @@
-﻿<?xml version="1.0" encoding="utf-8"?>
+<?xml version="1.0" encoding="utf-8"?>
 <abapGit version="v1.0.0" serializer="LCL_OBJECT_CLAS" serializer_version="v1.0.0">
  <asx:abap xmlns:asx="http://www.sap.com/abapxml" version="1.0">
   <asx:values>
@@ -18,11 +18,13 @@
     </TLINE>
     <TLINE>
      <TDFORMAT>AS</TDFORMAT>
-     <TDLINE>dummy text</TDLINE>
+     <TDLINE>The /CTDI/CL_PRINT_DATA_CTDI class is the data provider extension for</TDLINE>
     </TLINE>
     <TLINE>
-     <TDFORMAT>AS</TDFORMAT>
-     <TDLINE>dummy text</TDLINE>
+     <TDLINE> CTDI repair printouts. It contains database select and mapping logic</TDLINE>
+    </TLINE>
+    <TLINE>
+     <TDLINE> to fetch order details, customer info, and contract parameters.</TDLINE>
     </TLINE>
     <TLINE>
      <TDFORMAT>U1</TDFORMAT>
@@ -30,23 +32,10 @@
     </TLINE>
     <TLINE>
      <TDFORMAT>AS</TDFORMAT>
-     <TDLINE>dummy text</TDLINE>
+     <TDLINE>This class is instantiated and used by the print driver subclass</TDLINE>
     </TLINE>
     <TLINE>
-     <TDFORMAT>AS</TDFORMAT>
-     <TDLINE>dummy text</TDLINE>
-    </TLINE>
-    <TLINE>
-     <TDFORMAT>U1</TDFORMAT>
-     <TDLINE>&amp;EXAMPLE&amp;</TDLINE>
-    </TLINE>
-    <TLINE>
-     <TDFORMAT>AS</TDFORMAT>
-     <TDLINE>dummy text</TDLINE>
-    </TLINE>
-    <TLINE>
-     <TDFORMAT>AS</TDFORMAT>
-     <TDLINE>dummy text</TDLINE>
+     <TDLINE> /CTDI/CL_PRINT_DRIVER_CTDI to supply form parameters.</TDLINE>
     </TLINE>
     <TLINE>
      <TDFORMAT>U1</TDFORMAT>
@@ -54,27 +43,10 @@
     </TLINE>
     <TLINE>
      <TDFORMAT>AS</TDFORMAT>
-     <TDLINE>dummy text</TDLINE>
+     <TDLINE>All database selections are optimized and buffer-friendly to prevent</TDLINE>
     </TLINE>
     <TLINE>
-     <TDFORMAT>AS</TDFORMAT>
-     <TDLINE>dummy text</TDLINE>
-    </TLINE>
-    <TLINE>
-     <TDFORMAT>U1</TDFORMAT>
-     <TDLINE>&amp;FURTHER_SOURCES_OF_INF&amp;</TDLINE>
-    </TLINE>
-    <TLINE>
-     <TDFORMAT>AS</TDFORMAT>
-     <TDLINE>dummy text</TDLINE>
-    </TLINE>
-    <TLINE>
-     <TDFORMAT>AS</TDFORMAT>
-     <TDLINE>dummy text</TDLINE>
-    </TLINE>
-    <TLINE>
-     <TDFORMAT>AS</TDFORMAT>
-     <TDLINE>dummy text</TDLINE>
+     <TDLINE> redundant database hits during bulk print processing.</TDLINE>
     </TLINE>
    </LINES>
   </asx:values>

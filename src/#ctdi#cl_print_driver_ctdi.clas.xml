@@ -1,4 +1,4 @@
-﻿<?xml version="1.0" encoding="utf-8"?>
+<?xml version="1.0" encoding="utf-8"?>
 <abapGit version="v1.0.0" serializer="LCL_OBJECT_CLAS" serializer_version="v1.0.0">
  <asx:abap xmlns:asx="http://www.sap.com/abapxml" version="1.0">
   <asx:values>
@@ -17,6 +17,48 @@
      <DESCRIPT>Druckertreiber: CTDI Provider</DESCRIPT>
     </SEOSUBCOTX>
    </DESCRIPTIONS_SUB>
+   <LINES>
+    <TLINE>
+     <TDFORMAT>U1</TDFORMAT>
+     <TDLINE>&amp;FUNCTIONALITY&amp;</TDLINE>
+    </TLINE>
+    <TLINE>
+     <TDFORMAT>AS</TDFORMAT>
+     <TDLINE>The /CTDI/CL_PRINT_DRIVER_CTDI class is the custom print driver subclass</TDLINE>
+    </TLINE>
+    <TLINE>
+     <TDLINE> for standard CTDI repairs. It implements the data retrieval and mapping</TDLINE>
+    </TLINE>
+    <TLINE>
+     <TDLINE> lifecycle for CTDI Repair Reports.</TDLINE>
+    </TLINE>
+    <TLINE>
+     <TDFORMAT>U1</TDFORMAT>
+     <TDLINE>IMPLEMENTATION DETAILS</TDLINE>
+    </TLINE>
+    <TLINE>
+     <TDFORMAT>AS</TDFORMAT>
+     <TDLINE>This class redefines the protected action hooks to:</TDLINE>
+    </TLINE>
+    <TLINE>
+     <TDFORMAT>B1</TDFORMAT>
+     <TDLINE>- unpack_io_data: Extract CTDI-specific execution parameters.</TDLINE>
+    </TLINE>
+    <TLINE>
+     <TDFORMAT>B1</TDFORMAT>
+     <TDLINE>- fetch_data_from_db: Select repair and contract data via the CTDI</TDLINE>
+    </TLINE>
+    <TLINE>
+     <TDLINE>  data provider /CTDI/CL_PRINT_DATA_CTDI.</TDLINE>
+    </TLINE>
+    <TLINE>
+     <TDFORMAT>B1</TDFORMAT>
+     <TDLINE>- map_and_register_data: Map CTDI data structures and register form</TDLINE>
+    </TLINE>
+    <TLINE>
+     <TDLINE>  parameters for Smart Forms and Adobe Forms rendering.</TDLINE>
+    </TLINE>
+   </LINES>
   </asx:values>
  </asx:abap>
 </abapGit>

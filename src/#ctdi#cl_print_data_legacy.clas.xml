@@ -1,4 +1,4 @@
-﻿<?xml version="1.0" encoding="utf-8"?>
+<?xml version="1.0" encoding="utf-8"?>
 <abapGit version="v1.0.0" serializer="LCL_OBJECT_CLAS" serializer_version="v1.0.0">
  <asx:abap xmlns:asx="http://www.sap.com/abapxml" version="1.0">
   <asx:values>
@@ -11,6 +11,36 @@
     <FIXPT>X</FIXPT>
     <UNICODE>X</UNICODE>
    </VSEOCLASS>
+   <LINES>
+    <TLINE>
+     <TDFORMAT>U1</TDFORMAT>
+     <TDLINE>&amp;FUNCTIONALITY&amp;</TDLINE>
+    </TLINE>
+    <TLINE>
+     <TDFORMAT>AS</TDFORMAT>
+     <TDLINE>The /CTDI/CL_PRINT_DATA_LEGACY class is the data provider extension for</TDLINE>
+    </TLINE>
+    <TLINE>
+     <TDLINE> legacy repair printouts. It contains database select and mapping logic</TDLINE>
+    </TLINE>
+    <TLINE>
+     <TDLINE> to fetch order details, customer info, and contract parameters matching</TDLINE>
+    </TLINE>
+    <TLINE>
+     <TDLINE> the legacy ALCAREP02 report fields.</TDLINE>
+    </TLINE>
+    <TLINE>
+     <TDFORMAT>U1</TDFORMAT>
+     <TDLINE>&amp;RELATIONS&amp;</TDLINE>
+    </TLINE>
+    <TLINE>
+     <TDFORMAT>AS</TDFORMAT>
+     <TDLINE>This class is instantiated and used by the print driver subclass</TDLINE>
+    </TLINE>
+    <TLINE>
+     <TDLINE> /CTDI/CL_PRINT_DRIVER_LEGACY to supply standard legacy form parameters.</TDLINE>
+    </TLINE>
+   </LINES>
   </asx:values>
  </asx:abap>
 </abapGit>
