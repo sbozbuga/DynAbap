@@ -1,4 +1,4 @@
-﻿<?xml version="1.0" encoding="utf-8"?>
+<?xml version="1.0" encoding="utf-8"?>
 <abapGit version="v1.0.0" serializer="LCL_OBJECT_CLAS" serializer_version="v1.0.0">
  <asx:abap xmlns:asx="http://www.sap.com/abapxml" version="1.0">
   <asx:values>
@@ -17,6 +17,143 @@
      <DESCRIPT>Druckertreiber: Legacy Provider</DESCRIPT>
     </SEOSUBCOTX>
    </DESCRIPTIONS_SUB>
+   <LONGTEXTS>
+    <item>
+     <DOKIL>
+      <ID>CL</ID>
+      <OBJECT>/CTDI/CL_PRINT_DRIVER_LEGACY</OBJECT>
+      <LANGU>E</LANGU>
+      <TYP>E</TYP>
+      <VERSION>0001</VERSION>
+      <MASTERLANG>X</MASTERLANG>
+      <TXTLINES>00011</TXTLINES>
+      <DOKSTATE>A</DOKSTATE>
+     </DOKIL>
+     <HEAD>
+      <TDOBJECT>DOKU</TDOBJECT>
+      <TDNAME>/CTDI/CL_PRINT_DRIVER_LEGACY</TDNAME>
+      <TDID>CL</TDID>
+      <TDSPRAS>E</TDSPRAS>
+      <TDFUSER>DEVELOPER</TDFUSER>
+      <TDFRELES>750</TDFRELES>
+      <FUSER>DEVELOPER</FUSER>
+      <FRELES>750</FRELES>
+     </HEAD>
+     <LINES>
+      <item>
+       <TDFORMAT>U1</TDFORMAT>
+       <TDLINE>&amp;FUNCTIONALITY&amp;</TDLINE>
+      </item>
+      <item>
+       <TDFORMAT>AS</TDFORMAT>
+       <TDLINE>The /CTDI/CL_PRINT_DRIVER_LEGACY class is the subclass responsible for</TDLINE>
+      </item>
+      <item>
+       <TDFORMAT></TDFORMAT>
+       <TDLINE> executing legacy printing logic. It executes the print_old subroutine</TDLINE>
+      </item>
+      <item>
+       <TDFORMAT></TDFORMAT>
+       <TDLINE> inside /CELLAG/ALCAREP02 if a legacy layout name is configured.</TDLINE>
+      </item>
+      <item>
+       <TDFORMAT>U1</TDFORMAT>
+       <TDLINE>IMPLEMENTATION DETAILS</TDLINE>
+      </item>
+      <item>
+       <TDFORMAT>AS</TDFORMAT>
+       <TDLINE>This class redefines the protected action hooks to:</TDLINE>
+      </item>
+      <item>
+       <TDFORMAT>B1</TDFORMAT>
+       <TDLINE>- unpack_io_data: Retrieve generic print execution parameters.</TDLINE>
+      </item>
+      <item>
+       <TDFORMAT>B1</TDFORMAT>
+       <TDLINE>- fetch_data_from_db: Select legacy repair/order data via the legacy</TDLINE>
+      </item>
+      <item>
+       <TDFORMAT></TDFORMAT>
+       <TDLINE>  data provider /CTDI/CL_PRINT_DATA_LEGACY.</TDLINE>
+      </item>
+      <item>
+       <TDFORMAT>B1</TDFORMAT>
+       <TDLINE>- map_and_register_data: Map standard parameters and register data</TDLINE>
+      </item>
+      <item>
+       <TDFORMAT></TDFORMAT>
+       <TDLINE>  structures for legacy Smart Forms rendering.</TDLINE>
+      </item>
+     </LINES>
+    </item>
+    <item>
+     <DOKIL>
+      <ID>CL</ID>
+      <OBJECT>/CTDI/CL_PRINT_DRIVER_LEGACY</OBJECT>
+      <LANGU>D</LANGU>
+      <TYP>E</TYP>
+      <VERSION>0001</VERSION>
+      <TXTLINES>00011</TXTLINES>
+      <DOKSTATE>A</DOKSTATE>
+     </DOKIL>
+     <HEAD>
+      <TDOBJECT>DOKU</TDOBJECT>
+      <TDNAME>/CTDI/CL_PRINT_DRIVER_LEGACY</TDNAME>
+      <TDID>CL</TDID>
+      <TDSPRAS>D</TDSPRAS>
+      <TDFUSER>DEVELOPER</TDFUSER>
+      <TDFRELES>750</TDFRELES>
+      <FUSER>DEVELOPER</FUSER>
+      <FRELES>750</FRELES>
+     </HEAD>
+     <LINES>
+      <item>
+       <TDFORMAT>U1</TDFORMAT>
+       <TDLINE>&amp;FUNCTIONALITY&amp;</TDLINE>
+      </item>
+      <item>
+       <TDFORMAT>AS</TDFORMAT>
+       <TDLINE>Die Klasse /CTDI/CL_PRINT_DRIVER_LEGACY ist für die Ausführung der</TDLINE>
+      </item>
+      <item>
+       <TDFORMAT></TDFORMAT>
+       <TDLINE> Legacy-Drucklogik verantwortlich. Sie ruft das Unterprogramm print_old</TDLINE>
+      </item>
+      <item>
+       <TDFORMAT></TDFORMAT>
+       <TDLINE> in /CELLAG/ALCAREP02 auf, wenn ein Legacy-Layout konfiguriert ist.</TDLINE>
+      </item>
+      <item>
+       <TDFORMAT>U1</TDFORMAT>
+       <TDLINE>IMPLEMENTIERUNGSDETAILS</TDLINE>
+      </item>
+      <item>
+       <TDFORMAT>AS</TDFORMAT>
+       <TDLINE>Diese Klasse implementiert die geschützten Action-Hooks wie folgt:</TDLINE>
+      </item>
+      <item>
+       <TDFORMAT>B1</TDFORMAT>
+       <TDLINE>- unpack_io_data: Generische Ausführungsparameter entpacken.</TDLINE>
+      </item>
+      <item>
+       <TDFORMAT>B1</TDFORMAT>
+       <TDLINE>- fetch_data_from_db: Selektion der Legacy-Reparaturdaten über den</TDLINE>
+      </item>
+      <item>
+       <TDFORMAT></TDFORMAT>
+       <TDLINE>  Legacy-Datenbeschaffer /CTDI/CL_PRINT_DATA_LEGACY.</TDLINE>
+      </item>
+      <item>
+       <TDFORMAT>B1</TDFORMAT>
+       <TDLINE>- map_and_register_data: Datenmapping und Registrierung der Parameter</TDLINE>
+      </item>
+      <item>
+       <TDFORMAT></TDFORMAT>
+       <TDLINE>  für den Smart-Forms-Druck.</TDLINE>
+      </item>
+     </LINES>
+    </item>
+   </LONGTEXTS>
   </asx:values>
  </asx:abap>
 </abapGit>
