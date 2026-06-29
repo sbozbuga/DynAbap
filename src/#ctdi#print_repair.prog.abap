@@ -10,8 +10,6 @@
 *
 * Beschreibung:  Repair Printouts
 *                Dynamic routing and execution orchestrator.
-*                NOTE: This new program and framework infrastructure
-*                will eventually replace the legacy /CELLAG/ALCAREP02.
 *
 *                Routing & Determination Flow:
 *                - Reads customizing from /CTDI/REP_FORMS.
@@ -19,6 +17,10 @@
 *                  fallback access sequence.
 *                - If no config is found, falls back to legacy printing
 *                  (print_old in /CELLAG/ALCAREP02).
+*                NOTE: This program is based on the current legacy
+*                report /CELLAG/ALCAREP02. It enhances it with highly
+*                flexible routing options and will eventually replace it
+*                completely after a successful testing phase.
 *
 *                How to Extend Data Logic:
 *                1. Create a subclass inheriting from base class

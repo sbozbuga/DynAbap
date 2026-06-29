@@ -176,7 +176,7 @@
       <TYP>E</TYP>
       <VERSION>0001</VERSION>
       <MASTERLANG>X</MASTERLANG>
-      <TXTLINES>00033</TXTLINES>
+      <TXTLINES>00034</TXTLINES>
       <DOKSTATE>A</DOKSTATE>
      </DOKIL>
      <HEAD>
@@ -204,11 +204,19 @@
       </item>
       <item>
        <TDFORMAT></TDFORMAT>
-       <TDLINE> dynamic routing, and execution engine. This program and its framework</TDLINE>
+       <TDLINE> dynamic routing, and execution engine. This program is based on</TDLINE>
       </item>
       <item>
        <TDFORMAT></TDFORMAT>
-       <TDLINE> infrastructure will eventually replace the legacy /CELLAG/ALCAREP02.</TDLINE>
+       <TDLINE> the current legacy /CELLAG/ALCAREP02 report, enhancing it with</TDLINE>
+      </item>
+      <item>
+       <TDFORMAT></TDFORMAT>
+       <TDLINE> flexible options, and will eventually replace it completely after a</TDLINE>
+      </item>
+      <item>
+       <TDFORMAT></TDFORMAT>
+       <TDLINE> successful testing process.</TDLINE>
       </item>
       <item>
        <TDFORMAT>U1</TDFORMAT>
@@ -371,11 +379,19 @@
       </item>
       <item>
        <TDFORMAT></TDFORMAT>
-       <TDLINE> und die Ausführung der Drucktreiber. Dieses neue Programm und seine</TDLINE>
+       <TDLINE> und die Ausführung der Drucktreiber. Dieses Programm basiert auf dem</TDLINE>
       </item>
       <item>
        <TDFORMAT></TDFORMAT>
-       <TDLINE> Infrastruktur werden das Legacy-Programm /CELLAG/ALCAREP02 ersetzen.</TDLINE>
+       <TDLINE> aktuellen Report /CELLAG/ALCAREP02, erweitert diesen um flexible</TDLINE>
+      </item>
+      <item>
+       <TDFORMAT></TDFORMAT>
+       <TDLINE> Optionen und wird ihn nach erfolgreicher Testphase vollständig</TDLINE>
+      </item>
+      <item>
+       <TDFORMAT></TDFORMAT>
+       <TDLINE> ersetzen.</TDLINE>
       </item>
       <item>
        <TDFORMAT>U1</TDFORMAT>
