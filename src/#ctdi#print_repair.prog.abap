@@ -8,33 +8,35 @@
 *----------------------------------------------------------------------*
 * Firma               CTDI GmbH Malsch Headquarter
 *
-* Beschreibung:  Repair Printouts
-*                Dynamic routing and execution orchestrator.
-*
-*                Routing & Determination Flow:
-*                - Reads customizing from /CTDI/REP_FORMS.
-*                - Resolves form layout and print driver class via a
-*                  fallback access sequence.
-*                - If no config is found, falls back to legacy printing
-*                  (print_old in /CELLAG/ALCAREP02).
+* Beschreibung:  Dynamic Routing and Execution Orchestrator for Repair
+*                Printouts.
 *                NOTE: This program is based on the current legacy
 *                report /CELLAG/ALCAREP02. It enhances it with highly
 *                flexible routing options and will eventually replace it
 *                completely after a successful testing phase.
 *
+*                Routing & Determination Flow:
+*                - Reads customizing configurations from /CTDI/REP_FORMS.
+*                - Resolves the form layout and print driver class using
+*                  a fallback access sequence.
+*                - Falls back to legacy printing (subroutine print_old
+*                  in /CELLAG/ALCAREP02) if no configuration is found.
+*
 *                How to Extend Data Logic:
-*                1. Create a subclass inheriting from base class
+*                1. Create a new subclass inheriting from base class
 *                   /CTDI/CL_PRINT_DRIVER_BASE.
-*                2. Implement/redefine protected action hook methods:
-*                   - unpack_io_data: Extract parameters.
-*                   - fetch_data_from_db: Select database data.
+*                2. Redefine and implement protected action hook methods:
+*                   - unpack_io_data: Extract and unpack parameters.
+*                   - fetch_data_from_db: Retrieve required database data.
 *                   - map_and_register_data: Map fields & register
 *                     parameters.
-*                3. Register form parameters via register_custom_parameter.
+*                3. Register custom parameters in map_and_register_data
+*                   via register_custom_parameter, passing the explicit
+*                   parameter kind to avoid slow runtime DB lookups.
 *
 *                How to Extend Process Logic:
 *                1. Maintain configurations in /CTDI/REP_FORMS via SM30.
-*                2. Define layout name and assign your new driver class.
+*                2. Define form layout name and assign your new class.
 *----------------------------------------------------------------------*
 * Anforderer: Felix
 * Ticket....: 2508-077

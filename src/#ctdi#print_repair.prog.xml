@@ -176,7 +176,7 @@
       <TYP>E</TYP>
       <VERSION>0001</VERSION>
       <MASTERLANG>X</MASTERLANG>
-      <TXTLINES>00034</TXTLINES>
+      <TXTLINES>00035</TXTLINES>
       <DOKSTATE>A</DOKSTATE>
      </DOKIL>
      <HEAD>
@@ -196,27 +196,23 @@
       </item>
       <item>
        <TDFORMAT>AS</TDFORMAT>
-       <TDLINE>The /CTDI/PRINT_REPAIR program is the central report for Repair</TDLINE>
+       <TDLINE>The /CTDI/PRINT_REPAIR program is the dynamic routing and execution</TDLINE>
       </item>
       <item>
        <TDFORMAT></TDFORMAT>
-       <TDLINE> Printouts. It functions as the entry point, determination layer,</TDLINE>
+       <TDLINE> orchestrator for Repair Printouts. It is based on the legacy</TDLINE>
       </item>
       <item>
        <TDFORMAT></TDFORMAT>
-       <TDLINE> dynamic routing, and execution engine. This program is based on</TDLINE>
+       <TDLINE> /CELLAG/ALCAREP02 report, enhancing it with highly flexible options.</TDLINE>
       </item>
       <item>
        <TDFORMAT></TDFORMAT>
-       <TDLINE> the current legacy /CELLAG/ALCAREP02 report, enhancing it with</TDLINE>
+       <TDLINE> It will eventually replace the legacy report completely after a</TDLINE>
       </item>
       <item>
        <TDFORMAT></TDFORMAT>
-       <TDLINE> flexible options, and will eventually replace it completely after a</TDLINE>
-      </item>
-      <item>
-       <TDFORMAT></TDFORMAT>
-       <TDLINE> successful testing process.</TDLINE>
+       <TDLINE> successful testing phase.</TDLINE>
       </item>
       <item>
        <TDFORMAT>U1</TDFORMAT>
@@ -371,15 +367,11 @@
       </item>
       <item>
        <TDFORMAT>AS</TDFORMAT>
-       <TDLINE>Das Programm /CTDI/PRINT_REPAIR dient als zentraler Einstiegspunkt für</TDLINE>
+       <TDLINE>Das Programm /CTDI/PRINT_REPAIR dient als dynamischer Einstiegspunkt</TDLINE>
       </item>
       <item>
        <TDFORMAT></TDFORMAT>
-       <TDLINE> Reparaturberichte. Es übernimmt die Ermittlung, das dynamische Routing</TDLINE>
-      </item>
-      <item>
-       <TDFORMAT></TDFORMAT>
-       <TDLINE> und die Ausführung der Drucktreiber. Dieses Programm basiert auf dem</TDLINE>
+       <TDLINE> und Routing-Manager für Reparaturberichte. Es basiert auf dem</TDLINE>
       </item>
       <item>
        <TDFORMAT></TDFORMAT>
