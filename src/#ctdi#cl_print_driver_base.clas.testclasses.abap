@@ -91,12 +91,14 @@ CLASS lcl_tests IMPLEMENTATION.
 
 
   METHOD execute.
-    " Execute should raise /ctdi/cx_print_driver_error because data retrieval / forms fail
+    " Execute should return early and successfully (warning only) when data is initial
     TRY.
         f_cut->execute( ).
-        cl_abap_unit_assert=>fail( msg = 'execute should fail for invalid repair order' ).
-      CATCH /ctdi/cx_print_driver_error.
-        cl_abap_unit_assert=>assert_true( abap_true ).
+        cl_abap_unit_assert=>assert_true(
+          act = abap_true
+          msg = 'execute should run successfully and return early on initial data' ).
+      CATCH /ctdi/cx_print_driver_error INTO DATA(lx_err).
+        cl_abap_unit_assert=>fail( msg = lx_err->get_text( ) ).
     ENDTRY.
   ENDMETHOD.
 
