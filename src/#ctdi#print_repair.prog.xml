@@ -176,7 +176,7 @@
       <TYP>E</TYP>
       <VERSION>0001</VERSION>
       <MASTERLANG>X</MASTERLANG>
-      <TXTLINES>00036</TXTLINES>
+      <TXTLINES>00034</TXTLINES>
       <DOKSTATE>A</DOKSTATE>
      </DOKIL>
      <HEAD>
@@ -233,14 +233,6 @@
       <item>
        <TDFORMAT></TDFORMAT>
        <TDLINE> determine print drivers.</TDLINE>
-      </item>
-      <item>
-       <TDFORMAT>B1</TDFORMAT>
-       <TDLINE>Backward compatibility with legacy routines (ALCAREP02 / print_old)</TDLINE>
-      </item>
-      <item>
-       <TDFORMAT></TDFORMAT>
-       <TDLINE> via exception handling.</TDLINE>
       </item>
       <item>
        <TDFORMAT>B1</TDFORMAT>
@@ -408,14 +400,6 @@
       <item>
        <TDFORMAT></TDFORMAT>
        <TDLINE> Drucktreibers.</TDLINE>
-      </item>
-      <item>
-       <TDFORMAT>B1</TDFORMAT>
-       <TDLINE>Abwärtskompatibilität zur Legacy-Logik (ALCAREP02 / print_old) via</TDLINE>
-      </item>
-      <item>
-       <TDFORMAT></TDFORMAT>
-       <TDLINE> Exception-Handling.</TDLINE>
       </item>
       <item>
        <TDFORMAT>B1</TDFORMAT>

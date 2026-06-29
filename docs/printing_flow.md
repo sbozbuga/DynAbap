@@ -41,7 +41,7 @@ Once the print program is invoked, it instantiates the central orchestrator clas
   6. Generic Contract + Specific SKZ + Generic AKZ
   7. Generic Contract + Generic SKZ + Specific AKZ
 * Results are buffered inside class attribute `mt_config_buffer` for rapid sequential printing.
-* **Fallback Routing**: If no configuration is active or defined in `/CTDI/REP_FORMS`, it raises `/ctdi/cx_no_config_found`. The wrapper program catches this and routes execution to standard legacy routines (`PERFORM print_old`).
+* **No Config Behavior**: If no configuration is active or defined in `/CTDI/REP_FORMS`, it raises `/ctdi/cx_no_config_found` and the execution is aborted with an error message.
 
 ---
 
@@ -148,8 +148,9 @@ graph TD
     G --> H
     
     H -->|Access Sequence in /CTDI/REP_FORMS| I{Customizing Record Found?}
-    I -->|No| J[Fallback: PERFORM print_old]
+    I -->|No| J[Abort with error message]
     I -->|Yes| K[execute_provider]
+
 
     %% Provider Execution
     K -->|Dynamic Instantiation| L{Implements Print Provider Interface?}

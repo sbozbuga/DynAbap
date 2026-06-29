@@ -20,8 +20,6 @@
 *                - Reads customizing configurations from /CTDI/REP_FORMS.
 *                - Resolves the form layout and print driver class using
 *                  a fallback access sequence.
-*                - Falls back to legacy printing (subroutine print_old
-*                  in /CELLAG/ALCAREP02) if no configuration is found.
 *
 *                How to Extend Data Logic:
 *                1. Create a new subclass inheriting from base class
