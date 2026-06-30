@@ -851,20 +851,14 @@ CLASS /CTDI/CL_PRINT_DRIVER_BASE IMPLEMENTATION.
             message   = lv_err1.
       ENDIF.
 
-      SELECT bemot, stokz, stzhl
+      " ⚡ Bolt: Pushed SKZ filtering down to DB to prevent O(N) memory allocation and transfer overhead
+      SELECT SINGLE bemot
         FROM afru
         WHERE aufnr = @lv_aufnr
           AND vornr = @gc_operation_wfer
-        INTO TABLE @DATA(lt_afru).
-
-      IF sy-subrc = 0.
-        LOOP AT lt_afru ASSIGNING FIELD-SYMBOL(<ls_afru>).
-          IF <ls_afru>-stokz = space AND <ls_afru>-stzhl = '00000000'.
-            ev_skz = <ls_afru>-bemot.
-            EXIT.
-          ENDIF.
-        ENDLOOP.
-      ENDIF.
+          AND stokz = @space
+          AND stzhl = '00000000'
+        INTO @ev_skz.
 
       SELECT SINGLE qmcod
         FROM qmel
