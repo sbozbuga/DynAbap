@@ -272,6 +272,10 @@ CLASS /CTDI/CL_PRINT_DATA_LEGACY IMPLEMENTATION.
             AND version    EQ '000001'
             INTO TABLE @lt_qpct.
 
+        " ⚡ Bolt: Added SORT before DELETE ADJACENT DUPLICATES to properly deduplicate tables,
+        " reducing memory consumption and preparing for subsequent BINARY SEARCH
+        SORT lt_qpgt BY katalogart codegruppe.
+        SORT lt_qpct BY katalogart codegruppe code.
         DELETE ADJACENT DUPLICATES FROM lt_qpgt COMPARING katalogart codegruppe.
 
         DELETE ADJACENT DUPLICATES FROM lt_qpct COMPARING katalogart codegruppe code.
