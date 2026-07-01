@@ -28,3 +28,6 @@
 ## 2026-06-23 - Push SORT and LIMIT down to DB for change tracking tables
 **Learning:** Legacy code often fetches an entire history of changes (e.g. from `jcds` or `cdpos`) into an internal table, then sorts it and reads `INDEX 1` to find the latest record. This causes excessive data transfer and high memory usage.
 **Action:** Always shift this logic to the database level using `ORDER BY ... DESCENDING` combined with `UP TO 1 ROWS` (into a table, then read index 1) to significantly reduce DB communication overhead and application server memory consumption.
+## 2026-06-25 - Push conditional loops down to DB
+**Learning:** Found instances where a `SELECT ... INTO TABLE ...` is executed to fetch a set of records, only to be immediately followed by a `LOOP AT` that iterates to find a single record matching specific conditions. This causes unnecessary data transfer from DB to app server and wastes memory allocation for the internal table.
+**Action:** When a loop purely searches for a single matching row without mutating data, always shift this filtering logic down to the database using `SELECT SINGLE ... WHERE ...` (with the loop's conditions pushed into the `WHERE` clause) to prevent O(N) memory allocation and transfer overhead.
