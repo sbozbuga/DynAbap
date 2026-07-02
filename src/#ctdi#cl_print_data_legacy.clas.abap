@@ -132,25 +132,22 @@ CLASS /CTDI/CL_PRINT_DATA_LEGACY IMPLEMENTATION.
 
 
   METHOD get_astatus_data.
-    DATA: lt_jcds TYPE TABLE OF jcds.
-
+    " ⚡ Bolt: Fetch directly into structure, eliminating internal table memory overhead
     SELECT objnr, stat, chgnr, udate, utime, inact
       FROM jcds
       WHERE objnr = @iv_objnr
         AND stat = @co_wfer_stat
       ORDER BY udate DESCENDING, utime DESCENDING
-      INTO CORRESPONDING FIELDS OF TABLE @lt_jcds
-      UP TO 1 ROWS.
+      UP TO 1 ROWS
+      INTO @DATA(ls_jcds).
+    ENDSELECT.
 
-    IF lt_jcds IS NOT INITIAL.
-      READ TABLE lt_jcds ASSIGNING FIELD-SYMBOL(<ls_jcds>) INDEX 1.
-      IF <ls_jcds> IS ASSIGNED.
-        IF <ls_jcds>-inact IS NOT INITIAL.
-          MESSAGE e029(/cellag/cs01) WITH mv_aufnr.
-        ENDIF.
-        ev_wfer_date  = <ls_jcds>-udate.
-        ev_wfer_time  = <ls_jcds>-utime.
+    IF sy-subrc = 0.
+      IF ls_jcds-inact IS NOT INITIAL.
+        MESSAGE e029(/cellag/cs01) WITH mv_aufnr.
       ENDIF.
+      ev_wfer_date  = ls_jcds-udate.
+      ev_wfer_time  = ls_jcds-utime.
     ELSE.
       MESSAGE e028(/cellag/cs01) WITH mv_aufnr.
     ENDIF.
