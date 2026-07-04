@@ -14,7 +14,7 @@
     "avoid_use": false, 
     "local_class_naming": false,
     "object_naming": false,
-    "selection_screen_naming": false,
+    "selection_screen_naming": true,
     "types_naming": false,
     "line_length": false,
     "space_before_colon": false,
