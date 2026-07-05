@@ -144,12 +144,12 @@ CLASS /CTDI/CL_PRINT_DATA_LEGACY IMPLEMENTATION.
 
     IF sy-subrc = 0.
       IF ls_jcds-inact IS NOT INITIAL.
-        MESSAGE e029(/cellag/cs01) WITH mv_aufnr.
+        MESSAGE e029(/cellag/cs01) WITH mv_aufnr TYPE 'S' DISPLAY LIKE 'E'.
       ENDIF.
       ev_wfer_date  = ls_jcds-udate.
       ev_wfer_time  = ls_jcds-utime.
     ELSE.
-      MESSAGE e028(/cellag/cs01) WITH mv_aufnr.
+      MESSAGE e028(/cellag/cs01) WITH mv_aufnr TYPE 'S' DISPLAY LIKE 'E'.
     ENDIF.
   ENDMETHOD.
 
@@ -613,7 +613,7 @@ CLASS /CTDI/CL_PRINT_DATA_LEGACY IMPLEMENTATION.
       ms_legacy-old_part_no   = lf_oldpartnr.
       ms_legacy-new_part_no   = lf_newpartnr.
     ELSE.
-      MESSAGE e024(/cellag/cs01) WITH lv_p_sernr.
+      MESSAGE e024(/cellag/cs01) WITH lv_p_sernr TYPE 'S' DISPLAY LIKE 'E'.
     ENDIF.
 
     DATA lf_eqktx TYPE ktx01.
