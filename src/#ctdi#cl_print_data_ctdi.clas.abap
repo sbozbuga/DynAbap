@@ -1,22 +1,22 @@
 "! <summary>CTDI Print Data Provider Extension</summary>
 "! <desc>Extends the base Alcatel class to read repair results from the new
 "! /CTDI/REP_RESULT table using an 11-step access sequence based on Contract, SKZ, AKZ, and Swap Flag.</desc>
-class /CTDI/CL_PRINT_DATA_CTDI definition
-  public
-  inheriting from /CTDI/CL_PRINT_DATA_LEGACY
-  create public .
+CLASS /ctdi/cl_print_data_ctdi DEFINITION
+  PUBLIC
+  INHERITING FROM /ctdi/cl_print_data_legacy
+  CREATE PUBLIC .
 
-public section.
+  PUBLIC SECTION.
 
-  data MS_REPAIR type /CTDI/REPAIR .
-  data MT_REPAIR_ERROR type /CTDI/REPAIR_ERROR_TT .
-  data:
-    mt_comments     TYPE STANDARD TABLE OF tline .
+    DATA ms_repair TYPE /ctdi/repair .
+    DATA mt_repair_error TYPE /ctdi/repair_error_tt .
+    DATA:
+      mt_comments     TYPE STANDARD TABLE OF tline .
 
-  methods MAP_LEGACY_DATA .
+    METHODS map_legacy_data .
 
-  methods READ_DATA
-    redefinition .
+    METHODS read_data
+        REDEFINITION .
   PROTECTED SECTION.
 
     "! <summary>Redefined repair result retrieval</summary>

@@ -132,24 +132,27 @@ CLASS /CTDI/CL_PRINT_DATA_LEGACY IMPLEMENTATION.
 
 
   METHOD get_astatus_data.
-    " Fetch directly into structure, eliminating internal table memory overhead
+    DATA: lt_jcds TYPE TABLE OF jcds.
+
     SELECT objnr, stat, chgnr, udate, utime, inact
       FROM jcds
       WHERE objnr = @iv_objnr
         AND stat = @co_wfer_stat
       ORDER BY udate DESCENDING, utime DESCENDING
-      UP TO 1 ROWS
-      INTO @DATA(ls_jcds).
-    ENDSELECT.
+      INTO CORRESPONDING FIELDS OF TABLE @lt_jcds
+      UP TO 1 ROWS.
 
-    IF sy-subrc = 0.
-      IF ls_jcds-inact IS NOT INITIAL.
-        MESSAGE e029(/cellag/cs01) WITH mv_aufnr TYPE 'S' DISPLAY LIKE 'E'.
+    IF lt_jcds IS NOT INITIAL.
+      READ TABLE lt_jcds ASSIGNING FIELD-SYMBOL(<ls_jcds>) INDEX 1.
+      IF <ls_jcds> IS ASSIGNED.
+        IF <ls_jcds>-inact IS NOT INITIAL.
+          MESSAGE e029(/cellag/cs01) WITH mv_aufnr.
+        ENDIF.
+        ev_wfer_date  = <ls_jcds>-udate.
+        ev_wfer_time  = <ls_jcds>-utime.
       ENDIF.
-      ev_wfer_date  = ls_jcds-udate.
-      ev_wfer_time  = ls_jcds-utime.
     ELSE.
-      MESSAGE e028(/cellag/cs01) WITH mv_aufnr TYPE 'S' DISPLAY LIKE 'E'.
+      MESSAGE e028(/cellag/cs01) WITH mv_aufnr.
     ENDIF.
   ENDMETHOD.
 
@@ -613,7 +616,7 @@ CLASS /CTDI/CL_PRINT_DATA_LEGACY IMPLEMENTATION.
       ms_legacy-old_part_no   = lf_oldpartnr.
       ms_legacy-new_part_no   = lf_newpartnr.
     ELSE.
-      MESSAGE e024(/cellag/cs01) WITH lv_p_sernr TYPE 'S' DISPLAY LIKE 'E'.
+      MESSAGE e024(/cellag/cs01) WITH lv_p_sernr.
     ENDIF.
 
     DATA lf_eqktx TYPE ktx01.
