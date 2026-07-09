@@ -85,8 +85,12 @@ CLASS lcl_tests IMPLEMENTATION.
   METHOD download_pdf.
     DATA: iv_pdf_data TYPE xstring.
     " Empty input PDF data should return immediately in download_pdf
-    f_cut->download_pdf( iv_pdf_data ).
-    cl_abap_unit_assert=>assert_true( abap_true ).
+    TRY.
+        f_cut->download_pdf( iv_pdf_data ).
+        cl_abap_unit_assert=>assert_true( abap_true ).
+      CATCH /ctdi/cx_print_driver_error.
+        cl_abap_unit_assert=>fail( msg = 'Empty input PDF data should return immediately in download_pdf' ).
+    ENDTRY.
   ENDMETHOD.
 
 
@@ -140,8 +144,15 @@ CLASS lcl_tests IMPLEMENTATION.
 
   METHOD fetch_data_from_db.
     " fetch_data_from_db is a base no-op hook; should run successfully
-    f_cut->fetch_data_from_db( ).
-    cl_abap_unit_assert=>assert_true( abap_true ).
+    TRY.
+        f_cut->fetch_data_from_db( ).
+        cl_abap_unit_assert=>assert_true( abap_true ).
+      CATCH /ctdi/cx_print_driver_error  .
+        cl_abap_unit_assert=>fail( msg = 'fetch_data_from_db is a base no-op hook; should run successfully' ).
+      CATCH  cx_static_check .
+        cl_abap_unit_assert=>fail( msg = 'fetch_data_from_db is a base no-op hook; should run successfully' ).
+    ENDTRY.
+
   ENDMETHOD.
 
 
@@ -156,9 +167,12 @@ CLASS lcl_tests IMPLEMENTATION.
                     ev_class_name = lv_class_name
                     es_project    = ls_project ).
         cl_abap_unit_assert=>fail( msg = 'get_config_from_db should fail for invalid repair order' ).
+      CATCH /ctdi/cx_no_config_found .
+        cl_abap_unit_assert=>assert_true( abap_true ).
       CATCH /ctdi/cx_print_driver_error.
         cl_abap_unit_assert=>assert_true( abap_true ).
     ENDTRY.
+
   ENDMETHOD.
 
 
@@ -181,8 +195,13 @@ CLASS lcl_tests IMPLEMENTATION.
 
   METHOD map_and_register_data.
     " map_and_register_data is a base no-op hook; should run successfully
-    f_cut->map_and_register_data( ).
-    cl_abap_unit_assert=>assert_true( abap_true ).
+    TRY.
+        f_cut->map_and_register_data( ).
+        cl_abap_unit_assert=>assert_true( abap_true ).
+      CATCH /ctdi/cx_print_driver_error.
+        cl_abap_unit_assert=>fail( msg = 'map_and_register_data is a base no-op hook; should run successfully' ).
+    ENDTRY.
+
   ENDMETHOD.
 
 
@@ -252,8 +271,13 @@ CLASS lcl_tests IMPLEMENTATION.
   METHOD unpack_io_data.
     " unpack_io_data is a base no-op hook; should run successfully
     DATA: lo_obj TYPE REF TO object.
-    f_cut->unpack_io_data( lo_obj ).
-    cl_abap_unit_assert=>assert_true( abap_true ).
+    TRY.
+        f_cut->unpack_io_data( lo_obj ).
+        cl_abap_unit_assert=>assert_true( abap_true ).
+      CATCH /ctdi/cx_print_driver_error.
+        cl_abap_unit_assert=>fail( msg = 'unpack_io_data is a base no-op hook; should run successfully' ).
+    ENDTRY.
+
   ENDMETHOD.
 
 ENDCLASS.
