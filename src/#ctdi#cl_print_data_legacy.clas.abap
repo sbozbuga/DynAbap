@@ -132,7 +132,7 @@ CLASS /CTDI/CL_PRINT_DATA_LEGACY IMPLEMENTATION.
 
 
   METHOD get_astatus_data.
-    " ⚡ Bolt: Fetch directly into structure, eliminating internal table memory overhead
+    " Fetch directly into structure, eliminating internal table memory overhead
     SELECT objnr, stat, chgnr, udate, utime, inact
       FROM jcds
       WHERE objnr = @iv_objnr
