@@ -138,7 +138,12 @@ CLASS /CTDI/CL_PRINT_DATA_CTDI IMPLEMENTATION.
     LOOP AT mt_legacy_error ASSIGNING FIELD-SYMBOL(<ls_error>).
       APPEND INITIAL LINE TO mt_repair_error ASSIGNING FIELD-SYMBOL(<ls_repair_error>).
       MOVE-CORRESPONDING <ls_error> TO <ls_repair_error>.
+      <ls_repair_error>-error_text = |{ <ls_repair_error>-oteil_ktxt } / { <ls_repair_error>-fecod_ktxt }|.
+      CONDENSE <ls_repair_error>-error_text.
     ENDLOOP.
+
+    SORT mt_repair_error BY error_text.
+    DELETE ADJACENT DUPLICATES FROM mt_repair_error COMPARING error_text.
 
     mt_comments = mt_comment_lines.
   ENDMETHOD.
