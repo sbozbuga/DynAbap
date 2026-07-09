@@ -393,41 +393,24 @@ CLASS /CTDI/CL_PRINT_DATA_LEGACY IMPLEMENTATION.
          INTO @lv_qmart.
 
       IF lv_qmart = co_zx_qmart.
-        SELECT SINGLE ebeln, ebelp
-          FROM qmfe
-         WHERE qmnum = @mv_qmnum
-           AND fenum = @mv_fenum
-          INTO ( @lv_ebeln_u, @lv_ebelp_u ).
+        " ⚡ Consolidate sequential SELECT SINGLE queries across document flows
+        SELECT SINGLE e~aufnr, k~kdauf, k~kdpos, p~/cellag/qmnum, p~/cellag/fenum, p~posex, b~bstkd
+          FROM qmfe AS q
+          INNER JOIN ekkn AS e ON e~ebeln = q~ebeln AND e~ebelp = q~ebelp
+          LEFT OUTER JOIN aufk AS k ON k~aufnr = e~aufnr
+          LEFT OUTER JOIN vbap AS p ON p~vbeln = k~kdauf AND p~posnr = k~kdpos
+          LEFT OUTER JOIN vbkd AS b ON b~vbeln = k~kdauf AND b~posnr = k~kdpos
+          WHERE q~qmnum = @mv_qmnum
+            AND q~fenum = @mv_fenum
+          INTO ( @lv_aufnr, @lv_kdauf_u, @lv_kdpos_u, @lv_qmnum_u, @lv_fenum_u, @lv_posex_u, @lv_bstkd_u ).
 
-        CLEAR: mv_qmnum, mv_fenum.
-        SELECT SINGLE aufnr FROM ekkn
-         WHERE ebeln = @lv_ebeln_u AND ebelp = @lv_ebelp_u
-           INTO @lv_aufnr.
-
-        IF lv_aufnr IS NOT INITIAL.
-          SELECT SINGLE kdauf, kdpos
-            FROM aufk
-           WHERE aufnr = @lv_aufnr
-            INTO ( @lv_kdauf_u, @lv_kdpos_u ).
-
-          SELECT SINGLE /cellag/qmnum, /cellag/fenum, posex
-            FROM vbap
-           WHERE vbeln = @lv_kdauf_u
-             AND posnr = @lv_kdpos_u
-            INTO ( @lv_qmnum_u, @lv_fenum_u, @lv_posex_u ).
-
+        IF sy-subrc = 0 AND lv_aufnr IS NOT INITIAL.
           mv_fenum = lv_fenum_u.
           mv_qmnum = lv_qmnum_u.
-
-          SELECT SINGLE bstkd
-            FROM vbkd
-           WHERE vbeln = @lv_kdauf_u
-             AND posnr = @lv_kdpos_u
-            INTO @lv_bstkd_u.
-
-          CLEAR: mv_po_nr, mv_po_pos.
           mv_po_pos = lv_posex_u.
           mv_po_nr  = lv_bstkd_u.
+        ELSE.
+          CLEAR: mv_qmnum, mv_fenum.
         ENDIF.
       ENDIF.
 
