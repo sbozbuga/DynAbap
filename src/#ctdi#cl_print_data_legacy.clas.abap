@@ -393,37 +393,24 @@ CLASS /CTDI/CL_PRINT_DATA_LEGACY IMPLEMENTATION.
          INTO @lv_qmart.
 
       IF lv_qmart = co_zx_qmart.
-        SELECT SINGLE ebeln, ebelp
-          FROM qmfe
-         WHERE qmnum = @mv_qmnum
-           AND fenum = @mv_fenum
-          INTO ( @lv_ebeln_u, @lv_ebelp_u ).
+        " ⚡ Bolt: Consolidated 5 sequential SELECT SINGLE queries into a single JOIN
+        " Why: Eliminates N+1 anti-pattern inside the business logic flow
+        " Impact: Reduces DB roundtrips from 5 to 1, significantly improving latency
+        SELECT SINGLE q~ebeln, q~ebelp, e~aufnr, a~kdauf, a~kdpos, p~/cellag/qmnum, p~/cellag/fenum, p~posex, d~bstkd
+          FROM qmfe AS q
+          LEFT OUTER JOIN ekkn AS e ON e~ebeln = q~ebeln AND e~ebelp = q~ebelp
+          LEFT OUTER JOIN aufk AS a ON a~aufnr = e~aufnr
+          LEFT OUTER JOIN vbap AS p ON p~vbeln = a~kdauf AND p~posnr = a~kdpos
+          LEFT OUTER JOIN vbkd AS d ON d~vbeln = a~kdauf AND d~posnr = a~kdpos
+          WHERE q~qmnum = @mv_qmnum
+            AND q~fenum = @mv_fenum
+          INTO ( @lv_ebeln_u, @lv_ebelp_u, @lv_aufnr, @lv_kdauf_u, @lv_kdpos_u, @lv_qmnum_u, @lv_fenum_u, @lv_posex_u, @lv_bstkd_u ).
 
         CLEAR: mv_qmnum, mv_fenum.
-        SELECT SINGLE aufnr FROM ekkn
-         WHERE ebeln = @lv_ebeln_u AND ebelp = @lv_ebelp_u
-           INTO @lv_aufnr.
 
         IF lv_aufnr IS NOT INITIAL.
-          SELECT SINGLE kdauf, kdpos
-            FROM aufk
-           WHERE aufnr = @lv_aufnr
-            INTO ( @lv_kdauf_u, @lv_kdpos_u ).
-
-          SELECT SINGLE /cellag/qmnum, /cellag/fenum, posex
-            FROM vbap
-           WHERE vbeln = @lv_kdauf_u
-             AND posnr = @lv_kdpos_u
-            INTO ( @lv_qmnum_u, @lv_fenum_u, @lv_posex_u ).
-
           mv_fenum = lv_fenum_u.
           mv_qmnum = lv_qmnum_u.
-
-          SELECT SINGLE bstkd
-            FROM vbkd
-           WHERE vbeln = @lv_kdauf_u
-             AND posnr = @lv_kdpos_u
-            INTO @lv_bstkd_u.
 
           CLEAR: mv_po_nr, mv_po_pos.
           mv_po_pos = lv_posex_u.
