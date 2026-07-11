@@ -824,22 +824,19 @@ CLASS /CTDI/CL_PRINT_DRIVER_BASE IMPLEMENTATION.
       INTO @DATA(lv_order_id).
 
     IF sy-subrc = 0 AND lv_order_id IS NOT INITIAL.
-      SELECT SINGLE vgbel
-        FROM vbak
-       WHERE vbeln = @lv_order_id
-        INTO @ev_contract_id.
+      SELECT SINGLE o~vgbel AS contract_id, c~vbtyp
+        FROM vbak AS o
+        INNER JOIN vbak AS c ON c~vbeln = o~vgbel
+        WHERE o~vbeln = @lv_order_id
+        INTO ( @ev_contract_id, @DATA(lv_vbtyp) ).
 
-      IF sy-subrc = 0 AND ev_contract_id IS NOT INITIAL.
-        " Verify the linked document is actually a contract (vbtyp = 'G')
-        SELECT SINGLE vbtyp
-          FROM vbak
-         WHERE vbeln = @ev_contract_id
-          INTO @DATA(lv_vbtyp).
-
+      IF sy-subrc = 0.
         IF lv_vbtyp NE 'G'.
           CLEAR ev_contract_id.
           sy-subrc = 4. " Force failure flag
         ENDIF.
+      ELSE.
+        sy-subrc = 4. " Force failure flag if join fails
       ENDIF.
 
       IF sy-subrc NE 0.
@@ -851,20 +848,13 @@ CLASS /CTDI/CL_PRINT_DRIVER_BASE IMPLEMENTATION.
             message   = lv_err1.
       ENDIF.
 
-      SELECT bemot, stokz, stzhl
+      SELECT SINGLE bemot
         FROM afru
         WHERE aufnr = @lv_aufnr
           AND vornr = @gc_operation_wfer
-        INTO TABLE @DATA(lt_afru).
-
-      IF sy-subrc = 0.
-        LOOP AT lt_afru ASSIGNING FIELD-SYMBOL(<ls_afru>).
-          IF <ls_afru>-stokz = space AND <ls_afru>-stzhl = '00000000'.
-            ev_skz = <ls_afru>-bemot.
-            EXIT.
-          ENDIF.
-        ENDLOOP.
-      ENDIF.
+          AND stokz = @space
+          AND stzhl = '00000000'
+        INTO @ev_skz ##WARN_OK.
 
       SELECT SINGLE qmcod
         FROM qmel
