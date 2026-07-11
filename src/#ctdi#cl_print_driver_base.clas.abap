@@ -384,6 +384,10 @@ CLASS /CTDI/CL_PRINT_DRIVER_BASE IMPLEMENTATION.
         /ctdi/cl_print_driver_log=>log_exception( lx_dyn_call ).
         lv_err = |Dynamic call error for { mv_form_name }|.
         /ctdi/cl_print_driver_log=>log_error( lv_err ).
+        " Spooler safety: cleanly close the job on error to avoid locks
+        CALL FUNCTION 'FP_JOB_CLOSE'
+          EXCEPTIONS
+            OTHERS = 1.
         RAISE EXCEPTION TYPE /ctdi/cx_print_driver_error
           EXPORTING repair_id = mv_repair_order
                     message   = lv_err
@@ -590,6 +594,11 @@ CLASS /CTDI/CL_PRINT_DRIVER_BASE IMPLEMENTATION.
           lv_class_name TYPE seoclsname,
           ls_project_db TYPE /ctdi/rep_projec.
 
+    IF iv_repair_id IS INITIAL.
+      RAISE EXCEPTION TYPE /ctdi/cx_print_driver_error
+        EXPORTING message = 'Repair ID must not be empty.'.
+    ENDIF.
+
     /ctdi/cl_print_driver_log=>log_info(
       |Print driver factory invoked for Repair { iv_repair_id }, Sernr { iv_sernr }| ).
 
@@ -627,6 +636,11 @@ CLASS /CTDI/CL_PRINT_DRIVER_BASE IMPLEMENTATION.
           lv_skz      TYPE bemot,
           lv_akz      TYPE char4,
           ls_config   TYPE /ctdi/rep_forms.
+
+    IF iv_repair_id IS INITIAL.
+      RAISE EXCEPTION TYPE /ctdi/cx_print_driver_error
+        EXPORTING message = 'Repair ID must not be empty.'.
+    ENDIF.
 
     TYPES: BEGIN OF ty_query_step,
              vbeln TYPE vbeln_va,
@@ -690,7 +704,7 @@ CLASS /CTDI/CL_PRINT_DRIVER_BASE IMPLEMENTATION.
         ev_form_name  = ls_config-form_name.
         ev_class_name = /ctdi/cl_print_cust_engine=>normalize_class_name( ls_config-class_name ).
       ELSE.
-        RAISE EXCEPTION TYPE /ctdi/cx_print_driver_error
+        RAISE EXCEPTION TYPE /ctdi/cx_no_config_found
           EXPORTING
             repair_id = iv_repair_id
             message   = |No configuration found in /CTDI/REP_FORMS (including default fallback).|.
@@ -767,13 +781,13 @@ CLASS /CTDI/CL_PRINT_DRIVER_BASE IMPLEMENTATION.
       TRY.
           fetch_data_from_db( ).
           /ctdi/cl_print_driver_log=>log_info( |Read data from DB for Repair { mv_repair_order }| ).
-        CATCH cx_root INTO DATA(lx_root).
-          /ctdi/cl_print_driver_log=>log_exception( lx_root ).
+        CATCH cx_static_check cx_dynamic_check INTO DATA(lx_exc).
+          /ctdi/cl_print_driver_log=>log_exception( lx_exc ).
           DATA(lv_err) = |Error reading data from DB for { mv_repair_order }|.
           /ctdi/cl_print_driver_log=>log_error( lv_err ).
           RAISE EXCEPTION TYPE /ctdi/cx_print_driver_error
             EXPORTING message  = lv_err
-                      previous = lx_root.
+                      previous = lx_exc.
       ENDTRY.
     ENDIF.
 

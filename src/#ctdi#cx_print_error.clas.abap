@@ -4,8 +4,8 @@ CLASS /ctdi/cx_print_error DEFINITION
   CREATE PUBLIC .
 
   PUBLIC SECTION.
-    DATA: repair_id TYPE aufnr,
-          message   TYPE string.
+    DATA repair_id TYPE aufnr READ-ONLY.
+    DATA message   TYPE string READ-ONLY.
 
     METHODS constructor
       IMPORTING
@@ -13,6 +13,8 @@ CLASS /ctdi/cx_print_error DEFINITION
         !previous  LIKE previous OPTIONAL
         !repair_id TYPE aufnr OPTIONAL
         !message   TYPE string OPTIONAL.
+
+    METHODS get_text REDEFINITION.
 
   PROTECTED SECTION.
   PRIVATE SECTION.
@@ -28,5 +30,13 @@ CLASS /ctdi/cx_print_error IMPLEMENTATION.
         previous = previous.
     me->repair_id = repair_id.
     me->message   = message.
+  ENDMETHOD.
+
+  METHOD get_text.
+    IF me->message IS NOT INITIAL.
+      result = me->message.
+    ELSE.
+      result = super->get_text( ).
+    ENDIF.
   ENDMETHOD.
 ENDCLASS.

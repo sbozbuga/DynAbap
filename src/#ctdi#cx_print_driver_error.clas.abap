@@ -17,6 +17,8 @@ CLASS /ctdi/cx_print_driver_error DEFINITION
         !repair_id TYPE aufnr OPTIONAL
         !message   TYPE string OPTIONAL.
 
+    METHODS get_text REDEFINITION.
+
   PROTECTED SECTION.
   PRIVATE SECTION.
 ENDCLASS.
@@ -31,5 +33,13 @@ CLASS /ctdi/cx_print_driver_error IMPLEMENTATION.
         previous = previous.
     me->repair_id = repair_id.
     me->message   = message.
+  ENDMETHOD.
+
+  METHOD get_text.
+    IF me->message IS NOT INITIAL.
+      result = me->message.
+    ELSE.
+      result = super->get_text( ).
+    ENDIF.
   ENDMETHOD.
 ENDCLASS.

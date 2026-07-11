@@ -11,7 +11,9 @@ CLASS /ctdi/cl_print_data_legacy DEFINITION
     METHODS read_data
       IMPORTING
         !iv_aufnr TYPE aufk-aufnr
-        !iv_sernr TYPE equi-sernr OPTIONAL.
+        !iv_sernr TYPE equi-sernr OPTIONAL
+      RAISING
+        /ctdi/cx_print_driver_error.
 
 
 
@@ -44,7 +46,9 @@ CLASS /ctdi/cl_print_data_legacy DEFINITION
     DATA mv_equnr_retlief   TYPE equnr.
     DATA mv_katalogart      TYPE qkatart.
 
-    METHODS get_kddata.
+    METHODS get_kddata
+      RAISING
+        /ctdi/cx_print_driver_error.
     METHODS get_part_data.
     METHODS get_error_description.
     METHODS get_comment.
@@ -55,7 +59,9 @@ CLASS /ctdi/cl_print_data_legacy DEFINITION
         !iv_objnr     TYPE j_objnr
       EXPORTING
         !ev_wfer_date TYPE dats
-        !ev_wfer_time TYPE tims.
+        !ev_wfer_time TYPE tims
+      RAISING
+        /ctdi/cx_print_driver_error.
 
     METHODS get_rlf_wedate
       IMPORTING
@@ -146,13 +152,19 @@ CLASS /CTDI/CL_PRINT_DATA_LEGACY IMPLEMENTATION.
       READ TABLE lt_jcds ASSIGNING FIELD-SYMBOL(<ls_jcds>) INDEX 1.
       IF <ls_jcds> IS ASSIGNED.
         IF <ls_jcds>-inact IS NOT INITIAL.
-          MESSAGE e029(/cellag/cs01) WITH mv_aufnr.
+          MESSAGE e029(/cellag/cs01) WITH mv_aufnr INTO DATA(lv_err_029).
+          RAISE EXCEPTION TYPE /ctdi/cx_print_driver_error
+            EXPORTING repair_id = mv_aufnr
+                      message   = lv_err_029.
         ENDIF.
         ev_wfer_date  = <ls_jcds>-udate.
         ev_wfer_time  = <ls_jcds>-utime.
       ENDIF.
     ELSE.
-      MESSAGE e028(/cellag/cs01) WITH mv_aufnr.
+      MESSAGE e028(/cellag/cs01) WITH mv_aufnr INTO DATA(lv_err_028).
+      RAISE EXCEPTION TYPE /ctdi/cx_print_driver_error
+        EXPORTING repair_id = mv_aufnr
+                  message   = lv_err_028.
     ENDIF.
   ENDMETHOD.
 
