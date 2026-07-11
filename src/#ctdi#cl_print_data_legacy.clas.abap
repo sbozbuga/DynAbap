@@ -393,9 +393,7 @@ CLASS /CTDI/CL_PRINT_DATA_LEGACY IMPLEMENTATION.
          INTO @lv_qmart.
 
       IF lv_qmart = co_zx_qmart.
-        " ⚡ Bolt: Consolidated 5 sequential SELECT SINGLE queries into a single JOIN
-        " Why: Eliminates N+1 anti-pattern inside the business logic flow
-        " Impact: Reduces DB roundtrips from 5 to 1, significantly improving latency
+        " Consolidated 5 sequential SELECT SINGLE queries into a single JOIN
         SELECT SINGLE q~ebeln, q~ebelp, e~aufnr, a~kdauf, a~kdpos, p~/cellag/qmnum, p~/cellag/fenum, p~posex, d~bstkd
           FROM qmfe AS q
           LEFT OUTER JOIN ekkn AS e ON e~ebeln = q~ebeln AND e~ebelp = q~ebelp
