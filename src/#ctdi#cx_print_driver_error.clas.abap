@@ -1,15 +1,10 @@
 CLASS /ctdi/cx_print_driver_error DEFINITION
   PUBLIC
-  INHERITING FROM cx_static_check
+  INHERITING FROM /ctdi/cx_print_error
   FINAL
   CREATE PUBLIC.
 
   PUBLIC SECTION.
-    " Attribute to identify the repair/document that caused the error
-    DATA repair_id TYPE aufnr READ-ONLY.
-    " Human-readable error message
-    DATA message   TYPE string READ-ONLY.
-
     METHODS constructor
       IMPORTING
         !textid    LIKE textid OPTIONAL
@@ -17,10 +12,6 @@ CLASS /ctdi/cx_print_driver_error DEFINITION
         !repair_id TYPE aufnr OPTIONAL
         !message   TYPE string OPTIONAL.
 
-    METHODS get_text REDEFINITION.
-
-  PROTECTED SECTION.
-  PRIVATE SECTION.
 ENDCLASS.
 
 
@@ -29,17 +20,9 @@ CLASS /ctdi/cx_print_driver_error IMPLEMENTATION.
   METHOD constructor ##ADT_SUPPRESS_GENERATION.
     CALL METHOD super->constructor
       EXPORTING
-        textid   = textid
-        previous = previous.
-    me->repair_id = repair_id.
-    me->message   = message.
-  ENDMETHOD.
-
-  METHOD get_text.
-    IF me->message IS NOT INITIAL.
-      result = me->message.
-    ELSE.
-      result = super->get_text( ).
-    ENDIF.
+        textid    = textid
+        previous  = previous
+        repair_id = repair_id
+        message   = message.
   ENDMETHOD.
 ENDCLASS.
