@@ -315,86 +315,61 @@ CLASS /CTDI/CL_PRINT_DATA_LEGACY IMPLEMENTATION.
 
 
   METHOD get_kddata.
-    DATA: lf_kdauf       TYPE aufk-kdauf,
-          lf_kdpos       TYPE aufk-kdpos,
-          lf_objnr       TYPE j_objnr,
-          lf_wfer_date   TYPE dats,
-          lf_wfer_time   TYPE tims,
-          lf_vl_erdat    TYPE likp-erdat,
-          lf_vl_erzet    TYPE likp-erzet,
-          lf_po_nr       TYPE vbkd-bstkd_e,
-          lf_po_pos      TYPE vbkd-posex_e,
-          lf_qmnum       TYPE vbak-qmnum,
-          lf_fenum       TYPE vbap-/cellag/fenum,
-          lf_kvgr1       TYPE vbak-kvgr1,
-          lf_erdat       TYPE auferfdat,
-          lf_tabg_status TYPE aufidat2,
-          lf_erfzeit     TYPE tims,
-          lf_aezeit      TYPE tims.
+    CLEAR: mv_kdauf, mv_time_received, mv_time_repaired, mv_time_thisdate,
+           mv_po_nr, mv_po_pos, mv_qmnum, mv_fenum, mv_ctdi_odernr.
 
-    CLEAR: lf_kdauf, lf_kdpos, lf_erdat, lf_tabg_status, lf_erfzeit, lf_aezeit, lf_objnr.
-
-    SELECT SINGLE kdauf, kdpos, erdat, idat2, erfzeit, aezeit, objnr
+    SELECT SINGLE kdauf, kdpos, objnr
       FROM aufk
-      WHERE aufnr = @mv_aufnr INTO ( @lf_kdauf, @lf_kdpos, @lf_erdat, @lf_tabg_status, @lf_erfzeit, @lf_aezeit, @lf_objnr ).
+      WHERE aufnr = @mv_aufnr
+      INTO @DATA(ls_aufk).
 
     IF sy-subrc = 0.
-      mv_kdauf = lf_kdauf.
+      mv_kdauf = ls_aufk-kdauf.
 
       get_astatus_data(
-        EXPORTING iv_objnr     = lf_objnr
-        IMPORTING ev_wfer_date = lf_wfer_date
-                  ev_wfer_time = lf_wfer_time ).
+        EXPORTING iv_objnr     = ls_aufk-objnr
+        IMPORTING ev_wfer_date = DATA(lv_wfer_date)
+                  ev_wfer_time = DATA(lv_wfer_time) ).
 
       get_rlf_wedate(
         EXPORTING iv_vbeln_vl  = mv_retlief_nr
-        IMPORTING ev_vl_erdat  = lf_vl_erdat
-                  ev_vl_zeit   = lf_vl_erzet ).
+        IMPORTING ev_vl_erdat  = DATA(lv_vl_erdat)
+                  ev_vl_zeit   = DATA(lv_vl_erzet) ).
 
-      mv_time_received = lf_vl_erzet.
-      mv_time_repaired = lf_wfer_time.
+      mv_time_received = lv_vl_erzet.
+      mv_time_repaired = lv_wfer_time.
       mv_time_thisdate = sy-uzeit.
 
-      CLEAR lf_po_nr.
-      SELECT SINGLE bstkd FROM vbkd
-        WHERE vbeln = @lf_kdauf
-        AND posnr = @lf_kdpos
-        INTO @lf_po_nr.
-      mv_po_nr = lf_po_nr.
+      IF ls_aufk-kdauf IS NOT INITIAL.
+        SELECT SINGLE k~kvgr1,
+                      k~qmnum,
+                      p~/cellag/fenum AS fenum,
+                      p~posex         AS po_pos,
+                      d~bstkd         AS po_nr,
+                      q~qmart
+          FROM vbak AS k
+          LEFT OUTER JOIN vbap AS p ON p~vbeln = k~vbeln AND p~posnr = @ls_aufk-kdpos
+          LEFT OUTER JOIN vbkd AS d ON d~vbeln = k~vbeln AND d~posnr = @ls_aufk-kdpos
+          LEFT OUTER JOIN qmel AS q ON q~qmnum = k~qmnum
+          WHERE k~vbeln = @ls_aufk-kdauf
+          INTO @DATA(ls_vbak).
 
-      CLEAR: lf_qmnum, lf_kvgr1.
-      SELECT SINGLE kvgr1, qmnum FROM vbak
-        WHERE vbeln = @lf_kdauf
-        INTO ( @lf_kvgr1, @lf_qmnum ).
-      mv_qmnum = lf_qmnum.
+        mv_qmnum  = ls_vbak-qmnum.
+        mv_fenum  = ls_vbak-fenum.
+        mv_po_nr  = ls_vbak-po_nr.
+        mv_po_pos = ls_vbak-po_pos.
 
-      CLEAR: lf_fenum, lf_po_pos.
-      SELECT SINGLE /cellag/fenum, posex
-        FROM vbap
-        WHERE vbeln = @lf_kdauf
-          AND posnr = @lf_kdpos
-         INTO ( @lf_fenum, @lf_po_pos ).
-      mv_fenum = lf_fenum.
-      mv_po_pos = lf_po_pos.
+        ms_legacy-kvgr1 = ls_vbak-kvgr1.
+      ENDIF.
 
-      DATA: lv_qmart   TYPE qmel-qmart,
-            lv_aufnr   TYPE aufnr,
-            lv_qmnum_u TYPE qmnum,
-            lv_fenum_u TYPE fenum,
-            lv_ebeln_u TYPE ebeln,
-            lv_ebelp_u TYPE ebelp,
-            lv_kdauf_u TYPE kdauf,
-            lv_kdpos_u TYPE kdpos,
-            lv_posex_u TYPE vbap-posex,
-            lv_bstkd_u TYPE vbkd-bstkd.
-
-      SELECT SINGLE qmart FROM qmel
-        WHERE qmnum = @mv_qmnum
-         INTO @lv_qmart.
+      DATA(lv_qmart) = COND qmel-qmart( WHEN ls_aufk-kdauf IS NOT INITIAL THEN ls_vbak-qmart ).
 
       IF lv_qmart = co_zx_qmart.
-        " Consolidated 5 sequential SELECT SINGLE queries into a single JOIN
-        SELECT SINGLE q~ebeln, q~ebelp, e~aufnr, a~kdauf, a~kdpos, p~/cellag/qmnum, p~/cellag/fenum, p~posex, d~bstkd
+        SELECT SINGLE e~aufnr,
+                      p~/cellag/qmnum AS qmnum_u,
+                      p~/cellag/fenum AS fenum_u,
+                      p~posex         AS posex_u,
+                      d~bstkd         AS bstkd_u
           FROM qmfe AS q
           LEFT OUTER JOIN ekkn AS e ON e~ebeln = q~ebeln AND e~ebelp = q~ebelp
           LEFT OUTER JOIN aufk AS a ON a~aufnr = e~aufnr
@@ -402,32 +377,29 @@ CLASS /CTDI/CL_PRINT_DATA_LEGACY IMPLEMENTATION.
           LEFT OUTER JOIN vbkd AS d ON d~vbeln = a~kdauf AND d~posnr = a~kdpos
           WHERE q~qmnum = @mv_qmnum
             AND q~fenum = @mv_fenum
-          INTO ( @lv_ebeln_u, @lv_ebelp_u, @lv_aufnr, @lv_kdauf_u, @lv_kdpos_u, @lv_qmnum_u, @lv_fenum_u, @lv_posex_u, @lv_bstkd_u ).
+          INTO @DATA(ls_qmfe).
 
         CLEAR: mv_qmnum, mv_fenum.
 
-        IF lv_aufnr IS NOT INITIAL.
-          mv_fenum = lv_fenum_u.
-          mv_qmnum = lv_qmnum_u.
-
-          CLEAR: mv_po_nr, mv_po_pos.
-          mv_po_pos = lv_posex_u.
-          mv_po_nr  = lv_bstkd_u.
+        IF ls_qmfe-aufnr IS NOT INITIAL.
+          mv_fenum  = ls_qmfe-fenum_u.
+          mv_qmnum  = ls_qmfe-qmnum_u.
+          mv_po_pos = ls_qmfe-posex_u.
+          mv_po_nr  = ls_qmfe-bstkd_u.
         ENDIF.
       ENDIF.
 
       mv_ctdi_odernr = |{ mv_qmnum }-{ mv_fenum }|.
     ENDIF.
 
-    ms_legacy-csaufnr         = mv_aufnr.
-    ms_legacy-sernr           = mv_sernr.
-    ms_legacy-po_no           = mv_po_nr.
-    ms_legacy-po_item_no      = mv_po_pos.
-    ms_legacy-ctdi_order_no   = mv_ctdi_odernr.
-    ms_legacy-date_received   = lf_vl_erdat.
-    ms_legacy-date_repaired   = lf_wfer_date.
-    ms_legacy-date_current    = sy-datum.
-    ms_legacy-kvgr1           = lf_kvgr1.
+    ms_legacy-csaufnr       = mv_aufnr.
+    ms_legacy-sernr         = mv_sernr.
+    ms_legacy-po_no         = mv_po_nr.
+    ms_legacy-po_item_no    = mv_po_pos.
+    ms_legacy-ctdi_order_no = mv_ctdi_odernr.
+    ms_legacy-date_received = lv_vl_erdat.
+    ms_legacy-date_repaired = lv_wfer_date.
+    ms_legacy-date_current  = sy-datum.
   ENDMETHOD.
 
 
