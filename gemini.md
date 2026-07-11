@@ -13,7 +13,7 @@ Key implementations bridging these requirements include:
 
 ## Legacy Integration & Routing
 - **`FORM print_new`**: Serves as the crucial bridge and entry point between the legacy program and the new object-oriented framework. 
-  - **Backward Compatibility**: If a configuration record in `/CTDI/REP_FORMS` points to an old legacy form name, the new framework raises a specific exception (`/ctdi/cx_no_config_found`), allowing `FORM print_new` to gracefully fall back and continue processing in the old legacy program logic.
+  - **Migration Shift**: Historically used as a fallback mechanism; with the full migration to the new architecture, `/ctdi/cx_no_config_found` has been promoted to a first-class **missing configuration error** raised by `get_config_from_db` when no configuration is resolved, causing execution to terminate and report the missing setup.
   - **New Logic Takeover**: When a new form and class are successfully resolved, the new framework takes full control of data retrieval and form rendering, completely bypassing the legacy subroutines.
 
 ## Architecture & Refactoring
@@ -32,11 +32,21 @@ Key implementations bridging these requirements include:
   - Deleted the redundant copy class `/CTDI/APP_LOG` to keep the codebase dry and clean.
   - Kept all static APIs (`log_info`, `log_error`, etc.) intact to avoid changing any calling code in the print drivers.
   - Replaced text-only exception logging with proper object/stack trace logging using standard `BAL_LOG_EXC_ADD` under the hood.
-
-
+- **Robust Exception Handling & Clean Code (2026-07-11)**:
+  - **get_text Redefinition**: Redefined the standard `get_text( )` method in `/ctdi/cx_print_error`, `/ctdi/cx_print_driver_error`, and `/ctdi/cx_no_config_found` to dynamically return the custom `message` attribute if populated. This bridges custom error messages with standard SAP application log displays (`BAL_LOG_EXC_ADD`).
+  - **Exception Hierarchy Optimization**: Set `/ctdi/cx_print_driver_error` to inherit directly from `/ctdi/cx_print_error` (instead of `cx_static_check`). This eliminates duplicate attribute declarations and `get_text` implementations through inheritance.
+  - **Defensive Guards**: Added input validations for `iv_repair_id` at the beginning of `factory` and `get_config_from_db` to raise exceptions immediately on empty parameters.
+  - **Spooler Safety**: Added a catch-all call to `FP_JOB_CLOSE` inside `execute_adobeform`'s dynamic call catch block to guarantee Adobe Form spooler session closure and prevent subsequent locks.
+  - **Fast-Failure in Development**: Replaced generic `CATCH cx_root` in `read_data` with checked exception filters `CATCH cx_static_check cx_dynamic_check`. This lets programming/runtime bugs (`cx_no_check`) fail loud as dumps in dev/QA while production maintains its boundary safety nets.
 
 ## Performance & DB Optimizations
 - **In-Memory Configuration Resolution**: Refactored `get_config_from_db` to select all potential `/ctdi/rep_forms` fallback hierarchies into an internal table at once. It now resolves the correct hierarchy (Contract -> SKZ -> AKZ) via in-memory `READ TABLE` lookups instead of executing multiple `SELECT` queries.
+- **SD/QM Selects Consolidation (2026-07-11)**:
+  - In `get_kddata` ([`/ctdi/cl_print_data_legacy`](file:///d:/_Repos/DynAbap/src/%23ctdi%23cl_print_data_legacy.clas.abap#L329)), combined the three separate SD sequential queries (`VBKD`, `VBAK`, `VBAP`) and the notification query (`QMEL`) into a single `LEFT OUTER JOIN` on `VBAK`, `VBAP`, `VBKD`, and `QMEL`. Unused fields were pruned.
+- **VBAK Self-Join & AFRU Filtering (2026-07-11)**:
+  - In `resolve_contract` ([`/ctdi/cl_print_driver_base`](file:///d:/_Repos/DynAbap/src/%23ctdi%23cl_print_driver_base.clas.abap#L817)), replaced two sequential SD database calls with a single self-join on `VBAK` to resolve contract IDs. Combined this with database-level push-down filtering for confirmations on `AFRU` (`stokz = @space` and `stzhl = '00000000'`) to save database roundtrips and avoid internal table loops in memory.
+- **Unwrapping Legacy Breaks (2026-07-11)**:
+  - Replaced the direct, uncatchable `MESSAGE e...` statements inside `get_astatus_data` with proper `/ctdi/cx_print_driver_error` raises using `MESSAGE ... INTO DATA(...)` to capture legacy message class descriptions. This avoids abrupt transaction terminations/spool failures and wraps them in clean catching flows.
 
 ## Modernization & Strict SQL Compliance (ABAP 7.50)
 - **Strict SQL OpenSQL**: Modernized all OpenSQL queries across `/CTDI/CL_PRINT_DRIVER_BASE` and `/CTDI/CL_PRINT_CUST_ENGINE`. Moved all `INTO` and `INTO TABLE` clauses to the absolute end of the `SELECT` statements, guaranteeing forward compatibility with strict-SQL ABAP environments while maintaining 100% data integrity.
