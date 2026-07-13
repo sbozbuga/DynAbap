@@ -91,22 +91,16 @@ CLASS lcl_app IMPLEMENTATION.
         lr_driver->execute( iv_save_as_pdf = lv_save_as_pdf ).
 
       CATCH /ctdi/cx_no_config_found INTO DATA(lx_noconf).
+        " SECURITY: Do not expose raw exception text to the UI to prevent info leakage
         " Missing configuration — this is now a real error, not a fallback
         /ctdi/cl_print_driver_log=>log_exception( lx_noconf ).
-        IF lx_noconf->message IS NOT INITIAL.
-          lv_emsg = lx_noconf->message.
-        ELSE.
-          MESSAGE e001(00) WITH TEXT-005 p_aufnr INTO lv_emsg.
-        ENDIF.
+        MESSAGE e001(00) WITH TEXT-005 p_aufnr INTO lv_emsg.
 
       CATCH /ctdi/cx_print_driver_error INTO DATA(lx_driver_err).
-        " Business error — log full chain, show driver's message if available
+        " SECURITY: Do not expose raw exception text to the UI to prevent info leakage
+        " Business error — log full chain, do not show raw driver's message
         /ctdi/cl_print_driver_log=>log_exception( lx_driver_err ).
-        IF lx_driver_err->message IS NOT INITIAL.
-          lv_emsg = lx_driver_err->message.
-        ELSE.
-          MESSAGE e001(00) WITH TEXT-007 INTO lv_emsg.
-        ENDIF.
+        MESSAGE e001(00) WITH TEXT-007 INTO lv_emsg.
 
       CATCH cx_root INTO DATA(lx_root).
         " Safety net for unexpected errors — keep for production stability
