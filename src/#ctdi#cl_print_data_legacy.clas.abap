@@ -465,28 +465,27 @@ CLASS /CTDI/CL_PRINT_DATA_LEGACY IMPLEMENTATION.
     IF lf_equnr IS NOT INITIAL.
       IF mv_swap_flag IS NOT INITIAL.
 
-        SELECT SINGLE serge, matnr FROM equi
-           WHERE equnr = @lf_equnr
-          INTO ( @lf_newserialnr, @lv_newmatnr ).
+        " ⚡ Bolt: Consolidated sequential SELECT SINGLE into single DB hit via JOIN
+        SELECT SINGLE i~serge, i~matnr, z~mapar
+           FROM equi AS i
+           LEFT OUTER JOIN equz AS z ON z~equnr = i~equnr
+           WHERE i~equnr = @lf_equnr
+           INTO ( @lf_newserialnr, @lv_newmatnr, @lf_newpartnr ).
 
-        SELECT SINGLE mapar FROM equz
-          WHERE equnr = @lf_equnr
-          INTO @lf_newpartnr.
-
-        SELECT SINGLE serge, matnr FROM equi
-           WHERE equnr = @mv_equnr_retlief
-            INTO ( @lf_oldserialnr, @lv_oldmatnr ).
-
-        SELECT SINGLE mapar FROM equz
-          WHERE equnr = @mv_equnr_retlief
-          INTO @lf_oldpartnr.
+        SELECT SINGLE i~serge, i~matnr, z~mapar
+           FROM equi AS i
+           LEFT OUTER JOIN equz AS z ON z~equnr = i~equnr
+           WHERE i~equnr = @mv_equnr_retlief
+           INTO ( @lf_oldserialnr, @lv_oldmatnr, @lf_oldpartnr ).
       ELSE.
         " --- NEW OPTIMIZED LOGIC ---
         " Pre-fetch current values as defaults
-        SELECT SINGLE serge, matnr FROM equi  WHERE equnr = @lf_equnr
-          INTO ( @DATA(lv_cur_serge), @DATA(lv_cur_matnr) ).
-        SELECT SINGLE mapar FROM equz  WHERE equnr = @lf_equnr
-          INTO @DATA(lv_cur_mapar).
+        " ⚡ Bolt: Consolidated sequential SELECT SINGLE into single DB hit via JOIN
+        SELECT SINGLE i~serge, i~matnr, z~mapar
+           FROM equi AS i
+           LEFT OUTER JOIN equz AS z ON z~equnr = i~equnr
+           WHERE i~equnr = @lf_equnr
+           INTO ( @DATA(lv_cur_serge), @DATA(lv_cur_matnr), @DATA(lv_cur_mapar) ).
 
         lf_newserialnr = lv_cur_serge.
         lf_oldserialnr = lv_cur_serge.
