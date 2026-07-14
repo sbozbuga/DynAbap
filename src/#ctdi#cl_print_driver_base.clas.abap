@@ -832,51 +832,34 @@ CLASS /CTDI/CL_PRINT_DRIVER_BASE IMPLEMENTATION.
     DATA(lv_aufnr) = |{ iv_repair_id ALPHA = IN }|.
     CLEAR: ev_contract_id, ev_skz, ev_akz.
 
-    SELECT SINGLE kdauf
+    " ⚡ Bolt: Consolidated sequential database lookups into a single LEFT OUTER JOIN query
+    " Eliminates N+1 database roundtrips while preserving explicit fallback logic.
+    SELECT SINGLE a~kdauf,
+                  o~vgbel AS contract_id,
+                  c~vbtyp,
+                  f~bemot,
+                  q~qmcod
       FROM aufk AS a
+      LEFT OUTER JOIN vbak AS o ON o~vbeln = a~kdauf
+      LEFT OUTER JOIN vbak AS c ON c~vbeln = o~vgbel
+      LEFT OUTER JOIN afru AS f ON f~aufnr = a~aufnr
+                               AND f~vornr = @gc_operation_wfer
+                               AND f~stokz = @space
+                               AND f~stzhl = '00000000'
+      LEFT OUTER JOIN qmel AS q ON q~aufnr = a~aufnr
+                               AND q~qmart = 'Z2'
       WHERE a~aufnr = @lv_aufnr
-      INTO @DATA(lv_order_id).
+      INTO ( @DATA(lv_order_id), @ev_contract_id, @DATA(lv_vbtyp), @ev_skz, @ev_akz ) ##WARN_OK.
 
     IF sy-subrc = 0 AND lv_order_id IS NOT INITIAL.
-      SELECT SINGLE o~vgbel AS contract_id, c~vbtyp
-        FROM vbak AS o
-        INNER JOIN vbak AS c ON c~vbeln = o~vgbel
-        WHERE o~vbeln = @lv_order_id
-        INTO ( @ev_contract_id, @DATA(lv_vbtyp) ).
-
-      IF sy-subrc = 0.
-        IF lv_vbtyp NE 'G'.
-          CLEAR ev_contract_id.
-          sy-subrc = 4. " Force failure flag
-        ENDIF.
-      ELSE.
-        sy-subrc = 4. " Force failure flag if join fails
-      ENDIF.
-
-      IF sy-subrc NE 0.
+      IF ev_contract_id IS INITIAL OR lv_vbtyp NE 'G'.
+        CLEAR ev_contract_id.
         DATA(lv_err1) = |Could not find a Contract for Order { lv_order_id }|.
         /ctdi/cl_print_driver_log=>log_error( lv_err1 ).
         RAISE EXCEPTION TYPE /ctdi/cx_print_driver_error
           EXPORTING
             repair_id = iv_repair_id
             message   = lv_err1.
-      ENDIF.
-
-      SELECT SINGLE bemot
-        FROM afru
-        WHERE aufnr = @lv_aufnr
-          AND vornr = @gc_operation_wfer
-          AND stokz = @space
-          AND stzhl = '00000000'
-        INTO @ev_skz ##WARN_OK.
-
-      SELECT SINGLE qmcod
-        FROM qmel
-        WHERE aufnr = @lv_aufnr
-          AND qmart = 'Z2'
-        INTO @ev_akz.
-      IF sy-subrc <> 0.
-        " Ignore
       ENDIF.
 
       /ctdi/cl_print_driver_log=>log_info(
