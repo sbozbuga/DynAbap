@@ -563,19 +563,27 @@ CLASS /CTDI/CL_PRINT_DATA_LEGACY IMPLEMENTATION.
 
       IF lf_newpartnr IS INITIAL.
         IF lv_newmatnr IS INITIAL.
-          SELECT SINGLE matnr FROM equi  WHERE equnr = @lf_equnr INTO @lv_newmatnr.
-        ENDIF.
-        IF lv_newmatnr IS NOT INITIAL.
-          SELECT SINGLE mfrpn FROM mara  WHERE matnr = @lv_newmatnr INTO @lf_newpartnr.
+          " ⚡ Bolt: Consolidated sequential SELECT SINGLE (equi -> mara) into a single DB hit
+          SELECT SINGLE e~matnr, m~mfrpn
+            FROM equi AS e
+            LEFT OUTER JOIN mara AS m ON m~matnr = e~matnr
+            WHERE e~equnr = @lf_equnr
+            INTO ( @lv_newmatnr, @lf_newpartnr ).
+        ELSE.
+          SELECT SINGLE mfrpn FROM mara WHERE matnr = @lv_newmatnr INTO @lf_newpartnr.
         ENDIF.
       ENDIF.
 
       IF lf_oldpartnr IS INITIAL.
         IF lv_oldmatnr IS INITIAL.
-          SELECT SINGLE matnr FROM equi  WHERE equnr = @mv_equnr_retlief INTO @lv_oldmatnr.
-        ENDIF.
-        IF lv_oldmatnr IS NOT INITIAL.
-          SELECT SINGLE mfrpn FROM mara  WHERE matnr = @lv_oldmatnr INTO @lf_oldpartnr.
+          " ⚡ Bolt: Consolidated sequential SELECT SINGLE (equi -> mara) into a single DB hit
+          SELECT SINGLE e~matnr, m~mfrpn
+            FROM equi AS e
+            LEFT OUTER JOIN mara AS m ON m~matnr = e~matnr
+            WHERE e~equnr = @mv_equnr_retlief
+            INTO ( @lv_oldmatnr, @lf_oldpartnr ).
+        ELSE.
+          SELECT SINGLE mfrpn FROM mara WHERE matnr = @lv_oldmatnr INTO @lf_oldpartnr.
         ENDIF.
       ENDIF.
 
