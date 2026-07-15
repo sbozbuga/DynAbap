@@ -613,15 +613,18 @@ CLASS /CTDI/CL_PRINT_DATA_LEGACY IMPLEMENTATION.
           ls_eqstand_out TYPE /cellag/cseqstand_out.
 
     IF ls_qmel IS NOT INITIAL.
-      ms_legacy-rev_in  = ls_qmel-revin.
-      ms_legacy-rev_out = ls_qmel-revout.
 
       MOVE-CORRESPONDING ls_qmel TO ls_eqstand_in.
       MOVE-CORRESPONDING ls_qmel TO ls_eqstand_out.
 
       MOVE-CORRESPONDING ls_eqstand_in TO ms_legacy.
       MOVE-CORRESPONDING ls_eqstand_out TO ms_legacy.
+
+      ms_legacy-rev_in  = ls_qmel-revin.
+      ms_legacy-rev_out = ls_qmel-revout.
+
     ENDIF.
+
   ENDMETHOD.
 
 
