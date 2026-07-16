@@ -9,3 +9,7 @@
 ## 2026-07-04 - Avoid hard aborts in legacy class wrappers
 **Learning:** When wrapping legacy data classes (like `cl_print_data_legacy`) in a modern framework, using hard-abort `TYPE 'E'` messages deeply nested in the backend logic disrupts the user flow by locking the UI or terminating the application unexpectedly.
 **Action:** Replace `TYPE 'E'` with non-blocking errors (`TYPE 'S' DISPLAY LIKE 'E'`) even inside legacy classes to maintain a responsive and smooth user experience without crashing the wrapper.
+
+## 2026-07-28 - Maintain persistent status bar feedback alongside popup logs
+**Learning:** When displaying a popup log in ABAP, the background selection screen's status bar should still be updated with a non-blocking success or error message. Otherwise, users who close the log immediately are left without persistent visual feedback of the execution outcome.
+**Action:** Always ensure status bar messages are displayed independently of popup log displays to maintain consistent UI feedback.
