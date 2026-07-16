@@ -7,3 +7,6 @@
 ## 2025-01-29 - Consolidate independent sequential lookups into single DB hit (equi/equz)
 **Learning:** Sequential `SELECT SINGLE` queries on different tables (like `equi` and `equz`) that share a primary key (`equnr`) can be combined to reduce N+1-style DB roundtrips.
 **Action:** Use `LEFT OUTER JOIN`s to fetch all dependent properties simultaneously in a single query when the base key is the same, reducing overhead significantly.
+## 2024-03-21 - Mixed Inline Declarations in INTO Clause
+**Learning:** In ABAP Open SQL, when using a parenthesized list of targets in an `INTO ( ... )` clause, you cannot mix inline data declarations (e.g., `@DATA(...)`) with existing variables. All targets must be either exclusively inline declarations or exclusively pre-declared variables.
+**Action:** When refactoring queries to use `INTO ( ... )`, explicitly declare any new variables before the query if they need to be mixed with existing ones.

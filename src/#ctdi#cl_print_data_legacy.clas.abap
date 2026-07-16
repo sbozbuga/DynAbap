@@ -563,18 +563,26 @@ CLASS /CTDI/CL_PRINT_DATA_LEGACY IMPLEMENTATION.
 
       IF lf_newpartnr IS INITIAL.
         IF lv_newmatnr IS INITIAL.
-          SELECT SINGLE matnr FROM equi  WHERE equnr = @lf_equnr INTO @lv_newmatnr.
-        ENDIF.
-        IF lv_newmatnr IS NOT INITIAL.
+          " ⚡ Bolt: Consolidated sequential SELECT SINGLE into single DB hit via JOIN
+          SELECT SINGLE e~matnr, m~mfrpn
+            FROM equi AS e
+            LEFT OUTER JOIN mara AS m ON m~matnr = e~matnr
+            WHERE e~equnr = @lf_equnr
+            INTO ( @lv_newmatnr, @lf_newpartnr ).
+        ELSE.
           SELECT SINGLE mfrpn FROM mara  WHERE matnr = @lv_newmatnr INTO @lf_newpartnr.
         ENDIF.
       ENDIF.
 
       IF lf_oldpartnr IS INITIAL.
         IF lv_oldmatnr IS INITIAL.
-          SELECT SINGLE matnr FROM equi  WHERE equnr = @mv_equnr_retlief INTO @lv_oldmatnr.
-        ENDIF.
-        IF lv_oldmatnr IS NOT INITIAL.
+          " ⚡ Bolt: Consolidated sequential SELECT SINGLE into single DB hit via JOIN
+          SELECT SINGLE e~matnr, m~mfrpn
+            FROM equi AS e
+            LEFT OUTER JOIN mara AS m ON m~matnr = e~matnr
+            WHERE e~equnr = @mv_equnr_retlief
+            INTO ( @lv_oldmatnr, @lf_oldpartnr ).
+        ELSE.
           SELECT SINGLE mfrpn FROM mara  WHERE matnr = @lv_oldmatnr INTO @lf_oldpartnr.
         ENDIF.
       ENDIF.
@@ -596,13 +604,18 @@ CLASS /CTDI/CL_PRINT_DATA_LEGACY IMPLEMENTATION.
           lv_qmnum TYPE qmel-qmnum,
           ls_qmel  TYPE qmel.
 
-    SELECT SINGLE qmnum, obknr FROM afih  WHERE aufnr = @mv_aufnr
-      INTO CORRESPONDING FIELDS OF @ls_afih.
+    DATA lv_ihnum TYPE objk-ihnum.
+    " ⚡ Bolt: Consolidated sequential SELECT SINGLE into single DB hit via JOIN
+    SELECT SINGLE a~qmnum, a~obknr, o~ihnum
+      FROM afih AS a
+      LEFT OUTER JOIN objk AS o ON o~obknr = a~obknr AND o~ihnum <> @space
+      WHERE a~aufnr = @mv_aufnr
+      INTO ( @ls_afih-qmnum, @ls_afih-obknr, @lv_ihnum ).
+
     IF ls_afih-qmnum IS NOT INITIAL.
       lv_qmnum = ls_afih-qmnum.
-    ELSE.
-      SELECT SINGLE ihnum  FROM objk
-       WHERE obknr = @ls_afih-obknr AND ihnum <> @space INTO @lv_qmnum.
+    ELSEIF lv_ihnum IS NOT INITIAL.
+      lv_qmnum = lv_ihnum.
     ENDIF.
 
     IF lv_qmnum IS NOT INITIAL.
