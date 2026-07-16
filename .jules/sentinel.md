@@ -20,3 +20,7 @@
 **Vulnerability:** In `src/templates/sm30_event_class_generator.abap`, the custom exception text `lx_err->message` was directly assigned to a `MESSAGE ... TYPE 'W'` statement, exposing potentially sensitive backend information directly to the UI.
 **Learning:** Even within generated standard SAP templates (like SM30 table maintenance events), custom exceptions may still contain technical messages intended for backend tracing rather than UI exposure. Passing exception texts, custom attributes, or output directly into ABAP UI messages compromises security and can leak database table, configuration, or structural names.
 **Prevention:** Always sanitize UI error messages in ABAP dialogs. Instead of embedding custom exception attributes, utilize a standardized logging layer (e.g., `/ctdi/cl_print_driver_log=>log_exception`) to store technical details securely, and issue a generic, safe `MESSAGE` string to the frontend user.
+## 2026-07-16 - Class Method Hard Abort DoS Vulnerability
+**Vulnerability:** A hard abort `MESSAGE E...` was used inside a class method (`/ctdi/cl_print_data_legacy=>fetch_data_from_db`) instead of raising a catchable exception.
+**Learning:** Using `MESSAGE TYPE 'E'` inside class methods terminates the transaction or causes an uncatchable short dump, representing a Denial of Service risk.
+**Prevention:** Fail securely within class boundaries by throwing an ABAP class exception (e.g., `cx_...`) containing the message details, allowing the caller to catch the error, log it securely, and exit gracefully.

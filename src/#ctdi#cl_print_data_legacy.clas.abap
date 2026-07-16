@@ -584,7 +584,10 @@ CLASS /CTDI/CL_PRINT_DATA_LEGACY IMPLEMENTATION.
       ms_legacy-old_part_no   = lf_oldpartnr.
       ms_legacy-new_part_no   = lf_newpartnr.
     ELSE.
-      MESSAGE e024(/cellag/cs01) WITH lv_p_sernr.
+      MESSAGE e024(/cellag/cs01) WITH lv_p_sernr INTO DATA(lv_err_024).
+      RAISE EXCEPTION TYPE /ctdi/cx_print_driver_error
+        EXPORTING repair_id = mv_aufnr
+                  message   = lv_err_024.
     ENDIF.
 
     DATA lf_eqktx TYPE ktx01.
