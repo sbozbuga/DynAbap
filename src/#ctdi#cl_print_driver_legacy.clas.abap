@@ -1,17 +1,15 @@
-class /CTDI/CL_PRINT_DRIVER_LEGACY definition
-  public
-  inheriting from /CTDI/CL_PRINT_DRIVER_BASE
-  create public .
+CLASS /ctdi/cl_print_driver_legacy DEFINITION
+  PUBLIC
+  INHERITING FROM /ctdi/cl_print_driver_base
+  CREATE PUBLIC.
 
-public section.
-protected section.
+  PUBLIC SECTION.
 
-  methods FETCH_DATA_FROM_DB
-    redefinition .
-  methods MAP_AND_REGISTER_DATA
-    redefinition .
-  methods UNPACK_IO_DATA
-    redefinition .
+  PROTECTED SECTION.
+    METHODS fetch_data_from_db    REDEFINITION.
+    METHODS map_and_register_data REDEFINITION.
+    METHODS unpack_io_data        REDEFINITION.
+
   PRIVATE SECTION.
     DATA ms_alcarep_legacy TYPE /cellag/alcarep.
     DATA mt_alcarep_error  TYPE STANDARD TABLE OF /cellag/alcarep_error.
@@ -32,24 +30,34 @@ CLASS /CTDI/CL_PRINT_DRIVER_LEGACY IMPLEMENTATION.
 
 
   METHOD map_and_register_data.
-    IF mr_provider IS BOUND.
-      ms_alcarep_legacy = mr_provider->ms_legacy.
-      mt_alcarep_error  = mr_provider->mt_legacy_error.
-      mt_comments       = mr_provider->mt_comment_lines.
-
-      MOVE-CORRESPONDING ms_alcarep_legacy TO ms_repair.
-
-      LOOP AT mt_alcarep_error ASSIGNING FIELD-SYMBOL(<ls_err>).
-        APPEND INITIAL LINE TO mt_errors ASSIGNING FIELD-SYMBOL(<ls_target_err>).
-        MOVE-CORRESPONDING <ls_err> TO <ls_target_err>.
-      ENDLOOP.
-
-      " Register legacy structures for dynamic Smart Form parameter injection
-      register_custom_parameter( iv_name = '/CELLAG/ALCAREP'       iv_kind = abap_func_exporting ir_data = REF #( ms_alcarep_legacy ) ).
-      register_custom_parameter( iv_name = 'USER_SETTINGS'         iv_kind = abap_func_exporting ir_data = REF #( mv_user_settings ) ).
-      register_custom_parameter( iv_name = '/CELLAG/ALCAREP_ERROR' iv_kind = abap_func_tables    ir_data = REF #( mt_alcarep_error ) ).
-      register_custom_parameter( iv_name = 'GT_COMMENT_LINES'      iv_kind = abap_func_tables    ir_data = REF #( mt_comments ) ).
+    IF mr_provider IS NOT BOUND.
+      RETURN.
     ENDIF.
+
+    ms_alcarep_legacy = mr_provider->ms_legacy.
+    mt_alcarep_error  = mr_provider->mt_legacy_error.
+    mt_comments       = mr_provider->mt_comment_lines.
+
+    MOVE-CORRESPONDING ms_alcarep_legacy TO ms_repair.
+
+    LOOP AT mt_alcarep_error ASSIGNING FIELD-SYMBOL(<ls_err>).
+      APPEND INITIAL LINE TO mt_errors ASSIGNING FIELD-SYMBOL(<ls_target_err>).
+      MOVE-CORRESPONDING <ls_err> TO <ls_target_err>.
+    ENDLOOP.
+
+    " Register legacy structures for dynamic Smart Form parameter injection
+    register_custom_parameter( iv_name = '/CELLAG/ALCAREP'
+                               iv_kind = abap_func_exporting
+                               ir_data = REF #( ms_alcarep_legacy ) ).
+    register_custom_parameter( iv_name = 'USER_SETTINGS'
+                               iv_kind = abap_func_exporting
+                               ir_data = REF #( mv_user_settings ) ).
+    register_custom_parameter( iv_name = '/CELLAG/ALCAREP_ERROR'
+                               iv_kind = abap_func_tables
+                               ir_data = REF #( mt_alcarep_error ) ).
+    register_custom_parameter( iv_name = 'GT_COMMENT_LINES'
+                               iv_kind = abap_func_tables
+                               ir_data = REF #( mt_comments ) ).
   ENDMETHOD.
 
 

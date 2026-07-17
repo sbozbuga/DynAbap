@@ -31,14 +31,14 @@ FORM 01_before_save.
 
       TRY.
           /ctdi/cl_print_cust_engine=>validate_entry( is_entry = ls_validation_entry ).
-        CATCH /ctdi/cx_print_error INTO DATA(lx_print_error).
+        CATCH /ctdi/cx_cust_error INTO DATA(lx_print_error).
           " Signal TMG framework to abort the save
           vim_abort_saving = abap_true.
 
           /ctdi/cl_print_driver_log=>log_exception( lx_print_error ).
 
-          " Format message string into 50-char blocks for standard SAP message
-          DATA(lv_msg) = CONV text200( 'Validation failed due to a system error. See log.' ).
+          " Show the actual validation error to the user
+          DATA(lv_msg) = CONV text200( lx_print_error->get_text( ) ).
           sy-msgv1 = lv_msg(50).
           sy-msgv2 = lv_msg+50(50).
           sy-msgv3 = lv_msg+100(50).

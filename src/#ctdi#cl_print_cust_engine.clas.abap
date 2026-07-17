@@ -1,60 +1,197 @@
-CLASS /CTDI/CL_PRINT_CUST_ENGINE DEFINITION
-  PUBLIC
-  FINAL
+CLASS /ctdi/cl_print_cust_engine DEFINITION
+  PUBLIC FINAL
   CREATE PUBLIC.
 
   PUBLIC SECTION.
     CONSTANTS gc_base_class TYPE seoclsname VALUE '/CTDI/CL_PRINT_DRIVER_BASE'.
 
     CLASS-METHODS on_new_entry
-      CHANGING
-        !cs_entry TYPE /ctdi/rep_forms.
+      CHANGING cs_entry TYPE /ctdi/rep_forms.
 
     CLASS-METHODS validate_entry
-      IMPORTING
-        !is_entry TYPE /ctdi/rep_forms
-      RAISING
-        /ctdi/cx_print_error.
+      IMPORTING is_entry TYPE /ctdi/rep_forms
+      RAISING   /ctdi/cx_cust_error.
 
     CLASS-METHODS check_generation_allowed
-      RETURNING
-        VALUE(rv_allowed) TYPE abap_bool.
+      RETURNING VALUE(rv_allowed) TYPE abap_bool.
 
     "! Normalizes a short class name to the full provider class name
     "! @parameter iv_class_name | Short or full class name
     "! @parameter rv_class_name | Full normalized class name
     CLASS-METHODS normalize_class_name
-      IMPORTING
-        !iv_class_name       TYPE seoclsname
-      RETURNING
-        VALUE(rv_class_name) TYPE seoclsname.
+      IMPORTING iv_class_name        TYPE seoclsname
+      RETURNING VALUE(rv_class_name) TYPE seoclsname.
 
+  PRIVATE SECTION.
+    CONSTANTS gc_form_alcatel TYPE fpname VALUE '/CELLAG/ALCAREP' ##NO_TEXT.
 
-  PROTECTED SECTION.
-private section.
+    CLASS-METHODS is_subclass_of
+      IMPORTING iv_class_name    TYPE seoclsname
+                iv_base_class    TYPE seoclsname
+      RETURNING VALUE(rv_result) TYPE abap_bool.
 
-  constants GC_FORM_ALCATEL type FPNAME value '/CELLAG/ALCAREP' ##NO_TEXT.
+    CLASS-METHODS prompt_user_for_generation
+      IMPORTING iv_class_name     TYPE seoclsname
+                iv_vbeln          TYPE vbeln_va
+      RETURNING VALUE(rv_package) TYPE devclass
+      RAISING   /ctdi/cx_cust_error.
 
-  class-methods VALIDATE_FORM_INTERFACE
-    importing
-      !IV_FORM_NAME type FPNAME
-      !IV_CLASS_NAME type SEOCLSNAME
-      !IV_VBELN type VBELN_VA
-    RAISING
-      /CTDI/CX_PRINT_ERROR .
+    CLASS-METHODS copy_and_activate_class
+      IMPORTING iv_class_name TYPE seoclsname
+                iv_package    TYPE devclass
+                iv_vbeln      TYPE vbeln_va
+      RAISING   /ctdi/cx_cust_error.
 
-  CLASS-METHODS generate_provider_class
-    IMPORTING
-      !iv_class_name TYPE seoclsname
-      !iv_vbeln      TYPE vbeln_va
-    RAISING
-      /ctdi/cx_print_error.
+    CLASS-METHODS validate_form_interface
+      IMPORTING iv_form_name  TYPE fpname
+                iv_class_name TYPE seoclsname
+                iv_vbeln      TYPE vbeln_va
+      RAISING   /ctdi/cx_cust_error.
+
+    CLASS-METHODS generate_provider_class
+      IMPORTING iv_class_name TYPE seoclsname
+                iv_vbeln      TYPE vbeln_va
+      RAISING   /ctdi/cx_cust_error.
 
 ENDCLASS.
 
 
 
 CLASS /CTDI/CL_PRINT_CUST_ENGINE IMPLEMENTATION.
+
+
+  METHOD check_generation_allowed.
+    rv_allowed = abap_false.
+
+    " 1. Check user development authorization (CLAS / Create)
+    AUTHORITY-CHECK OBJECT 'S_DEVELOP'
+                    ID 'DEVCLASS' FIELD '*'
+                    ID 'OBJTYPE'  FIELD 'CLAS'
+                    ID 'OBJNAME'  FIELD '*'
+                    ID 'P_GROUP'  FIELD '*'
+                    ID 'ACTVT'    FIELD '01'. " Create
+    IF sy-subrc <> 0.
+      RETURN.
+    ENDIF.
+
+    " 2. Check if the current system repository is modifiable
+    DATA lv_system_edit TYPE tadir-edtflag.
+    " TODO: variable is assigned but never used (ABAP cleaner)
+    DATA lv_system_name TYPE sysysid.
+    " TODO: variable is assigned but never used (ABAP cleaner)
+    DATA lv_system_type TYPE sysysid.
+
+    CALL FUNCTION 'TR_SYS_PARAMS'
+      IMPORTING
+        systemname    = lv_system_name
+        systemtype    = lv_system_type
+        systemedit    = lv_system_edit  " 'W' = Modifiable, 'R' = Read-only
+      EXCEPTIONS
+        no_systemname = 1
+        no_systemtype = 2
+        OTHERS        = 3.
+    DATA(lv_subrc_sys) = sy-subrc.
+
+    IF lv_subrc_sys = 0 AND lv_system_edit <> 'N'.
+      rv_allowed = abap_true.
+    ENDIF.
+  ENDMETHOD.
+
+
+  METHOD copy_and_activate_class.
+    DATA ls_clskey     TYPE seoclskey.
+    DATA ls_new_clskey TYPE seoclskey.
+    " TODO: variable is assigned but never used (ABAP cleaner)
+    DATA ls_new_class  TYPE vseoclass.
+    DATA lv_package    TYPE devclass.
+
+    ls_clskey-clsname     = '/CTDI/CL_PRINT_DRIVER_TEMPLATE'.
+    ls_new_clskey-clsname = iv_class_name.
+    lv_package            = iv_package.
+
+    CALL FUNCTION 'SEO_CLASS_COPY'
+      EXPORTING
+        clskey       = ls_clskey
+        new_clskey   = ls_new_clskey
+      IMPORTING
+        new_class    = ls_new_class
+      CHANGING
+        devclass     = lv_package
+      EXCEPTIONS
+        not_existing = 1
+        deleted      = 2
+        is_interface = 3
+        not_copied   = 4
+        db_error     = 5
+        no_access    = 6
+        OTHERS       = 7.
+
+    IF sy-subrc <> 0.
+      RAISE EXCEPTION TYPE /ctdi/cx_cust_error
+        EXPORTING
+          contract_id = iv_vbeln
+          message     = |Failed to generate class (SUBRC: { sy-subrc }).|.
+    ENDIF.
+
+    MESSAGE |Class { iv_class_name } generated successfully.| TYPE 'S'.
+
+    " Activate the newly generated class
+    DATA lt_objects TYPE STANDARD TABLE OF dwinactiv.
+    DATA ls_object  TYPE dwinactiv.
+
+    ls_object-object   = 'CLAS'.
+    ls_object-obj_name = iv_class_name.
+    APPEND ls_object TO lt_objects.
+
+    CALL FUNCTION 'RS_WORKING_OBJECTS_ACTIVATE'
+      EXPORTING
+        activate_ddic_objects  = abap_true
+        with_popup             = abap_false
+      TABLES
+        objects                = lt_objects
+      EXCEPTIONS
+        excecution_error       = 1
+        cancelled              = 2
+        insert_into_corr_error = 3
+        OTHERS                 = 4.
+    IF sy-subrc = 0.
+      MESSAGE |Class { iv_class_name } activated successfully.| TYPE 'S'.
+    ENDIF.
+  ENDMETHOD.
+
+
+  METHOD generate_provider_class.
+    DATA(lv_package) = prompt_user_for_generation( iv_class_name = iv_class_name
+                                                   iv_vbeln      = iv_vbeln ).
+
+    copy_and_activate_class( iv_class_name = iv_class_name
+                             iv_package    = lv_package
+                             iv_vbeln      = iv_vbeln ).
+  ENDMETHOD.
+
+
+  METHOD is_subclass_of.
+    DATA lv_current_class TYPE seoclsname.
+
+    lv_current_class = iv_class_name.
+    rv_result = abap_false.
+
+    WHILE lv_current_class IS NOT INITIAL.
+      IF lv_current_class = iv_base_class.
+        rv_result = abap_true.
+        RETURN.
+      ENDIF.
+
+      SELECT SINGLE refclsname FROM seometarel
+        WHERE clsname = @lv_current_class
+          AND reltype = '2'
+        INTO @lv_current_class.
+      IF sy-subrc <> 0.
+        CLEAR lv_current_class.
+      ENDIF.
+    ENDWHILE.
+  ENDMETHOD.
+
 
   METHOD normalize_class_name.
     rv_class_name = to_upper( iv_class_name ).
@@ -77,152 +214,12 @@ CLASS /CTDI/CL_PRINT_CUST_ENGINE IMPLEMENTATION.
   ENDMETHOD.
 
 
-  METHOD check_generation_allowed.
-    rv_allowed = abap_false.
-
-    " 1. Check user development authorization (CLAS / Create)
-    AUTHORITY-CHECK OBJECT 'S_DEVELOP'
-      ID 'DEVCLASS' FIELD '*'
-      ID 'OBJTYPE'  FIELD 'CLAS'
-      ID 'OBJNAME'  FIELD '*'
-      ID 'P_GROUP'  FIELD '*'
-      ID 'ACTVT'    FIELD '01'. " Create
-    IF sy-subrc <> 0.
-      RETURN.
-    ENDIF.
-
-    " 2. Check if the current system repository is modifiable
-    DATA: lv_system_edit TYPE tadir-edtflag,
-          lv_system_name TYPE sysysid,
-          lv_system_type TYPE sysysid.
-
-    CALL FUNCTION 'TR_SYS_PARAMS'
-      IMPORTING
-        systemname    = lv_system_name
-        systemtype    = lv_system_type
-        systemedit    = lv_system_edit  " 'W' = Modifiable, 'R' = Read-only
-      EXCEPTIONS
-        no_systemname = 1
-        no_systemtype = 2
-        OTHERS        = 3.
-    DATA(lv_subrc_sys) = sy-subrc.
-
-    IF lv_subrc_sys = 0 AND lv_system_edit NE 'N'.
-      rv_allowed = abap_true.
-    ENDIF.
-  ENDMETHOD.
-
-
-
-
   METHOD on_new_entry.
-*    " Default class name and method name to standard base provider class
-*    IF cs_entry-class_name IS INITIAL.
-*      cs_entry-class_name = gc_base_class.
-*    ENDIF.
-*    cs_entry-method_name = 'EXECUTE'.
   ENDMETHOD.
 
 
-  METHOD validate_entry.
-
-    " 1. Validate Form Name existence in Smart Forms (STXFADM) or Adobe Forms (FPCONTEXT)
-    IF is_entry-form_name IS NOT INITIAL.
-      SELECT SINGLE formname FROM stxfadm
-        WHERE formname = @is_entry-form_name
-        INTO @DATA(lv_ssf_exists).
-      IF sy-subrc <> 0.
-        SELECT SINGLE name FROM fpcontext
-          WHERE name = @is_entry-form_name
-          INTO @DATA(lv_fp_exists).
-        IF sy-subrc <> 0.
-          DATA(lv_form_err) = |Form { is_entry-form_name } does not exist as a Smart Form or Adobe Form.|.
-          RAISE EXCEPTION TYPE /ctdi/cx_print_error
-            EXPORTING
-              repair_id = CONV aufnr( is_entry-vbeln )
-              message   = lv_form_err.
-        ENDIF.
-      ENDIF.
-
-      " Eagerly validate form parameter compatibility
-      validate_form_interface( iv_form_name  = is_entry-form_name
-                               iv_class_name = is_entry-class_name
-                               iv_vbeln      = is_entry-vbeln ).
-    ENDIF.
-
-    IF is_entry-form_name NE gc_form_alcatel.
-
-      " 2. Class name is required for new Forms
-      IF is_entry-class_name IS INITIAL.
-        DATA(lv_msg) = |Class name is required for Contract { is_entry-vbeln }|.
-        RAISE EXCEPTION TYPE /ctdi/cx_print_error
-          EXPORTING
-            repair_id = CONV aufnr( is_entry-vbeln )
-            message   = lv_msg.
-      ENDIF.
-
-      " 3. Validate Class existence in Repository (SEOCLASS)
-      DATA(lv_class_name) = is_entry-class_name.
-
-      SELECT SINGLE clsname FROM seoclass
-        WHERE clsname = @lv_class_name
-        INTO @DATA(lv_class_exists).
-      IF sy-subrc <> 0.
-        " Class does not exist! Offer to generate it on-the-fly if system modifiability and authorizations permit
-        IF check_generation_allowed( ) = abap_true.
-          generate_provider_class( iv_class_name = is_entry-class_name
-                                   iv_vbeln      = is_entry-vbeln ).
-          RETURN. " Class now successfully generated, bypass error check
-        ENDIF.
-
-        " Raise validation error if generation is skipped or not permitted (e.g. locked client)
-        DATA(lv_class_err) = |Class { is_entry-class_name } does not exist in the repository|.
-        RAISE EXCEPTION TYPE /ctdi/cx_print_error
-          EXPORTING
-            repair_id = CONV aufnr( is_entry-vbeln )
-            message   = lv_class_err.
-      ELSE.
-        " Validate inheritance from base class /CTDI/CL_PRINT_DRIVER_BASE
-        " Check the class and all its superclasses
-        DATA: lv_implemented   TYPE abap_bool,
-              lv_current_class TYPE seoclsname.
-
-        lv_current_class = lv_class_name.
-        lv_implemented   = abap_false.
-
-        WHILE lv_current_class IS NOT INITIAL.
-          IF lv_current_class = gc_base_class.
-            lv_implemented = abap_true.
-            EXIT.
-          ENDIF.
-
-          SELECT SINGLE refclsname FROM seometarel
-            WHERE clsname = @lv_current_class
-              AND reltype = '2' " 2 = Inheritance
-            INTO @lv_current_class.
-          IF sy-subrc <> 0.
-            CLEAR lv_current_class.
-          ENDIF.
-        ENDWHILE.
-
-        IF lv_implemented = abap_false.
-          DATA(lv_interface_err) = |Class { is_entry-class_name } does not inherit from /CTDI/CL_PRINT_DRIVER_BASE|.
-          RAISE EXCEPTION TYPE /ctdi/cx_print_error
-            EXPORTING
-              repair_id = CONV aufnr( is_entry-vbeln )
-              message   = lv_interface_err.
-        ENDIF.
-
-        " Method_name validation removed as field no longer exists
-
-      ENDIF." select seoclass
-    ENDIF. "NE gc_form_alcatel.
-
-  ENDMETHOD.
-
-
-  METHOD generate_provider_class.
-    DATA: lv_answer TYPE c.
+  METHOD prompt_user_for_generation.
+    DATA lv_answer TYPE c LENGTH 1.
 
     DATA(lv_question) = |Class { iv_class_name } does not exist. Do you want to generate it now?|.
 
@@ -239,120 +236,137 @@ CLASS /CTDI/CL_PRINT_CUST_ENGINE IMPLEMENTATION.
         text_not_found        = 1
         OTHERS                = 2.
 
-    IF sy-subrc = 0 AND lv_answer = '1'.
-      " Prompt user for the target Development Package
-      DATA: lt_fields     TYPE TABLE OF sval,
-            ls_field      TYPE sval,
-            lv_returncode TYPE c,
-            lv_package    TYPE devclass VALUE '/CTDI/WORKSHOP'.
-
-      ls_field-tabname   = 'TDEVC'.
-      ls_field-fieldname = 'DEVCLASS'.
-      ls_field-value     = '/CTDI/WORKSHOP'.
-      APPEND ls_field TO lt_fields.
-
-      CALL FUNCTION 'POPUP_GET_VALUES'
-        EXPORTING
-          popup_title = 'Enter Target Development Package'
-        IMPORTING
-          returncode  = lv_returncode
-        TABLES
-          fields      = lt_fields
-        EXCEPTIONS
-          OTHERS      = 1.
-      IF sy-subrc <> 0.
-        lv_returncode = 'A'.
-      ENDIF.
-
-      IF lv_returncode <> 'A'.
-        READ TABLE lt_fields INTO ls_field INDEX 1.
-        IF sy-subrc = 0 AND ls_field-value IS NOT INITIAL.
-          lv_package = ls_field-value.
-        ENDIF.
-      ELSE.
-        " Cancelled: abort generation with error
-        RAISE EXCEPTION TYPE /ctdi/cx_print_error
-          EXPORTING
-            repair_id = CONV aufnr( iv_vbeln )
-            message   = 'Class generation cancelled by user.'.
-      ENDIF.
-
-      " Copy standard base class /CTDI/CL_PRINT_DRIVER_TEMPLATE to the new class name
-      DATA: ls_clskey     TYPE seoclskey,
-            ls_new_clskey TYPE seoclskey,
-            ls_new_class  TYPE vseoclass.
-
-      ls_clskey-clsname     = '/CTDI/CL_PRINT_DRIVER_TEMPLATE'.
-      ls_new_clskey-clsname = iv_class_name.
-
-      CALL FUNCTION 'SEO_CLASS_COPY'
-        EXPORTING
-          clskey       = ls_clskey
-          new_clskey   = ls_new_clskey
-        IMPORTING
-          new_class    = ls_new_class
-        CHANGING
-          devclass     = lv_package
-        EXCEPTIONS
-          not_existing = 1
-          deleted      = 2
-          is_interface = 3
-          not_copied   = 4
-          db_error     = 5
-          no_access    = 6
-          OTHERS       = 7.
-
-      IF sy-subrc = 0.
-        DATA(lv_success) = |Class { iv_class_name } generated successfully.|.
-        MESSAGE lv_success TYPE 'S'.
-
-        " Activate the newly generated class
-        DATA: lt_objects TYPE STANDARD TABLE OF dwinactiv,
-              ls_object  TYPE dwinactiv.
-
-        ls_object-object   = 'CLAS'.
-        ls_object-obj_name = iv_class_name.
-        APPEND ls_object TO lt_objects.
-
-        CALL FUNCTION 'RS_WORKING_OBJECTS_ACTIVATE'
-          EXPORTING
-            activate_ddic_objects  = abap_true
-            with_popup             = abap_false
-          TABLES
-            objects                = lt_objects
-          EXCEPTIONS
-            excecution_error       = 1
-            cancelled              = 2
-            insert_into_corr_error = 3
-            OTHERS                 = 4.
-        IF sy-subrc EQ 0.
-          lv_success = |Class { iv_class_name } activated successfully.|.
-          MESSAGE lv_success TYPE 'S'.
-        ENDIF.
-      ELSE.
-        DATA(lv_subrc) = sy-subrc.
-        RAISE EXCEPTION TYPE /ctdi/cx_print_error
-          EXPORTING
-            repair_id = CONV aufnr( iv_vbeln )
-            message   = |Failed to generate class (SUBRC: { lv_subrc }).|.
-      ENDIF.
-    ELSE.
+    IF sy-subrc <> 0 OR lv_answer <> '1'.
       DATA(lv_cancel_msg) = |Class { iv_class_name } does not exist and generation was declined.|.
-      RAISE EXCEPTION TYPE /ctdi/cx_print_error
+      RAISE EXCEPTION TYPE /ctdi/cx_cust_error
         EXPORTING
-          repair_id = CONV aufnr( iv_vbeln )
-          message   = lv_cancel_msg.
+          contract_id = iv_vbeln
+          message     = lv_cancel_msg.
+    ENDIF.
+
+    " Prompt user for the target Development Package
+    DATA lt_fields     TYPE TABLE OF sval.
+    DATA ls_field      TYPE sval.
+    DATA lv_returncode TYPE c LENGTH 1.
+
+    rv_package = '/CTDI/WORKSHOP'.
+
+    ls_field-tabname   = 'TDEVC'.
+    ls_field-fieldname = 'DEVCLASS'.
+    ls_field-value     = '/CTDI/WORKSHOP'.
+    APPEND ls_field TO lt_fields.
+
+    CALL FUNCTION 'POPUP_GET_VALUES'
+      EXPORTING
+        popup_title = 'Enter Target Development Package'
+      IMPORTING
+        returncode  = lv_returncode
+      TABLES
+        fields      = lt_fields
+      EXCEPTIONS
+        OTHERS      = 1.
+    IF sy-subrc <> 0.
+      lv_returncode = 'A'.
+    ENDIF.
+
+    IF lv_returncode = 'A'.
+      RAISE EXCEPTION TYPE /ctdi/cx_cust_error
+        EXPORTING
+          contract_id = iv_vbeln
+          message     = 'Class generation cancelled by user.'.
+    ENDIF.
+
+    READ TABLE lt_fields INTO ls_field INDEX 1.
+    IF sy-subrc = 0 AND ls_field-value IS NOT INITIAL.
+      rv_package = ls_field-value.
     ENDIF.
   ENDMETHOD.
 
 
+  METHOD validate_entry.
+    " 1. Validate Form Name existence in Smart Forms (STXFADM) or Adobe Forms (FPCONTEXT)
+    IF is_entry-form_name IS NOT INITIAL.
+      SELECT SINGLE formname FROM stxfadm
+        WHERE formname = @is_entry-form_name
+        " TODO: variable is assigned but never used (ABAP cleaner)
+        INTO @DATA(lv_ssf_exists).
+      IF sy-subrc <> 0.
+        SELECT SINGLE name FROM fpcontext
+          WHERE name = @is_entry-form_name
+          " TODO: variable is assigned but never used (ABAP cleaner)
+          INTO @DATA(lv_fp_exists).
+        IF sy-subrc <> 0.
+          DATA(lv_form_err) = |Form { is_entry-form_name } does not exist as a Smart Form or Adobe Form.|.
+          RAISE EXCEPTION TYPE /ctdi/cx_cust_error
+            EXPORTING
+              contract_id = is_entry-vbeln
+              message     = lv_form_err.
+        ENDIF.
+      ENDIF.
+
+      " Eagerly validate form parameter compatibility
+      validate_form_interface( iv_form_name  = is_entry-form_name
+                               iv_class_name = is_entry-class_name
+                               iv_vbeln      = is_entry-vbeln ).
+    ENDIF.
+
+    IF is_entry-form_name = gc_form_alcatel.
+      RETURN.
+    ENDIF. " NE gc_form_alcatel.
+
+    " 2. Class name is required for new Forms
+    IF is_entry-class_name IS INITIAL.
+      DATA(lv_msg) = |Class name is required for Contract { is_entry-vbeln }|.
+      RAISE EXCEPTION TYPE /ctdi/cx_cust_error
+        EXPORTING
+          contract_id = is_entry-vbeln
+          message     = lv_msg.
+    ENDIF.
+
+    " 3. Validate Class existence in Repository (SEOCLASS)
+    DATA(lv_class_name) = is_entry-class_name.
+
+    SELECT SINGLE clsname FROM seoclass
+      WHERE clsname = @lv_class_name
+      " TODO: variable is assigned but never used (ABAP cleaner)
+      INTO @DATA(lv_class_exists).
+    IF sy-subrc <> 0.
+      " Class does not exist! Offer to generate it on-the-fly if system modifiability and authorizations permit
+      IF check_generation_allowed( ) = abap_true.
+        generate_provider_class( iv_class_name = is_entry-class_name
+                                 iv_vbeln      = is_entry-vbeln ).
+        RETURN. " Class now successfully generated, bypass error check
+      ENDIF.
+
+      " Raise validation error if generation is skipped or not permitted (e.g. locked client)
+      DATA(lv_class_err) = |Class { is_entry-class_name } does not exist in the repository|.
+      RAISE EXCEPTION TYPE /ctdi/cx_cust_error
+        EXPORTING
+          contract_id = is_entry-vbeln
+          message     = lv_class_err.
+    ELSE.
+      " Validate inheritance from base class /CTDI/CL_PRINT_DRIVER_BASE
+      IF is_subclass_of( iv_class_name = lv_class_name
+                         iv_base_class = gc_base_class ) = abap_false.
+        DATA(lv_interface_err) = |Class { is_entry-class_name } does not inherit from /CTDI/CL_PRINT_DRIVER_BASE|.
+        RAISE EXCEPTION TYPE /ctdi/cx_cust_error
+          EXPORTING
+            contract_id = is_entry-vbeln
+            message     = lv_interface_err.
+      ENDIF.
+
+    ENDIF. " select seoclass
+  ENDMETHOD.
+
+
   METHOD validate_form_interface.
-    DATA: lv_fm_name   TYPE rs38l_fnam,
-          lv_form_type TYPE char1.
+    DATA lv_fm_name   TYPE rs38l_fnam.
+    DATA lv_form_type TYPE char1.
 
     " 1. Determine form type and generated FM name
     SELECT SINGLE formname FROM stxfadm
       WHERE formname = @iv_form_name
+      " TODO: variable is assigned but never used (ABAP cleaner)
       INTO @DATA(lv_ssf_name).
     IF sy-subrc = 0.
       lv_form_type = 'S'. " Smart Form
@@ -382,12 +396,11 @@ CLASS /CTDI/CL_PRINT_CUST_ENGINE IMPLEMENTATION.
     ENDIF.
 
     " 2. Fetch all mandatory parameters (OPTIONAL = space, DEFAULTVAL = space)
-    SELECT parameter
-      FROM fupararef
-      WHERE funcname = @lv_fm_name
-        AND paramtype IN ('I', 'T', 'C')
-        AND optional = @space
-        AND defaultval = @space
+    SELECT parameter FROM fupararef
+      WHERE funcname    = @lv_fm_name
+        AND paramtype  IN ( 'I', 'T', 'C' )
+        AND optional    = @space
+        AND defaultval  = @space
       ORDER BY parameter
       INTO TABLE @DATA(lt_mandatory_params).
 
@@ -396,23 +409,30 @@ CLASS /CTDI/CL_PRINT_CUST_ENGINE IMPLEMENTATION.
     ENDIF.
 
     " 3. Filter out standard/framework parameters
+    DATA lt_framework_sf TYPE SORTED TABLE OF fupararef-parameter WITH UNIQUE KEY table_line.
+    DATA lt_framework_af TYPE SORTED TABLE OF fupararef-parameter WITH UNIQUE KEY table_line.
+
+    lt_framework_sf = VALUE #( ( CONV #( 'CONTROL_PARAMETERS' ) )
+                               ( CONV #( 'OUTPUT_OPTIONS' ) )
+                               ( CONV #( 'USER_SETTINGS' ) )
+                               ( CONV #( 'ARCHIVE_INDEX' ) )
+                               ( CONV #( 'ARCHIVE_INDEX_TAB' ) )
+                               ( CONV #( 'ARCHIVE_PARAMETERS' ) )
+                               ( CONV #( 'MAIL_APPL_OBJ' ) )
+                               ( CONV #( 'MAIL_RECIPIENT' ) )
+                               ( CONV #( 'MAIL_SENDER' ) ) ).
+
+    lt_framework_af = VALUE #( ( CONV #( '/1BCDWB/DOCPARAMS' ) ) ).
+
     LOOP AT lt_mandatory_params ASSIGNING FIELD-SYMBOL(<ls_param>).
       DATA(lv_param) = to_upper( <ls_param>-parameter ).
 
-      IF lv_form_type = 'S'. " Smart Form
-        IF lv_param = 'CONTROL_PARAMETERS' OR
-           lv_param = 'OUTPUT_OPTIONS'     OR
-           lv_param = 'USER_SETTINGS'      OR
-           lv_param = 'ARCHIVE_INDEX'      OR
-           lv_param = 'ARCHIVE_INDEX_TAB'  OR
-           lv_param = 'ARCHIVE_PARAMETERS' OR
-           lv_param = 'MAIL_APPL_OBJ'      OR
-           lv_param = 'MAIL_RECIPIENT'     OR
-           lv_param = 'MAIL_SENDER'.
+      IF lv_form_type = 'S'.
+        IF line_exists( lt_framework_sf[ table_line = lv_param ] ).
           CONTINUE.
         ENDIF.
-      ELSE. " Adobe Form
-        IF lv_param = '/1BCDWB/DOCPARAMS'.
+      ELSE.
+        IF line_exists( lt_framework_af[ table_line = lv_param ] ).
           CONTINUE.
         ENDIF.
       ENDIF.
@@ -421,12 +441,11 @@ CLASS /CTDI/CL_PRINT_CUST_ENGINE IMPLEMENTATION.
       " If the base class is configured, it will dump because it cannot supply this parameter.
       IF iv_class_name = gc_base_class.
         DATA(lv_err_msg) = |Form { iv_form_name } requires custom mandatory parameter { <ls_param>-parameter } which standard base class does not support.|.
-        RAISE EXCEPTION TYPE /ctdi/cx_print_error
+        RAISE EXCEPTION TYPE /ctdi/cx_cust_error
           EXPORTING
-            repair_id = CONV aufnr( iv_vbeln )
-            message   = lv_err_msg.
+            contract_id = iv_vbeln
+            message     = lv_err_msg.
       ENDIF.
     ENDLOOP.
-
   ENDMETHOD.
 ENDCLASS.

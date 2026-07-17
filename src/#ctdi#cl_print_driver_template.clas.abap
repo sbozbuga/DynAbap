@@ -1,24 +1,21 @@
-class /CTDI/CL_PRINT_DRIVER_TEMPLATE definition
-  public
-  inheriting from /CTDI/CL_PRINT_DRIVER_BASE
-  create public .
+CLASS /ctdi/cl_print_driver_template DEFINITION
+  PUBLIC
+  INHERITING FROM /ctdi/cl_print_driver_base
+  CREATE PUBLIC.
 
-public section.
-protected section.
+  PUBLIC SECTION.
 
-    "! Hook: Fetches business data directly from the DB.
-  methods FETCH_DATA_FROM_DB
-    redefinition .
-    "! Hook: Maps loaded data to base attributes and registers form parameters.
-  methods MAP_AND_REGISTER_DATA
-    redefinition .
-    "! Redefines base method to customize form routing, add pre/post
-    "! processing around form execution, or bypass form rendering entirely.
-  methods RENDER_FORM
-    redefinition .
-    "! Hook: Unpacks a pre-loaded data object (io_data).
-  methods UNPACK_IO_DATA
-    redefinition .
+  PROTECTED SECTION.
+    " Hook: Fetches business data directly from the DB.
+    METHODS fetch_data_from_db    REDEFINITION.
+    " Hook: Maps loaded data to base attributes and registers form parameters.
+    METHODS map_and_register_data REDEFINITION.
+    " Redefines base method to customize form routing, add pre/post
+    " processing around form execution, or bypass form rendering entirely.
+    METHODS render_form           REDEFINITION.
+    " Hook: Unpacks a pre-loaded data object (io_data).
+    METHODS unpack_io_data        REDEFINITION.
+
   PRIVATE SECTION.
 ENDCLASS.
 
@@ -38,7 +35,7 @@ CLASS /CTDI/CL_PRINT_DRIVER_TEMPLATE IMPLEMENTATION.
     DATA(lv_repair_id) = |{ mv_repair_order ALPHA = IN }|.
 
     /ctdi/cl_print_driver_log=>log_info(
-      |Template fetch_data_from_db started for Repair ID: { mv_repair_order } (internal format: { lv_repair_id })| ).
+        |Template fetch_data_from_db started for Repair ID: { mv_repair_order } (internal format: { lv_repair_id })| ).
 
     " Example 1: Select header data into ms_repair structure.
     " SELECT SINGLE *
@@ -115,7 +112,7 @@ CLASS /CTDI/CL_PRINT_DRIVER_TEMPLATE IMPLEMENTATION.
     " =========================================================================
 
     /ctdi/cl_print_driver_log=>log_info(
-      |Template render_form invoked for Repair { mv_repair_order }, Form { mv_form_name }| ).
+        |Template render_form invoked for Repair { mv_repair_order }, Form { mv_form_name }| ).
 
     " --- Example: Pre-processing ---
     " Update a custom status before printing
@@ -123,8 +120,7 @@ CLASS /CTDI/CL_PRINT_DRIVER_TEMPLATE IMPLEMENTATION.
     " COMMIT WORK.
 
     " --- Standard base pipeline ---
-    super->render_form(
-      EXPORTING iv_save_as_pdf = iv_save_as_pdf ).
+    super->render_form( iv_save_as_pdf = iv_save_as_pdf ).
 
     " --- Example: Post-processing ---
     " Log or trigger a follow-up action after successful printing
@@ -132,7 +128,6 @@ CLASS /CTDI/CL_PRINT_DRIVER_TEMPLATE IMPLEMENTATION.
     "   |Print completed — triggering follow-up for { mv_repair_order }| ).
     " UPDATE /ctdi/repair SET print_status = 'PRINTED' WHERE aufnr = @mv_repair_order.
     " COMMIT WORK.
-
   ENDMETHOD.
 
 

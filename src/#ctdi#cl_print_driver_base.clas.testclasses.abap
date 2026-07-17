@@ -1,5 +1,16 @@
+CLASS lcl_test_driver DEFINITION DEFERRED.
 CLASS lcl_tests DEFINITION DEFERRED.
-CLASS /ctdi/cl_print_driver_base DEFINITION LOCAL FRIENDS lcl_tests.
+CLASS /ctdi/cl_print_driver_base DEFINITION LOCAL FRIENDS lcl_tests lcl_test_driver.
+
+"! Minimal concrete subclass for testing the abstract base class in isolation.
+CLASS lcl_test_driver DEFINITION
+  INHERITING FROM /ctdi/cl_print_driver_base
+  CREATE PUBLIC.
+  PUBLIC SECTION.
+ENDCLASS.
+
+CLASS lcl_test_driver IMPLEMENTATION.
+ENDCLASS.
 
 CLASS lcl_tests DEFINITION FOR TESTING
   DURATION SHORT
@@ -49,6 +60,14 @@ CLASS lcl_tests DEFINITION FOR TESTING
     METHODS: render_form FOR TESTING.
     METHODS: resolve_contract FOR TESTING.
     METHODS: unpack_io_data FOR TESTING.
+    " --- Exception handling tests ---
+    METHODS: cx_driver_error_get_text FOR TESTING.
+    METHODS: cx_driver_error_empty_msg FOR TESTING.
+    METHODS: cx_no_config_get_text FOR TESTING.
+    METHODS: cx_no_config_empty_msg FOR TESTING.
+    METHODS: read_data_cast_error FOR TESTING.
+    METHODS: get_config_no_config_exc FOR TESTING.
+    METHODS: normalize_class_name FOR TESTING.
 ENDCLASS.       "lcl_tests
 
 
@@ -63,7 +82,7 @@ CLASS lcl_tests IMPLEMENTATION.
 
 
   METHOD setup.
-    CREATE OBJECT f_cut.
+    CREATE OBJECT f_cut TYPE lcl_test_driver.
   ENDMETHOD.
 
 
@@ -278,6 +297,123 @@ CLASS lcl_tests IMPLEMENTATION.
         cl_abap_unit_assert=>fail( msg = 'unpack_io_data is a base no-op hook; should run successfully' ).
     ENDTRY.
 
+  ENDMETHOD.
+
+
+  METHOD cx_driver_error_get_text.
+    " get_text should return the message attribute when populated
+    DATA(lx) = NEW /ctdi/cx_print_driver_error(
+                      repair_id = '000012345678'
+                      message   = 'Test error message' ).
+    cl_abap_unit_assert=>assert_equals(
+      act = lx->get_text( )
+      exp = 'Test error message'
+      msg = 'get_text should return the message attribute' ).
+    cl_abap_unit_assert=>assert_equals(
+      act = lx->repair_id
+      exp = '000012345678'
+      msg = 'repair_id should be populated' ).
+  ENDMETHOD.
+
+
+  METHOD cx_driver_error_empty_msg.
+    " get_text with empty message should not dump (returns blank or default)
+    DATA(lx) = NEW /ctdi/cx_print_driver_error( ).
+    DATA(lv_text) = lx->get_text( ).
+    " Should not dump; text may be blank or default
+    cl_abap_unit_assert=>assert_true(
+      act = abap_true
+      msg = 'get_text with empty message should not dump' ).
+  ENDMETHOD.
+
+
+  METHOD cx_no_config_get_text.
+    " cx_no_config_found should carry and return a diagnostic message
+    DATA(lx) = NEW /ctdi/cx_no_config_found(
+                      message = 'No config for order 12345' ).
+    cl_abap_unit_assert=>assert_equals(
+      act = lx->get_text( )
+      exp = 'No config for order 12345'
+      msg = 'get_text should return the message attribute' ).
+    cl_abap_unit_assert=>assert_equals(
+      act = lx->message
+      exp = 'No config for order 12345'
+      msg = 'message attribute should be populated' ).
+  ENDMETHOD.
+
+
+  METHOD cx_no_config_empty_msg.
+    " cx_no_config_found with empty message should not dump
+    DATA(lx) = NEW /ctdi/cx_no_config_found( ).
+    DATA(lv_text) = lx->get_text( ).
+    cl_abap_unit_assert=>assert_true(
+      act = abap_true
+      msg = 'get_text with empty message should not dump' ).
+  ENDMETHOD.
+
+
+  METHOD read_data_cast_error.
+    " When a subclass redefines unpack_io_data with a CAST, a wrong type raises cx_print_driver_error.
+    " On the base class, io_data is simply ignored (no-op hook), so no exception is expected.
+    " This test verifies the base class read_data handles non-null io_data gracefully.
+    DATA: lo_obj TYPE REF TO object.
+    lo_obj = cl_abap_typedescr=>describe_by_name( 'STRING' ).
+    TRY.
+        f_cut->read_data( io_data = lo_obj ).
+        cl_abap_unit_assert=>assert_true(
+          act = abap_true
+          msg = 'read_data with arbitrary io_data should succeed on base class (no-op hook)' ).
+      CATCH /ctdi/cx_print_driver_error INTO DATA(lx_err).
+        cl_abap_unit_assert=>fail( msg = |Unexpected error: { lx_err->get_text( ) }| ).
+    ENDTRY.
+  ENDMETHOD.
+
+
+  METHOD get_config_no_config_exc.
+    " get_config_from_db with invalid order should raise cx_no_config_found with message
+    DATA: lv_form  TYPE fpname,
+          lv_class TYPE seoclsname,
+          ls_proj  TYPE /ctdi/rep_projec.
+    TRY.
+        /ctdi/cl_print_driver_base=>get_config_from_db(
+          EXPORTING iv_repair_id  = '0000000001'
+          IMPORTING ev_form_name  = lv_form
+                    ev_class_name = lv_class
+                    es_project    = ls_proj ).
+        cl_abap_unit_assert=>fail( msg = 'Should raise exception for nonexistent config' ).
+      CATCH /ctdi/cx_no_config_found INTO DATA(lx_noconf).
+        cl_abap_unit_assert=>assert_not_initial(
+          act = lx_noconf->get_text( )
+          msg = 'cx_no_config_found should carry a diagnostic message' ).
+      CATCH /ctdi/cx_print_driver_error INTO DATA(lx_err).
+        cl_abap_unit_assert=>assert_not_initial(
+          act = lx_err->get_text( )
+          msg = 'Exception should carry a meaningful message' ).
+    ENDTRY.
+  ENDMETHOD.
+
+
+  METHOD normalize_class_name.
+    " Test the cust engine normalize_class_name utility
+    cl_abap_unit_assert=>assert_equals(
+      act = /ctdi/cl_print_cust_engine=>normalize_class_name( 'LEGACY' )
+      exp = '/CTDI/CL_PRINT_DRIVER_LEGACY'
+      msg = 'Short name should be expanded to full class path' ).
+
+    cl_abap_unit_assert=>assert_equals(
+      act = /ctdi/cl_print_cust_engine=>normalize_class_name( 'CL_PRINT_DRIVER_CTDI' )
+      exp = '/CTDI/CL_PRINT_DRIVER_CTDI'
+      msg = 'Name with CL_PRINT_DRIVER_ prefix should get namespace only' ).
+
+    cl_abap_unit_assert=>assert_equals(
+      act = /ctdi/cl_print_cust_engine=>normalize_class_name( '/CTDI/CL_PRINT_DRIVER_BASE' )
+      exp = '/CTDI/CL_PRINT_DRIVER_BASE'
+      msg = 'Full name with namespace should remain unchanged' ).
+
+    cl_abap_unit_assert=>assert_equals(
+      act = /ctdi/cl_print_cust_engine=>normalize_class_name( '' )
+      exp = ''
+      msg = 'Empty input should return empty' ).
   ENDMETHOD.
 
 ENDCLASS.

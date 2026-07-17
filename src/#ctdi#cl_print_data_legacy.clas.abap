@@ -3,24 +3,24 @@ CLASS /ctdi/cl_print_data_legacy DEFINITION
   CREATE PUBLIC.
 
   PUBLIC SECTION.
-    DATA ms_legacy       TYPE /cellag/alcarep.
-    DATA mt_legacy_error TYPE STANDARD TABLE OF /cellag/alcarep_error.
-    DATA mt_comment_lines TYPE STANDARD TABLE OF tline.
+    DATA ms_legacy        TYPE /cellag/alcarep READ-ONLY.
+    DATA mt_legacy_error  TYPE STANDARD TABLE OF /cellag/alcarep_error READ-ONLY.
+    DATA mt_comment_lines TYPE STANDARD TABLE OF tline READ-ONLY.
 
     "! Reads the required data for the Alcatel repair process.
+    "!
+    "! @parameter iv_aufnr |
+    "! @parameter iv_sernr |
+    "! @raising /ctdi/cx_print_driver_error |
     METHODS read_data
-      IMPORTING
-        !iv_aufnr TYPE aufk-aufnr
-        !iv_sernr TYPE equi-sernr OPTIONAL
-      RAISING
-        /ctdi/cx_print_driver_error.
-
-
+      IMPORTING iv_aufnr TYPE aufk-aufnr
+                iv_sernr TYPE equi-sernr OPTIONAL
+      RAISING   /ctdi/cx_print_driver_error.
 
   PROTECTED SECTION.
-    DATA mv_aufnr TYPE aufk-aufnr.
-    DATA mv_qmcod TYPE qmel-qmcod.
-    DATA mv_kdauf TYPE aufk-kdauf.
+    DATA mv_aufnr     TYPE aufk-aufnr.
+    DATA mv_qmcod     TYPE qmel-qmcod.
+    DATA mv_kdauf     TYPE aufk-kdauf.
     DATA mv_swap_flag TYPE flag.
 
     METHODS get_repair_result.
@@ -31,56 +31,78 @@ CLASS /ctdi/cl_print_data_legacy DEFINITION
     CONSTANTS co_wfer_stat TYPE j_estat    VALUE 'E0001'.
     CONSTANTS co_zx_qmart  TYPE qmart      VALUE 'ZX'.
 
-    DATA mv_sernr TYPE equi-sernr.
+    DATA mv_sernr         TYPE equi-sernr.
 
-    DATA mv_po_nr           TYPE vbkd-bstkd_e.
-    DATA mv_po_pos          TYPE vbkd-posex_e.
-    DATA mv_ctdi_odernr     TYPE c LENGTH 20.
-    DATA mv_qmnum           TYPE qmel-qmnum.
-    DATA mv_fenum           TYPE qmfe-fenum.
-    DATA mv_time_received   TYPE tims.
-    DATA mv_time_repaired   TYPE tims.
-    DATA mv_time_thisdate   TYPE tims.
-    DATA mv_spras           TYPE sy-langu.
-    DATA mv_retlief_nr      TYPE vbeln_vl.
-    DATA mv_equnr_retlief   TYPE equnr.
-    DATA mv_katalogart      TYPE qkatart.
+    DATA mv_po_nr         TYPE vbkd-bstkd_e.
+    DATA mv_po_pos        TYPE vbkd-posex_e.
+    DATA mv_ctdi_odernr   TYPE c LENGTH 20.
+    DATA mv_qmnum         TYPE qmel-qmnum.
+    DATA mv_fenum         TYPE qmfe-fenum.
+    DATA mv_time_received TYPE tims.
+    DATA mv_time_repaired TYPE tims.
+    DATA mv_time_thisdate TYPE tims.
+    DATA mv_spras         TYPE sy-langu.
+    DATA mv_retlief_nr    TYPE vbeln_vl.
+    DATA mv_equnr_retlief TYPE equnr.
+    DATA mv_katalogart    TYPE qkatart.
+
+    DATA mv_old_serial    TYPE serge.
+    DATA mv_new_serial    TYPE serge.
+    DATA mv_old_part      TYPE mapar.
+    DATA mv_new_part      TYPE mapar.
+    DATA mv_old_matnr     TYPE matnr.
+    DATA mv_new_matnr     TYPE matnr.
 
     METHODS get_kddata
-      RAISING
-        /ctdi/cx_print_driver_error.
-    METHODS get_part_data.
+      RAISING /ctdi/cx_print_driver_error.
+
+    METHODS get_part_data
+      RAISING /ctdi/cx_print_driver_error.
+
+    METHODS resolve_equipment_number
+      RETURNING VALUE(rv_equnr) TYPE equnr
+      RAISING   /ctdi/cx_print_driver_error.
+
+    METHODS determine_serial_and_part
+      IMPORTING iv_equnr TYPE equnr.
+
+    METHODS determine_swap_data
+      IMPORTING iv_equnr TYPE equnr.
+
+    METHODS determine_change_doc_data
+      IMPORTING iv_equnr TYPE equnr.
+
+    METHODS fallback_part_numbers
+      IMPORTING iv_equnr TYPE equnr.
+
+    METHODS get_equipment_model
+      IMPORTING iv_equnr TYPE equnr.
+
+    METHODS get_equipment_stands.
+
     METHODS get_error_description.
     METHODS get_comment.
     METHODS check_sernr_swap.
 
     METHODS get_astatus_data
-      IMPORTING
-        !iv_objnr     TYPE j_objnr
-      EXPORTING
-        !ev_wfer_date TYPE dats
-        !ev_wfer_time TYPE tims
-      RAISING
-        /ctdi/cx_print_driver_error.
+      IMPORTING iv_objnr     TYPE j_objnr
+      EXPORTING ev_wfer_date TYPE dats
+                ev_wfer_time TYPE tims
+      RAISING   /ctdi/cx_print_driver_error.
 
     METHODS get_rlf_wedate
-      IMPORTING
-        !iv_vbeln_vl  TYPE vbeln_vl
-      EXPORTING
-        !ev_vl_erdat  TYPE likp-erdat
-        !ev_vl_zeit   TYPE likp-erzet.
+      IMPORTING iv_vbeln_vl TYPE vbeln_vl
+      EXPORTING ev_vl_erdat TYPE likp-erdat
+                ev_vl_zeit  TYPE likp-erzet.
 
     METHODS get_retlief
-      EXPORTING
-        !es_vbfa      TYPE vbfa
-        !ev_vbfa_rl   TYPE vbeln_vl.
+      EXPORTING es_vbfa    TYPE vbfa
+                ev_vbfa_rl TYPE vbeln_vl.
 
     METHODS convert_to_timestamp
-      IMPORTING
-        !iv_date      TYPE dats
-        !iv_time      TYPE tims
-      RETURNING
-        VALUE(rv_tstamp) TYPE timestamp.
+      IMPORTING iv_date          TYPE dats
+                iv_time          TYPE tims
+      RETURNING VALUE(rv_tstamp) TYPE timestamp.
 
 ENDCLASS.
 
@@ -90,19 +112,22 @@ CLASS /CTDI/CL_PRINT_DATA_LEGACY IMPLEMENTATION.
 
 
   METHOD check_sernr_swap.
-    DATA: lf_rmanr     TYPE vbap-vbeln,
-          lf_posnv_rma TYPE posnr,
-          lf_posnr_rma TYPE posnr,
-          lt_order_sn  TYPE /cellag/cs_order_sn_t,
-          ls_order_sn  TYPE /cellag/cs_order_sn,
-          lt_snx_tab   TYPE /cellag/csauf_snx_t,
-          ls_snx_tab   TYPE /cellag/csauf_snx.
+    DATA lf_rmanr     TYPE vbap-vbeln.
+    DATA lf_posnv_rma TYPE posnr.
+    DATA lf_posnr_rma TYPE posnr.
+    DATA lt_order_sn  TYPE /cellag/cs_order_sn_t.
+    DATA ls_order_sn  TYPE /cellag/cs_order_sn.
+    DATA lt_snx_tab   TYPE /cellag/csauf_snx_t.
+    DATA ls_snx_tab   TYPE /cellag/csauf_snx.
 
-    CLEAR: mv_swap_flag, mv_retlief_nr, mv_equnr_retlief.
+    CLEAR: mv_swap_flag,
+           mv_retlief_nr,
+           mv_equnr_retlief.
 
     SELECT SINGLE rmanr, posnv_rma, posnr_rma
       FROM afko
-      WHERE aufnr = @mv_aufnr INTO ( @lf_rmanr, @lf_posnv_rma, @lf_posnr_rma ).
+      WHERE aufnr = @mv_aufnr
+      INTO ( @lf_rmanr, @lf_posnv_rma, @lf_posnr_rma ).
 
     CALL FUNCTION '/CELLAG/SDPOS_RALMENGE_GET'
       EXPORTING
@@ -114,12 +139,14 @@ CLASS /CTDI/CL_PRINT_DATA_LEGACY IMPLEMENTATION.
         OTHERS      = 1. "#EC CI_SUBRC
 
     READ TABLE lt_order_sn INTO ls_order_sn
-      WITH KEY aufnr = mv_aufnr rmanr = lf_rmanr posnr_rma = lf_posnr_rma.
+         WITH KEY aufnr     = mv_aufnr
+                  rmanr     = lf_rmanr
+                  posnr_rma = lf_posnr_rma.
     IF sy-subrc = 0.
       mv_retlief_nr = ls_order_sn-vbeln_vl.
       lt_snx_tab = ls_order_sn-snx_tab.
 
-      "send lines with empty ral_equnr to the end of the list
+      " send lines with empty ral_equnr to the end of the list
       SORT lt_snx_tab BY ral_equnr DESCENDING.
 
       READ TABLE lt_snx_tab INTO ls_snx_tab INDEX 1.
@@ -133,18 +160,160 @@ CLASS /CTDI/CL_PRINT_DATA_LEGACY IMPLEMENTATION.
 
   METHOD convert_to_timestamp.
     CONVERT DATE iv_date TIME iv_time
-    INTO TIME STAMP rv_tstamp TIME ZONE sy-zonlo.
+            INTO TIME STAMP rv_tstamp TIME ZONE sy-zonlo.
+  ENDMETHOD.
+
+
+  METHOD determine_change_doc_data.
+    " Pre-fetch current values as defaults
+    SELECT SINGLE serge, matnr FROM equi
+      WHERE equnr = @iv_equnr
+      INTO ( @mv_new_serial, @mv_new_matnr ).
+    SELECT SINGLE mapar FROM equz
+      WHERE equnr = @iv_equnr
+      INTO @mv_new_part.
+
+    mv_old_serial = mv_new_serial.
+    mv_old_part   = mv_new_part.
+    mv_old_matnr  = mv_new_matnr.
+
+    " Determine timestamp window
+    DATA(lv_ts_received) = convert_to_timestamp( iv_date = ms_legacy-date_received
+                                                 iv_time = mv_time_received ).
+    DATA(lv_ts_repaired) = convert_to_timestamp( iv_date = ms_legacy-date_repaired
+                                                 iv_time = mv_time_repaired ).
+
+    SELECT changenr, udate, utime FROM cdhdr
+      WHERE objectclas = 'EQUI' AND objectid = @iv_equnr
+      INTO TABLE @DATA(lt_cdhdr).
+    IF lt_cdhdr IS INITIAL.
+      RETURN.
+    ENDIF.
+
+    DATA(lr_changenr) = VALUE rseloption( FOR <fs_hdr> IN lt_cdhdr
+                                          ( sign = 'I' option = 'EQ' low = <fs_hdr>-changenr ) ).
+
+    SELECT changenr, tabname, fname, value_old, value_new
+      FROM cdpos
+      WHERE objectclas  = 'EQUI'
+        AND objectid    = @iv_equnr
+        AND changenr   IN @lr_changenr
+      INTO TABLE @DATA(lt_cdpos).
+    IF lt_cdpos IS INITIAL.
+      RETURN.
+    ENDIF.
+
+    SORT lt_cdhdr BY udate DESCENDING
+                     utime DESCENDING.
+    SORT lt_cdpos BY changenr
+                     tabname
+                     fname.
+
+    DATA lv_serge_found TYPE abap_bool.
+    DATA lv_mapar_found TYPE abap_bool.
+
+    LOOP AT lt_cdhdr ASSIGNING FIELD-SYMBOL(<ls_hdr>).
+      IF lv_serge_found = abap_true AND lv_mapar_found = abap_true.
+        EXIT.
+      ENDIF.
+
+      DATA(lv_ts_changed) = convert_to_timestamp( iv_date = <ls_hdr>-udate
+                                                  iv_time = <ls_hdr>-utime ).
+
+      IF lv_ts_changed < lv_ts_received OR lv_ts_changed > lv_ts_repaired.
+        CONTINUE.
+      ENDIF.
+
+      IF lv_serge_found = abap_false.
+        READ TABLE lt_cdpos ASSIGNING FIELD-SYMBOL(<ls_pos>)
+             WITH KEY changenr = <ls_hdr>-changenr
+                      tabname  = 'EQUI'
+                      fname    = 'SERGE' BINARY SEARCH.
+        IF sy-subrc = 0.
+          mv_old_serial  = <ls_pos>-value_old.
+          mv_new_serial  = <ls_pos>-value_new.
+          lv_serge_found = abap_true.
+        ENDIF.
+      ENDIF.
+
+      IF lv_mapar_found = abap_false.
+        READ TABLE lt_cdpos ASSIGNING <ls_pos>
+             WITH KEY changenr = <ls_hdr>-changenr
+                      tabname  = 'EQUZ'
+                      fname    = 'MAPAR' BINARY SEARCH.
+        IF sy-subrc = 0.
+          mv_old_part    = <ls_pos>-value_old.
+          mv_new_part    = <ls_pos>-value_new.
+          lv_mapar_found = abap_true.
+        ENDIF.
+      ENDIF.
+    ENDLOOP.
+  ENDMETHOD.
+
+
+  METHOD determine_serial_and_part.
+    CLEAR: mv_old_serial,
+           mv_new_serial,
+           mv_old_part,
+           mv_new_part,
+           mv_old_matnr,
+           mv_new_matnr.
+
+    IF mv_swap_flag IS NOT INITIAL.
+      determine_swap_data( iv_equnr ).
+    ELSE.
+      determine_change_doc_data( iv_equnr ).
+    ENDIF.
+  ENDMETHOD.
+
+
+  METHOD determine_swap_data.
+    SELECT SINGLE serge, matnr FROM equi
+      WHERE equnr = @iv_equnr
+      INTO ( @mv_new_serial, @mv_new_matnr ).
+    SELECT SINGLE mapar FROM equz
+      WHERE equnr = @iv_equnr
+      INTO @mv_new_part.
+
+    SELECT SINGLE serge, matnr FROM equi
+      WHERE equnr = @mv_equnr_retlief
+      INTO ( @mv_old_serial, @mv_old_matnr ).
+    SELECT SINGLE mapar FROM equz
+      WHERE equnr = @mv_equnr_retlief
+      INTO @mv_old_part.
+  ENDMETHOD.
+
+
+  METHOD fallback_part_numbers.
+    IF mv_new_part IS INITIAL.
+      IF mv_new_matnr IS INITIAL.
+        SELECT SINGLE matnr FROM equi WHERE equnr = @iv_equnr INTO @mv_new_matnr.
+      ENDIF.
+      IF mv_new_matnr IS NOT INITIAL.
+        SELECT SINGLE mfrpn FROM mara WHERE matnr = @mv_new_matnr INTO @mv_new_part.
+      ENDIF.
+    ENDIF.
+
+    IF mv_old_part IS INITIAL.
+      IF mv_old_matnr IS INITIAL.
+        SELECT SINGLE matnr FROM equi WHERE equnr = @mv_equnr_retlief INTO @mv_old_matnr.
+      ENDIF.
+      IF mv_old_matnr IS NOT INITIAL.
+        SELECT SINGLE mfrpn FROM mara WHERE matnr = @mv_old_matnr INTO @mv_old_part.
+      ENDIF.
+    ENDIF.
   ENDMETHOD.
 
 
   METHOD get_astatus_data.
-    DATA: lt_jcds TYPE TABLE OF jcds.
+    DATA lt_jcds TYPE TABLE OF jcds.
 
     SELECT objnr, stat, chgnr, udate, utime, inact
       FROM jcds
       WHERE objnr = @iv_objnr
-        AND stat = @co_wfer_stat
-      ORDER BY udate DESCENDING, utime DESCENDING
+        AND stat  = @co_wfer_stat
+      ORDER BY udate DESCENDING,
+               utime DESCENDING
       INTO CORRESPONDING FIELDS OF TABLE @lt_jcds
       UP TO 1 ROWS.
 
@@ -152,28 +321,30 @@ CLASS /CTDI/CL_PRINT_DATA_LEGACY IMPLEMENTATION.
       READ TABLE lt_jcds ASSIGNING FIELD-SYMBOL(<ls_jcds>) INDEX 1.
       IF <ls_jcds> IS ASSIGNED.
         IF <ls_jcds>-inact IS NOT INITIAL.
-          MESSAGE e029(/cellag/cs01) WITH mv_aufnr INTO DATA(lv_err_029).
+          MESSAGE e029(/cellag/cs01) WITH mv_aufnr INTO DATA(lv_msg1).
           RAISE EXCEPTION TYPE /ctdi/cx_print_driver_error
-            EXPORTING repair_id = mv_aufnr
-                      message   = lv_err_029.
+            EXPORTING
+              repair_id = mv_aufnr
+              message   = lv_msg1.
         ENDIF.
-        ev_wfer_date  = <ls_jcds>-udate.
-        ev_wfer_time  = <ls_jcds>-utime.
+        ev_wfer_date = <ls_jcds>-udate.
+        ev_wfer_time = <ls_jcds>-utime.
       ENDIF.
     ELSE.
-      MESSAGE e028(/cellag/cs01) WITH mv_aufnr INTO DATA(lv_err_028).
+      MESSAGE e028(/cellag/cs01) WITH mv_aufnr INTO DATA(lv_msg2).
       RAISE EXCEPTION TYPE /ctdi/cx_print_driver_error
-        EXPORTING repair_id = mv_aufnr
-                  message   = lv_err_028.
+        EXPORTING
+          repair_id = mv_aufnr
+          message   = lv_msg2.
     ENDIF.
   ENDMETHOD.
 
 
   METHOD get_comment.
-    DATA: lt_lines      TYPE TABLE OF tline,
-          lf_qmnum_conv TYPE qmel-qmnum,
-          lf_name       TYPE thead-tdname,
-          lf_spras      TYPE sy-langu.
+    DATA lt_lines      TYPE TABLE OF tline.
+    DATA lf_qmnum_conv TYPE qmel-qmnum.
+    DATA lf_name       TYPE thead-tdname.
+    DATA lf_spras      TYPE sy-langu.
 
     CALL FUNCTION 'CONVERSION_EXIT_ALPHA_INPUT'
       EXPORTING
@@ -186,7 +357,8 @@ CLASS /CTDI/CL_PRINT_DATA_LEGACY IMPLEMENTATION.
     SELECT SINGLE tdspras FROM stxh
       WHERE tdobject = 'QMEL'
         AND tdname   = @lf_name
-        AND tdid     = 'LTXT' INTO @lf_spras.
+        AND tdid     = 'LTXT'
+      INTO @lf_spras.
     IF sy-subrc <> 0.
       lf_spras = mv_spras.
     ENDIF.
@@ -194,141 +366,203 @@ CLASS /CTDI/CL_PRINT_DATA_LEGACY IMPLEMENTATION.
     CLEAR lt_lines.
     CALL FUNCTION 'READ_TEXT'
       EXPORTING
-        id                      = 'LTXT'
-        language                = lf_spras
-        name                    = lf_name
-        object                  = 'QMEL'
+        id       = 'LTXT'
+        language = lf_spras
+        name     = lf_name
+        object   = 'QMEL'
       TABLES
-        lines                   = lt_lines
+        lines    = lt_lines
       EXCEPTIONS
-        OTHERS                  = 8. "#EC CI_SUBRC
+        OTHERS   = 8. "#EC CI_SUBRC
 
     mt_comment_lines = lt_lines.
   ENDMETHOD.
 
 
+  METHOD get_equipment_model.
+    SELECT SINGLE eqktx FROM eqkt
+      WHERE equnr = @iv_equnr AND spras = @mv_spras
+      INTO @ms_legacy-model.
+  ENDMETHOD.
+
+
+  METHOD get_equipment_stands.
+    SELECT SINGLE qmnum, obknr FROM afih
+      WHERE aufnr = @mv_aufnr
+      INTO @DATA(ls_afih).
+
+    DATA(lv_qmnum) = COND qmel-qmnum(
+      WHEN ls_afih-qmnum IS NOT INITIAL THEN ls_afih-qmnum ).
+
+    IF lv_qmnum IS INITIAL.
+      SELECT SINGLE ihnum FROM objk
+        WHERE obknr = @ls_afih-obknr AND ihnum <> @space
+        INTO @lv_qmnum.
+    ENDIF.
+
+    IF lv_qmnum IS INITIAL.
+      RETURN.
+    ENDIF.
+
+    SELECT SINGLE * FROM qmel WHERE qmnum = @lv_qmnum INTO @DATA(ls_qmel). "#EC CI_ALL_FIELDS_NEEDED
+
+    IF ls_qmel IS INITIAL.
+      RETURN.
+    ENDIF.
+
+    ms_legacy-rev_in  = ls_qmel-revin.
+    ms_legacy-rev_out = ls_qmel-revout.
+
+    DATA(ls_eqstand_in) = CORRESPONDING /cellag/cseqstand_in( ls_qmel ).
+    DATA(ls_eqstand_out) = CORRESPONDING /cellag/cseqstand_out( ls_qmel ).
+
+    MOVE-CORRESPONDING ls_eqstand_in  TO ms_legacy.
+    MOVE-CORRESPONDING ls_eqstand_out TO ms_legacy.
+  ENDMETHOD.
+
+
   METHOD get_error_description.
-    DATA: lf_qmnum TYPE qmnum,
-          lf_qmcod TYPE qmel-qmcod.
-*--------------------------------------------------------------------*
+    DATA lf_qmnum TYPE qmnum.
+    DATA lf_qmcod TYPE qmel-qmcod.
+    " ---------------------------------------------------------------------
     TYPES: BEGIN OF ty_qpgt,
              katalogart TYPE qpgt-katalogart,
              codegruppe TYPE qpgt-codegruppe,
              kurztext   TYPE qpgt-kurztext,
-           END OF ty_qpgt,
-           BEGIN OF ty_qpct,
+           END OF ty_qpgt.
+    TYPES: BEGIN OF ty_qpct,
              katalogart TYPE qpct-katalogart,
              codegruppe TYPE qpct-codegruppe,
              code       TYPE qpct-code,
              kurztext   TYPE qpct-kurztext,
            END OF ty_qpct.
 
-    DATA: lt_qpgt TYPE SORTED TABLE OF ty_qpgt WITH NON-UNIQUE KEY katalogart codegruppe,
-          lt_qpct TYPE SORTED TABLE OF ty_qpct WITH NON-UNIQUE KEY katalogart codegruppe code.
+    DATA lt_qpgt       TYPE SORTED TABLE OF ty_qpgt WITH NON-UNIQUE KEY katalogart codegruppe.
+    DATA lt_qpct       TYPE SORTED TABLE OF ty_qpct WITH NON-UNIQUE KEY katalogart codegruppe code.
 
-    DATA: lt_katalogart TYPE SORTED TABLE OF qkatart   WITH UNIQUE KEY table_line,
-          lt_codegruppe TYPE SORTED TABLE OF qcodegrp  WITH UNIQUE KEY table_line,
-          lt_code       TYPE SORTED TABLE OF qcode     WITH UNIQUE KEY table_line.
+    DATA lt_katalogart TYPE SORTED TABLE OF qkatart WITH UNIQUE KEY table_line.
+    DATA lt_codegruppe TYPE SORTED TABLE OF qcodegrp WITH UNIQUE KEY table_line.
+    DATA lt_code       TYPE SORTED TABLE OF qcode WITH UNIQUE KEY table_line.
 
-    DATA: lr_katalogart TYPE RANGE OF qkatart,
-          lr_codegruppe TYPE RANGE OF qcodegrp,
-          lr_code       TYPE RANGE OF qcode.
-*--------------------------------------------------------------------*
+    DATA lr_katalogart TYPE RANGE OF qkatart.
+    DATA lr_codegruppe TYPE RANGE OF qcodegrp.
+    DATA lr_code       TYPE RANGE OF qcode.
+    " ---------------------------------------------------------------------
 
     SELECT SINGLE qmnum, qmcod FROM qmel
       WHERE aufnr = @mv_aufnr
-        AND qmart = @co_qmart INTO ( @lf_qmnum, @lf_qmcod ).
+        AND qmart = @co_qmart
+      INTO ( @lf_qmnum, @lf_qmcod ).
 
-    IF sy-subrc = 0.
-      mv_qmnum = lf_qmnum.
-      mv_qmcod = lf_qmcod.
-
-      SELECT otkat, otgrp, oteil,
-             fekat, fegrp, fecod  FROM qmfe
-        WHERE qmnum = @lf_qmnum
-        INTO TABLE @DATA(lt_fe).
-
-      "If exactly repeated , remove
-      SORT lt_fe BY table_line.
-      DELETE ADJACENT DUPLICATES FROM lt_fe COMPARING ALL FIELDS.
-
-      IF lt_fe IS NOT INITIAL.
-*--------------------------------------------------------------------*
-        lt_katalogart = VALUE #( FOR <e> IN lt_fe ( <e>-otkat )
-                                                  ( <e>-fekat ) ).
-        lt_codegruppe = VALUE #( FOR <e> IN lt_fe ( <e>-otgrp )
-                                                  ( <e>-fegrp ) ).
-        lt_code =       VALUE #( FOR <e> IN lt_fe ( <e>-oteil )
-                                                  ( <e>-fecod ) ).
-
-        lr_katalogart = VALUE #( FOR <a> IN lt_katalogart
-                                 ( sign = 'I' option = 'EQ' low = <a> ) ).
-        lr_codegruppe = VALUE #( FOR <g> IN lt_codegruppe
-                                 ( sign = 'I' option = 'EQ' low = <g> ) ).
-        lr_code =       VALUE #( FOR <c> IN lt_code
-                                 ( sign = 'I' option = 'EQ' low = <c> ) ).
-*--------------------------------------------------------------------*
-        SELECT katalogart, codegruppe, kurztext         "#EC CI_GENBUFF
-          FROM qpgt
-          WHERE katalogart IN @lr_katalogart
-            AND codegruppe IN @lr_codegruppe
-            AND sprache    EQ @mv_spras
-          INTO TABLE @lt_qpgt.
-
-        SELECT katalogart, codegruppe, code, kurztext   "#EC CI_GENBUFF
-          FROM qpct
-          WHERE katalogart IN @lr_katalogart
-            AND codegruppe IN @lr_codegruppe
-            AND code       IN @lr_code
-            AND sprache    EQ @mv_spras
-            AND version    EQ '000001'
-            INTO TABLE @lt_qpct.
-
-        DELETE ADJACENT DUPLICATES FROM lt_qpgt COMPARING katalogart codegruppe.
-
-        DELETE ADJACENT DUPLICATES FROM lt_qpct COMPARING katalogart codegruppe code.
-
-        LOOP AT lt_fe ASSIGNING FIELD-SYMBOL(<fe>).
-
-          APPEND INITIAL LINE TO mt_legacy_error ASSIGNING FIELD-SYMBOL(<le>).
-          MOVE-CORRESPONDING <fe> TO <le>.
-          <le>-qmnum = lf_qmnum.
-
-          " Added BINARY SEARCH to prevent O(N*M) nested loop lookups
-          READ TABLE lt_qpgt ASSIGNING FIELD-SYMBOL(<gt>)
-               WITH KEY katalogart = <fe>-otkat codegruppe = <fe>-otgrp BINARY SEARCH.
-          IF sy-subrc = 0.
-            <le>-otgrp_ktxt = <gt>-kurztext.
-          ENDIF.
-
-          READ TABLE lt_qpgt ASSIGNING <gt>
-               WITH KEY katalogart = <fe>-fekat codegruppe = <fe>-fegrp BINARY SEARCH.
-          IF sy-subrc = 0.
-            <le>-fegrp_ktxt = <gt>-kurztext.
-          ENDIF.
-
-          READ TABLE lt_qpct ASSIGNING FIELD-SYMBOL(<ct>)
-               WITH KEY katalogart = <fe>-otkat codegruppe = <fe>-otgrp code = <fe>-oteil BINARY SEARCH.
-          IF sy-subrc = 0.
-            <le>-oteil_ktxt = <ct>-kurztext.
-          ENDIF.
-
-          READ TABLE lt_qpct ASSIGNING <ct>
-               WITH KEY katalogart = <fe>-fekat codegruppe = <fe>-fegrp code = <fe>-fecod BINARY SEARCH.
-          IF sy-subrc = 0.
-            <le>-fecod_ktxt = <ct>-kurztext.
-          ENDIF.
-
-        ENDLOOP.
-      ENDIF.
+    IF sy-subrc <> 0.
+      RETURN.
     ENDIF.
 
+    mv_qmnum = lf_qmnum.
+    mv_qmcod = lf_qmcod.
+
+    SELECT otkat, otgrp, oteil, fekat, fegrp, fecod
+      FROM qmfe
+      WHERE qmnum = @lf_qmnum
+      INTO TABLE @DATA(lt_fe).
+
+    " If exactly repeated , remove
+    SORT lt_fe BY table_line.
+    DELETE ADJACENT DUPLICATES FROM lt_fe COMPARING ALL FIELDS.
+
+    IF lt_fe IS INITIAL.
+      RETURN.
+    ENDIF.
+
+    " ---------------------------------------------------------------------
+    lt_katalogart = VALUE #( FOR <e> IN lt_fe
+                             ( <e>-otkat )
+                             ( <e>-fekat ) ).
+    lt_codegruppe = VALUE #( FOR <e> IN lt_fe
+                             ( <e>-otgrp )
+                             ( <e>-fegrp ) ).
+    lt_code =       VALUE #( FOR <e> IN lt_fe
+                             ( <e>-oteil )
+                             ( <e>-fecod ) ).
+
+    lr_katalogart = VALUE #( FOR <a> IN lt_katalogart
+                             ( sign = 'I' option = 'EQ' low = <a> ) ).
+    lr_codegruppe = VALUE #( FOR <g> IN lt_codegruppe
+                             ( sign = 'I' option = 'EQ' low = <g> ) ).
+    lr_code =       VALUE #( FOR <c> IN lt_code
+                             ( sign = 'I' option = 'EQ' low = <c> ) ).
+    " ---------------------------------------------------------------------
+    SELECT katalogart, codegruppe, kurztext             "#EC CI_GENBUFF
+      FROM qpgt
+      WHERE katalogart IN @lr_katalogart
+        AND codegruppe IN @lr_codegruppe
+        AND sprache     = @mv_spras
+      INTO TABLE @lt_qpgt.
+
+    SELECT katalogart, codegruppe, code, kurztext       "#EC CI_GENBUFF
+      FROM qpct
+      WHERE katalogart IN @lr_katalogart
+        AND codegruppe IN @lr_codegruppe
+        AND code       IN @lr_code
+        AND sprache     = @mv_spras
+        AND version     = '000001'
+      INTO TABLE @lt_qpct.
+
+    DELETE ADJACENT DUPLICATES FROM lt_qpgt COMPARING katalogart codegruppe.
+
+    DELETE ADJACENT DUPLICATES FROM lt_qpct COMPARING katalogart codegruppe code.
+
+    LOOP AT lt_fe ASSIGNING FIELD-SYMBOL(<fe>).
+
+      APPEND INITIAL LINE TO mt_legacy_error ASSIGNING FIELD-SYMBOL(<le>).
+      MOVE-CORRESPONDING <fe> TO <le>.
+      <le>-qmnum = lf_qmnum.
+
+      " Added BINARY SEARCH to prevent O(N*M) nested loop lookups
+      READ TABLE lt_qpgt ASSIGNING FIELD-SYMBOL(<gt>)
+           WITH KEY katalogart = <fe>-otkat
+                    codegruppe = <fe>-otgrp BINARY SEARCH.
+      IF sy-subrc = 0.
+        <le>-otgrp_ktxt = <gt>-kurztext.
+      ENDIF.
+
+      READ TABLE lt_qpgt ASSIGNING <gt>
+           WITH KEY katalogart = <fe>-fekat
+                    codegruppe = <fe>-fegrp BINARY SEARCH.
+      IF sy-subrc = 0.
+        <le>-fegrp_ktxt = <gt>-kurztext.
+      ENDIF.
+
+      READ TABLE lt_qpct ASSIGNING FIELD-SYMBOL(<ct>)
+           WITH KEY katalogart = <fe>-otkat
+                    codegruppe = <fe>-otgrp
+                    code       = <fe>-oteil BINARY SEARCH.
+      IF sy-subrc = 0.
+        <le>-oteil_ktxt = <ct>-kurztext.
+      ENDIF.
+
+      READ TABLE lt_qpct ASSIGNING <ct>
+           WITH KEY katalogart = <fe>-fekat
+                    codegruppe = <fe>-fegrp
+                    code       = <fe>-fecod BINARY SEARCH.
+      IF sy-subrc = 0.
+        <le>-fecod_ktxt = <ct>-kurztext.
+      ENDIF.
+
+    ENDLOOP.
   ENDMETHOD.
 
 
   METHOD get_kddata.
-    CLEAR: mv_kdauf, mv_time_received, mv_time_repaired, mv_time_thisdate,
-           mv_po_nr, mv_po_pos, mv_qmnum, mv_fenum, mv_ctdi_odernr.
+    CLEAR: mv_kdauf,
+           mv_time_received,
+           mv_time_repaired,
+           mv_time_thisdate,
+           mv_po_nr,
+           mv_po_pos,
+           mv_qmnum,
+           mv_fenum,
+           mv_ctdi_odernr.
 
     SELECT SINGLE kdauf, kdpos, objnr
       FROM aufk
@@ -338,15 +572,13 @@ CLASS /CTDI/CL_PRINT_DATA_LEGACY IMPLEMENTATION.
     IF sy-subrc = 0.
       mv_kdauf = ls_aufk-kdauf.
 
-      get_astatus_data(
-        EXPORTING iv_objnr     = ls_aufk-objnr
-        IMPORTING ev_wfer_date = DATA(lv_wfer_date)
-                  ev_wfer_time = DATA(lv_wfer_time) ).
+      get_astatus_data( EXPORTING iv_objnr     = ls_aufk-objnr
+                        IMPORTING ev_wfer_date = DATA(lv_wfer_date)
+                                  ev_wfer_time = DATA(lv_wfer_time) ).
 
-      get_rlf_wedate(
-        EXPORTING iv_vbeln_vl  = mv_retlief_nr
-        IMPORTING ev_vl_erdat  = DATA(lv_vl_erdat)
-                  ev_vl_zeit   = DATA(lv_vl_erzet) ).
+      get_rlf_wedate( EXPORTING iv_vbeln_vl = mv_retlief_nr
+                      IMPORTING ev_vl_erdat = DATA(lv_vl_erdat)
+                                ev_vl_zeit  = DATA(lv_vl_erzet) ).
 
       mv_time_received = lv_vl_erzet.
       mv_time_repaired = lv_wfer_time.
@@ -360,9 +592,12 @@ CLASS /CTDI/CL_PRINT_DATA_LEGACY IMPLEMENTATION.
                       d~bstkd         AS po_nr,
                       q~qmart
           FROM vbak AS k
-          LEFT OUTER JOIN vbap AS p ON p~vbeln = k~vbeln AND p~posnr = @ls_aufk-kdpos
-          LEFT OUTER JOIN vbkd AS d ON d~vbeln = k~vbeln AND d~posnr = @ls_aufk-kdpos
-          LEFT OUTER JOIN qmel AS q ON q~qmnum = k~qmnum
+                 LEFT OUTER JOIN
+                   vbap AS p ON p~vbeln = k~vbeln AND p~posnr = @ls_aufk-kdpos
+                     LEFT OUTER JOIN
+                       vbkd AS d ON d~vbeln = k~vbeln AND d~posnr = @ls_aufk-kdpos
+                         LEFT OUTER JOIN
+                           qmel AS q ON q~qmnum = k~qmnum
           WHERE k~vbeln = @ls_aufk-kdauf
           INTO @DATA(ls_vbak).
 
@@ -383,15 +618,20 @@ CLASS /CTDI/CL_PRINT_DATA_LEGACY IMPLEMENTATION.
                       p~posex         AS posex_u,
                       d~bstkd         AS bstkd_u
           FROM qmfe AS q
-          LEFT OUTER JOIN ekkn AS e ON e~ebeln = q~ebeln AND e~ebelp = q~ebelp
-          LEFT OUTER JOIN aufk AS a ON a~aufnr = e~aufnr
-          LEFT OUTER JOIN vbap AS p ON p~vbeln = a~kdauf AND p~posnr = a~kdpos
-          LEFT OUTER JOIN vbkd AS d ON d~vbeln = a~kdauf AND d~posnr = a~kdpos
+                 LEFT OUTER JOIN
+                   ekkn AS e ON e~ebeln = q~ebeln AND e~ebelp = q~ebelp
+                     LEFT OUTER JOIN
+                       aufk AS a ON a~aufnr = e~aufnr
+                         LEFT OUTER JOIN
+                           vbap AS p ON p~vbeln = a~kdauf AND p~posnr = a~kdpos
+                             LEFT OUTER JOIN
+                               vbkd AS d ON d~vbeln = a~kdauf AND d~posnr = a~kdpos
           WHERE q~qmnum = @mv_qmnum
             AND q~fenum = @mv_fenum
           INTO @DATA(ls_qmfe).
 
-        CLEAR: mv_qmnum, mv_fenum.
+        CLEAR: mv_qmnum,
+               mv_fenum.
 
         IF ls_qmfe-aufnr IS NOT INITIAL.
           mv_fenum  = ls_qmfe-fenum_u.
@@ -416,237 +656,40 @@ CLASS /CTDI/CL_PRINT_DATA_LEGACY IMPLEMENTATION.
 
 
   METHOD get_part_data.
-    DATA: lf_oldpartnr   TYPE itob-mapar,
-          lf_newpartnr   TYPE itob-mapar,
-          lf_oldserialnr TYPE itob-serge,
-          lf_newserialnr TYPE itob-serge,
-          lv_oldmatnr    TYPE matnr,
-          lv_newmatnr    TYPE matnr,
-          lf_equnr       TYPE equnr,
-          lv_p_sernr     TYPE equi-sernr.
+    DATA(lv_equnr) = resolve_equipment_number( ).
 
-    DATA: lf_udate           TYPE cddatum,
-          lf_utime           TYPE cduzeit,
-          lf_tstamp_received TYPE timestamp,
-          lf_tstamp_changed  TYPE timestamp,
-          lf_tstamp_repaired TYPE timestamp,
-          lf_tstamp_thisdate TYPE timestamp,
-          ls_cdpos           TYPE cdpos,
-          ls_cdpos_first     TYPE cdpos,
-          ls_cdpos_serge     TYPE cdpos,
-          ls_cdpos_mapar     TYPE cdpos,
-          lt_cdhdr           TYPE TABLE OF cdhdr,
-          lt_cdhdr_serge     TYPE TABLE OF cdhdr,
-          lt_cdhdr_mapar     TYPE TABLE OF cdhdr,
-          ls_cdhdr           TYPE cdhdr,
-          lv_lines           TYPE i.
+    determine_serial_and_part( lv_equnr ).
+    fallback_part_numbers( lv_equnr ).
 
-    DATA: lt_order_objk TYPE TABLE OF objk.
-    FIELD-SYMBOLS: <ls_objk> TYPE objk.
+    ms_legacy-old_serial_no = mv_old_serial.
+    ms_legacy-new_serial_no = mv_new_serial.
+    ms_legacy-old_part_no   = mv_old_part.
+    ms_legacy-new_part_no   = mv_new_part.
 
-    lv_p_sernr = mv_sernr.
-    IF lv_p_sernr IS INITIAL.
-      CALL FUNCTION '/CELLAG/CS_ORDER_SERNR_GET'
-        EXPORTING
-          i_aufnr       = mv_aufnr
-        TABLES
-          et_order_objk = lt_order_objk
-        EXCEPTIONS
-          OTHERS        = 1. "#EC CI_SUBRC
-      LOOP AT lt_order_objk ASSIGNING <ls_objk>.
-        lv_p_sernr = <ls_objk>-sernr.
-        EXIT.
-      ENDLOOP.
-    ENDIF.
-
-    SELECT SINGLE equnr FROM equi
-      WHERE sernr = @lv_p_sernr INTO @lf_equnr.
-
-    IF lf_equnr IS NOT INITIAL.
-      IF mv_swap_flag IS NOT INITIAL.
-
-        " ⚡ Bolt: Consolidated sequential SELECT SINGLE into single DB hit via JOIN
-        SELECT SINGLE i~serge, i~matnr, z~mapar
-           FROM equi AS i
-           LEFT OUTER JOIN equz AS z ON z~equnr = i~equnr
-           WHERE i~equnr = @lf_equnr
-           INTO ( @lf_newserialnr, @lv_newmatnr, @lf_newpartnr ).
-
-        SELECT SINGLE i~serge, i~matnr, z~mapar
-           FROM equi AS i
-           LEFT OUTER JOIN equz AS z ON z~equnr = i~equnr
-           WHERE i~equnr = @mv_equnr_retlief
-           INTO ( @lf_oldserialnr, @lv_oldmatnr, @lf_oldpartnr ).
-      ELSE.
-        " --- NEW OPTIMIZED LOGIC ---
-        " Pre-fetch current values as defaults
-        " ⚡ Bolt: Consolidated sequential SELECT SINGLE into single DB hit via JOIN
-        SELECT SINGLE i~serge, i~matnr, z~mapar
-           FROM equi AS i
-           LEFT OUTER JOIN equz AS z ON z~equnr = i~equnr
-           WHERE i~equnr = @lf_equnr
-           INTO ( @DATA(lv_cur_serge), @DATA(lv_cur_matnr), @DATA(lv_cur_mapar) ).
-
-        lf_newserialnr = lv_cur_serge.
-        lf_oldserialnr = lv_cur_serge.
-        lv_newmatnr    = lv_cur_matnr.
-        lv_oldmatnr    = lv_cur_matnr.
-        lf_newpartnr   = lv_cur_mapar.
-        lf_oldpartnr   = lv_cur_mapar.
-        " Determine timestamp window
-        lf_tstamp_received = convert_to_timestamp( iv_date = ms_legacy-date_received iv_time = mv_time_received ).
-        lf_tstamp_repaired = convert_to_timestamp( iv_date = ms_legacy-date_repaired iv_time = mv_time_repaired ).
-
-        SELECT changenr, udate, utime FROM cdhdr
-          WHERE objectclas = 'EQUI' AND objectid = @lf_equnr
-          INTO CORRESPONDING FIELDS OF TABLE @lt_cdhdr.
-
-        IF lt_cdhdr IS NOT INITIAL.
-          " Build a RANGE table for changenr to avoid ATC FOR ALL ENTRIES warning on cluster table
-          DATA: lr_changenr TYPE RANGE OF cdhdr-changenr.
-          lr_changenr = VALUE #( FOR <fs_hdr> IN lt_cdhdr ( sign = 'I' option = 'EQ' low = <fs_hdr>-changenr ) ).
-
-          " Fetch all relevant CDPOS records in one go
-          SELECT changenr, tabname, fname, value_old, value_new FROM cdpos
-            WHERE objectclas = 'EQUI'
-              AND objectid   = @lf_equnr
-              AND changenr   IN @lr_changenr
-            INTO TABLE @DATA(lt_cdpos_all).
-
-          IF lt_cdpos_all IS NOT INITIAL.
-            " Sort cdhdr descending by date/time to find the latest valid change first
-            SORT lt_cdhdr DESCENDING BY udate utime DESCENDING.
-            " Sort cdpos for binary search
-            SORT lt_cdpos_all BY changenr tabname fname.
-
-            DATA: lv_serge_found TYPE abap_bool VALUE abap_false,
-                  lv_mapar_found TYPE abap_bool VALUE abap_false.
-
-            LOOP AT lt_cdhdr ASSIGNING FIELD-SYMBOL(<ls_cdhdr>).
-              " Stop if we found both
-              IF lv_serge_found = abap_true AND lv_mapar_found = abap_true.
-                EXIT.
-              ENDIF.
-
-              lf_tstamp_changed = convert_to_timestamp( iv_date = <ls_cdhdr>-udate iv_time = <ls_cdhdr>-utime ).
-
-              " Only consider changes within the repair window
-              IF lf_tstamp_changed >= lf_tstamp_received AND lf_tstamp_changed <= lf_tstamp_repaired.
-
-                " Check for SERGE change
-                IF lv_serge_found = abap_false.
-                  READ TABLE lt_cdpos_all ASSIGNING FIELD-SYMBOL(<ls_pos_serge>)
-                  WITH KEY changenr = <ls_cdhdr>-changenr tabname = 'EQUI' fname = 'SERGE' BINARY SEARCH.
-                  IF sy-subrc = 0.
-                    lf_oldserialnr = <ls_pos_serge>-value_old.
-                    lf_newserialnr = <ls_pos_serge>-value_new.
-                    lv_serge_found = abap_true.
-                  ENDIF.
-                ENDIF.
-
-                " Check for MAPAR change
-                IF lv_mapar_found = abap_false.
-                  READ TABLE lt_cdpos_all ASSIGNING FIELD-SYMBOL(<ls_pos_mapar>)
-                  WITH KEY changenr = <ls_cdhdr>-changenr tabname = 'EQUZ' fname = 'MAPAR' BINARY SEARCH.
-                  IF sy-subrc = 0.
-                    lf_oldpartnr = <ls_pos_mapar>-value_old.
-                    lf_newpartnr = <ls_pos_mapar>-value_new.
-                    lv_mapar_found = abap_true.
-                  ENDIF.
-                ENDIF.
-
-              ENDIF.
-            ENDLOOP.
-          ENDIF.
-        ENDIF.
-      ENDIF.
-
-      IF lf_newpartnr IS INITIAL.
-        IF lv_newmatnr IS INITIAL.
-          SELECT SINGLE matnr FROM equi  WHERE equnr = @lf_equnr INTO @lv_newmatnr.
-        ENDIF.
-        IF lv_newmatnr IS NOT INITIAL.
-          SELECT SINGLE mfrpn FROM mara  WHERE matnr = @lv_newmatnr INTO @lf_newpartnr.
-        ENDIF.
-      ENDIF.
-
-      IF lf_oldpartnr IS INITIAL.
-        IF lv_oldmatnr IS INITIAL.
-          SELECT SINGLE matnr FROM equi  WHERE equnr = @mv_equnr_retlief INTO @lv_oldmatnr.
-        ENDIF.
-        IF lv_oldmatnr IS NOT INITIAL.
-          SELECT SINGLE mfrpn FROM mara  WHERE matnr = @lv_oldmatnr INTO @lf_oldpartnr.
-        ENDIF.
-      ENDIF.
-
-      ms_legacy-old_serial_no = lf_oldserialnr.
-      ms_legacy-new_serial_no = lf_newserialnr.
-      ms_legacy-old_part_no   = lf_oldpartnr.
-      ms_legacy-new_part_no   = lf_newpartnr.
-    ELSE.
-      MESSAGE e024(/cellag/cs01) WITH lv_p_sernr.
-    ENDIF.
-
-    DATA lf_eqktx TYPE ktx01.
-    SELECT SINGLE eqktx FROM eqkt
-      WHERE equnr = @lf_equnr AND spras = @mv_spras INTO @lf_eqktx.
-    ms_legacy-model = lf_eqktx.
-
-    DATA: ls_afih  TYPE afih,
-          lv_qmnum TYPE qmel-qmnum,
-          ls_qmel  TYPE qmel.
-
-    SELECT SINGLE qmnum, obknr FROM afih  WHERE aufnr = @mv_aufnr
-      INTO CORRESPONDING FIELDS OF @ls_afih.
-    IF ls_afih-qmnum IS NOT INITIAL.
-      lv_qmnum = ls_afih-qmnum.
-    ELSE.
-      SELECT SINGLE ihnum  FROM objk
-       WHERE obknr = @ls_afih-obknr AND ihnum <> @space INTO @lv_qmnum.
-    ENDIF.
-
-    IF lv_qmnum IS NOT INITIAL.
-      SELECT SINGLE *  FROM qmel WHERE qmnum = @lv_qmnum INTO @ls_qmel. "#EC CI_ALL_FIELDS_NEEDED
-    ENDIF.
-
-    DATA: ls_eqstand_in  TYPE /cellag/cseqstand_in,
-          ls_eqstand_out TYPE /cellag/cseqstand_out.
-
-    IF ls_qmel IS NOT INITIAL.
-
-      MOVE-CORRESPONDING ls_qmel TO ls_eqstand_in.
-      MOVE-CORRESPONDING ls_qmel TO ls_eqstand_out.
-
-      MOVE-CORRESPONDING ls_eqstand_in TO ms_legacy.
-      MOVE-CORRESPONDING ls_eqstand_out TO ms_legacy.
-
-      ms_legacy-rev_in  = ls_qmel-revin.
-      ms_legacy-rev_out = ls_qmel-revout.
-
-    ENDIF.
-
+    get_equipment_model( lv_equnr ).
+    get_equipment_stands( ).
   ENDMETHOD.
 
 
   METHOD get_repair_result.
-    DATA: lf_repres     TYPE /cellag/repair_result,
-          lf_repres_txt TYPE /cellag/repair_result_txt.
+    DATA lf_repres     TYPE /cellag/repair_result.
+    DATA lf_repres_txt TYPE /cellag/repair_result_txt.
 
-    DATA: lv_bemot TYPE afru-bemot,
-          lv_stokz TYPE afru-stokz,
-          lv_stzhl TYPE afru-stzhl.
+    DATA lv_bemot      TYPE afru-bemot.
+    DATA lv_stokz      TYPE afru-stokz.
+    DATA lv_stzhl      TYPE afru-stzhl.
 
     IF ms_legacy-old_serial_no IS NOT INITIAL AND ms_legacy-old_serial_no <> ms_legacy-new_serial_no.
-      SELECT SINGLE repres_barc, repres_txt FROM zalca_rep_result
-
-             WHERE bemot = 'RE'
-               AND akz   = '' INTO ( @lf_repres, @lf_repres_txt ).
+      SELECT SINGLE repres_barc, repres_txt
+        FROM zalca_rep_result
+        WHERE bemot = 'RE'
+          AND akz   = ''
+        INTO ( @lf_repres, @lf_repres_txt ).
     ELSE.
-      " ⚡ Removed SELECT...ENDSELECT in favor of SELECT INTO TABLE
-      DATA: lv_subrc TYPE sysubrc.
 
-      SELECT bemot, stokz, stzhl
-        FROM afru
+      DATA lv_subrc TYPE sysubrc.
+
+      SELECT bemot, stokz, stzhl FROM afru
         WHERE aufnr = @mv_aufnr
           AND vornr = @/ctdi/cl_print_driver_base=>gc_operation_wfer
         INTO TABLE @DATA(lt_afru_skz).
@@ -663,13 +706,17 @@ CLASS /CTDI/CL_PRINT_DATA_LEGACY IMPLEMENTATION.
       ENDLOOP.
 
       IF lv_subrc = 0.
-        SELECT SINGLE repres_barc, repres_txt FROM zalca_rep_result
-           WHERE bemot = @lv_bemot
-             AND akz   = @mv_qmcod INTO ( @lf_repres, @lf_repres_txt ).
+        SELECT SINGLE repres_barc, repres_txt
+          FROM zalca_rep_result
+          WHERE bemot = @lv_bemot
+            AND akz   = @mv_qmcod
+          INTO ( @lf_repres, @lf_repres_txt ).
         IF sy-subrc <> 0.
-          SELECT SINGLE repres_barc, repres_txt FROM zalca_rep_result
-           WHERE bemot = @lv_bemot
-             AND akz   = '' INTO ( @lf_repres, @lf_repres_txt ).
+          SELECT SINGLE repres_barc, repres_txt
+            FROM zalca_rep_result
+            WHERE bemot = @lv_bemot
+              AND akz   = ''
+            INTO ( @lf_repres, @lf_repres_txt ).
         ENDIF.
       ENDIF.
     ENDIF.
@@ -680,59 +727,98 @@ CLASS /CTDI/CL_PRINT_DATA_LEGACY IMPLEMENTATION.
 
 
   METHOD get_retlief.
-    DATA: lf_rmanr     TYPE vbap-vbeln,
-          lf_posnv_rma TYPE posnr,
-          lf_posnr_rma TYPE posnr,
-          ls_comwa     TYPE vbco6,
-          lt_vbfa      TYPE TABLE OF vbfa,
-          ls_vbfa_rl   TYPE vbfa.
+    DATA lf_rmanr     TYPE vbap-vbeln.
+    DATA lf_posnv_rma TYPE posnr.
+    " TODO: variable is assigned but never used (ABAP cleaner)
+    DATA lf_posnr_rma TYPE posnr.
+    DATA ls_comwa     TYPE vbco6.
+    DATA lt_vbfa      TYPE TABLE OF vbfa.
+    DATA ls_vbfa_rl   TYPE vbfa.
 
-    SELECT SINGLE rmanr, posnr_rma, posnv_rma FROM afko
+    SELECT SINGLE rmanr, posnr_rma, posnv_rma
+      FROM afko
 
-      WHERE aufnr = @mv_aufnr INTO ( @lf_rmanr, @lf_posnr_rma, @lf_posnv_rma ).
+      WHERE aufnr = @mv_aufnr
+      INTO ( @lf_rmanr, @lf_posnr_rma, @lf_posnv_rma ).
     ls_comwa-vbeln = lf_rmanr.
     ls_comwa-posnr = lf_posnv_rma.
 
     CALL FUNCTION 'RV_ORDER_FLOW_INFORMATION'
       EXPORTING
-        comwa         = ls_comwa
+        comwa    = ls_comwa
       TABLES
-        vbfa_tab      = lt_vbfa
+        vbfa_tab = lt_vbfa
       EXCEPTIONS
-        OTHERS        = 3. "#EC CI_SUBRC
+        OTHERS   = 3. "#EC CI_SUBRC
 
     READ TABLE lt_vbfa INTO ls_vbfa_rl
-                       WITH KEY vbelv = lf_rmanr
-                                vbtyp_n = 'T'
-                                vbtyp_v = 'C'.
+         WITH KEY vbelv   = lf_rmanr
+                  vbtyp_n = 'T'
+                  vbtyp_v = 'C'.
     es_vbfa = ls_vbfa_rl.
     ev_vbfa_rl = ls_vbfa_rl-vbeln.
   ENDMETHOD.
 
 
   METHOD get_rlf_wedate.
-    SELECT SINGLE erdat, erzet FROM likp  WHERE vbeln = @iv_vbeln_vl INTO ( @ev_vl_erdat, @ev_vl_zeit ).
+    SELECT SINGLE erdat, erzet FROM likp WHERE vbeln = @iv_vbeln_vl INTO ( @ev_vl_erdat, @ev_vl_zeit ).
   ENDMETHOD.
 
 
   METHOD read_data.
-    CLEAR: me->ms_legacy, me->mt_legacy_error, me->mt_comment_lines.
+    CLEAR: me->ms_legacy,
+           me->mt_legacy_error,
+           me->mt_comment_lines.
 
-    me->mv_aufnr = iv_aufnr.
-    me->mv_sernr = iv_sernr.
+    mv_aufnr = iv_aufnr.
+    mv_sernr = iv_sernr.
 
     " set language
     IF sy-langu = 'D'.
-      me->mv_spras = 'D'.
+      mv_spras = 'D'.
     ELSE.
-      me->mv_spras = 'E'.
+      mv_spras = 'E'.
     ENDIF.
 
-    me->check_sernr_swap( ).
-    me->get_kddata( ).
-    me->get_part_data( ).
-    me->get_error_description( ).
-    me->get_repair_result( ).
-    me->get_comment( ).
+    check_sernr_swap( ).
+    get_kddata( ).
+    get_part_data( ).
+    get_error_description( ).
+    get_repair_result( ).
+    get_comment( ).
+  ENDMETHOD.
+
+
+  METHOD resolve_equipment_number.
+    DATA lv_sernr      TYPE equi-sernr.
+    DATA lt_order_objk TYPE TABLE OF objk.
+
+    lv_sernr = mv_sernr.
+
+    IF lv_sernr IS INITIAL.
+      CALL FUNCTION '/CELLAG/CS_ORDER_SERNR_GET'
+        EXPORTING
+          i_aufnr       = mv_aufnr
+        TABLES
+          et_order_objk = lt_order_objk
+        EXCEPTIONS
+          OTHERS        = 1.           "#EC CI_SUBRC
+      READ TABLE lt_order_objk INDEX 1 ASSIGNING FIELD-SYMBOL(<ls_objk>).
+      IF sy-subrc = 0.
+        lv_sernr = <ls_objk>-sernr.
+      ENDIF.
+    ENDIF.
+
+    SELECT SINGLE equnr FROM equi
+      WHERE sernr = @lv_sernr
+      INTO @rv_equnr.
+
+    IF rv_equnr IS INITIAL.
+      MESSAGE e024(/cellag/cs01) WITH lv_sernr INTO DATA(lv_msg).
+      RAISE EXCEPTION TYPE /ctdi/cx_print_driver_error
+        EXPORTING
+          repair_id = mv_aufnr
+          message   = lv_msg.
+    ENDIF.
   ENDMETHOD.
 ENDCLASS.
