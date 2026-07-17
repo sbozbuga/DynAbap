@@ -37,8 +37,8 @@ FORM 01_before_save.
 
           /ctdi/cl_print_driver_log=>log_exception( lx_print_error ).
 
-          " Show the actual validation error to the user
-          DATA(lv_msg) = CONV text200( lx_print_error->get_text( ) ).
+          " Show a generic validation error to the user
+          DATA(lv_msg) = CONV text200( 'Validation failed. Please check the logs.' ).
           sy-msgv1 = lv_msg(50).
           sy-msgv2 = lv_msg+50(50).
           sy-msgv3 = lv_msg+100(50).
