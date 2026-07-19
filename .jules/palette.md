@@ -13,3 +13,6 @@
 ## 2026-07-28 - Maintain persistent status bar feedback alongside popup logs
 **Learning:** When displaying a popup log in ABAP, the background selection screen's status bar should still be updated with a non-blocking success or error message. Otherwise, users who close the log immediately are left without persistent visual feedback of the execution outcome.
 **Action:** Always ensure status bar messages are displayed independently of popup log displays to maintain consistent UI feedback.
+## 2026-07-29 - Add selection screen texts to resolve abaplint warnings and improve accessibility
+**Learning:** When ABAP selection screens lack text pool definitions for their frame titles (like `TEXT-002`), it causes `selection_screen_texts_missing` abaplint warnings and makes the UI elements improperly labeled for screen readers and users.
+**Action:** Always verify and provide text pool entries in both the original language (e.g., German) and translations (e.g., English) for selection screen elements defined via `TEXT-xxx` placeholders.
