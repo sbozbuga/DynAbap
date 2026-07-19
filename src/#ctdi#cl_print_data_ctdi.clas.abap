@@ -64,12 +64,17 @@ CLASS /CTDI/CL_PRINT_DATA_CTDI IMPLEMENTATION.
     DATA lv_contract TYPE vbak-vgbel.
 
     IF mv_kdauf IS NOT INITIAL.
-      SELECT SINGLE vgbel FROM vbak WHERE vbeln = @mv_kdauf INTO @lv_contract.
-      IF sy-subrc = 0 AND lv_contract IS NOT INITIAL.
+      " ⚡ Bolt Optimization: Consolidate two sequential SELECT SINGLE queries
+      " into a single LEFT OUTER JOIN to eliminate an unnecessary database round-trip.
+      SELECT SINGLE v1~vgbel, v2~vbtyp
+        FROM vbak AS v1
+        LEFT OUTER JOIN vbak AS v2 ON v2~vbeln = v1~vgbel
+        WHERE v1~vbeln = @mv_kdauf
+        INTO @DATA(ls_contract_data).
+      IF sy-subrc = 0 AND ls_contract_data-vgbel IS NOT INITIAL.
         " Verify the linked document is actually a contract (vbtyp = 'G')
-        SELECT SINGLE vbtyp FROM vbak WHERE vbeln = @lv_contract INTO @DATA(lv_vbtyp).
-        IF lv_vbtyp <> 'G'.
-          CLEAR lv_contract.
+        IF ls_contract_data-vbtyp = 'G'.
+          lv_contract = ls_contract_data-vgbel.
         ENDIF.
       ENDIF.
     ENDIF.
