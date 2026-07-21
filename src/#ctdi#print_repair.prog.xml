@@ -12,6 +12,12 @@
    <TPOOL>
     <item>
      <ID>I</ID>
+     <KEY>002</KEY>
+     <ENTRY>Execution Parameters</ENTRY>
+     <LENGTH>20</LENGTH>
+    </item>
+    <item>
+     <ID>I</ID>
      <KEY>008</KEY>
      <ENTRY>Printout generated successfully</ENTRY>
      <LENGTH>31</LENGTH>
@@ -44,6 +50,12 @@
     <item>
      <LANGUAGE>D</LANGUAGE>
      <TEXTPOOL>
+      <item>
+       <ID>I</ID>
+       <KEY>002</KEY>
+       <ENTRY>Ausführungsparameter</ENTRY>
+       <LENGTH>20</LENGTH>
+      </item>
       <item>
        <ID>I</ID>
        <KEY>008</KEY>
