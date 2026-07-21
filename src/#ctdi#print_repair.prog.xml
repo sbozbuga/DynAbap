@@ -12,6 +12,12 @@
    <TPOOL>
     <item>
      <ID>I</ID>
+     <KEY>007</KEY>
+     <ENTRY>A technical error occurred. Please check logs.</ENTRY>
+     <LENGTH>46</LENGTH>
+    </item>
+    <item>
+     <ID>I</ID>
      <KEY>008</KEY>
      <ENTRY>Printout generated successfully</ENTRY>
      <LENGTH>31</LENGTH>
@@ -44,6 +50,12 @@
     <item>
      <LANGUAGE>D</LANGUAGE>
      <TEXTPOOL>
+      <item>
+       <ID>I</ID>
+       <KEY>007</KEY>
+       <ENTRY>Ein technischer Fehler ist aufgetreten. Bitte Protokolle prüfen.</ENTRY>
+       <LENGTH>64</LENGTH>
+      </item>
       <item>
        <ID>I</ID>
        <KEY>008</KEY>
