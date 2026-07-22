@@ -84,14 +84,19 @@ CLASS lcl_app IMPLEMENTATION.
         lr_driver->execute( iv_save_as_pdf = lv_save_as_pdf ).
 
       CATCH /ctdi/cx_no_config_found INTO DATA(lx_noconf).
-        lv_emsg = lx_noconf->get_text( ).
+        /ctdi/cl_print_driver_log=>log_exception( lx_noconf ).
+        " 🛡️ Sentinel: Prevent information leakage by not exposing exception text
+        lv_emsg = TEXT-007.
 
       CATCH /ctdi/cx_print_driver_error INTO DATA(lx_driver_err).
-        lv_emsg = lx_driver_err->get_text( ).
+        /ctdi/cl_print_driver_log=>log_exception( lx_driver_err ).
+        " 🛡️ Sentinel: Prevent information leakage by not exposing exception text
+        lv_emsg = TEXT-007.
 
       CATCH cx_root INTO DATA(lx_root).
         /ctdi/cl_print_driver_log=>log_exception( lx_root ).
-        lv_emsg = lx_root->get_text( ).
+        " 🛡️ Sentinel: Prevent information leakage by not exposing exception text
+        lv_emsg = TEXT-007.
     ENDTRY.
 
     IF p_shwlog = abap_true.
