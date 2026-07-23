@@ -23,6 +23,7 @@
     "inline_data_old_versions": false,
     "message_exists": false,
     "no_prefixes": false,
+    "selection_screen_texts_missing": true,
     "text_elements": false,
     "unknown_types": false,
     "check_syntax": false,
