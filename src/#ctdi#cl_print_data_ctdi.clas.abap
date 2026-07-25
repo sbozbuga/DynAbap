@@ -62,12 +62,19 @@ CLASS /CTDI/CL_PRINT_DATA_CTDI IMPLEMENTATION.
            END OF ty_query_step.
     DATA lt_steps    TYPE TABLE OF ty_query_step.
     DATA lv_contract TYPE vbak-vgbel.
+    DATA lv_vbtyp    TYPE vbak-vbtyp.
 
     IF mv_kdauf IS NOT INITIAL.
-      SELECT SINGLE vgbel FROM vbak WHERE vbeln = @mv_kdauf INTO @lv_contract.
+      " ⚡ Bolt Optimization: Consolidate sequential vbak lookups into a single self-JOIN
+      " Fetching the contract number (vgbel) and verifying the contract type (vbtyp) in one round-trip
+      SELECT SINGLE main~vgbel, contract~vbtyp
+        FROM vbak AS main
+               LEFT OUTER JOIN vbak AS contract ON contract~vbeln = main~vgbel
+        WHERE main~vbeln = @mv_kdauf
+        INTO ( @lv_contract, @lv_vbtyp ).
+
       IF sy-subrc = 0 AND lv_contract IS NOT INITIAL.
         " Verify the linked document is actually a contract (vbtyp = 'G')
-        SELECT SINGLE vbtyp FROM vbak WHERE vbeln = @lv_contract INTO @DATA(lv_vbtyp).
         IF lv_vbtyp <> 'G'.
           CLEAR lv_contract.
         ENDIF.
