@@ -23,6 +23,12 @@
      <LENGTH>31</LENGTH>
     </item>
     <item>
+     <ID>I</ID>
+     <KEY>009</KEY>
+     <ENTRY>An unexpected error occurred. Please check logs.</ENTRY>
+     <LENGTH>48</LENGTH>
+    </item>
+    <item>
      <ID>R</ID>
      <ENTRY>Repair Printouts</ENTRY>
      <LENGTH>16</LENGTH>
@@ -61,6 +67,12 @@
        <KEY>008</KEY>
        <ENTRY>Ausdruck erfolgreich erstellt</ENTRY>
        <LENGTH>31</LENGTH>
+      </item>
+      <item>
+       <ID>I</ID>
+       <KEY>009</KEY>
+       <ENTRY>Ein unerwarteter Fehler ist aufgetreten. Bitte prüfen Sie die Protokolle.</ENTRY>
+       <LENGTH>73</LENGTH>
       </item>
       <item>
        <ID>R</ID>
