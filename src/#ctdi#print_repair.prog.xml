@@ -23,6 +23,12 @@
      <LENGTH>31</LENGTH>
     </item>
     <item>
+     <ID>I</ID>
+     <KEY>009</KEY>
+     <ENTRY>An internal error occurred. Contact support.</ENTRY>
+     <LENGTH>44</LENGTH>
+    </item>
+    <item>
      <ID>R</ID>
      <ENTRY>Repair Printouts</ENTRY>
      <LENGTH>16</LENGTH>
@@ -61,6 +67,12 @@
        <KEY>008</KEY>
        <ENTRY>Ausdruck erfolgreich erstellt</ENTRY>
        <LENGTH>31</LENGTH>
+      </item>
+      <item>
+       <ID>I</ID>
+       <KEY>009</KEY>
+       <ENTRY>Es ist ein interner Fehler aufgetreten. Bitte kontaktieren Sie den Support.</ENTRY>
+       <LENGTH>75</LENGTH>
       </item>
       <item>
        <ID>R</ID>
