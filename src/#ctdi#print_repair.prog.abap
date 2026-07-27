@@ -91,7 +91,8 @@ CLASS lcl_app IMPLEMENTATION.
 
       CATCH cx_root INTO DATA(lx_root).
         /ctdi/cl_print_driver_log=>log_exception( lx_root ).
-        lv_emsg = lx_root->get_text( ).
+        " 🛡️ Sentinel: Prevent info leakage by not exposing raw exception text to the UI
+        lv_emsg = 'An unexpected system error occurred. Please check logs.'.
     ENDTRY.
 
     IF p_shwlog = abap_true.
