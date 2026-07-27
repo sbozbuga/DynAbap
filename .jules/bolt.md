@@ -7,3 +7,6 @@
 ## 2025-01-29 - Consolidate independent sequential lookups into single DB hit (equi/equz)
 **Learning:** Sequential `SELECT SINGLE` queries on different tables (like `equi` and `equz`) that share a primary key (`equnr`) can be combined to reduce N+1-style DB roundtrips.
 **Action:** Use `LEFT OUTER JOIN`s to fetch all dependent properties simultaneously in a single query when the base key is the same, reducing overhead significantly.
+## 2026-07-27 - Sort before DELETE ADJACENT DUPLICATES
+**Learning:** In ABAP, `DELETE ADJACENT DUPLICATES` only removes consecutive identical rows. If an internal table is not sorted by the exact fields being compared, duplicate entries that are not adjacent will remain in the table, silently causing memory bloat and breaking downstream `BINARY SEARCH` assumptions.
+**Action:** Always add an explicit `SORT` statement by the comparison keys immediately before calling `DELETE ADJACENT DUPLICATES` to guarantee accurate deduplication and correct binary search behavior downstream.
