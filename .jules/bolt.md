@@ -7,3 +7,6 @@
 ## 2025-01-29 - Consolidate independent sequential lookups into single DB hit (equi/equz)
 **Learning:** Sequential `SELECT SINGLE` queries on different tables (like `equi` and `equz`) that share a primary key (`equnr`) can be combined to reduce N+1-style DB roundtrips.
 **Action:** Use `LEFT OUTER JOIN`s to fetch all dependent properties simultaneously in a single query when the base key is the same, reducing overhead significantly.
+## 2024-07-28 - Consolidating Sequential Database Queries in ABAP
+**Learning:** Sequential `SELECT SINGLE` database queries are a common ABAP anti-pattern that can lead to N+1 performance bottlenecks. While maintaining explicit outer logic, sequential queries across related tables (e.g. `equi` to `mara`) can often be optimized into a single `LEFT OUTER JOIN` query. However, any enclosing `IF` statements checking if the keys are already populated must be maintained so as not to query the database when unnecessary.
+**Action:** Always look for sequences of `SELECT SINGLE` in ABAP that share a primary key path. When combining them with `JOIN`s, ensure legacy fallback branching logic (e.g., `IF lv_matnr IS INITIAL`) is preserved and explicitly use comments to document the optimization.
