@@ -7,3 +7,6 @@
 ## 2025-01-29 - Consolidate independent sequential lookups into single DB hit (equi/equz)
 **Learning:** Sequential `SELECT SINGLE` queries on different tables (like `equi` and `equz`) that share a primary key (`equnr`) can be combined to reduce N+1-style DB roundtrips.
 **Action:** Use `LEFT OUTER JOIN`s to fetch all dependent properties simultaneously in a single query when the base key is the same, reducing overhead significantly.
+## 2025-01-29 - Consolidate sequential lookups into single DB hit using self JOIN
+**Learning:** When ABAP logic fetches a reference ID from a table and then queries the same table to get properties of the referenced document (e.g., fetching a contract `vgbel` from `vbak`, then fetching the `vbtyp` of that contract from `vbak`), it introduces an N+1 latency pattern.
+**Action:** Use a self `LEFT OUTER JOIN` (e.g., `vbak AS a LEFT OUTER JOIN vbak AS b ON b~vbeln = a~vgbel`) to fetch both the linked ID and the linked document's properties in a single roundtrip, preserving conditional checks on the resulting fields.
