@@ -7,3 +7,6 @@
 ## 2025-01-29 - Consolidate independent sequential lookups into single DB hit (equi/equz)
 **Learning:** Sequential `SELECT SINGLE` queries on different tables (like `equi` and `equz`) that share a primary key (`equnr`) can be combined to reduce N+1-style DB roundtrips.
 **Action:** Use `LEFT OUTER JOIN`s to fetch all dependent properties simultaneously in a single query when the base key is the same, reducing overhead significantly.
+## 2024-07-25 - Consolidate equi and mara lookups
+**Learning:** Sequential `SELECT SINGLE` lookups on `equi` and `mara` within the same logical path cause unnecessary database round-trips.
+**Action:** Use a `LEFT OUTER JOIN` between `equi` and `mara` based on `matnr` to fetch equipment and material data in a single query when the equipment number is known, significantly reducing DB latency.
