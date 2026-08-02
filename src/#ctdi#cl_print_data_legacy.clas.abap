@@ -287,18 +287,28 @@ CLASS /CTDI/CL_PRINT_DATA_LEGACY IMPLEMENTATION.
   METHOD fallback_part_numbers.
     IF mv_new_part IS INITIAL.
       IF mv_new_matnr IS INITIAL.
-        SELECT SINGLE matnr FROM equi WHERE equnr = @iv_equnr INTO @mv_new_matnr.
-      ENDIF.
-      IF mv_new_matnr IS NOT INITIAL.
+        " ⚡ Bolt Optimization: Consolidate sequential equi and mara queries into a single JOIN to eliminate unnecessary database round-trips.
+        SELECT SINGLE e~matnr, m~mfrpn
+          FROM equi AS e
+                 LEFT OUTER JOIN
+                   mara AS m ON m~matnr = e~matnr
+          WHERE e~equnr = @iv_equnr
+          INTO ( @mv_new_matnr, @mv_new_part ).
+      ELSE.
         SELECT SINGLE mfrpn FROM mara WHERE matnr = @mv_new_matnr INTO @mv_new_part.
       ENDIF.
     ENDIF.
 
     IF mv_old_part IS INITIAL.
       IF mv_old_matnr IS INITIAL.
-        SELECT SINGLE matnr FROM equi WHERE equnr = @mv_equnr_retlief INTO @mv_old_matnr.
-      ENDIF.
-      IF mv_old_matnr IS NOT INITIAL.
+        " ⚡ Bolt Optimization: Consolidate sequential equi and mara queries into a single JOIN to eliminate unnecessary database round-trips.
+        SELECT SINGLE e~matnr, m~mfrpn
+          FROM equi AS e
+                 LEFT OUTER JOIN
+                   mara AS m ON m~matnr = e~matnr
+          WHERE e~equnr = @mv_equnr_retlief
+          INTO ( @mv_old_matnr, @mv_old_part ).
+      ELSE.
         SELECT SINGLE mfrpn FROM mara WHERE matnr = @mv_old_matnr INTO @mv_old_part.
       ENDIF.
     ENDIF.
