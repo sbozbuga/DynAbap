@@ -508,8 +508,11 @@ CLASS /CTDI/CL_PRINT_DATA_LEGACY IMPLEMENTATION.
         AND version     = '000001'
       INTO TABLE @lt_qpct.
 
+    " ⚡ Bolt Optimization: Ensure tables are sorted before deduplication and binary search
+    SORT lt_qpgt BY katalogart codegruppe.
     DELETE ADJACENT DUPLICATES FROM lt_qpgt COMPARING katalogart codegruppe.
 
+    SORT lt_qpct BY katalogart codegruppe code.
     DELETE ADJACENT DUPLICATES FROM lt_qpct COMPARING katalogart codegruppe code.
 
     LOOP AT lt_fe ASSIGNING FIELD-SYMBOL(<fe>).
