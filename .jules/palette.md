@@ -16,3 +16,6 @@
 ## 2026-07-29 - Label text missing for selection screen frames
 **Learning:** When building selection screens, developers often use `SELECTION-SCREEN BEGIN OF BLOCK ... WITH FRAME TITLE TEXT-xxx` but forget to add the actual text symbol in the program`s XML text pool. This results in empty frame titles, which is confusing visually and breaks accessibility for screen readers.
 **Action:** Always verify that referenced `TEXT-xxx` symbols exist in the `.prog.xml` text pool (both `<TPOOL>` and `<I18N_TPOOL>`). If missing, add them to improve the UX and resolve abaplint warnings.
+## 2024-08-05 - Add text descriptions to NO-DISPLAY parameters
+**Learning:** In ABAP, background selection screen parameters defined with `NO-DISPLAY` (e.g., `P_SF`) still require text descriptions in the text pool (e.g., `<TPOOL>`). This ensures proper labeling in background job scheduling screens, parameter variants, and dynamic UIs, improving UX and accessibility for administrators.
+**Action:** When adding missing selection screen texts, ensure parameters with `NO-DISPLAY` also receive text entries in the default (`<TPOOL>`) and translated (`<I18N_TPOOL>`) text pools.
