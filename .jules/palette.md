@@ -16,3 +16,6 @@
 ## 2026-07-29 - Label text missing for selection screen frames
 **Learning:** When building selection screens, developers often use `SELECTION-SCREEN BEGIN OF BLOCK ... WITH FRAME TITLE TEXT-xxx` but forget to add the actual text symbol in the program`s XML text pool. This results in empty frame titles, which is confusing visually and breaks accessibility for screen readers.
 **Action:** Always verify that referenced `TEXT-xxx` symbols exist in the `.prog.xml` text pool (both `<TPOOL>` and `<I18N_TPOOL>`). If missing, add them to improve the UX and resolve abaplint warnings.
+## 2024-05-24 - Missing NO-DISPLAY parameter text pool entries
+**Learning:** Background selection screen parameters defined with `NO-DISPLAY` (e.g., `P_SF`) lack text descriptions in `.prog.xml`, which harms UX and a11y for administrators in background job scheduling screens.
+**Action:** Add missing text pool entries for NO-DISPLAY parameters in the default text pool to improve labeling and resolve `selection_screen_texts_missing` warnings.
