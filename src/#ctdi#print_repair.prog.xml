@@ -41,6 +41,12 @@
     </item>
     <item>
      <ID>S</ID>
+     <KEY>P_SF</KEY>
+     <ENTRY>Save as PDF</ENTRY>
+     <LENGTH>19</LENGTH>
+    </item>
+    <item>
+     <ID>S</ID>
      <KEY>P_SHWLOG</KEY>
      <ENTRY>Show logs</ENTRY>
      <LENGTH>17</LENGTH>
@@ -77,6 +83,12 @@
        <ID>S</ID>
        <KEY>P_SERNR</KEY>
        <ENTRY>Seriennummer</ENTRY>
+       <LENGTH>38</LENGTH>
+      </item>
+      <item>
+       <ID>S</ID>
+       <KEY>P_SF</KEY>
+       <ENTRY>Als PDF speichern</ENTRY>
        <LENGTH>38</LENGTH>
       </item>
       <item>
