@@ -165,13 +165,13 @@ CLASS /CTDI/CL_PRINT_DATA_LEGACY IMPLEMENTATION.
 
 
   METHOD determine_change_doc_data.
+    " ⚡ Bolt Optimization: Consolidate sequential equi and equz queries into a single JOIN
     " Pre-fetch current values as defaults
-    SELECT SINGLE serge, matnr FROM equi
-      WHERE equnr = @iv_equnr
-      INTO ( @mv_new_serial, @mv_new_matnr ).
-    SELECT SINGLE mapar FROM equz
-      WHERE equnr = @iv_equnr
-      INTO @mv_new_part.
+    SELECT SINGLE q~serge, q~matnr, z~mapar
+      FROM equi AS q
+             LEFT OUTER JOIN equz AS z ON z~equnr = q~equnr
+      WHERE q~equnr = @iv_equnr
+      INTO ( @mv_new_serial, @mv_new_matnr, @mv_new_part ).
 
     mv_old_serial = mv_new_serial.
     mv_old_part   = mv_new_part.
@@ -268,19 +268,19 @@ CLASS /CTDI/CL_PRINT_DATA_LEGACY IMPLEMENTATION.
 
 
   METHOD determine_swap_data.
-    SELECT SINGLE serge, matnr FROM equi
-      WHERE equnr = @iv_equnr
-      INTO ( @mv_new_serial, @mv_new_matnr ).
-    SELECT SINGLE mapar FROM equz
-      WHERE equnr = @iv_equnr
-      INTO @mv_new_part.
+    " ⚡ Bolt Optimization: Consolidate sequential equi and equz queries into a single JOIN
+    SELECT SINGLE q~serge, q~matnr, z~mapar
+      FROM equi AS q
+             LEFT OUTER JOIN equz AS z ON z~equnr = q~equnr
+      WHERE q~equnr = @iv_equnr
+      INTO ( @mv_new_serial, @mv_new_matnr, @mv_new_part ).
 
-    SELECT SINGLE serge, matnr FROM equi
-      WHERE equnr = @mv_equnr_retlief
-      INTO ( @mv_old_serial, @mv_old_matnr ).
-    SELECT SINGLE mapar FROM equz
-      WHERE equnr = @mv_equnr_retlief
-      INTO @mv_old_part.
+    " ⚡ Bolt Optimization: Consolidate sequential equi and equz queries into a single JOIN
+    SELECT SINGLE q~serge, q~matnr, z~mapar
+      FROM equi AS q
+             LEFT OUTER JOIN equz AS z ON z~equnr = q~equnr
+      WHERE q~equnr = @mv_equnr_retlief
+      INTO ( @mv_old_serial, @mv_old_matnr, @mv_old_part ).
   ENDMETHOD.
 
 
