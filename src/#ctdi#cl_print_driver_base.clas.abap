@@ -265,6 +265,13 @@ CLASS /CTDI/CL_PRINT_DRIVER_BASE IMPLEMENTATION.
     CLEAR: et_ptab,
            et_etab.
 
+    " Fetch all valid parameters for the generated function module to prevent dumps
+    SELECT parameter FROM fupararef
+      WHERE funcname = @iv_fm_name
+      INTO TABLE @DATA(lt_valid_params).
+
+    SORT lt_valid_params BY parameter.
+
     ls_ptab-name = 'CONTROL_PARAMETERS'.
     ls_ptab-kind = abap_func_exporting.
     GET REFERENCE OF is_control_params INTO ls_ptab-value.
@@ -274,20 +281,6 @@ CLASS /CTDI/CL_PRINT_DRIVER_BASE IMPLEMENTATION.
     ls_ptab-kind = abap_func_exporting.
     GET REFERENCE OF is_output_options INTO ls_ptab-value.
     INSERT ls_ptab INTO TABLE et_ptab.
-
-    " Disable user settings to prevent overriding programmatic output options (legacy compatibility)
-    DATA lv_user_settings TYPE c LENGTH 1 VALUE space.
-    ls_ptab-name = 'USER_SETTINGS'.
-    ls_ptab-kind = abap_func_exporting.
-    GET REFERENCE OF lv_user_settings INTO ls_ptab-value.
-    INSERT ls_ptab INTO TABLE et_ptab.
-
-    " Fetch all valid parameters for the generated function module to prevent dumps
-    SELECT parameter FROM fupararef
-      WHERE funcname = @iv_fm_name
-      INTO TABLE @DATA(lt_valid_params).
-
-    SORT lt_valid_params BY parameter.
 
     " Inject any dynamically registered custom parameters if they exist in the form
     LOOP AT mt_custom_form_params ASSIGNING FIELD-SYMBOL(<ls_custom_param>).

@@ -13,10 +13,8 @@ CLASS /ctdi/cl_print_driver_legacy DEFINITION
   PRIVATE SECTION.
     DATA ms_alcarep_legacy TYPE /cellag/alcarep.
     DATA mt_alcarep_error  TYPE STANDARD TABLE OF /cellag/alcarep_error.
-    DATA mv_user_settings  TYPE char1 VALUE space.
     DATA mr_provider       TYPE REF TO /ctdi/cl_print_data_legacy.
 ENDCLASS.
-
 
 
 CLASS /CTDI/CL_PRINT_DRIVER_LEGACY IMPLEMENTATION.
@@ -49,9 +47,6 @@ CLASS /CTDI/CL_PRINT_DRIVER_LEGACY IMPLEMENTATION.
     register_custom_parameter( iv_name = '/CELLAG/ALCAREP'
                                iv_kind = abap_func_exporting
                                ir_data = REF #( ms_alcarep_legacy ) ).
-    register_custom_parameter( iv_name = 'USER_SETTINGS'
-                               iv_kind = abap_func_exporting
-                               ir_data = REF #( mv_user_settings ) ).
     register_custom_parameter( iv_name = '/CELLAG/ALCAREP_ERROR'
                                iv_kind = abap_func_tables
                                ir_data = REF #( mt_alcarep_error ) ).
