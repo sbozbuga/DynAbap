@@ -37,7 +37,6 @@ CLASS /CTDI/CL_PRINT_DATA_CTDI IMPLEMENTATION.
     DATA lv_stokz      TYPE afru-stokz.
     DATA lv_stzhl      TYPE afru-stzhl.
 
-    " Removed SELECT...ENDSELECT in favor of SELECT INTO TABLE
     " Always get SKZ from AFRU for operation 9010
     SELECT bemot, stokz, stzhl FROM afru
       WHERE aufnr = @mv_aufnr

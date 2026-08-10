@@ -12,12 +12,6 @@
    <TPOOL>
     <item>
      <ID>I</ID>
-     <KEY>002</KEY>
-     <ENTRY>Selection</ENTRY>
-     <LENGTH>19</LENGTH>
-    </item>
-    <item>
-     <ID>I</ID>
      <KEY>008</KEY>
      <ENTRY>Printout generated successfully</ENTRY>
      <LENGTH>31</LENGTH>
@@ -50,12 +44,6 @@
     <item>
      <LANGUAGE>D</LANGUAGE>
      <TEXTPOOL>
-      <item>
-       <ID>I</ID>
-       <KEY>002</KEY>
-       <ENTRY>Selektion</ENTRY>
-       <LENGTH>19</LENGTH>
-      </item>
       <item>
        <ID>I</ID>
        <KEY>008</KEY>

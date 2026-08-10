@@ -165,7 +165,7 @@ CLASS /CTDI/CL_PRINT_DATA_LEGACY IMPLEMENTATION.
 
 
   METHOD determine_change_doc_data.
-    " ⚡ Bolt Optimization: Consolidate sequential equi and equz queries into a single JOIN
+    " Consolidate sequential equi and equz queries into a single JOIN
     " Pre-fetch current values as defaults
     SELECT SINGLE q~serge, q~matnr, z~mapar
       FROM equi AS q
@@ -268,19 +268,20 @@ CLASS /CTDI/CL_PRINT_DATA_LEGACY IMPLEMENTATION.
 
 
   METHOD determine_swap_data.
-    " ⚡ Bolt Optimization: Consolidate sequential equi and equz queries into a single JOIN
+    " Optimization: Consolidate sequential equi and equz queries into a single JOIN
+
     SELECT SINGLE q~serge, q~matnr, z~mapar
       FROM equi AS q
              LEFT OUTER JOIN equz AS z ON z~equnr = q~equnr
       WHERE q~equnr = @iv_equnr
       INTO ( @mv_new_serial, @mv_new_matnr, @mv_new_part ).
 
-    " ⚡ Bolt Optimization: Consolidate sequential equi and equz queries into a single JOIN
     SELECT SINGLE q~serge, q~matnr, z~mapar
       FROM equi AS q
              LEFT OUTER JOIN equz AS z ON z~equnr = q~equnr
       WHERE q~equnr = @mv_equnr_retlief
       INTO ( @mv_old_serial, @mv_old_matnr, @mv_old_part ).
+
   ENDMETHOD.
 
 
@@ -518,7 +519,7 @@ CLASS /CTDI/CL_PRINT_DATA_LEGACY IMPLEMENTATION.
       MOVE-CORRESPONDING <fe> TO <le>.
       <le>-qmnum = lf_qmnum.
 
-      " Added BINARY SEARCH to prevent O(N*M) nested loop lookups
+      " Added BINARY SEARCH to prevent ineeficient nested loop lookups
       READ TABLE lt_qpgt ASSIGNING FIELD-SYMBOL(<gt>)
            WITH KEY katalogart = <fe>-otkat
                     codegruppe = <fe>-otgrp BINARY SEARCH.
@@ -729,7 +730,6 @@ CLASS /CTDI/CL_PRINT_DATA_LEGACY IMPLEMENTATION.
   METHOD get_retlief.
     DATA lf_rmanr     TYPE vbap-vbeln.
     DATA lf_posnv_rma TYPE posnr.
-    " TODO: variable is assigned but never used (ABAP cleaner)
     DATA lf_posnr_rma TYPE posnr.
     DATA ls_comwa     TYPE vbco6.
     DATA lt_vbfa      TYPE TABLE OF vbfa.
@@ -737,7 +737,6 @@ CLASS /CTDI/CL_PRINT_DATA_LEGACY IMPLEMENTATION.
 
     SELECT SINGLE rmanr, posnr_rma, posnv_rma
       FROM afko
-
       WHERE aufnr = @mv_aufnr
       INTO ( @lf_rmanr, @lf_posnr_rma, @lf_posnv_rma ).
     ls_comwa-vbeln = lf_rmanr.
