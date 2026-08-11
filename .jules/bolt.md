@@ -7,3 +7,6 @@
 ## 2025-01-29 - Consolidate independent sequential lookups into single DB hit (equi/equz)
 **Learning:** Sequential `SELECT SINGLE` queries on different tables (like `equi` and `equz`) that share a primary key (`equnr`) can be combined to reduce N+1-style DB roundtrips.
 **Action:** Use `LEFT OUTER JOIN`s to fetch all dependent properties simultaneously in a single query when the base key is the same, reducing overhead significantly.
+## 2025-01-29 - Consolidate sequential lookups into single DB hit (vbak)
+**Learning:** Legacy ABAP code often performs sequential `SELECT SINGLE` lookups based on an initial order ID or similar (e.g., getting a field from a row, then checking another field of that row, or joining to a related table). Here, `SELECT SINGLE vgbel FROM vbak` then `SELECT SINGLE vbtyp FROM vbak` on the same document are two trips to the DB, causing N+1-style overhead.
+**Action:** Consolidate these into a single database hit using a single query fetching all required fields (e.g., `vgbel, vbtyp`), avoiding redundant DB roundtrips.
