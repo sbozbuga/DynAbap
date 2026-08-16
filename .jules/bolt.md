@@ -7,3 +7,6 @@
 ## 2025-01-29 - Consolidate independent sequential lookups into single DB hit (equi/equz)
 **Learning:** Sequential `SELECT SINGLE` queries on different tables (like `equi` and `equz`) that share a primary key (`equnr`) can be combined to reduce N+1-style DB roundtrips.
 **Action:** Use `LEFT OUTER JOIN`s to fetch all dependent properties simultaneously in a single query when the base key is the same, reducing overhead significantly.
+## 2025-01-29 - Consolidate independent sequential lookups into single DB hit (vbak self join)
+**Learning:** Sequential `SELECT SINGLE` queries on the same table (like `vbak`) where a secondary document is fetched based on a field of the primary document (e.g. `vgbel`) create N+1-style DB latency.
+**Action:** Use a self `LEFT OUTER JOIN` to fetch both records simultaneously in a single query (e.g., `FROM vbak AS a LEFT OUTER JOIN vbak AS b ON b~vbeln = a~vgbel`), reducing overhead significantly. Ensure to explicitly type variables when selecting into a flat structure to avoid mixing `@DATA` and explicit variables.
