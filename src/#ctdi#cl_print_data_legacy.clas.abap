@@ -288,18 +288,26 @@ CLASS /CTDI/CL_PRINT_DATA_LEGACY IMPLEMENTATION.
   METHOD fallback_part_numbers.
     IF mv_new_part IS INITIAL.
       IF mv_new_matnr IS INITIAL.
-        SELECT SINGLE matnr FROM equi WHERE equnr = @iv_equnr INTO @mv_new_matnr.
-      ENDIF.
-      IF mv_new_matnr IS NOT INITIAL.
+        " ⚡ Bolt Optimization: Consolidate sequential equi and mara lookups into a single JOIN
+        SELECT SINGLE q~matnr, m~mfrpn
+          FROM equi AS q
+                 LEFT OUTER JOIN mara AS m ON m~matnr = q~matnr
+          WHERE q~equnr = @iv_equnr
+          INTO ( @mv_new_matnr, @mv_new_part ).
+      ELSE.
         SELECT SINGLE mfrpn FROM mara WHERE matnr = @mv_new_matnr INTO @mv_new_part.
       ENDIF.
     ENDIF.
 
     IF mv_old_part IS INITIAL.
       IF mv_old_matnr IS INITIAL.
-        SELECT SINGLE matnr FROM equi WHERE equnr = @mv_equnr_retlief INTO @mv_old_matnr.
-      ENDIF.
-      IF mv_old_matnr IS NOT INITIAL.
+        " ⚡ Bolt Optimization: Consolidate sequential equi and mara lookups into a single JOIN
+        SELECT SINGLE q~matnr, m~mfrpn
+          FROM equi AS q
+                 LEFT OUTER JOIN mara AS m ON m~matnr = q~matnr
+          WHERE q~equnr = @mv_equnr_retlief
+          INTO ( @mv_old_matnr, @mv_old_part ).
+      ELSE.
         SELECT SINGLE mfrpn FROM mara WHERE matnr = @mv_old_matnr INTO @mv_old_part.
       ENDIF.
     ENDIF.
@@ -307,29 +315,26 @@ CLASS /CTDI/CL_PRINT_DATA_LEGACY IMPLEMENTATION.
 
 
   METHOD get_astatus_data.
-    DATA lt_jcds TYPE TABLE OF jcds.
+    DATA lv_inact TYPE jcds-inact.
 
-    SELECT objnr, stat, chgnr, udate, utime, inact
+    " ⚡ Bolt Optimization: Push latest record fetch to DB avoiding internal table mapping overhead
+    SELECT udate, utime, inact
       FROM jcds
       WHERE objnr = @iv_objnr
         AND stat  = @co_wfer_stat
       ORDER BY udate DESCENDING,
                utime DESCENDING
-      INTO CORRESPONDING FIELDS OF TABLE @lt_jcds
+      INTO ( @ev_wfer_date, @ev_wfer_time, @lv_inact )
       UP TO 1 ROWS.
+    ENDSELECT.
 
-    IF lt_jcds IS NOT INITIAL.
-      READ TABLE lt_jcds ASSIGNING FIELD-SYMBOL(<ls_jcds>) INDEX 1.
-      IF <ls_jcds> IS ASSIGNED.
-        IF <ls_jcds>-inact IS NOT INITIAL.
-          MESSAGE e029(/cellag/cs01) WITH mv_aufnr INTO DATA(lv_msg1).
-          RAISE EXCEPTION TYPE /ctdi/cx_print_driver_error
-            EXPORTING
-              repair_id = mv_aufnr
-              message   = lv_msg1.
-        ENDIF.
-        ev_wfer_date = <ls_jcds>-udate.
-        ev_wfer_time = <ls_jcds>-utime.
+    IF sy-subrc = 0.
+      IF lv_inact IS NOT INITIAL.
+        MESSAGE e029(/cellag/cs01) WITH mv_aufnr INTO DATA(lv_msg1).
+        RAISE EXCEPTION TYPE /ctdi/cx_print_driver_error
+          EXPORTING
+            repair_id = mv_aufnr
+            message   = lv_msg1.
       ENDIF.
     ELSE.
       MESSAGE e028(/cellag/cs01) WITH mv_aufnr INTO DATA(lv_msg2).
