@@ -68,6 +68,7 @@ CLASS lcl_tests DEFINITION FOR TESTING
     METHODS: read_data_cast_error FOR TESTING.
     METHODS: get_config_no_config_exc FOR TESTING.
     METHODS: normalize_class_name FOR TESTING.
+    METHODS: set_get_download_dir FOR TESTING.
 ENDCLASS.       "lcl_tests
 
 
@@ -414,6 +415,14 @@ CLASS lcl_tests IMPLEMENTATION.
       act = /ctdi/cl_print_cust_engine=>normalize_class_name( '' )
       exp = ''
       msg = 'Empty input should return empty' ).
+  ENDMETHOD.
+
+  METHOD set_get_download_dir.
+    /ctdi/cl_print_driver_base=>set_download_dir( 'C:\TestFolder' ).
+    cl_abap_unit_assert=>assert_equals(
+      act = /ctdi/cl_print_driver_base=>get_download_dir( )
+      exp = 'C:\TestFolder\'
+      msg = 'Directory should be normalized with trailing backslash' ).
   ENDMETHOD.
 
 ENDCLASS.

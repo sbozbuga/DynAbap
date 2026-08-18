@@ -22,17 +22,29 @@ CLASS /ctdi/cl_print_driver_base DEFINITION
       RAISING   /ctdi/cx_print_driver_error
                 /ctdi/cx_no_config_found.
 
+    CLASS-METHODS set_download_dir
+      IMPORTING iv_dir TYPE string.
+
+    CLASS-METHODS get_download_dir
+      RETURNING VALUE(rv_dir) TYPE string.
+
     "! Executes the full print pipeline (read data + render form).
     "!
     "! @parameter iv_save_as_pdf |
+    "! @parameter iv_no_dialog |
+    "! @parameter iv_preview |
     "! @parameter io_data |
     "! @raising /ctdi/cx_print_driver_error |
     METHODS execute
       IMPORTING iv_save_as_pdf TYPE abap_bool     DEFAULT abap_false
+                iv_no_dialog   TYPE abap_bool     DEFAULT abap_true
+                iv_preview     TYPE abap_bool     DEFAULT abap_false
                 io_data        TYPE REF TO object OPTIONAL
       RAISING   /ctdi/cx_print_driver_error.
 
   PROTECTED SECTION.
+    CLASS-DATA mv_download_dir TYPE string.
+
     DATA mv_repair_order       TYPE aufnr.
     DATA mv_sernr              TYPE equi-sernr.
     DATA mv_qmnum              TYPE qmnum.
@@ -92,9 +104,13 @@ CLASS /ctdi/cl_print_driver_base DEFINITION
     "! Renders the form (SmartForm or Adobe) and optionally saves as PDF.
     "!
     "! @parameter iv_save_as_pdf |
+    "! @parameter iv_no_dialog |
+    "! @parameter iv_preview |
     "! @raising /ctdi/cx_print_driver_error |
     METHODS render_form
       IMPORTING iv_save_as_pdf TYPE abap_bool
+                iv_no_dialog   TYPE abap_bool DEFAULT abap_true
+                iv_preview     TYPE abap_bool DEFAULT abap_false
       RAISING   /ctdi/cx_print_driver_error.
 
     "! Detects form technology: 'S' = Smart Form, 'A' = Adobe Form.
@@ -106,17 +122,25 @@ CLASS /ctdi/cl_print_driver_base DEFINITION
     "! Executes a Smart Form and optionally converts OTF output to PDF.
     "!
     "! @parameter iv_save_as_pdf |
+    "! @parameter iv_no_dialog |
+    "! @parameter iv_preview |
     "! @raising /ctdi/cx_print_driver_error |
     METHODS execute_smartform
       IMPORTING iv_save_as_pdf TYPE abap_bool
+                iv_no_dialog   TYPE abap_bool DEFAULT abap_true
+                iv_preview     TYPE abap_bool DEFAULT abap_false
       RAISING   /ctdi/cx_print_driver_error.
 
     "! Executes an Adobe Form and optionally retrieves the PDF stream.
     "!
     "! @parameter iv_save_as_pdf |
+    "! @parameter iv_no_dialog |
+    "! @parameter iv_preview |
     "! @raising /ctdi/cx_print_driver_error |
     METHODS execute_adobeform
       IMPORTING iv_save_as_pdf TYPE abap_bool
+                iv_no_dialog   TYPE abap_bool DEFAULT abap_true
+                iv_preview     TYPE abap_bool DEFAULT abap_false
       RAISING   /ctdi/cx_print_driver_error.
 
     "! Downloads an XSTRING as a PDF file via the presentation layer.
@@ -186,8 +210,6 @@ CLASS /ctdi/cl_print_driver_base DEFINITION
                 ev_delete  TYPE c.
 
   PRIVATE SECTION.
-    CLASS-DATA mv_download_dir TYPE string.
-
     CLASS-METHODS resolve_contract
       IMPORTING iv_repair_id   TYPE aufnr
       EXPORTING ev_contract_id TYPE vbeln_va
@@ -208,6 +230,24 @@ ENDCLASS.
 
 
 CLASS /CTDI/CL_PRINT_DRIVER_BASE IMPLEMENTATION.
+
+
+  METHOD set_download_dir.
+    mv_download_dir = iv_dir.
+    IF mv_download_dir IS NOT INITIAL.
+      DATA(lv_len) = strlen( mv_download_dir ).
+      DATA(lv_off) = lv_len - 1.
+      DATA(lv_last_char) = mv_download_dir+lv_off(1).
+      IF lv_last_char <> '\' AND lv_last_char <> '/'.
+        mv_download_dir = mv_download_dir && '\'.
+      ENDIF.
+    ENDIF.
+  ENDMETHOD.
+
+
+  METHOD get_download_dir.
+    rv_dir = mv_download_dir.
+  ENDMETHOD.
 
 
   METHOD build_adobeform_params.
@@ -408,26 +448,31 @@ CLASS /CTDI/CL_PRINT_DRIVER_BASE IMPLEMENTATION.
     ENDIF.
 
     IF mv_download_dir IS INITIAL.
-      " First download in this session: show file-save dialog
-      cl_gui_frontend_services=>file_save_dialog( EXPORTING  default_file_name = lv_pdf_filename
-                                                             default_extension = 'pdf'
-                                                             file_filter       = 'PDF Files (*.pdf)|*.pdf'
-                                                  CHANGING   filename          = lv_filename
-                                                             path              = lv_path
-                                                             fullpath          = lv_fpath
-                                                             user_action       = lv_action
-                                                  EXCEPTIONS OTHERS            = 1 ).
-
-      IF lv_action <> cl_gui_frontend_services=>action_ok OR lv_fpath IS INITIAL.
-        RETURN.
+      " Prompt once for directory using folder browse
+      DATA lv_folder TYPE string.
+      cl_gui_frontend_services=>directory_browse( EXPORTING  initial_folder = space
+                                                  CHANGING   selected_folder = lv_folder
+                                                  EXCEPTIONS OTHERS          = 1 ).
+      IF sy-subrc = 0 AND lv_folder IS NOT INITIAL.
+        set_download_dir( lv_folder ).
+      ELSE.
+        " Fallback to file save dialog if folder browse was cancelled or unsupported
+        cl_gui_frontend_services=>file_save_dialog( EXPORTING  default_file_name = lv_pdf_filename
+                                                               default_extension = 'pdf'
+                                                               file_filter       = 'PDF Files (*.pdf)|*.pdf'
+                                                    CHANGING   filename          = lv_filename
+                                                               path              = lv_path
+                                                               fullpath          = lv_fpath
+                                                               user_action       = lv_action
+                                                    EXCEPTIONS OTHERS            = 1 ).
+        IF lv_action <> cl_gui_frontend_services=>action_ok OR lv_fpath IS INITIAL.
+          RETURN.
+        ENDIF.
+        set_download_dir( lv_path ).
       ENDIF.
-
-      " Remember directory for subsequent downloads
-      mv_download_dir = lv_path.
-    ELSE.
-      " Subsequent downloads: reuse stored directory, auto-generate filename
-      lv_fpath = mv_download_dir && lv_pdf_filename.
     ENDIF.
+
+    lv_fpath = mv_download_dir && lv_pdf_filename.
 
     lv_filesize = xstrlen( iv_pdf_data ).
 
@@ -468,7 +513,9 @@ CLASS /CTDI/CL_PRINT_DRIVER_BASE IMPLEMENTATION.
     read_data( io_data = io_data ).
 
     " Step 2: Render the form (SmartForm or Adobe)
-    render_form( iv_save_as_pdf = iv_save_as_pdf ).
+    render_form( iv_save_as_pdf = iv_save_as_pdf
+                 iv_no_dialog   = iv_no_dialog
+                 iv_preview     = iv_preview ).
 
     MESSAGE i002(/ctdi/print_repair) WITH mv_repair_order
             INTO DATA(lv_msg_completed).
@@ -504,7 +551,8 @@ CLASS /CTDI/CL_PRINT_DRIVER_BASE IMPLEMENTATION.
       ls_outputparams-nodialog = abap_true.
       ls_outputparams-getpdf   = abap_true.
     ELSE.
-      ls_outputparams-preview = abap_true.
+      ls_outputparams-nodialog = iv_no_dialog.
+      ls_outputparams-preview  = iv_preview.
     ENDIF.
 
     " Open Adobe print job
@@ -635,8 +683,9 @@ CLASS /CTDI/CL_PRINT_DRIVER_BASE IMPLEMENTATION.
     ENDIF.
     ls_output_options-tdprinter = lv_devtype.
 
-    " Suppress print dialog unconditionally (legacy compatibility)
-    ls_control_params-no_dialog = abap_true.
+    " Configure print dialog and preview mode
+    ls_control_params-no_dialog = iv_no_dialog.
+    ls_control_params-preview   = iv_preview.
 
     " PDF mode: intercept OTF data
     IF iv_save_as_pdf = abap_true.
@@ -918,10 +967,14 @@ CLASS /CTDI/CL_PRINT_DRIVER_BASE IMPLEMENTATION.
 
     IF lv_form_type = 'S'.
       /ctdi/cl_print_driver_log=>log_info( |Form { mv_form_name } detected as Smart Form| ).
-      execute_smartform( iv_save_as_pdf = iv_save_as_pdf ).
+      execute_smartform( iv_save_as_pdf = iv_save_as_pdf
+                         iv_no_dialog   = iv_no_dialog
+                         iv_preview     = iv_preview ).
     ELSE.
       /ctdi/cl_print_driver_log=>log_info( |Form { mv_form_name } detected as Adobe Form| ).
-      execute_adobeform( iv_save_as_pdf = iv_save_as_pdf ).
+      execute_adobeform( iv_save_as_pdf = iv_save_as_pdf
+                         iv_no_dialog   = iv_no_dialog
+                         iv_preview     = iv_preview ).
     ENDIF.
   ENDMETHOD.
 

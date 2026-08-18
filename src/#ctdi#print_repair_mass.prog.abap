@@ -54,8 +54,18 @@ PARAMETERS: p_vornr TYPE afru-vornr DEFAULT '9010',     " Operation (WFER)
 SELECTION-SCREEN END OF BLOCK b1.
 
 SELECTION-SCREEN BEGIN OF BLOCK b2 WITH FRAME TITLE TEXT-002.
-PARAMETERS p_pdf TYPE sap_bool AS CHECKBOX.               " Save as PDF
+PARAMETERS: p_pdf TYPE sap_bool AS CHECKBOX,               " Save as PDF
+            p_dir TYPE string LOWER CASE.                   " Target Directory
 SELECTION-SCREEN END OF BLOCK b2.
+
+AT SELECTION-SCREEN ON VALUE-REQUEST FOR p_dir.
+  DATA lv_browse_folder TYPE string.
+  cl_gui_frontend_services=>directory_browse( EXPORTING  initial_folder = p_dir
+                                              CHANGING   selected_folder = lv_browse_folder
+                                              EXCEPTIONS OTHERS          = 1 ).
+  IF sy-subrc = 0 AND lv_browse_folder IS NOT INITIAL.
+    p_dir = lv_browse_folder.
+  ENDIF.
 
 " -----------------------------------------------------------------------
 " ALV output structure
@@ -242,6 +252,23 @@ CLASS lcl_mass_print IMPLEMENTATION.
       RETURN.
     ENDIF.
 
+    IF p_pdf = abap_true.
+      IF p_dir IS NOT INITIAL.
+        /ctdi/cl_print_driver_base=>set_download_dir( p_dir ).
+      ELSEIF /ctdi/cl_print_driver_base=>get_download_dir( ) IS INITIAL.
+        DATA lv_sel_folder TYPE string.
+        cl_gui_frontend_services=>directory_browse( EXPORTING  initial_folder = space
+                                                    CHANGING   selected_folder = lv_sel_folder
+                                                    EXCEPTIONS OTHERS          = 1 ).
+        IF sy-subrc = 0 AND lv_sel_folder IS NOT INITIAL.
+          /ctdi/cl_print_driver_base=>set_download_dir( lv_sel_folder ).
+        ELSE.
+          MESSAGE 'Print process cancelled: No target directory selected.' TYPE 'S' DISPLAY LIKE 'W'.
+          RETURN.
+        ENDIF.
+      ENDIF.
+    ENDIF.
+
     LOOP AT lt_rows INTO DATA(lv_row).
       ASSIGN gt_alv[ lv_row ] TO FIELD-SYMBOL(<ls_line>).
       IF sy-subrc <> 0.
@@ -255,7 +282,9 @@ CLASS lcl_mass_print IMPLEMENTATION.
 
       TRY.
           DATA(lr_driver) = /ctdi/cl_print_driver_base=>factory( iv_repair_id = <ls_line>-aufnr ).
-          lr_driver->execute( iv_save_as_pdf = p_pdf ).
+          lr_driver->execute( iv_save_as_pdf = p_pdf
+                              iv_no_dialog   = abap_true
+                              iv_preview     = abap_false ).
 
           <ls_line>-icon = icon_led_green.
           <ls_line>-msg  = TEXT-010.
@@ -291,6 +320,23 @@ CLASS lcl_mass_print IMPLEMENTATION.
     DATA lv_count_ok  TYPE i.
     DATA lv_count_err TYPE i.
 
+    IF p_pdf = abap_true.
+      IF p_dir IS NOT INITIAL.
+        /ctdi/cl_print_driver_base=>set_download_dir( p_dir ).
+      ELSEIF /ctdi/cl_print_driver_base=>get_download_dir( ) IS INITIAL.
+        DATA lv_sel_folder TYPE string.
+        cl_gui_frontend_services=>directory_browse( EXPORTING  initial_folder = space
+                                                    CHANGING   selected_folder = lv_sel_folder
+                                                    EXCEPTIONS OTHERS          = 1 ).
+        IF sy-subrc = 0 AND lv_sel_folder IS NOT INITIAL.
+          /ctdi/cl_print_driver_base=>set_download_dir( lv_sel_folder ).
+        ELSE.
+          MESSAGE 'Print process cancelled: No target directory selected.' TYPE 'S' DISPLAY LIKE 'W'.
+          RETURN.
+        ENDIF.
+      ENDIF.
+    ENDIF.
+
     LOOP AT gt_alv ASSIGNING FIELD-SYMBOL(<ls_line>).
       cl_progress_indicator=>progress_indicate( i_text               = |Printing { <ls_line>-aufnr }...|
                                                 i_processed          = sy-tabix
@@ -299,7 +345,9 @@ CLASS lcl_mass_print IMPLEMENTATION.
 
       TRY.
           DATA(lr_driver) = /ctdi/cl_print_driver_base=>factory( iv_repair_id = <ls_line>-aufnr ).
-          lr_driver->execute( iv_save_as_pdf = p_pdf ).
+          lr_driver->execute( iv_save_as_pdf = p_pdf
+                              iv_no_dialog   = abap_true
+                              iv_preview     = abap_false ).
 
           <ls_line>-icon = icon_led_green.
           <ls_line>-msg  = TEXT-010.
