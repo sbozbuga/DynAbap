@@ -54,8 +54,8 @@ PARAMETERS: p_vornr TYPE afru-vornr DEFAULT '9010',     " Operation (WFER)
 SELECTION-SCREEN END OF BLOCK b1.
 
 SELECTION-SCREEN BEGIN OF BLOCK b2 WITH FRAME TITLE TEXT-002.
-PARAMETERS: p_pdf TYPE sap_bool AS CHECKBOX,               " Save as PDF
-            p_dir TYPE string LOWER CASE.                   " Target Directory
+PARAMETERS: p_pdf TYPE sap_bool AS CHECKBOX USER-COMMAND pdf_toggle, " Save as PDF
+            p_dir TYPE string LOWER CASE MODIF ID pdf.               " Target Directory
 SELECTION-SCREEN END OF BLOCK b2.
 
 " -----------------------------------------------------------------------
@@ -384,6 +384,20 @@ INITIALIZATION.
   ELSE.
     p_dir = 'C:\temp\'.
   ENDIF.
+
+AT SELECTION-SCREEN OUTPUT.
+  LOOP AT SCREEN.
+    IF screen-group1 = 'PDF'.
+      IF p_pdf = abap_true.
+        screen-active    = '1'.
+        screen-invisible = '0'.
+      ELSE.
+        screen-active    = '0'.
+        screen-invisible = '1'.
+      ENDIF.
+      MODIFY SCREEN.
+    ENDIF.
+  ENDLOOP.
 
 AT SELECTION-SCREEN ON VALUE-REQUEST FOR p_dir.
   DATA lv_browse_folder TYPE string.
