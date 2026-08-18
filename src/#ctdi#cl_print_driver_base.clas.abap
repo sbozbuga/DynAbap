@@ -948,14 +948,31 @@ CLASS /CTDI/CL_PRINT_DRIVER_BASE IMPLEMENTATION.
     " 2. Map structures and register
     map_and_register_data( ).
 
-    " 3. Resolve notification number and position for PDF filename
+    " 3. Resolve notification number, position, and serial number for PDF filename
     IF mv_qmnum IS INITIAL.
-      SELECT SINGLE q~qmnum, f~fenum
-        FROM qmel AS q
-               LEFT OUTER JOIN qmfe AS f ON f~qmnum = q~qmnum
-        WHERE q~aufnr = @mv_repair_order
-          AND q~qmart = @gc_qmart_repair
-        INTO ( @mv_qmnum, @mv_fenum ) ##WARN_OK.
+      SELECT SINGLE qmnum FROM afih
+        WHERE aufnr = @mv_repair_order
+        INTO @mv_qmnum.
+
+      IF mv_qmnum IS INITIAL.
+        SELECT SINGLE qmnum FROM qmel
+          WHERE aufnr = @mv_repair_order
+          INTO @mv_qmnum.
+      ENDIF.
+    ENDIF.
+
+    IF mv_qmnum IS NOT INITIAL AND mv_fenum IS INITIAL.
+      SELECT SINGLE fenum FROM qmfe
+        WHERE qmnum = @mv_qmnum
+        INTO @mv_fenum.
+    ENDIF.
+
+    IF mv_sernr IS INITIAL AND ms_repair-sernr IS INITIAL.
+      SELECT SINGLE e~sernr
+        FROM afih AS a
+               INNER JOIN equi AS e ON e~equnr = a~equnr
+        WHERE a~aufnr = @mv_repair_order
+        INTO @mv_sernr.
     ENDIF.
   ENDMETHOD.
 
