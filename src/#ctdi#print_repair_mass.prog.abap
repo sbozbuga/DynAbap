@@ -128,7 +128,7 @@ CLASS lcl_mass_print IMPLEMENTATION.
                                  AND f~vornr = @p_vornr
                                  AND f~stokz = @space
                                  AND f~stzhl = '00000000'
-                          LEFT OUTER JOIN
+                         LEFT OUTER JOIN
                            qmel AS q ON  q~aufnr = a~aufnr
                                      AND q~qmart = @p_qmart
       WHERE a~aufnr IN @s_aufnr
@@ -248,7 +248,7 @@ CLASS lcl_mass_print IMPLEMENTATION.
         /ctdi/cl_print_driver_base=>set_download_dir( p_dir ).
       ELSEIF /ctdi/cl_print_driver_base=>get_download_dir( ) IS INITIAL.
         DATA lv_sel_folder TYPE string.
-        cl_gui_frontend_services=>directory_browse( EXPORTING  initial_folder = space
+        cl_gui_frontend_services=>directory_browse( EXPORTING  initial_folder  = space
                                                     CHANGING   selected_folder = lv_sel_folder
                                                     EXCEPTIONS OTHERS          = 1 ).
         IF sy-subrc = 0 AND lv_sel_folder IS NOT INITIAL.
@@ -316,7 +316,7 @@ CLASS lcl_mass_print IMPLEMENTATION.
         /ctdi/cl_print_driver_base=>set_download_dir( p_dir ).
       ELSEIF /ctdi/cl_print_driver_base=>get_download_dir( ) IS INITIAL.
         DATA lv_sel_folder TYPE string.
-        cl_gui_frontend_services=>directory_browse( EXPORTING  initial_folder = space
+        cl_gui_frontend_services=>directory_browse( EXPORTING  initial_folder  = space
                                                     CHANGING   selected_folder = lv_sel_folder
                                                     EXCEPTIONS OTHERS          = 1 ).
         IF sy-subrc = 0 AND lv_sel_folder IS NOT INITIAL.
@@ -376,6 +376,7 @@ ENDCLASS.
 
 INITIALIZATION.
   DATA lv_desktop_dir TYPE string.
+
   cl_gui_frontend_services=>get_desktop_directory( CHANGING   desktop_directory = lv_desktop_dir
                                                    EXCEPTIONS OTHERS            = 1 ).
   IF sy-subrc = 0 AND lv_desktop_dir IS NOT INITIAL.
@@ -401,7 +402,8 @@ AT SELECTION-SCREEN OUTPUT.
 
 AT SELECTION-SCREEN ON VALUE-REQUEST FOR p_dir.
   DATA lv_browse_folder TYPE string.
-  cl_gui_frontend_services=>directory_browse( EXPORTING  initial_folder = p_dir
+
+  cl_gui_frontend_services=>directory_browse( EXPORTING  initial_folder  = p_dir
                                               CHANGING   selected_folder = lv_browse_folder
                                               EXCEPTIONS OTHERS          = 1 ).
   IF sy-subrc = 0 AND lv_browse_folder IS NOT INITIAL.
