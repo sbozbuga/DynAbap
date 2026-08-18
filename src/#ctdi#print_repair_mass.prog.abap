@@ -376,8 +376,8 @@ ENDCLASS.
 
 INITIALIZATION.
   DATA lv_desktop_dir TYPE string.
-  cl_gui_frontend_services=>get_desktop_directory( CHANGING   selected_folder = lv_desktop_dir
-                                                   EXCEPTIONS OTHERS          = 1 ).
+  cl_gui_frontend_services=>get_desktop_directory( CHANGING   desktop_folder = lv_desktop_dir
+                                                   EXCEPTIONS OTHERS         = 1 ).
   IF sy-subrc = 0 AND lv_desktop_dir IS NOT INITIAL.
     cl_gui_cfw=>flush( ).
     p_dir = lv_desktop_dir.
