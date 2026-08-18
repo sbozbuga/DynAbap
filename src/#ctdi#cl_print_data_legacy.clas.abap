@@ -95,10 +95,6 @@ CLASS /ctdi/cl_print_data_legacy DEFINITION
       EXPORTING ev_vl_erdat TYPE likp-erdat
                 ev_vl_zeit  TYPE likp-erzet.
 
-    METHODS get_retlief
-      EXPORTING es_vbfa    TYPE vbfa
-                ev_vbfa_rl TYPE vbeln_vl.
-
     METHODS convert_to_timestamp
       IMPORTING iv_date          TYPE dats
                 iv_time          TYPE tims
@@ -107,10 +103,7 @@ CLASS /ctdi/cl_print_data_legacy DEFINITION
 ENDCLASS.
 
 
-
-CLASS /CTDI/CL_PRINT_DATA_LEGACY IMPLEMENTATION.
-
-
+CLASS /ctdi/cl_print_data_legacy IMPLEMENTATION.
   METHOD check_sernr_swap.
     DATA lf_rmanr     TYPE vbap-vbeln.
     DATA lf_posnv_rma TYPE posnr.
@@ -157,19 +150,20 @@ CLASS /CTDI/CL_PRINT_DATA_LEGACY IMPLEMENTATION.
     ENDIF.
   ENDMETHOD.
 
-
   METHOD convert_to_timestamp.
     CONVERT DATE iv_date TIME iv_time
             INTO TIME STAMP rv_tstamp TIME ZONE sy-zonlo.
   ENDMETHOD.
 
-
   METHOD determine_change_doc_data.
     " Consolidate sequential equi and equz queries into a single JOIN
     " Pre-fetch current values as defaults
-    SELECT SINGLE q~serge, q~matnr, z~mapar
+    SELECT SINGLE q~serge,
+                  q~matnr,
+                  z~mapar
       FROM equi AS q
-             LEFT OUTER JOIN equz AS z ON z~equnr = q~equnr
+             LEFT OUTER JOIN
+               equz AS z ON z~equnr = q~equnr
       WHERE q~equnr = @iv_equnr
       INTO ( @mv_new_serial, @mv_new_matnr, @mv_new_part ).
 
@@ -250,7 +244,6 @@ CLASS /CTDI/CL_PRINT_DATA_LEGACY IMPLEMENTATION.
     ENDLOOP.
   ENDMETHOD.
 
-
   METHOD determine_serial_and_part.
     CLEAR: mv_old_serial,
            mv_new_serial,
@@ -266,24 +259,26 @@ CLASS /CTDI/CL_PRINT_DATA_LEGACY IMPLEMENTATION.
     ENDIF.
   ENDMETHOD.
 
-
   METHOD determine_swap_data.
     " Optimization: Consolidate sequential equi and equz queries into a single JOIN
-
-    SELECT SINGLE q~serge, q~matnr, z~mapar
+    SELECT SINGLE q~serge,
+                  q~matnr,
+                  z~mapar
       FROM equi AS q
-             LEFT OUTER JOIN equz AS z ON z~equnr = q~equnr
+             LEFT OUTER JOIN
+               equz AS z ON z~equnr = q~equnr
       WHERE q~equnr = @iv_equnr
       INTO ( @mv_new_serial, @mv_new_matnr, @mv_new_part ).
 
-    SELECT SINGLE q~serge, q~matnr, z~mapar
+    SELECT SINGLE q~serge,
+                  q~matnr,
+                  z~mapar
       FROM equi AS q
-             LEFT OUTER JOIN equz AS z ON z~equnr = q~equnr
+             LEFT OUTER JOIN
+               equz AS z ON z~equnr = q~equnr
       WHERE q~equnr = @mv_equnr_retlief
       INTO ( @mv_old_serial, @mv_old_matnr, @mv_old_part ).
-
   ENDMETHOD.
-
 
   METHOD fallback_part_numbers.
     IF mv_new_part IS INITIAL.
@@ -304,7 +299,6 @@ CLASS /CTDI/CL_PRINT_DATA_LEGACY IMPLEMENTATION.
       ENDIF.
     ENDIF.
   ENDMETHOD.
-
 
   METHOD get_astatus_data.
     DATA lt_jcds TYPE TABLE OF jcds.
@@ -339,7 +333,6 @@ CLASS /CTDI/CL_PRINT_DATA_LEGACY IMPLEMENTATION.
           message   = lv_msg2.
     ENDIF.
   ENDMETHOD.
-
 
   METHOD get_comment.
     DATA lt_lines      TYPE TABLE OF tline.
@@ -379,13 +372,11 @@ CLASS /CTDI/CL_PRINT_DATA_LEGACY IMPLEMENTATION.
     mt_comment_lines = lt_lines.
   ENDMETHOD.
 
-
   METHOD get_equipment_model.
     SELECT SINGLE eqktx FROM eqkt
       WHERE equnr = @iv_equnr AND spras = @mv_spras
       INTO @ms_legacy-model.
   ENDMETHOD.
-
 
   METHOD get_equipment_stands.
     SELECT SINGLE qmnum, obknr FROM afih
@@ -421,10 +412,11 @@ CLASS /CTDI/CL_PRINT_DATA_LEGACY IMPLEMENTATION.
     MOVE-CORRESPONDING ls_eqstand_out TO ms_legacy.
   ENDMETHOD.
 
-
   METHOD get_error_description.
-    DATA lf_qmnum TYPE qmnum.
-    DATA lf_qmcod TYPE qmel-qmcod.
+    DATA lf_qmnum       TYPE qmnum.
+    DATA lf_qmcod       TYPE qmel-qmcod.
+    DATA lf_besz_string TYPE c LENGTH 30.
+    DATA lf_besz        TYPE string.
     " ---------------------------------------------------------------------
     TYPES: BEGIN OF ty_qpgt,
              katalogart TYPE qpgt-katalogart,
@@ -441,9 +433,11 @@ CLASS /CTDI/CL_PRINT_DATA_LEGACY IMPLEMENTATION.
     DATA lt_qpgt       TYPE SORTED TABLE OF ty_qpgt WITH NON-UNIQUE KEY katalogart codegruppe.
     DATA lt_qpct       TYPE SORTED TABLE OF ty_qpct WITH NON-UNIQUE KEY katalogart codegruppe code.
 
-    DATA lt_katalogart TYPE SORTED TABLE OF qkatart WITH UNIQUE KEY table_line.
-    DATA lt_codegruppe TYPE SORTED TABLE OF qcodegrp WITH UNIQUE KEY table_line.
-    DATA lt_code       TYPE SORTED TABLE OF qcode WITH UNIQUE KEY table_line.
+    " SBO - 14.08.2026 - DA1K990869
+    " Table keys are changed to non-unique to allow processing duplicates
+    DATA lt_katalogart TYPE SORTED TABLE OF qkatart WITH NON-UNIQUE KEY table_line.   " 14.08.2026
+    DATA lt_codegruppe TYPE SORTED TABLE OF qcodegrp WITH NON-UNIQUE KEY table_line.  " 14.08.2026
+    DATA lt_code TYPE SORTED TABLE OF qcode WITH NON-UNIQUE KEY table_line.           " 14.08.2026
 
     DATA lr_katalogart TYPE RANGE OF qkatart.
     DATA lr_codegruppe TYPE RANGE OF qcodegrp.
@@ -462,7 +456,7 @@ CLASS /CTDI/CL_PRINT_DATA_LEGACY IMPLEMENTATION.
     mv_qmnum = lf_qmnum.
     mv_qmcod = lf_qmcod.
 
-    SELECT otkat, otgrp, oteil, fekat, fegrp, fecod
+    SELECT otkat, otgrp, oteil, fekat, fegrp, fecod, besz
       FROM qmfe
       WHERE qmnum = @lf_qmnum
       INTO TABLE @DATA(lt_fe).
@@ -485,6 +479,10 @@ CLASS /CTDI/CL_PRINT_DATA_LEGACY IMPLEMENTATION.
     lt_code =       VALUE #( FOR <e> IN lt_fe
                              ( <e>-oteil )
                              ( <e>-fecod ) ).
+
+    DELETE ADJACENT DUPLICATES FROM lt_katalogart COMPARING ALL FIELDS. " 14.08.2026
+    DELETE ADJACENT DUPLICATES FROM lt_codegruppe COMPARING ALL FIELDS. " 14.08.2026
+    DELETE ADJACENT DUPLICATES FROM lt_code COMPARING ALL FIELDS.       " 14.08.2026
 
     lr_katalogart = VALUE #( FOR <a> IN lt_katalogart
                              ( sign = 'I' option = 'EQ' low = <a> ) ).
@@ -510,10 +508,12 @@ CLASS /CTDI/CL_PRINT_DATA_LEGACY IMPLEMENTATION.
       INTO TABLE @lt_qpct.
 
     DELETE ADJACENT DUPLICATES FROM lt_qpgt COMPARING katalogart codegruppe.
-
     DELETE ADJACENT DUPLICATES FROM lt_qpct COMPARING katalogart codegruppe code.
 
     LOOP AT lt_fe ASSIGNING FIELD-SYMBOL(<fe>).
+
+      lf_besz_string = <fe>-besz.
+      CONCATENATE lf_besz lf_besz_string '; ' INTO lf_besz.
 
       APPEND INITIAL LINE TO mt_legacy_error ASSIGNING FIELD-SYMBOL(<le>).
       MOVE-CORRESPONDING <fe> TO <le>.
@@ -549,10 +549,13 @@ CLASS /CTDI/CL_PRINT_DATA_LEGACY IMPLEMENTATION.
       IF sy-subrc = 0.
         <le>-fecod_ktxt = <ct>-kurztext.
       ENDIF.
-
     ENDLOOP.
-  ENDMETHOD.
 
+    " aufbereitung für die ausgabe: lösche das letzte semikolon.
+    SHIFT lf_besz RIGHT DELETING TRAILING ';'.
+    lf_besz = condense( lf_besz ).
+    ms_legacy-besz_cld = lf_besz.
+  ENDMETHOD.
 
   METHOD get_kddata.
     CLEAR: mv_kdauf,
@@ -655,7 +658,6 @@ CLASS /CTDI/CL_PRINT_DATA_LEGACY IMPLEMENTATION.
     ms_legacy-date_current  = sy-datum.
   ENDMETHOD.
 
-
   METHOD get_part_data.
     DATA(lv_equnr) = resolve_equipment_number( ).
 
@@ -670,7 +672,6 @@ CLASS /CTDI/CL_PRINT_DATA_LEGACY IMPLEMENTATION.
     get_equipment_model( lv_equnr ).
     get_equipment_stands( ).
   ENDMETHOD.
-
 
   METHOD get_repair_result.
     DATA lf_repres     TYPE /cellag/repair_result.
@@ -726,43 +727,9 @@ CLASS /CTDI/CL_PRINT_DATA_LEGACY IMPLEMENTATION.
     ms_legacy-repair_result_txt = lf_repres_txt.
   ENDMETHOD.
 
-
-  METHOD get_retlief.
-    DATA lf_rmanr     TYPE vbap-vbeln.
-    DATA lf_posnv_rma TYPE posnr.
-    DATA lf_posnr_rma TYPE posnr.
-    DATA ls_comwa     TYPE vbco6.
-    DATA lt_vbfa      TYPE TABLE OF vbfa.
-    DATA ls_vbfa_rl   TYPE vbfa.
-
-    SELECT SINGLE rmanr, posnr_rma, posnv_rma
-      FROM afko
-      WHERE aufnr = @mv_aufnr
-      INTO ( @lf_rmanr, @lf_posnr_rma, @lf_posnv_rma ).
-    ls_comwa-vbeln = lf_rmanr.
-    ls_comwa-posnr = lf_posnv_rma.
-
-    CALL FUNCTION 'RV_ORDER_FLOW_INFORMATION'
-      EXPORTING
-        comwa    = ls_comwa
-      TABLES
-        vbfa_tab = lt_vbfa
-      EXCEPTIONS
-        OTHERS   = 3. "#EC CI_SUBRC
-
-    READ TABLE lt_vbfa INTO ls_vbfa_rl
-         WITH KEY vbelv   = lf_rmanr
-                  vbtyp_n = 'T'
-                  vbtyp_v = 'C'.
-    es_vbfa = ls_vbfa_rl.
-    ev_vbfa_rl = ls_vbfa_rl-vbeln.
-  ENDMETHOD.
-
-
   METHOD get_rlf_wedate.
     SELECT SINGLE erdat, erzet FROM likp WHERE vbeln = @iv_vbeln_vl INTO ( @ev_vl_erdat, @ev_vl_zeit ).
   ENDMETHOD.
-
 
   METHOD read_data.
     CLEAR: me->ms_legacy,
@@ -786,7 +753,6 @@ CLASS /CTDI/CL_PRINT_DATA_LEGACY IMPLEMENTATION.
     get_repair_result( ).
     get_comment( ).
   ENDMETHOD.
-
 
   METHOD resolve_equipment_number.
     DATA lv_sernr      TYPE equi-sernr.
@@ -821,3 +787,4 @@ CLASS /CTDI/CL_PRINT_DATA_LEGACY IMPLEMENTATION.
     ENDIF.
   ENDMETHOD.
 ENDCLASS.
+

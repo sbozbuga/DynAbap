@@ -35,6 +35,8 @@ CLASS /ctdi/cl_print_driver_base DEFINITION
   PROTECTED SECTION.
     DATA mv_repair_order       TYPE aufnr.
     DATA mv_sernr              TYPE equi-sernr.
+    DATA mv_qmnum              TYPE qmnum.
+    DATA mv_fenum              TYPE fenum.
     DATA mv_form_name          TYPE fpname.
     DATA ms_repair             TYPE /ctdi/repair.
     DATA ms_project            TYPE /ctdi/rep_projec.
@@ -184,6 +186,8 @@ CLASS /ctdi/cl_print_driver_base DEFINITION
                 ev_delete  TYPE c.
 
   PRIVATE SECTION.
+    CLASS-DATA mv_download_dir TYPE string.
+
     CLASS-METHODS resolve_contract
       IMPORTING iv_repair_id   TYPE aufnr
       EXPORTING ev_contract_id TYPE vbeln_va
@@ -352,7 +356,7 @@ CLASS /CTDI/CL_PRINT_DRIVER_BASE IMPLEMENTATION.
 
 
   METHOD detect_form_type.
-    SELECT SINGLE formname FROM stxfadm
+    SELECT SINGLE formname FROM stxfadm              "#EC CI_SEL_NESTED
       WHERE formname = @mv_form_name
       INTO @DATA(lv_ssf_name).
     IF sy-subrc = 0.
@@ -381,6 +385,16 @@ CLASS /CTDI/CL_PRINT_DRIVER_BASE IMPLEMENTATION.
       RETURN.
     ENDIF.
 
+    " Build filename: Meldungsnummer+Position_Werkstattauftrag_Herstellerserialnummer
+    DATA(lv_aufnr_out) = |{ mv_repair_order ALPHA = OUT }|.
+    DATA(lv_qmnum_out) = |{ mv_qmnum ALPHA = OUT }|.
+    DATA(lv_sernr_out) = COND string( WHEN ms_repair-sernr IS NOT INITIAL
+                                      THEN |{ ms_repair-sernr }|
+                                      ELSE |{ mv_sernr }| ).
+    CONDENSE: lv_aufnr_out, lv_qmnum_out, lv_sernr_out.
+
+    DATA(lv_pdf_filename) = |{ lv_qmnum_out }+{ mv_fenum }_{ lv_aufnr_out }_{ lv_sernr_out }.pdf|.
+
     " Convert XSTRING to binary table
     CALL FUNCTION 'SCMS_XSTRING_TO_BINARY'
       EXPORTING
@@ -393,45 +407,54 @@ CLASS /CTDI/CL_PRINT_DRIVER_BASE IMPLEMENTATION.
       RETURN.
     ENDIF.
 
-    " Show file-save dialog
-    cl_gui_frontend_services=>file_save_dialog( EXPORTING  default_file_name = |Repair_{ mv_repair_order }.pdf|
-                                                           default_extension = 'pdf'
-                                                           file_filter       = 'PDF Files (*.pdf)|*.pdf'
-                                                CHANGING   filename          = lv_filename
-                                                           path              = lv_path
-                                                           fullpath          = lv_fpath
-                                                           user_action       = lv_action
-                                                EXCEPTIONS OTHERS            = 1 ).
-    IF sy-subrc <> 0.
+    IF mv_download_dir IS INITIAL.
+      " First download in this session: show file-save dialog
+      cl_gui_frontend_services=>file_save_dialog( EXPORTING  default_file_name = lv_pdf_filename
+                                                             default_extension = 'pdf'
+                                                             file_filter       = 'PDF Files (*.pdf)|*.pdf'
+                                                  CHANGING   filename          = lv_filename
+                                                             path              = lv_path
+                                                             fullpath          = lv_fpath
+                                                             user_action       = lv_action
+                                                  EXCEPTIONS OTHERS            = 1 ).
+
+      IF lv_action <> cl_gui_frontend_services=>action_ok OR lv_fpath IS INITIAL.
+        RETURN.
+      ENDIF.
+
+      " Remember directory for subsequent downloads
+      mv_download_dir = lv_path.
+    ELSE.
+      " Subsequent downloads: reuse stored directory, auto-generate filename
+      lv_fpath = mv_download_dir && lv_pdf_filename.
     ENDIF.
 
-    IF lv_action = cl_gui_frontend_services=>action_ok AND lv_fpath IS NOT INITIAL.
-      lv_filesize = xstrlen( iv_pdf_data ).
+    lv_filesize = xstrlen( iv_pdf_data ).
 
-      cl_gui_frontend_services=>gui_download( EXPORTING  filename                = lv_fpath
-                                                         filetype                = 'BIN'
-                                                         bin_filesize            = lv_filesize
-                                              CHANGING   data_tab                = lt_data
-                                              EXCEPTIONS file_write_error        = 1
-                                                         no_batch                = 2
-                                                         gui_refuse_filetransfer = 3
-                                                         invalid_type            = 4
-                                                         no_authority            = 5
-                                                         unknown_error           = 6
-                                                         header_not_allowed      = 7
-                                                         separator_not_allowed   = 8
-                                                         filesize_not_allowed    = 9
-                                                         header_too_long         = 10
-                                                         access_denied           = 12
-                                                         dp_out_of_memory        = 13
-                                                         disk_full               = 14
-                                                         dp_timeout              = 15
-                                                         file_not_found          = 16
-                                                         dataprovider_exception  = 17
-                                                         control_flush_error     = 18
-                                                         OTHERS                  = 19 ).
-      IF sy-subrc <> 0.
-      ENDIF.
+    cl_gui_frontend_services=>gui_download( EXPORTING  filename                = lv_fpath
+                                                       filetype                = 'BIN'
+                                                       bin_filesize            = lv_filesize
+                                            CHANGING   data_tab                = lt_data
+                                            EXCEPTIONS file_write_error        = 1
+                                                       no_batch                = 2
+                                                       gui_refuse_filetransfer = 3
+                                                       invalid_type            = 4
+                                                       no_authority            = 5
+                                                       unknown_error           = 6
+                                                       header_not_allowed      = 7
+                                                       separator_not_allowed   = 8
+                                                       filesize_not_allowed    = 9
+                                                       header_too_long         = 10
+                                                       access_denied           = 12
+                                                       dp_out_of_memory        = 13
+                                                       disk_full               = 14
+                                                       dp_timeout              = 15
+                                                       file_not_found          = 16
+                                                       dataprovider_exception  = 17
+                                                       control_flush_error     = 18
+                                                       OTHERS                  = 19 ).
+    IF sy-subrc <> 0.
+      /ctdi/cl_print_driver_log=>log_warning( |PDF download failed for Repair { mv_repair_order } (sy-subrc={ sy-subrc })| ).
     ENDIF.
   ENDMETHOD.
 
@@ -750,7 +773,7 @@ CLASS /CTDI/CL_PRINT_DRIVER_BASE IMPLEMENTATION.
                     akz   = '' ) TO lt_steps.
 
     SELECT * FROM /ctdi/rep_forms             "#EC CI_ALL_FIELDS_NEEDED
-      WHERE vbeln = @lv_contract OR vbeln = ''
+      WHERE vbeln = @lv_contract OR vbeln = ''       "#EC CI_SEL_NESTED
       ORDER BY PRIMARY KEY ##SUBRC_OK
       INTO TABLE @DATA(lt_forms).
 
@@ -783,7 +806,7 @@ CLASS /CTDI/CL_PRINT_DRIVER_BASE IMPLEMENTATION.
 
     SELECT SINGLE * FROM /ctdi/rep_projec     "#EC CI_ALL_FIELDS_NEEDED
       WHERE vbeln = @lv_contract ##SUBRC_OK
-      INTO @es_project.
+      INTO @es_project.                              "#EC CI_SEL_NESTED
   ENDMETHOD.
 
 
@@ -860,6 +883,16 @@ CLASS /CTDI/CL_PRINT_DRIVER_BASE IMPLEMENTATION.
 
     " 2. Map structures and register
     map_and_register_data( ).
+
+    " 3. Resolve notification number and position for PDF filename
+    IF mv_qmnum IS INITIAL.
+      SELECT SINGLE q~qmnum, f~fenum
+        FROM qmel AS q
+               INNER JOIN qmfe AS f ON f~qmnum = q~qmnum
+        WHERE q~aufnr = @mv_repair_order
+          AND q~qmart = @gc_qmart_repair
+        INTO ( @mv_qmnum, @mv_fenum ) ##WARN_OK.
+    ENDIF.
   ENDMETHOD.
 
 
@@ -899,7 +932,7 @@ CLASS /CTDI/CL_PRINT_DRIVER_BASE IMPLEMENTATION.
            ev_skz,
            ev_akz.
 
-    SELECT SINGLE a~kdauf,
+    SELECT SINGLE a~kdauf,                           "#EC CI_SEL_NESTED
                   o~vgbel AS contract_id,
                   c~vbtyp,
                   f~bemot,
