@@ -58,15 +58,6 @@ PARAMETERS: p_pdf TYPE sap_bool AS CHECKBOX,               " Save as PDF
             p_dir TYPE string LOWER CASE.                   " Target Directory
 SELECTION-SCREEN END OF BLOCK b2.
 
-AT SELECTION-SCREEN ON VALUE-REQUEST FOR p_dir.
-  DATA lv_browse_folder TYPE string.
-  cl_gui_frontend_services=>directory_browse( EXPORTING  initial_folder = p_dir
-                                              CHANGING   selected_folder = lv_browse_folder
-                                              EXCEPTIONS OTHERS          = 1 ).
-  IF sy-subrc = 0 AND lv_browse_folder IS NOT INITIAL.
-    p_dir = lv_browse_folder.
-  ENDIF.
-
 " -----------------------------------------------------------------------
 " ALV output structure
 " -----------------------------------------------------------------------
@@ -382,6 +373,15 @@ ENDCLASS.
 
 
 " -----------------------------------------------------------------------
+
+AT SELECTION-SCREEN ON VALUE-REQUEST FOR p_dir.
+  DATA lv_browse_folder TYPE string.
+  cl_gui_frontend_services=>directory_browse( EXPORTING  initial_folder = p_dir
+                                              CHANGING   selected_folder = lv_browse_folder
+                                              EXCEPTIONS OTHERS          = 1 ).
+  IF sy-subrc = 0 AND lv_browse_folder IS NOT INITIAL.
+    p_dir = lv_browse_folder.
+  ENDIF.
 
 START-OF-SELECTION.
   lcl_mass_print=>run( ).
