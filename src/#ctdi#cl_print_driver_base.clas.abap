@@ -209,6 +209,9 @@ CLASS /ctdi/cl_print_driver_base DEFINITION
                 ev_immed   TYPE c
                 ev_delete  TYPE c.
 
+    "! Resolves notification number, position, and serial number for PDF filename construction.
+    METHODS resolve_filename_attributes.
+
   PRIVATE SECTION.
     CLASS-METHODS resolve_contract
       IMPORTING iv_repair_id   TYPE aufnr
@@ -949,6 +952,11 @@ CLASS /CTDI/CL_PRINT_DRIVER_BASE IMPLEMENTATION.
     map_and_register_data( ).
 
     " 3. Resolve notification number, position, and serial number for PDF filename
+    resolve_filename_attributes( ).
+  ENDMETHOD.
+
+
+  METHOD resolve_filename_attributes.
     IF mv_qmnum IS INITIAL.
       SELECT SINGLE qmnum FROM afih
         WHERE aufnr = @mv_repair_order
