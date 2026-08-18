@@ -425,15 +425,30 @@ CLASS /CTDI/CL_PRINT_DRIVER_BASE IMPLEMENTATION.
       RETURN.
     ENDIF.
 
-    " Build filename: Meldungsnummer+Position_Werkstattauftrag_Herstellerserialnummer
+    " Build filename cleanly based on available attributes
     DATA(lv_aufnr_out) = |{ mv_repair_order ALPHA = OUT }|.
-    DATA(lv_qmnum_out) = |{ mv_qmnum ALPHA = OUT }|.
-    DATA(lv_sernr_out) = COND string( WHEN ms_repair-sernr IS NOT INITIAL
-                                      THEN |{ ms_repair-sernr }|
-                                      ELSE |{ mv_sernr }| ).
+    DATA(lv_qmnum_out) = COND string( WHEN mv_qmnum IS NOT INITIAL THEN |{ mv_qmnum ALPHA = OUT }| ).
+    DATA(lv_sernr_out) = COND string( WHEN ms_repair-sernr IS NOT INITIAL THEN |{ ms_repair-sernr }|
+                                      WHEN mv_sernr IS NOT INITIAL THEN |{ mv_sernr }| ).
     CONDENSE: lv_aufnr_out, lv_qmnum_out, lv_sernr_out.
 
-    DATA(lv_pdf_filename) = |{ lv_qmnum_out }+{ mv_fenum }_{ lv_aufnr_out }_{ lv_sernr_out }.pdf|.
+    DATA lv_pdf_filename TYPE string.
+
+    IF lv_qmnum_out IS NOT INITIAL.
+      lv_pdf_filename = lv_qmnum_out.
+      IF mv_fenum IS NOT INITIAL AND mv_fenum <> '0000'.
+        lv_pdf_filename = |{ lv_pdf_filename }+{ mv_fenum }|.
+      ENDIF.
+      lv_pdf_filename = |{ lv_pdf_filename }_{ lv_aufnr_out }|.
+    ELSE.
+      lv_pdf_filename = lv_aufnr_out.
+    ENDIF.
+
+    IF lv_sernr_out IS NOT INITIAL.
+      lv_pdf_filename = |{ lv_pdf_filename }_{ lv_sernr_out }|.
+    ENDIF.
+
+    lv_pdf_filename = |{ lv_pdf_filename }.pdf|.
 
     " Convert XSTRING to binary table
     CALL FUNCTION 'SCMS_XSTRING_TO_BINARY'
@@ -937,7 +952,7 @@ CLASS /CTDI/CL_PRINT_DRIVER_BASE IMPLEMENTATION.
     IF mv_qmnum IS INITIAL.
       SELECT SINGLE q~qmnum, f~fenum
         FROM qmel AS q
-               INNER JOIN qmfe AS f ON f~qmnum = q~qmnum
+               LEFT OUTER JOIN qmfe AS f ON f~qmnum = q~qmnum
         WHERE q~aufnr = @mv_repair_order
           AND q~qmart = @gc_qmart_repair
         INTO ( @mv_qmnum, @mv_fenum ) ##WARN_OK.
