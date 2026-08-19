@@ -149,6 +149,11 @@ CLASS /ctdi/cl_print_driver_base DEFINITION
       IMPORTING iv_pdf_data TYPE xstring
       RAISING   /ctdi/cx_print_driver_error.
 
+    "! Builds the PDF filename (without extension) from repair data.
+    "! Used for file download name and spool cover title.
+    METHODS build_pdf_filename
+      RETURNING VALUE(rv_filename) TYPE string.
+
     "! Builds the parameter + exception tables for an Adobe Form dynamic call.
     "!
     "! @parameter iv_fm_name |
@@ -375,6 +380,25 @@ CLASS /CTDI/CL_PRINT_DRIVER_BASE IMPLEMENTATION.
   ENDMETHOD.
 
 
+  METHOD build_pdf_filename.
+    DATA(lv_aufnr_out) = |{ mv_repair_order ALPHA = OUT }|.
+    CONDENSE lv_aufnr_out.
+
+    IF ms_repair-ctdi_order_no IS NOT INITIAL.
+      DATA(lv_order_no) = CONV string( ms_repair-ctdi_order_no ).
+      REPLACE ALL OCCURRENCES OF '-' IN lv_order_no WITH ''.
+      CONDENSE lv_order_no.
+      rv_filename = |{ lv_order_no }_{ lv_aufnr_out }|.
+    ELSE.
+      rv_filename = lv_aufnr_out.
+    ENDIF.
+
+    IF ms_repair-new_serial_no IS NOT INITIAL.
+      rv_filename = |{ rv_filename }_{ ms_repair-new_serial_no }|.
+    ENDIF.
+  ENDMETHOD.
+
+
   METHOD detect_form_type.
     SELECT SINGLE formname FROM stxfadm              "#EC CI_SEL_NESTED
       WHERE formname = @mv_form_name
@@ -405,27 +429,8 @@ CLASS /CTDI/CL_PRINT_DRIVER_BASE IMPLEMENTATION.
       RETURN.
     ENDIF.
 
-    " Build filename from ms_repair fields (populated by data provider)
-    DATA(lv_aufnr_out) = |{ mv_repair_order ALPHA = OUT }|.
-    CONDENSE lv_aufnr_out.
-
-    DATA lv_pdf_filename TYPE string.
-
-    IF ms_repair-ctdi_order_no IS NOT INITIAL.
-      " ctdi_order_no = 'qmnum-fenum' → remove separator for filename
-      DATA(lv_order_no) = CONV string( ms_repair-ctdi_order_no ).
-      REPLACE ALL OCCURRENCES OF '-' IN lv_order_no WITH ''.
-      CONDENSE lv_order_no.
-      lv_pdf_filename = |{ lv_order_no }_{ lv_aufnr_out }|.
-    ELSE.
-      lv_pdf_filename = lv_aufnr_out.
-    ENDIF.
-
-    IF ms_repair-new_serial_no IS NOT INITIAL.
-      lv_pdf_filename = |{ lv_pdf_filename }_{ ms_repair-new_serial_no }|.
-    ENDIF.
-
-    lv_pdf_filename = |{ lv_pdf_filename }.pdf|.
+    " Build filename
+    DATA(lv_pdf_filename) = build_pdf_filename( ) && '.pdf'.
 
     " Convert XSTRING to binary table
     CALL FUNCTION 'SCMS_XSTRING_TO_BINARY'
@@ -537,6 +542,7 @@ CLASS /CTDI/CL_PRINT_DRIVER_BASE IMPLEMENTATION.
       ls_outputparams-nodialog = iv_no_dialog.
       ls_outputparams-preview  = iv_preview.
     ENDIF.
+    ls_outputparams-covtitle = build_pdf_filename( ).
 
     " Open Adobe print job
     CALL FUNCTION 'FP_JOB_OPEN'
@@ -651,6 +657,7 @@ CLASS /CTDI/CL_PRINT_DRIVER_BASE IMPLEMENTATION.
     ls_output_options-tdimmed  = lv_immed.
     ls_output_options-tddelete = lv_delete.
     ls_output_options-tdnewid  = abap_true.
+    ls_output_options-tdcovtitle = build_pdf_filename( ).
 
     " Dynamic device type based on logon language
     DATA lv_devtype TYPE rspoptype.

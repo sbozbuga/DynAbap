@@ -92,8 +92,8 @@ CLASS lcl_mass_print DEFINITION FINAL.
     CLASS-METHODS on_user_command FOR EVENT added_function OF cl_salv_events_table
       IMPORTING e_salv_function.
 
-    CLASS-METHODS execute_print.
-    CLASS-METHODS execute_print_all.
+    CLASS-METHODS execute_print
+      IMPORTING iv_save_as_pdf TYPE abap_bool.
 ENDCLASS.
 
 
@@ -151,6 +151,15 @@ CLASS lcl_mass_print IMPLEMENTATION.
                                 skz         = <ls_order>-skz
                                 akz         = <ls_order>-akz ) TO gt_alv.
     ENDLOOP.
+
+    " Force minimum 40-char width for MSG column using non-breaking spaces (U+00A0)
+    IF gt_alv IS NOT INITIAL.
+      ASSIGN gt_alv[ 1 ] TO FIELD-SYMBOL(<ls_first>).
+      DO 80 TIMES.
+        <ls_first>-msg = <ls_first>-msg && cl_abap_conv_in_ce=>uccp( '00A0' ).
+      ENDDO.
+      <ls_first>-msg = <ls_first>-msg && '.'.
+    ENDIF.
   ENDMETHOD.
 
   METHOD display_alv.
@@ -181,8 +190,8 @@ CLASS lcl_mass_print IMPLEMENTATION.
                                     tooltip  = CONV #( TEXT-004 )
                                     position = if_salv_c_function_position=>right_of_salv_functions ).
 
-        lo_functions->add_function( name     = 'PRINT_ALL'
-                                    icon     = CONV #( icon_select_all )
+        lo_functions->add_function( name     = 'PDF_SEL'
+                                    icon     = CONV #( icon_pdf )
                                     text     = CONV #( TEXT-005 )
                                     tooltip  = CONV #( TEXT-005 )
                                     position = if_salv_c_function_position=>right_of_salv_functions ).
@@ -198,9 +207,10 @@ CLASS lcl_mass_print IMPLEMENTATION.
         lo_column = lo_columns->get_column( 'ICON' ).
         lo_column->set_short_text( 'Status' ).
 
-        lo_column = lo_columns->get_column( 'MSG' ).
-        lo_column->set_short_text( 'Message' ).
-        lo_column->set_output_length( 30 ).
+        DATA(lo_col_msg) = CAST cl_salv_column_table( lo_columns->get_column( 'MSG' ) ).
+        lo_col_msg->set_short_text( 'Message' ).
+        lo_col_msg->set_output_length( 40 ).
+        lo_col_msg->set_fixed_header_text( 's' ).
       CATCH cx_salv_not_found.
     ENDTRY.
 
@@ -222,11 +232,11 @@ CLASS lcl_mass_print IMPLEMENTATION.
   METHOD on_user_command.
     CASE e_salv_function.
       WHEN 'PRINT_SEL'.
-        execute_print( ).
+        execute_print( iv_save_as_pdf = abap_false ).
         go_salv->refresh( ).
 
-      WHEN 'PRINT_ALL'.
-        execute_print_all( ).
+      WHEN 'PDF_SEL'.
+        execute_print( iv_save_as_pdf = abap_true ).
         go_salv->refresh( ).
     ENDCASE.
   ENDMETHOD.
@@ -243,21 +253,9 @@ CLASS lcl_mass_print IMPLEMENTATION.
       RETURN.
     ENDIF.
 
-    IF p_pdf = abap_true.
-      IF p_dir IS NOT INITIAL.
-        /ctdi/cl_print_driver_base=>set_download_dir( p_dir ).
-      ELSEIF /ctdi/cl_print_driver_base=>get_download_dir( ) IS INITIAL.
-        DATA lv_sel_folder TYPE string.
-        cl_gui_frontend_services=>directory_browse( EXPORTING  initial_folder  = space
-                                                    CHANGING   selected_folder = lv_sel_folder
-                                                    EXCEPTIONS OTHERS          = 1 ).
-        IF sy-subrc = 0 AND lv_sel_folder IS NOT INITIAL.
-          /ctdi/cl_print_driver_base=>set_download_dir( lv_sel_folder ).
-        ELSE.
-          MESSAGE 'Print process cancelled: No target directory selected.' TYPE 'S' DISPLAY LIKE 'W'.
-          RETURN.
-        ENDIF.
-      ENDIF.
+    " Pre-set download directory from selection screen if PDF checkbox was checked
+    IF iv_save_as_pdf = abap_true AND p_pdf = abap_true AND p_dir IS NOT INITIAL.
+      /ctdi/cl_print_driver_base=>set_download_dir( p_dir ).
     ENDIF.
 
     LOOP AT lt_rows INTO DATA(lv_row).
@@ -273,75 +271,14 @@ CLASS lcl_mass_print IMPLEMENTATION.
 
       TRY.
           DATA(lr_driver) = /ctdi/cl_print_driver_base=>factory( iv_repair_id = <ls_line>-aufnr ).
-          lr_driver->execute( iv_save_as_pdf = p_pdf
+          lr_driver->execute( iv_save_as_pdf = iv_save_as_pdf
                               iv_no_dialog   = abap_true
                               iv_preview     = abap_false ).
 
           <ls_line>-icon = icon_led_green.
-          <ls_line>-msg  = TEXT-010.
-          lv_count_ok = lv_count_ok + 1.
-
-        CATCH /ctdi/cx_no_config_found INTO DATA(lx_noconf).
-          <ls_line>-icon = icon_led_yellow.
-          <ls_line>-msg  = COND #( WHEN lx_noconf->previous IS BOUND
-                                   THEN lx_noconf->previous->get_text( )
-                                   ELSE lx_noconf->get_text( ) ).
-          lv_count_err = lv_count_err + 1.
-
-        CATCH /ctdi/cx_print_driver_error INTO DATA(lx_driver).
-          <ls_line>-icon = icon_led_red.
-          <ls_line>-msg  = COND #( WHEN lx_driver->previous IS BOUND
-                                   THEN lx_driver->previous->get_text( )
-                                   ELSE lx_driver->get_text( ) ).
-          lv_count_err = lv_count_err + 1.
-
-        CATCH cx_root INTO DATA(lx_root).
-          <ls_line>-icon = icon_led_red.
-          <ls_line>-msg  = COND #( WHEN lx_root->previous IS BOUND
-                                   THEN lx_root->previous->get_text( )
-                                   ELSE lx_root->get_text( ) ).
-          lv_count_err = lv_count_err + 1.
-      ENDTRY.
-    ENDLOOP.
-
-    MESSAGE |Printed: { lv_count_ok } OK, { lv_count_err } errors.| TYPE 'S'.
-  ENDMETHOD.
-
-  METHOD execute_print_all.
-    DATA lv_count_ok  TYPE i.
-    DATA lv_count_err TYPE i.
-
-    IF p_pdf = abap_true.
-      IF p_dir IS NOT INITIAL.
-        /ctdi/cl_print_driver_base=>set_download_dir( p_dir ).
-      ELSEIF /ctdi/cl_print_driver_base=>get_download_dir( ) IS INITIAL.
-        DATA lv_sel_folder TYPE string.
-        cl_gui_frontend_services=>directory_browse( EXPORTING  initial_folder  = space
-                                                    CHANGING   selected_folder = lv_sel_folder
-                                                    EXCEPTIONS OTHERS          = 1 ).
-        IF sy-subrc = 0 AND lv_sel_folder IS NOT INITIAL.
-          /ctdi/cl_print_driver_base=>set_download_dir( lv_sel_folder ).
-        ELSE.
-          MESSAGE 'Print process cancelled: No target directory selected.' TYPE 'S' DISPLAY LIKE 'W'.
-          RETURN.
-        ENDIF.
-      ENDIF.
-    ENDIF.
-
-    LOOP AT gt_alv ASSIGNING FIELD-SYMBOL(<ls_line>).
-      cl_progress_indicator=>progress_indicate( i_text               = |Printing { <ls_line>-aufnr }...|
-                                                i_processed          = sy-tabix
-                                                i_total              = lines( gt_alv )
-                                                i_output_immediately = abap_true ).
-
-      TRY.
-          DATA(lr_driver) = /ctdi/cl_print_driver_base=>factory( iv_repair_id = <ls_line>-aufnr ).
-          lr_driver->execute( iv_save_as_pdf = p_pdf
-                              iv_no_dialog   = abap_true
-                              iv_preview     = abap_false ).
-
-          <ls_line>-icon = icon_led_green.
-          <ls_line>-msg  = TEXT-010.
+          <ls_line>-msg  = COND #( WHEN iv_save_as_pdf = abap_true
+                                   THEN TEXT-011
+                                   ELSE TEXT-010 ).
           lv_count_ok = lv_count_ok + 1.
 
         CATCH /ctdi/cx_no_config_found INTO DATA(lx_noconf).
