@@ -33,16 +33,16 @@ CLASS /CTDI/CL_PRINT_DRIVER_CTDI IMPLEMENTATION.
       mt_comments = mr_provider->mt_comments.
 
       " Register standard CTDI structures dynamically for Smart/Adobe Forms
-      register_custom_parameter( iv_name = 'REPAIR'
+      register_custom_parameter( iv_name = gc_param_repair
                                  iv_kind = abap_func_exporting
                                  ir_data = REF #( ms_repair ) ).
-      register_custom_parameter( iv_name = 'PROJECT'
+      register_custom_parameter( iv_name = gc_param_project
                                  iv_kind = abap_func_exporting
                                  ir_data = REF #( ms_project ) ).
-      register_custom_parameter( iv_name = 'REPAIR_ERRORS'
+      register_custom_parameter( iv_name = gc_param_repair_errors
                                  iv_kind = abap_func_tables
                                  ir_data = REF #( mt_errors ) ).
-      register_custom_parameter( iv_name = 'COMMENT_LINES'
+      register_custom_parameter( iv_name = gc_param_comments
                                  iv_kind = abap_func_tables
                                  ir_data = REF #( mt_comments ) ).
     ENDIF.

@@ -8,6 +8,24 @@ CLASS /ctdi/cl_print_driver_base DEFINITION
     CONSTANTS gc_devtype_fallback TYPE rspoptype VALUE 'YPDF' ##NO_TEXT.
     CONSTANTS gc_qmart_repair     TYPE qmart     VALUE 'Z2' ##NO_TEXT.
 
+    " Form parameter constants (CTDI standard)
+    CONSTANTS gc_param_repair        TYPE string VALUE 'REPAIR' ##NO_TEXT.
+    CONSTANTS gc_param_project       TYPE string VALUE 'PROJECT' ##NO_TEXT.
+    CONSTANTS gc_param_repair_errors TYPE string VALUE 'REPAIR_ERRORS' ##NO_TEXT.
+    CONSTANTS gc_param_comments      TYPE string VALUE 'COMMENT_LINES' ##NO_TEXT.
+
+    " Form parameter constants (Legacy Alcatel)
+    CONSTANTS gc_param_legacy_rep    TYPE string VALUE '/CELLAG/ALCAREP' ##NO_TEXT.
+    CONSTANTS gc_param_legacy_err    TYPE string VALUE '/CELLAG/ALCAREP_ERROR' ##NO_TEXT.
+    CONSTANTS gc_param_legacy_comm   TYPE string VALUE 'GT_COMMENT_LINES' ##NO_TEXT.
+
+    " Form parameter constants (SAP Framework)
+    CONSTANTS gc_param_docparams     TYPE string VALUE '/1BCDWB/DOCPARAMS' ##NO_TEXT.
+    CONSTANTS gc_param_formoutput    TYPE string VALUE '/1BCDWB/FORMOUTPUT' ##NO_TEXT.
+    CONSTANTS gc_param_control_param TYPE string VALUE 'CONTROL_PARAMETERS' ##NO_TEXT.
+    CONSTANTS gc_param_output_opt    TYPE string VALUE 'OUTPUT_OPTIONS' ##NO_TEXT.
+    CONSTANTS gc_param_job_output    TYPE string VALUE 'JOB_OUTPUT_INFO' ##NO_TEXT.
+
     "! Static factory to determine and instantiate the correct driver
     "!
     "! @parameter iv_repair_id |
@@ -242,7 +260,7 @@ CLASS /CTDI/CL_PRINT_DRIVER_BASE IMPLEMENTATION.
     CLEAR: et_ptab,
            et_etab.
 
-    ls_ptab-name = '/1BCDWB/DOCPARAMS'.
+    ls_ptab-name = gc_param_docparams.
     ls_ptab-kind = abap_func_exporting.
     GET REFERENCE OF is_docparams INTO ls_ptab-value.
     INSERT ls_ptab INTO TABLE et_ptab.
@@ -267,7 +285,7 @@ CLASS /CTDI/CL_PRINT_DRIVER_BASE IMPLEMENTATION.
       ENDIF.
     ENDLOOP.
 
-    ls_ptab-name = '/1BCDWB/FORMOUTPUT'.
+    ls_ptab-name = gc_param_formoutput.
     ls_ptab-kind = abap_func_importing.
     GET REFERENCE OF cs_formoutput INTO ls_ptab-value.
     INSERT ls_ptab INTO TABLE et_ptab.
@@ -294,12 +312,12 @@ CLASS /CTDI/CL_PRINT_DRIVER_BASE IMPLEMENTATION.
     CLEAR: et_ptab,
            et_etab.
 
-    ls_ptab-name = 'CONTROL_PARAMETERS'.
+    ls_ptab-name = gc_param_control_param.
     ls_ptab-kind = abap_func_exporting.
     GET REFERENCE OF is_control_params INTO ls_ptab-value.
     INSERT ls_ptab INTO TABLE et_ptab.
 
-    ls_ptab-name = 'OUTPUT_OPTIONS'.
+    ls_ptab-name = gc_param_output_opt.
     ls_ptab-kind = abap_func_exporting.
     GET REFERENCE OF is_output_options INTO ls_ptab-value.
     INSERT ls_ptab INTO TABLE et_ptab.
@@ -328,7 +346,7 @@ CLASS /CTDI/CL_PRINT_DRIVER_BASE IMPLEMENTATION.
       ENDIF.
     ENDLOOP.
 
-    ls_ptab-name = 'JOB_OUTPUT_INFO'.
+    ls_ptab-name = gc_param_job_output.
     ls_ptab-kind = abap_func_importing.
     GET REFERENCE OF cs_job_output INTO ls_ptab-value.
     INSERT ls_ptab INTO TABLE et_ptab.

@@ -398,8 +398,8 @@ CLASS /CTDI/CL_PRINT_CUST_ENGINE IMPLEMENTATION.
     DATA lt_framework_sf TYPE SORTED TABLE OF fupararef-parameter WITH UNIQUE KEY table_line.
     DATA lt_framework_af TYPE SORTED TABLE OF fupararef-parameter WITH UNIQUE KEY table_line.
 
-    lt_framework_sf = VALUE #( ( CONV #( 'CONTROL_PARAMETERS' ) )
-                               ( CONV #( 'OUTPUT_OPTIONS' ) )
+    lt_framework_sf = VALUE #( ( CONV #( /ctdi/cl_print_driver_base=>gc_param_control_param ) )
+                               ( CONV #( /ctdi/cl_print_driver_base=>gc_param_output_opt ) )
                                ( CONV #( 'USER_SETTINGS' ) )
                                ( CONV #( 'ARCHIVE_INDEX' ) )
                                ( CONV #( 'ARCHIVE_INDEX_TAB' ) )
@@ -408,7 +408,7 @@ CLASS /CTDI/CL_PRINT_CUST_ENGINE IMPLEMENTATION.
                                ( CONV #( 'MAIL_RECIPIENT' ) )
                                ( CONV #( 'MAIL_SENDER' ) ) ).
 
-    lt_framework_af = VALUE #( ( CONV #( '/1BCDWB/DOCPARAMS' ) ) ).
+    lt_framework_af = VALUE #( ( CONV #( /ctdi/cl_print_driver_base=>gc_param_docparams ) ) ).
 
     LOOP AT lt_mandatory_params ASSIGNING FIELD-SYMBOL(<ls_param>).
       DATA(lv_param) = to_upper( <ls_param>-parameter ).

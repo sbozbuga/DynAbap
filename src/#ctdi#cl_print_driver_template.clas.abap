@@ -88,10 +88,10 @@ CLASS /CTDI/CL_PRINT_DRIVER_TEMPLATE IMPLEMENTATION.
     " --- STANDARD BINDING ---
     " Because the base class no longer hardcodes parameter injection, we must
     " explicitly register the standard structures if our form expects them.
-    " register_custom_parameter( iv_name = 'REPAIR'        iv_kind = abap_func_exporting ir_data = REF #( ms_repair ) ).
-    " register_custom_parameter( iv_name = 'PROJECT'       iv_kind = abap_func_exporting ir_data = REF #( ms_project ) ).
-    " register_custom_parameter( iv_name = 'REPAIR_ERRORS' iv_kind = abap_func_tables    ir_data = REF #( mt_errors ) ).
-    " register_custom_parameter( iv_name = 'COMMENT_LINES' iv_kind = abap_func_tables    ir_data = REF #( mt_comments ) ).
+    " register_custom_parameter( iv_name = gc_param_repair        iv_kind = abap_func_exporting ir_data = REF #( ms_repair ) ).
+    " register_custom_parameter( iv_name = gc_param_project       iv_kind = abap_func_exporting ir_data = REF #( ms_project ) ).
+    " register_custom_parameter( iv_name = gc_param_repair_errors iv_kind = abap_func_tables    ir_data = REF #( mt_errors ) ).
+    " register_custom_parameter( iv_name = gc_param_comments      iv_kind = abap_func_tables    ir_data = REF #( mt_comments ) ).
   ENDMETHOD.
 
 

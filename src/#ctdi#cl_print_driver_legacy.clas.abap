@@ -45,13 +45,13 @@ CLASS /CTDI/CL_PRINT_DRIVER_LEGACY IMPLEMENTATION.
     ENDLOOP.
 
     " Register legacy structures for dynamic Smart Form parameter injection
-    register_custom_parameter( iv_name = '/CELLAG/ALCAREP'
+    register_custom_parameter( iv_name = gc_param_legacy_rep
                                iv_kind = abap_func_exporting
                                ir_data = REF #( ms_alcarep_legacy ) ).
-    register_custom_parameter( iv_name = '/CELLAG/ALCAREP_ERROR'
+    register_custom_parameter( iv_name = gc_param_legacy_err
                                iv_kind = abap_func_tables
                                ir_data = REF #( mt_alcarep_error ) ).
-    register_custom_parameter( iv_name = 'GT_COMMENT_LINES'
+    register_custom_parameter( iv_name = gc_param_legacy_comm
                                iv_kind = abap_func_tables
                                ir_data = REF #( mt_comments ) ).
   ENDMETHOD.
