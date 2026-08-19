@@ -1,4 +1,4 @@
-﻿<?xml version="1.0" encoding="utf-8"?>
+<?xml version="1.0" encoding="utf-8"?>
 <abapGit version="v1.0.0" serializer="LCL_OBJECT_PROG" serializer_version="v1.0.0">
  <asx:abap xmlns:asx="http://www.sap.com/abapxml" version="1.0">
   <asx:values>
@@ -14,6 +14,24 @@
    <TPOOL>
     <item>
      <ID>I</ID>
+     <KEY>001</KEY>
+     <ENTRY>Selection criteria</ENTRY>
+     <LENGTH>30</LENGTH>
+    </item>
+    <item>
+     <ID>I</ID>
+     <KEY>002</KEY>
+     <ENTRY>PDF settings</ENTRY>
+     <LENGTH>30</LENGTH>
+    </item>
+    <item>
+     <ID>I</ID>
+     <KEY>003</KEY>
+     <ENTRY>No repair orders found</ENTRY>
+     <LENGTH>40</LENGTH>
+    </item>
+    <item>
+     <ID>I</ID>
      <KEY>004</KEY>
      <ENTRY>Print selected</ENTRY>
      <LENGTH>33</LENGTH>
@@ -23,6 +41,24 @@
      <KEY>005</KEY>
      <ENTRY>Save as PDF</ENTRY>
      <LENGTH>33</LENGTH>
+    </item>
+    <item>
+     <ID>I</ID>
+     <KEY>006</KEY>
+     <ENTRY>Message</ENTRY>
+     <LENGTH>20</LENGTH>
+    </item>
+    <item>
+     <ID>I</ID>
+     <KEY>007</KEY>
+     <ENTRY>Printing</ENTRY>
+     <LENGTH>20</LENGTH>
+    </item>
+    <item>
+     <ID>I</ID>
+     <KEY>008</KEY>
+     <ENTRY>Please select at least one order</ENTRY>
+     <LENGTH>50</LENGTH>
     </item>
     <item>
      <ID>I</ID>
@@ -37,9 +73,21 @@
      <LENGTH>54</LENGTH>
     </item>
     <item>
+     <ID>I</ID>
+     <KEY>012</KEY>
+     <ENTRY>Printed</ENTRY>
+     <LENGTH>20</LENGTH>
+    </item>
+    <item>
+     <ID>I</ID>
+     <KEY>013</KEY>
+     <ENTRY>errors</ENTRY>
+     <LENGTH>20</LENGTH>
+    </item>
+    <item>
      <ID>R</ID>
      <ENTRY>Mass Print Repair Orders</ENTRY>
-     <LENGTH>24</LENGTH>
+     <LENGTH>70</LENGTH>
     </item>
     <item>
      <ID>S</ID>
@@ -50,7 +98,7 @@
     <item>
      <ID>S</ID>
      <KEY>P_PDF</KEY>
-     <ENTRY>Download PDF</ENTRY>
+     <ENTRY>Save as PDF</ENTRY>
      <LENGTH>20</LENGTH>
     </item>
     <item>
@@ -102,37 +150,91 @@
      <TEXTPOOL>
       <item>
        <ID>I</ID>
+       <KEY>001</KEY>
+       <ENTRY>Selektionskriterien</ENTRY>
+       <LENGTH>30</LENGTH>
+      </item>
+      <item>
+       <ID>I</ID>
+       <KEY>002</KEY>
+       <ENTRY>PDF-Einstellungen</ENTRY>
+       <LENGTH>30</LENGTH>
+      </item>
+      <item>
+       <ID>I</ID>
+       <KEY>003</KEY>
+       <ENTRY>Keine Reparaturaufträge gefunden</ENTRY>
+       <LENGTH>40</LENGTH>
+      </item>
+      <item>
+       <ID>I</ID>
        <KEY>004</KEY>
-       <ENTRY>Druck</ENTRY>
+       <ENTRY>Markierte drucken</ENTRY>
        <LENGTH>33</LENGTH>
       </item>
       <item>
        <ID>I</ID>
        <KEY>005</KEY>
-       <ENTRY>PDF</ENTRY>
+       <ENTRY>Als PDF speichern</ENTRY>
        <LENGTH>33</LENGTH>
       </item>
       <item>
        <ID>I</ID>
+       <KEY>006</KEY>
+       <ENTRY>Meldung</ENTRY>
+       <LENGTH>20</LENGTH>
+      </item>
+      <item>
+       <ID>I</ID>
+       <KEY>007</KEY>
+       <ENTRY>Drucke</ENTRY>
+       <LENGTH>20</LENGTH>
+      </item>
+      <item>
+       <ID>I</ID>
+       <KEY>008</KEY>
+       <ENTRY>Bitte mindestens einen Auftrag markieren</ENTRY>
+       <LENGTH>50</LENGTH>
+      </item>
+      <item>
+       <ID>I</ID>
        <KEY>010</KEY>
-       <ENTRY>Gedruckt</ENTRY>
+       <ENTRY>Erfolgreich gedruckt</ENTRY>
        <LENGTH>33</LENGTH>
       </item>
       <item>
+       <ID>I</ID>
+       <KEY>011</KEY>
+       <ENTRY>PDF erfolgreich heruntergeladen</ENTRY>
+       <LENGTH>54</LENGTH>
+      </item>
+      <item>
+       <ID>I</ID>
+       <KEY>012</KEY>
+       <ENTRY>Gedruckt</ENTRY>
+       <LENGTH>20</LENGTH>
+      </item>
+      <item>
+       <ID>I</ID>
+       <KEY>013</KEY>
+       <ENTRY>Fehler</ENTRY>
+       <LENGTH>20</LENGTH>
+      </item>
+      <item>
        <ID>R</ID>
-       <ENTRY>Mass Print Repair Orders</ENTRY>
+       <ENTRY>Massendruck Reparaturaufträge</ENTRY>
        <LENGTH>70</LENGTH>
       </item>
       <item>
        <ID>S</ID>
        <KEY>P_DIR</KEY>
-       <ENTRY>Ordner</ENTRY>
+       <ENTRY>Zielverzeichnis</ENTRY>
        <LENGTH>38</LENGTH>
       </item>
       <item>
        <ID>S</ID>
        <KEY>P_PDF</KEY>
-       <ENTRY>PDF</ENTRY>
+       <ENTRY>Als PDF speichern</ENTRY>
        <LENGTH>38</LENGTH>
       </item>
       <item>
@@ -180,6 +282,153 @@
      </TEXTPOOL>
     </item>
    </I18N_TPOOL>
+   <LONGTEXTS>
+    <item>
+     <DOKIL>
+      <ID>RE</ID>
+      <OBJECT>/CTDI/PRINT_REPAIR_MASS</OBJECT>
+      <LANGU>D</LANGU>
+      <TYP>E</TYP>
+      <VERSION>0001</VERSION>
+      <MASTERLANG>X</MASTERLANG>
+      <TXTLINES>00025</TXTLINES>
+      <DOKSTATE>A</DOKSTATE>
+     </DOKIL>
+     <HEAD>
+      <TDOBJECT>DOKU</TDOBJECT>
+      <TDNAME>/CTDI/PRINT_REPAIR_MASS</TDNAME>
+      <TDID>RE</TDID>
+      <TDSPRAS>D</TDSPRAS>
+      <TDFORM>S_DOCU_SHOW</TDFORM>
+      <TDSTYLE>S_DOCUS1</TDSTYLE>
+      <TDVERSION>00001</TDVERSION>
+      <TDLINESIZE>072</TDLINESIZE>
+     </HEAD>
+     <LINES>
+      <TLINE>
+       <TDFORMAT>U1</TDFORMAT>
+       <TDLINE>&amp;PURPOSE&amp;</TDLINE>
+      </TLINE>
+      <TLINE>
+       <TDFORMAT>AS</TDFORMAT>
+       <TDLINE>Das Programm /CTDI/PRINT_REPAIR_MASS dient zur Massenverarbeitung und</TDLINE>
+      </TLINE>
+      <TLINE>
+       <TDLINE> zum Massendruck von Reparaturaufträgen über ein interaktives ALV-Grid.</TDLINE>
+      </TLINE>
+      <TLINE>
+       <TDFORMAT>U1</TDFORMAT>
+       <TDLINE>HAUPTMERKMALE</TDLINE>
+      </TLINE>
+      <TLINE>
+       <TDFORMAT>B1</TDFORMAT>
+       <TDLINE>Selektion von Reparaturaufträgen anhand von Auftragsnummer, Auftragsart,</TDLINE>
+      </TLINE>
+      <TLINE>
+       <TDLINE> Werk und Erfassungsdatum.</TDLINE>
+      </TLINE>
+      <TLINE>
+       <TDFORMAT>B1</TDFORMAT>
+       <TDLINE>Interaktives ALV-Grid mit Mehrfachauswahl und Statusanzeige.</TDLINE>
+      </TLINE>
+      <TLINE>
+       <TDFORMAT>B1</TDFORMAT>
+       <TDLINE>Massendruck auf Spool oder lokaler Download als PDF-Dateien.</TDLINE>
+      </TLINE>
+      <TLINE>
+       <TDFORMAT>B1</TDFORMAT>
+       <TDLINE>Verwendung des Drucktreiber-Frameworks /CTDI/CL_PRINT_DRIVER_BASE.</TDLINE>
+      </TLINE>
+      <TLINE>
+       <TDFORMAT>U1</TDFORMAT>
+       <TDLINE>VORGEHENSWEISE</TDLINE>
+      </TLINE>
+      <TLINE>
+       <TDFORMAT>AS</TDFORMAT>
+       <TDLINE>1. Selektionsparameter eingeben und Report ausführen.</TDLINE>
+      </TLINE>
+      <TLINE>
+       <TDFORMAT>AS</TDFORMAT>
+       <TDLINE>2. Gewünschte Reparaturaufträge im ALV-Grid markieren.</TDLINE>
+      </TLINE>
+      <TLINE>
+       <TDFORMAT>AS</TDFORMAT>
+       <TDLINE>3. Funktion &apos;Markierte drucken&apos; oder &apos;Als PDF speichern&apos; wählen.</TDLINE>
+      </TLINE>
+     </LINES>
+    </item>
+    <item>
+     <DOKIL>
+      <ID>RE</ID>
+      <OBJECT>/CTDI/PRINT_REPAIR_MASS</OBJECT>
+      <LANGU>E</LANGU>
+      <TYP>E</TYP>
+      <VERSION>0001</VERSION>
+      <MASTERLANG>X</MASTERLANG>
+      <TXTLINES>00025</TXTLINES>
+      <DOKSTATE>A</DOKSTATE>
+     </DOKIL>
+     <HEAD>
+      <TDOBJECT>DOKU</TDOBJECT>
+      <TDNAME>/CTDI/PRINT_REPAIR_MASS</TDNAME>
+      <TDID>RE</TDID>
+      <TDSPRAS>E</TDSPRAS>
+      <TDFORM>S_DOCU_SHOW</TDFORM>
+      <TDSTYLE>S_DOCUS1</TDSTYLE>
+      <TDVERSION>00001</TDVERSION>
+      <TDLINESIZE>072</TDLINESIZE>
+     </HEAD>
+     <LINES>
+      <TLINE>
+       <TDFORMAT>U1</TDFORMAT>
+       <TDLINE>&amp;PURPOSE&amp;</TDLINE>
+      </TLINE>
+      <TLINE>
+       <TDFORMAT>AS</TDFORMAT>
+       <TDLINE>The /CTDI/PRINT_REPAIR_MASS program provides mass printing and PDF export</TDLINE>
+      </TLINE>
+      <TLINE>
+       <TDLINE> functionality for repair orders using an interactive ALV grid.</TDLINE>
+      </TLINE>
+      <TLINE>
+       <TDFORMAT>U1</TDFORMAT>
+       <TDLINE>FEATURES</TDLINE>
+      </TLINE>
+      <TLINE>
+       <TDFORMAT>B1</TDFORMAT>
+       <TDLINE>Filtering repair orders by order number, order type, plant, and creation date.</TDLINE>
+      </TLINE>
+      <TLINE>
+       <TDFORMAT>B1</TDFORMAT>
+       <TDLINE>Interactive ALV grid with multi-row selection and status indication.</TDLINE>
+      </TLINE>
+      <TLINE>
+       <TDFORMAT>B1</TDFORMAT>
+       <TDLINE>Mass printing to spool or local download as PDF files.</TDLINE>
+      </TLINE>
+      <TLINE>
+       <TDFORMAT>B1</TDFORMAT>
+       <TDLINE>Dynamic output execution via /CTDI/CL_PRINT_DRIVER_BASE framework.</TDLINE>
+      </TLINE>
+      <TLINE>
+       <TDFORMAT>U1</TDFORMAT>
+       <TDLINE>PROCEDURE</TDLINE>
+      </TLINE>
+      <TLINE>
+       <TDFORMAT>AS</TDFORMAT>
+       <TDLINE>1. Enter selection parameters and execute the report.</TDLINE>
+      </TLINE>
+      <TLINE>
+       <TDFORMAT>AS</TDFORMAT>
+       <TDLINE>2. Select the desired repair orders in the ALV table.</TDLINE>
+      </TLINE>
+      <TLINE>
+       <TDFORMAT>AS</TDFORMAT>
+       <TDLINE>3. Click &apos;Print selected&apos; or &apos;Save as PDF&apos; to process.</TDLINE>
+      </TLINE>
+     </LINES>
+    </item>
+   </LONGTEXTS>
   </asx:values>
  </asx:abap>
 </abapGit>

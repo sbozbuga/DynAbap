@@ -208,7 +208,9 @@ CLASS lcl_mass_print IMPLEMENTATION.
         lo_column->set_short_text( 'Status' ).
 
         DATA(lo_col_msg) = CAST cl_salv_column_table( lo_columns->get_column( 'MSG' ) ).
-        lo_col_msg->set_short_text( 'Message' ).
+        lo_col_msg->set_short_text( CONV #( TEXT-006 ) ).
+        lo_col_msg->set_medium_text( CONV #( TEXT-006 ) ).
+        lo_col_msg->set_long_text( CONV #( TEXT-006 ) ).
         lo_col_msg->set_output_length( 40 ).
         lo_col_msg->set_fixed_header_text( 's' ).
       CATCH cx_salv_not_found.
@@ -264,7 +266,7 @@ CLASS lcl_mass_print IMPLEMENTATION.
         CONTINUE.
       ENDIF.
 
-      cl_progress_indicator=>progress_indicate( i_text               = |Printing { <ls_line>-aufnr }...|
+      cl_progress_indicator=>progress_indicate( i_text               = |{ TEXT-007 } { <ls_line>-aufnr }...|
                                                 i_processed          = sy-tabix
                                                 i_total              = lines( lt_rows )
                                                 i_output_immediately = abap_true ).
@@ -304,7 +306,7 @@ CLASS lcl_mass_print IMPLEMENTATION.
       ENDTRY.
     ENDLOOP.
 
-    MESSAGE |Printed: { lv_count_ok } OK, { lv_count_err } errors.| TYPE 'S'.
+    MESSAGE |{ TEXT-012 }: { lv_count_ok } OK, { lv_count_err } { TEXT-013 }.| TYPE 'S'.
   ENDMETHOD.
 ENDCLASS.
 
