@@ -76,15 +76,9 @@ CLASS /CTDI/CL_PRINT_CUST_ENGINE IMPLEMENTATION.
 
     " 2. Check if the current system repository is modifiable
     DATA lv_system_edit TYPE tadir-edtflag.
-    " TODO: variable is assigned but never used (ABAP cleaner)
-    DATA lv_system_name TYPE sysysid.
-    " TODO: variable is assigned but never used (ABAP cleaner)
-    DATA lv_system_type TYPE sysysid.
 
     CALL FUNCTION 'TR_SYS_PARAMS'
       IMPORTING
-        systemname    = lv_system_name
-        systemtype    = lv_system_type
         systemedit    = lv_system_edit  " 'W' = Modifiable, 'R' = Read-only
       EXCEPTIONS
         no_systemname = 1
@@ -101,8 +95,6 @@ CLASS /CTDI/CL_PRINT_CUST_ENGINE IMPLEMENTATION.
   METHOD copy_and_activate_class.
     DATA ls_clskey     TYPE seoclskey.
     DATA ls_new_clskey TYPE seoclskey.
-    " TODO: variable is assigned but never used (ABAP cleaner)
-    DATA ls_new_class  TYPE vseoclass.
     DATA lv_package    TYPE devclass.
 
     ls_clskey-clsname     = '/CTDI/CL_PRINT_DRIVER_TEMPLATE'.
@@ -113,8 +105,6 @@ CLASS /CTDI/CL_PRINT_CUST_ENGINE IMPLEMENTATION.
       EXPORTING
         clskey       = ls_clskey
         new_clskey   = ls_new_clskey
-      IMPORTING
-        new_class    = ls_new_class
       CHANGING
         devclass     = lv_package
       EXCEPTIONS
@@ -288,13 +278,11 @@ CLASS /CTDI/CL_PRINT_CUST_ENGINE IMPLEMENTATION.
     IF is_entry-form_name IS NOT INITIAL.
       SELECT SINGLE formname FROM stxfadm
         WHERE formname = @is_entry-form_name
-        " TODO: variable is assigned but never used (ABAP cleaner)
-        INTO @DATA(lv_ssf_exists).
+        INTO @DATA(lv_ssf_exists) ##NEEDED.
       IF sy-subrc <> 0.
         SELECT SINGLE name FROM fpcontext
           WHERE name = @is_entry-form_name
-          " TODO: variable is assigned but never used (ABAP cleaner)
-          INTO @DATA(lv_fp_exists).
+          INTO @DATA(lv_fp_exists) ##NEEDED.
         IF sy-subrc <> 0.
           DATA(lv_form_err) = |Form { is_entry-form_name } does not exist as a Smart Form or Adobe Form.|.
           RAISE EXCEPTION TYPE /ctdi/cx_cust_error
@@ -328,8 +316,7 @@ CLASS /CTDI/CL_PRINT_CUST_ENGINE IMPLEMENTATION.
 
     SELECT SINGLE clsname FROM seoclass
       WHERE clsname = @lv_class_name
-      " TODO: variable is assigned but never used (ABAP cleaner)
-      INTO @DATA(lv_class_exists).
+      INTO @DATA(lv_class_exists) ##NEEDED.
     IF sy-subrc <> 0.
       " Class does not exist! Offer to generate it on-the-fly if system modifiability and authorizations permit
       IF check_generation_allowed( ) = abap_true.
@@ -366,8 +353,7 @@ CLASS /CTDI/CL_PRINT_CUST_ENGINE IMPLEMENTATION.
     " 1. Determine form type and generated FM name
     SELECT SINGLE formname FROM stxfadm
       WHERE formname = @iv_form_name
-      " TODO: variable is assigned but never used (ABAP cleaner)
-      INTO @DATA(lv_ssf_name).
+      INTO @DATA(lv_ssf_name) ##NEEDED.
     IF sy-subrc = 0.
       lv_form_type = 'S'. " Smart Form
       CALL FUNCTION 'SSF_FUNCTION_MODULE_NAME'
