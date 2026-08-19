@@ -171,7 +171,9 @@ CLASS lcl_mass_print IMPLEMENTATION.
                                 IMPORTING r_salv_table = go_salv
                                 CHANGING  t_table      = gt_alv ).
       CATCH cx_salv_msg INTO DATA(lx_msg).
-        MESSAGE lx_msg->get_text( ) TYPE 'E'.
+        " Salv exception does not implement IF_T100_DYN_MSG required for the logger,
+        " but we must sanitize the output.
+        MESSAGE 'An unexpected system error occurred' TYPE 'E'.
         RETURN.
     ENDTRY.
 
@@ -281,24 +283,21 @@ CLASS lcl_mass_print IMPLEMENTATION.
           lv_count_ok = lv_count_ok + 1.
 
         CATCH /ctdi/cx_no_config_found INTO DATA(lx_noconf).
+          /ctdi/cl_print_driver_log=>log_exception( lx_noconf ).
           <ls_line>-icon = icon_led_yellow.
-          <ls_line>-msg  = COND #( WHEN lx_noconf->previous IS BOUND
-                                   THEN lx_noconf->previous->get_text( )
-                                   ELSE lx_noconf->get_text( ) ).
+          <ls_line>-msg  = 'An unexpected system error occurred'.
           lv_count_err = lv_count_err + 1.
 
         CATCH /ctdi/cx_print_driver_error INTO DATA(lx_driver).
+          /ctdi/cl_print_driver_log=>log_exception( lx_driver ).
           <ls_line>-icon = icon_led_red.
-          <ls_line>-msg  = COND #( WHEN lx_driver->previous IS BOUND
-                                   THEN lx_driver->previous->get_text( )
-                                   ELSE lx_driver->get_text( ) ).
+          <ls_line>-msg  = 'An unexpected system error occurred'.
           lv_count_err = lv_count_err + 1.
 
         CATCH cx_root INTO DATA(lx_root).
+          /ctdi/cl_print_driver_log=>log_exception( lx_root ).
           <ls_line>-icon = icon_led_red.
-          <ls_line>-msg  = COND #( WHEN lx_root->previous IS BOUND
-                                   THEN lx_root->previous->get_text( )
-                                   ELSE lx_root->get_text( ) ).
+          <ls_line>-msg  = 'An unexpected system error occurred'.
           lv_count_err = lv_count_err + 1.
       ENDTRY.
     ENDLOOP.
