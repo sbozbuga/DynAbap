@@ -774,6 +774,12 @@ CLASS /ctdi/cl_print_data_legacy IMPLEMENTATION.
       ENDIF.
     ENDIF.
 
+    " Write resolved serial back so it's available for filename and repair structure
+    IF mv_sernr IS INITIAL AND lv_sernr IS NOT INITIAL.
+      mv_sernr        = lv_sernr.
+      ms_legacy-sernr = lv_sernr.
+    ENDIF.
+
     SELECT SINGLE equnr FROM equi
       WHERE sernr = @lv_sernr
       INTO @rv_equnr.

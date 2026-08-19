@@ -6,6 +6,7 @@
     <NAME>/CTDI/PRINT_REPAIR_MASS</NAME>
     <DBAPL>S</DBAPL>
     <SUBC>1</SUBC>
+    <RLOAD>E</RLOAD>
     <FIXPT>X</FIXPT>
     <LDBNAME>D$S</LDBNAME>
     <UCCHECK>X</UCCHECK>
@@ -32,7 +33,13 @@
     <item>
      <ID>R</ID>
      <ENTRY>Mass Print Repair Orders</ENTRY>
-     <LENGTH>30</LENGTH>
+     <LENGTH>24</LENGTH>
+    </item>
+    <item>
+     <ID>S</ID>
+     <KEY>P_DIR</KEY>
+     <ENTRY>Download folder</ENTRY>
+     <LENGTH>23</LENGTH>
     </item>
     <item>
      <ID>S</ID>

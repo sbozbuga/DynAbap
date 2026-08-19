@@ -47,8 +47,6 @@ CLASS /ctdi/cl_print_driver_base DEFINITION
 
     DATA mv_repair_order       TYPE aufnr.
     DATA mv_sernr              TYPE equi-sernr.
-    DATA mv_qmnum              TYPE qmnum.
-    DATA mv_fenum              TYPE fenum.
     DATA mv_form_name          TYPE fpname.
     DATA ms_repair             TYPE /ctdi/repair.
     DATA ms_project            TYPE /ctdi/rep_projec.
@@ -209,9 +207,6 @@ CLASS /ctdi/cl_print_driver_base DEFINITION
                 ev_immed   TYPE c
                 ev_delete  TYPE c.
 
-    "! Resolves notification number, position, and serial number for PDF filename construction.
-    METHODS resolve_filename_attributes.
-
   PRIVATE SECTION.
     CLASS-METHODS resolve_contract
       IMPORTING iv_repair_id   TYPE aufnr
@@ -233,24 +228,6 @@ ENDCLASS.
 
 
 CLASS /CTDI/CL_PRINT_DRIVER_BASE IMPLEMENTATION.
-
-
-  METHOD set_download_dir.
-    mv_download_dir = iv_dir.
-    IF mv_download_dir IS NOT INITIAL.
-      DATA(lv_len) = strlen( mv_download_dir ).
-      DATA(lv_off) = lv_len - 1.
-      DATA(lv_last_char) = mv_download_dir+lv_off(1).
-      IF lv_last_char <> '\' AND lv_last_char <> '/'.
-        mv_download_dir = mv_download_dir && '\'.
-      ENDIF.
-    ENDIF.
-  ENDMETHOD.
-
-
-  METHOD get_download_dir.
-    rv_dir = mv_download_dir.
-  ENDMETHOD.
 
 
   METHOD build_adobeform_params.
@@ -428,27 +405,24 @@ CLASS /CTDI/CL_PRINT_DRIVER_BASE IMPLEMENTATION.
       RETURN.
     ENDIF.
 
-    " Build filename cleanly based on available attributes
+    " Build filename from ms_repair fields (populated by data provider)
     DATA(lv_aufnr_out) = |{ mv_repair_order ALPHA = OUT }|.
-    DATA(lv_qmnum_out) = COND string( WHEN mv_qmnum IS NOT INITIAL THEN |{ mv_qmnum ALPHA = OUT }| ).
-    DATA(lv_sernr_out) = COND string( WHEN ms_repair-sernr IS NOT INITIAL THEN |{ ms_repair-sernr }|
-                                      WHEN mv_sernr IS NOT INITIAL THEN |{ mv_sernr }| ).
-    CONDENSE: lv_aufnr_out, lv_qmnum_out, lv_sernr_out.
+    CONDENSE lv_aufnr_out.
 
     DATA lv_pdf_filename TYPE string.
 
-    IF lv_qmnum_out IS NOT INITIAL.
-      lv_pdf_filename = lv_qmnum_out.
-      IF mv_fenum IS NOT INITIAL AND mv_fenum <> '0000'.
-        lv_pdf_filename = |{ lv_pdf_filename }+{ mv_fenum }|.
-      ENDIF.
-      lv_pdf_filename = |{ lv_pdf_filename }_{ lv_aufnr_out }|.
+    IF ms_repair-ctdi_order_no IS NOT INITIAL.
+      " ctdi_order_no = 'qmnum-fenum' → remove separator for filename
+      DATA(lv_order_no) = CONV string( ms_repair-ctdi_order_no ).
+      REPLACE ALL OCCURRENCES OF '-' IN lv_order_no WITH ''.
+      CONDENSE lv_order_no.
+      lv_pdf_filename = |{ lv_order_no }_{ lv_aufnr_out }|.
     ELSE.
       lv_pdf_filename = lv_aufnr_out.
     ENDIF.
 
-    IF lv_sernr_out IS NOT INITIAL.
-      lv_pdf_filename = |{ lv_pdf_filename }_{ lv_sernr_out }|.
+    IF ms_repair-new_serial_no IS NOT INITIAL.
+      lv_pdf_filename = |{ lv_pdf_filename }_{ ms_repair-new_serial_no }|.
     ENDIF.
 
     lv_pdf_filename = |{ lv_pdf_filename }.pdf|.
@@ -466,28 +440,19 @@ CLASS /CTDI/CL_PRINT_DRIVER_BASE IMPLEMENTATION.
     ENDIF.
 
     IF mv_download_dir IS INITIAL.
-      " Prompt once for directory using folder browse
-      DATA lv_folder TYPE string.
-      cl_gui_frontend_services=>directory_browse( EXPORTING  initial_folder = space
-                                                  CHANGING   selected_folder = lv_folder
-                                                  EXCEPTIONS OTHERS          = 1 ).
-      IF sy-subrc = 0 AND lv_folder IS NOT INITIAL.
-        set_download_dir( lv_folder ).
-      ELSE.
-        " Fallback to file save dialog if folder browse was cancelled or unsupported
-        cl_gui_frontend_services=>file_save_dialog( EXPORTING  default_file_name = lv_pdf_filename
-                                                               default_extension = 'pdf'
-                                                               file_filter       = 'PDF Files (*.pdf)|*.pdf'
-                                                    CHANGING   filename          = lv_filename
-                                                               path              = lv_path
-                                                               fullpath          = lv_fpath
-                                                               user_action       = lv_action
-                                                    EXCEPTIONS OTHERS            = 1 ).
-        IF lv_action <> cl_gui_frontend_services=>action_ok OR lv_fpath IS INITIAL.
-          RETURN.
-        ENDIF.
-        set_download_dir( lv_path ).
+      " First download: show file-save dialog to get directory + confirm filename
+      cl_gui_frontend_services=>file_save_dialog( EXPORTING  default_file_name = lv_pdf_filename
+                                                             default_extension = 'pdf'
+                                                             file_filter       = 'PDF Files (*.pdf)|*.pdf'
+                                                  CHANGING   filename          = lv_filename
+                                                             path              = lv_path
+                                                             fullpath          = lv_fpath
+                                                             user_action       = lv_action
+                                                  EXCEPTIONS OTHERS            = 1 ).
+      IF lv_action <> cl_gui_frontend_services=>action_ok OR lv_fpath IS INITIAL.
+        RETURN.
       ENDIF.
+      set_download_dir( lv_path ).
     ENDIF.
 
     lv_fpath = mv_download_dir && lv_pdf_filename.
@@ -877,6 +842,11 @@ CLASS /CTDI/CL_PRINT_DRIVER_BASE IMPLEMENTATION.
   ENDMETHOD.
 
 
+  METHOD get_download_dir.
+    rv_dir = mv_download_dir.
+  ENDMETHOD.
+
+
   METHOD get_user_print_defaults.
     DATA ls_user_defaults TYPE usdefaults.
     DATA lv_user_printer  TYPE char40.
@@ -950,38 +920,6 @@ CLASS /CTDI/CL_PRINT_DRIVER_BASE IMPLEMENTATION.
 
     " 2. Map structures and register
     map_and_register_data( ).
-
-    " 3. Resolve notification number, position, and serial number for PDF filename
-    resolve_filename_attributes( ).
-  ENDMETHOD.
-
-
-  METHOD resolve_filename_attributes.
-    IF mv_qmnum IS INITIAL.
-      SELECT SINGLE qmnum FROM afih
-        WHERE aufnr = @mv_repair_order
-        INTO @mv_qmnum.
-
-      IF mv_qmnum IS INITIAL.
-        SELECT SINGLE qmnum FROM qmel
-          WHERE aufnr = @mv_repair_order
-          INTO @mv_qmnum.
-      ENDIF.
-    ENDIF.
-
-    IF mv_qmnum IS NOT INITIAL AND mv_fenum IS INITIAL.
-      SELECT SINGLE fenum FROM qmfe
-        WHERE qmnum = @mv_qmnum
-        INTO @mv_fenum.
-    ENDIF.
-
-    IF mv_sernr IS INITIAL AND ms_repair-sernr IS INITIAL.
-      SELECT SINGLE e~sernr
-        FROM afih AS a
-               INNER JOIN equi AS e ON e~equnr = a~equnr
-        WHERE a~aufnr = @mv_repair_order
-        INTO @mv_sernr.
-    ENDIF.
   ENDMETHOD.
 
 
@@ -1064,6 +1002,19 @@ CLASS /CTDI/CL_PRINT_DRIVER_BASE IMPLEMENTATION.
         EXPORTING
           repair_id = iv_repair_id
           message   = lv_err.
+    ENDIF.
+  ENDMETHOD.
+
+
+  METHOD set_download_dir.
+    mv_download_dir = iv_dir.
+    IF mv_download_dir IS NOT INITIAL.
+      DATA(lv_len) = strlen( mv_download_dir ).
+      DATA(lv_off) = lv_len - 1.
+      DATA(lv_last_char) = mv_download_dir+lv_off(1).
+      IF lv_last_char <> '\' AND lv_last_char <> '/'.
+        mv_download_dir = mv_download_dir && '\'.
+      ENDIF.
     ENDIF.
   ENDMETHOD.
 
