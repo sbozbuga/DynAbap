@@ -17,16 +17,12 @@ CLASS /ctdi/cl_print_driver_legacy DEFINITION
 ENDCLASS.
 
 
-
-CLASS /CTDI/CL_PRINT_DRIVER_LEGACY IMPLEMENTATION.
-
-
+CLASS /ctdi/cl_print_driver_legacy IMPLEMENTATION.
   METHOD fetch_data_from_db.
     mr_provider = NEW #( ).
     mr_provider->read_data( iv_aufnr = mv_repair_order
                             iv_sernr = mv_sernr ).
   ENDMETHOD.
-
 
   METHOD map_and_register_data.
     IF mr_provider IS NOT BOUND.
@@ -56,8 +52,8 @@ CLASS /CTDI/CL_PRINT_DRIVER_LEGACY IMPLEMENTATION.
                                ir_data = REF #( mt_comments ) ).
   ENDMETHOD.
 
-
   METHOD unpack_io_data.
     mr_provider = CAST #( io_data ).
   ENDMETHOD.
 ENDCLASS.
+

@@ -105,13 +105,6 @@ CLASS /CTDI/CL_PRINT_DRIVER_LOG IMPLEMENTATION.
       lo_log->add_single_message( iv_msgty = iv_msgty
                                   iv_msg   = iv_text ).
       gv_has_unsaved_logs = abap_true.
-
-      " Give visual feedback to the user on long-running processes
-      IF sy-batch = abap_false.
-        CALL FUNCTION 'SAPGUI_PROGRESS_INDICATOR'
-          EXPORTING
-            text = iv_text.
-      ENDIF.
     ENDIF.
   ENDMETHOD.
 

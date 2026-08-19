@@ -56,10 +56,7 @@ CLASS /ctdi/cl_print_cust_engine DEFINITION
 ENDCLASS.
 
 
-
-CLASS /CTDI/CL_PRINT_CUST_ENGINE IMPLEMENTATION.
-
-
+CLASS /ctdi/cl_print_cust_engine IMPLEMENTATION.
   METHOD check_generation_allowed.
     rv_allowed = abap_false.
 
@@ -90,7 +87,6 @@ CLASS /CTDI/CL_PRINT_CUST_ENGINE IMPLEMENTATION.
       rv_allowed = abap_true.
     ENDIF.
   ENDMETHOD.
-
 
   METHOD copy_and_activate_class.
     DATA ls_clskey     TYPE seoclskey.
@@ -149,7 +145,6 @@ CLASS /CTDI/CL_PRINT_CUST_ENGINE IMPLEMENTATION.
     ENDIF.
   ENDMETHOD.
 
-
   METHOD generate_provider_class.
     DATA(lv_package) = prompt_user_for_generation( iv_class_name = iv_class_name
                                                    iv_vbeln      = iv_vbeln ).
@@ -158,7 +153,6 @@ CLASS /CTDI/CL_PRINT_CUST_ENGINE IMPLEMENTATION.
                              iv_package    = lv_package
                              iv_vbeln      = iv_vbeln ).
   ENDMETHOD.
-
 
   METHOD is_subclass_of.
     DATA lv_current_class TYPE seoclsname.
@@ -182,7 +176,6 @@ CLASS /CTDI/CL_PRINT_CUST_ENGINE IMPLEMENTATION.
     ENDWHILE.
   ENDMETHOD.
 
-
   METHOD normalize_class_name.
     rv_class_name = to_upper( iv_class_name ).
 
@@ -203,10 +196,8 @@ CLASS /CTDI/CL_PRINT_CUST_ENGINE IMPLEMENTATION.
     ENDIF.
   ENDMETHOD.
 
-
   METHOD on_new_entry.
   ENDMETHOD.
-
 
   METHOD prompt_user_for_generation.
     DATA lv_answer TYPE c LENGTH 1.
@@ -271,7 +262,6 @@ CLASS /CTDI/CL_PRINT_CUST_ENGINE IMPLEMENTATION.
       rv_package = ls_field-value.
     ENDIF.
   ENDMETHOD.
-
 
   METHOD validate_entry.
     " 1. Validate Form Name existence in Smart Forms (STXFADM) or Adobe Forms (FPCONTEXT)
@@ -344,7 +334,6 @@ CLASS /CTDI/CL_PRINT_CUST_ENGINE IMPLEMENTATION.
 
     ENDIF. " select seoclass
   ENDMETHOD.
-
 
   METHOD validate_form_interface.
     DATA lv_fm_name   TYPE rs38l_fnam.
@@ -435,3 +424,4 @@ CLASS /CTDI/CL_PRINT_CUST_ENGINE IMPLEMENTATION.
     ENDLOOP.
   ENDMETHOD.
 ENDCLASS.
+

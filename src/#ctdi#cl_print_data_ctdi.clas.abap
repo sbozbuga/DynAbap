@@ -25,10 +25,7 @@ CLASS /ctdi/cl_print_data_ctdi DEFINITION
 ENDCLASS.
 
 
-
-CLASS /CTDI/CL_PRINT_DATA_CTDI IMPLEMENTATION.
-
-
+CLASS /ctdi/cl_print_data_ctdi IMPLEMENTATION.
   METHOD get_repair_result.
     DATA lf_repres     TYPE /cellag/repair_result.
     DATA lf_repres_txt TYPE /cellag/repair_result_txt.
@@ -159,7 +156,6 @@ CLASS /CTDI/CL_PRINT_DATA_CTDI IMPLEMENTATION.
     ms_legacy-repair_result_txt = lf_repres_txt.
   ENDMETHOD.
 
-
   METHOD map_legacy_data.
     CLEAR: ms_repair,
            mt_repair_error,
@@ -180,7 +176,6 @@ CLASS /CTDI/CL_PRINT_DATA_CTDI IMPLEMENTATION.
     mt_comments = mt_comment_lines.
   ENDMETHOD.
 
-
   METHOD read_data.
     " 1. Call super class logic to fetch raw legacy data into ms_legacy, mt_legacy_error, etc.
     super->read_data( iv_aufnr = iv_aufnr
@@ -190,3 +185,4 @@ CLASS /CTDI/CL_PRINT_DATA_CTDI IMPLEMENTATION.
     map_legacy_data( ).
   ENDMETHOD.
 ENDCLASS.
+

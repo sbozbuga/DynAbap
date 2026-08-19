@@ -3,28 +3,28 @@ CLASS /ctdi/cl_print_driver_base DEFINITION
   CREATE PROTECTED.
 
   PUBLIC SECTION.
-    CONSTANTS gc_operation_wfer   TYPE vornr     VALUE '9010' ##NO_TEXT.
-    CONSTANTS gc_country_default  TYPE land1     VALUE 'DE' ##NO_TEXT.
-    CONSTANTS gc_devtype_fallback TYPE rspoptype VALUE 'YPDF' ##NO_TEXT.
-    CONSTANTS gc_qmart_repair     TYPE qmart     VALUE 'Z2' ##NO_TEXT.
+    CONSTANTS gc_operation_wfer      TYPE vornr     VALUE '9010' ##NO_TEXT.
+    CONSTANTS gc_country_default     TYPE land1     VALUE 'DE' ##NO_TEXT.
+    CONSTANTS gc_devtype_fallback    TYPE rspoptype VALUE 'YPDF' ##NO_TEXT.
+    CONSTANTS gc_qmart_repair        TYPE qmart     VALUE 'Z2' ##NO_TEXT.
 
     " Form parameter constants (CTDI standard)
-    CONSTANTS gc_param_repair        TYPE string VALUE 'REPAIR' ##NO_TEXT.
-    CONSTANTS gc_param_project       TYPE string VALUE 'PROJECT' ##NO_TEXT.
-    CONSTANTS gc_param_repair_errors TYPE string VALUE 'REPAIR_ERRORS' ##NO_TEXT.
-    CONSTANTS gc_param_comments      TYPE string VALUE 'COMMENT_LINES' ##NO_TEXT.
+    CONSTANTS gc_param_repair        TYPE string    VALUE 'REPAIR' ##NO_TEXT.
+    CONSTANTS gc_param_project       TYPE string    VALUE 'PROJECT' ##NO_TEXT.
+    CONSTANTS gc_param_repair_errors TYPE string    VALUE 'REPAIR_ERRORS' ##NO_TEXT.
+    CONSTANTS gc_param_comments      TYPE string    VALUE 'COMMENT_LINES' ##NO_TEXT.
 
     " Form parameter constants (Legacy Alcatel)
-    CONSTANTS gc_param_legacy_rep    TYPE string VALUE '/CELLAG/ALCAREP' ##NO_TEXT.
-    CONSTANTS gc_param_legacy_err    TYPE string VALUE '/CELLAG/ALCAREP_ERROR' ##NO_TEXT.
-    CONSTANTS gc_param_legacy_comm   TYPE string VALUE 'GT_COMMENT_LINES' ##NO_TEXT.
+    CONSTANTS gc_param_legacy_rep    TYPE string    VALUE '/CELLAG/ALCAREP' ##NO_TEXT.
+    CONSTANTS gc_param_legacy_err    TYPE string    VALUE '/CELLAG/ALCAREP_ERROR' ##NO_TEXT.
+    CONSTANTS gc_param_legacy_comm   TYPE string    VALUE 'GT_COMMENT_LINES' ##NO_TEXT.
 
     " Form parameter constants (SAP Framework)
-    CONSTANTS gc_param_docparams     TYPE string VALUE '/1BCDWB/DOCPARAMS' ##NO_TEXT.
-    CONSTANTS gc_param_formoutput    TYPE string VALUE '/1BCDWB/FORMOUTPUT' ##NO_TEXT.
-    CONSTANTS gc_param_control_param TYPE string VALUE 'CONTROL_PARAMETERS' ##NO_TEXT.
-    CONSTANTS gc_param_output_opt    TYPE string VALUE 'OUTPUT_OPTIONS' ##NO_TEXT.
-    CONSTANTS gc_param_job_output    TYPE string VALUE 'JOB_OUTPUT_INFO' ##NO_TEXT.
+    CONSTANTS gc_param_docparams     TYPE string    VALUE '/1BCDWB/DOCPARAMS' ##NO_TEXT.
+    CONSTANTS gc_param_formoutput    TYPE string    VALUE '/1BCDWB/FORMOUTPUT' ##NO_TEXT.
+    CONSTANTS gc_param_control_param TYPE string    VALUE 'CONTROL_PARAMETERS' ##NO_TEXT.
+    CONSTANTS gc_param_output_opt    TYPE string    VALUE 'OUTPUT_OPTIONS' ##NO_TEXT.
+    CONSTANTS gc_param_job_output    TYPE string    VALUE 'JOB_OUTPUT_INFO' ##NO_TEXT.
 
     "! Static factory to determine and instantiate the correct driver
     "!
@@ -169,6 +169,8 @@ CLASS /ctdi/cl_print_driver_base DEFINITION
 
     "! Builds the PDF filename (without extension) from repair data.
     "! Used for file download name and spool cover title.
+    "!
+    "! @parameter rv_filename |
     METHODS build_pdf_filename
       RETURNING VALUE(rv_filename) TYPE string.
 
@@ -249,10 +251,7 @@ CLASS /ctdi/cl_print_driver_base DEFINITION
 ENDCLASS.
 
 
-
-CLASS /CTDI/CL_PRINT_DRIVER_BASE IMPLEMENTATION.
-
-
+CLASS /ctdi/cl_print_driver_base IMPLEMENTATION.
   METHOD build_adobeform_params.
     DATA ls_ptab TYPE abap_func_parmbind.
     DATA ls_etab TYPE abap_func_excpbind.
@@ -303,7 +302,6 @@ CLASS /CTDI/CL_PRINT_DRIVER_BASE IMPLEMENTATION.
     ls_etab-value = 4.
     INSERT ls_etab INTO TABLE et_etab.
   ENDMETHOD.
-
 
   METHOD build_smartform_params.
     DATA ls_ptab TYPE abap_func_parmbind.
@@ -368,7 +366,6 @@ CLASS /CTDI/CL_PRINT_DRIVER_BASE IMPLEMENTATION.
     INSERT ls_etab INTO TABLE et_etab.
   ENDMETHOD.
 
-
   METHOD convert_otf_to_pdf.
     DATA lt_otf         TYPE TABLE OF itcoo.
     DATA lv_pdf_xstring TYPE xstring.
@@ -397,7 +394,6 @@ CLASS /CTDI/CL_PRINT_DRIVER_BASE IMPLEMENTATION.
     download_pdf( iv_pdf_data = lv_pdf_xstring ).
   ENDMETHOD.
 
-
   METHOD build_pdf_filename.
     DATA(lv_aufnr_out) = |{ mv_repair_order ALPHA = OUT }|.
     CONDENSE lv_aufnr_out.
@@ -416,10 +412,10 @@ CLASS /CTDI/CL_PRINT_DRIVER_BASE IMPLEMENTATION.
     ENDIF.
   ENDMETHOD.
 
-
   METHOD detect_form_type.
     SELECT SINGLE formname FROM stxfadm              "#EC CI_SEL_NESTED
       WHERE formname = @mv_form_name
+      " TODO: variable is assigned but never used (ABAP cleaner)
       INTO @DATA(lv_ssf_name).
     IF sy-subrc = 0.
       rv_type = 'S'.          " Smart Form exists in STXFADM
@@ -427,7 +423,6 @@ CLASS /CTDI/CL_PRINT_DRIVER_BASE IMPLEMENTATION.
       rv_type = 'A'.          " Default to Adobe Form
     ENDIF.
   ENDMETHOD.
-
 
   METHOD download_pdf.
     DATA lv_action   TYPE i.
@@ -505,10 +500,10 @@ CLASS /CTDI/CL_PRINT_DRIVER_BASE IMPLEMENTATION.
                                                        control_flush_error     = 18
                                                        OTHERS                  = 19 ).
     IF sy-subrc <> 0.
-      /ctdi/cl_print_driver_log=>log_warning( |PDF download failed for Repair { mv_repair_order } (sy-subrc={ sy-subrc })| ).
+      /ctdi/cl_print_driver_log=>log_warning(
+          |PDF download failed for Repair { mv_repair_order } (sy-subrc={ sy-subrc })| ).
     ENDIF.
   ENDMETHOD.
-
 
   METHOD execute.
     MESSAGE i001(/ctdi/print_repair) WITH mv_repair_order mv_form_name iv_save_as_pdf
@@ -528,12 +523,12 @@ CLASS /CTDI/CL_PRINT_DRIVER_BASE IMPLEMENTATION.
     /ctdi/cl_print_driver_log=>log_info( lv_msg_completed ).
   ENDMETHOD.
 
-
   METHOD execute_adobeform.
     DATA lv_fm_name      TYPE rs38l_fnam.
     DATA ls_outputparams TYPE sfpoutputparams.
     DATA ls_docparams    TYPE sfpdocparams.
     DATA ls_formoutput   TYPE fpformoutput.
+    " TODO: variable is assigned but never used (ABAP cleaner)
     DATA ls_joboutput    TYPE sfpjoboutput.
     DATA lv_subrc        TYPE sysubrc.
     DATA lv_printer      TYPE rspopname.
@@ -641,7 +636,6 @@ CLASS /CTDI/CL_PRINT_DRIVER_BASE IMPLEMENTATION.
     ENDIF.
   ENDMETHOD.
 
-
   METHOD execute_smartform.
     DATA lv_fm_name        TYPE rs38l_fnam.
     DATA ls_control_params TYPE ssfctrlop.
@@ -670,11 +664,11 @@ CLASS /CTDI/CL_PRINT_DRIVER_BASE IMPLEMENTATION.
                                        ev_immed   = lv_immed
                                        ev_delete  = lv_delete ).
 
-    ls_output_options-tddest   = lv_printer.
-    ls_output_options-tdcopies = 1.
-    ls_output_options-tdimmed  = lv_immed.
-    ls_output_options-tddelete = lv_delete.
-    ls_output_options-tdnewid  = abap_true.
+    ls_output_options-tddest     = lv_printer.
+    ls_output_options-tdcopies   = 1.
+    ls_output_options-tdimmed    = lv_immed.
+    ls_output_options-tddelete   = lv_delete.
+    ls_output_options-tdnewid    = abap_true.
     ls_output_options-tdcovtitle = build_pdf_filename( ).
 
     " Dynamic device type based on logon language
@@ -735,7 +729,6 @@ CLASS /CTDI/CL_PRINT_DRIVER_BASE IMPLEMENTATION.
     ENDIF.
   ENDMETHOD.
 
-
   METHOD factory.
     DATA lv_form_name  TYPE fpname.
     DATA lv_class_name TYPE seoclsname.
@@ -763,11 +756,9 @@ CLASS /CTDI/CL_PRINT_DRIVER_BASE IMPLEMENTATION.
     ENDTRY.
   ENDMETHOD.
 
-
   METHOD fetch_data_from_db.
     " Default: no-op. Subclasses redefine this to load data from database.
   ENDMETHOD.
-
 
   METHOD get_config_from_db.
     DATA lv_contract TYPE vbeln_va.
@@ -866,11 +857,9 @@ CLASS /CTDI/CL_PRINT_DRIVER_BASE IMPLEMENTATION.
       INTO @es_project.                              "#EC CI_SEL_NESTED
   ENDMETHOD.
 
-
   METHOD get_download_dir.
     rv_dir = mv_download_dir.
   ENDMETHOD.
-
 
   METHOD get_user_print_defaults.
     DATA ls_user_defaults TYPE usdefaults.
@@ -903,11 +892,9 @@ CLASS /CTDI/CL_PRINT_DRIVER_BASE IMPLEMENTATION.
     ev_delete = abap_true.
   ENDMETHOD.
 
-
   METHOD map_and_register_data.
     " Default: no-op. Subclasses redefine this to map data structures.
   ENDMETHOD.
-
 
   METHOD raise_driver_error.
     IF ix_previous IS BOUND.
@@ -921,7 +908,6 @@ CLASS /CTDI/CL_PRINT_DRIVER_BASE IMPLEMENTATION.
         message   = iv_message
         previous  = ix_previous.
   ENDMETHOD.
-
 
   METHOD read_data.
     " 1. Initialize data state
@@ -947,7 +933,6 @@ CLASS /CTDI/CL_PRINT_DRIVER_BASE IMPLEMENTATION.
     map_and_register_data( ).
   ENDMETHOD.
 
-
   METHOD register_custom_parameter.
     DATA ls_param TYPE abap_func_parmbind.
 
@@ -956,7 +941,6 @@ CLASS /CTDI/CL_PRINT_DRIVER_BASE IMPLEMENTATION.
     ls_param-value = ir_data.
     INSERT ls_param INTO TABLE mt_custom_form_params.
   ENDMETHOD.
-
 
   METHOD render_form.
     " Ensure passed repair header is valid
@@ -980,7 +964,6 @@ CLASS /CTDI/CL_PRINT_DRIVER_BASE IMPLEMENTATION.
                          iv_preview     = iv_preview ).
     ENDIF.
   ENDMETHOD.
-
 
   METHOD resolve_contract.
     DATA(lv_aufnr) = |{ iv_repair_id ALPHA = IN }|.
@@ -1030,7 +1013,6 @@ CLASS /CTDI/CL_PRINT_DRIVER_BASE IMPLEMENTATION.
     ENDIF.
   ENDMETHOD.
 
-
   METHOD set_download_dir.
     mv_download_dir = iv_dir.
     IF mv_download_dir IS NOT INITIAL.
@@ -1043,8 +1025,8 @@ CLASS /CTDI/CL_PRINT_DRIVER_BASE IMPLEMENTATION.
     ENDIF.
   ENDMETHOD.
 
-
   METHOD unpack_io_data.
     " Default: no-op. Subclasses redefine this to unpack custom objects.
   ENDMETHOD.
 ENDCLASS.
+

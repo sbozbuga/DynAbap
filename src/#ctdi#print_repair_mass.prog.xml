@@ -1,4 +1,4 @@
-<?xml version="1.0" encoding="utf-8"?>
+﻿<?xml version="1.0" encoding="utf-8"?>
 <abapGit version="v1.0.0" serializer="LCL_OBJECT_PROG" serializer_version="v1.0.0">
  <asx:abap xmlns:asx="http://www.sap.com/abapxml" version="1.0">
   <asx:values>
@@ -290,8 +290,7 @@
       <LANGU>D</LANGU>
       <TYP>E</TYP>
       <VERSION>0001</VERSION>
-      <MASTERLANG>X</MASTERLANG>
-      <TXTLINES>00025</TXTLINES>
+      <TXTLINES>00012</TXTLINES>
       <DOKSTATE>A</DOKSTATE>
      </DOKIL>
      <HEAD>
@@ -365,7 +364,7 @@
       <TYP>E</TYP>
       <VERSION>0001</VERSION>
       <MASTERLANG>X</MASTERLANG>
-      <TXTLINES>00025</TXTLINES>
+      <TXTLINES>00011</TXTLINES>
       <DOKSTATE>A</DOKSTATE>
      </DOKIL>
      <HEAD>
@@ -385,7 +384,7 @@
       </TLINE>
       <TLINE>
        <TDFORMAT>AS</TDFORMAT>
-       <TDLINE>The /CTDI/PRINT_REPAIR_MASS program provides mass printing and PDF export</TDLINE>
+       <TDLINE>The /CTDI/PRINT_REPAIR_MASS program provides mass printing and PDF expor</TDLINE>
       </TLINE>
       <TLINE>
        <TDLINE> functionality for repair orders using an interactive ALV grid.</TDLINE>
@@ -396,7 +395,7 @@
       </TLINE>
       <TLINE>
        <TDFORMAT>B1</TDFORMAT>
-       <TDLINE>Filtering repair orders by order number, order type, plant, and creation date.</TDLINE>
+       <TDLINE>Filtering repair orders by order number, order type, plant, and creation</TDLINE>
       </TLINE>
       <TLINE>
        <TDFORMAT>B1</TDFORMAT>

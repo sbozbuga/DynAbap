@@ -152,13 +152,10 @@ CLASS lcl_mass_print IMPLEMENTATION.
                                 akz         = <ls_order>-akz ) TO gt_alv.
     ENDLOOP.
 
-    " Force minimum 40-char width for MSG column using non-breaking spaces (U+00A0)
+    " Force minimum 80-char width for MSG column using non-breaking spaces (U+00A0)
     IF gt_alv IS NOT INITIAL.
       ASSIGN gt_alv[ 1 ] TO FIELD-SYMBOL(<ls_first>).
-      DO 80 TIMES.
-        <ls_first>-msg = <ls_first>-msg && cl_abap_conv_in_ce=>uccp( '00A0' ).
-      ENDDO.
-      <ls_first>-msg = <ls_first>-msg && '.'.
+      <ls_first>-msg = repeat( val = cl_abap_conv_in_ce=>uccp( '00A0' ) occ = 80 ).
     ENDIF.
   ENDMETHOD.
 
