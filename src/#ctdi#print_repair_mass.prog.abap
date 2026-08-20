@@ -89,6 +89,22 @@ TYPES: BEGIN OF ty_alv_line,
          msg         TYPE string,         " Message (success/error)
        END OF ty_alv_line.
 
+" Result structure shared between parallel tasks and main program
+TYPES: BEGIN OF ty_result,
+         aufnr    TYPE aufnr,
+         filename TYPE string,
+         icon     TYPE icon_d,
+         msg      TYPE string,
+         pdf_data TYPE xstring,
+       END OF ty_result.
+
+TYPES: BEGIN OF ty_step,
+         vbeln TYPE vbeln_va,
+         skz   TYPE bemot,
+         akz   TYPE char4,
+       END OF ty_step.
+TYPES ty_step_tab TYPE STANDARD TABLE OF ty_step WITH EMPTY KEY.
+
 " -----------------------------------------------------------------------
 " Parallel Processing Class (for 50+ orders)
 " -----------------------------------------------------------------------
@@ -105,13 +121,6 @@ CLASS lcl_parallel_print IMPLEMENTATION.
     IMPORT aufnr    = lv_aufnr
            pdf_mode = lv_pdf_mode FROM DATA BUFFER p_in.
 
-    TYPES: BEGIN OF ty_result,
-             aufnr    TYPE aufnr,
-             filename TYPE string,
-             icon     TYPE icon_d,
-             msg      TYPE string,
-             pdf_data TYPE xstring,
-           END OF ty_result.
     DATA ls_result TYPE ty_result.
     ls_result-aufnr = lv_aufnr.
 
@@ -323,63 +332,31 @@ CLASS lcl_mass_print IMPLEMENTATION.
       WHERE formname = @lt_form_names-table_line
       INTO TABLE @lt_smartforms ##SUBRC_OK.
 
-    " 3. For each ALV line: find matching config via 8-step access sequence
-    SORT lt_config BY vbeln skz akz.
-
+    " 3. For each ALV line: find matching config via 8-step fallback sequence
     LOOP AT gt_alv ASSIGNING FIELD-SYMBOL(<ls_alv>).
-      READ TABLE lt_config ASSIGNING FIELD-SYMBOL(<ls_match>)
-           WITH KEY vbeln = <ls_alv>-contract_id
-                    skz   = <ls_alv>-skz
-                    akz   = <ls_alv>-akz BINARY SEARCH.
-      IF sy-subrc <> 0.
-        READ TABLE lt_config ASSIGNING <ls_match>
-             WITH KEY vbeln = <ls_alv>-contract_id
-                      skz   = <ls_alv>-skz
-                      akz   = '' BINARY SEARCH.
-      ENDIF.
-      IF sy-subrc <> 0.
-        READ TABLE lt_config ASSIGNING <ls_match>
-             WITH KEY vbeln = <ls_alv>-contract_id
-                      skz   = ''
-                      akz   = <ls_alv>-akz BINARY SEARCH.
-      ENDIF.
-      IF sy-subrc <> 0.
-        READ TABLE lt_config ASSIGNING <ls_match>
-             WITH KEY vbeln = <ls_alv>-contract_id
-                      skz   = ''
-                      akz   = '' BINARY SEARCH.
-      ENDIF.
-      IF sy-subrc <> 0.
-        READ TABLE lt_config ASSIGNING <ls_match>
-             WITH KEY vbeln = ''
-                      skz   = <ls_alv>-skz
-                      akz   = <ls_alv>-akz BINARY SEARCH.
-      ENDIF.
-      IF sy-subrc <> 0.
-        READ TABLE lt_config ASSIGNING <ls_match>
-             WITH KEY vbeln = ''
-                      skz   = <ls_alv>-skz
-                      akz   = '' BINARY SEARCH.
-      ENDIF.
-      IF sy-subrc <> 0.
-        READ TABLE lt_config ASSIGNING <ls_match>
-             WITH KEY vbeln = ''
-                      skz   = ''
-                      akz   = <ls_alv>-akz BINARY SEARCH.
-      ENDIF.
-      IF sy-subrc <> 0.
-        READ TABLE lt_config ASSIGNING <ls_match>
-             WITH KEY vbeln = ''
-                      skz   = ''
-                      akz   = '' BINARY SEARCH.
-      ENDIF.
+      DATA(lt_steps) = VALUE ty_step_tab(
+        ( vbeln = <ls_alv>-contract_id skz = <ls_alv>-skz akz = <ls_alv>-akz )
+        ( vbeln = <ls_alv>-contract_id skz = <ls_alv>-skz akz = '' )
+        ( vbeln = <ls_alv>-contract_id skz = ''           akz = <ls_alv>-akz )
+        ( vbeln = <ls_alv>-contract_id skz = ''           akz = '' )
+        ( vbeln = ''                   skz = <ls_alv>-skz akz = <ls_alv>-akz )
+        ( vbeln = ''                   skz = <ls_alv>-skz akz = '' )
+        ( vbeln = ''                   skz = ''           akz = <ls_alv>-akz )
+        ( vbeln = ''                   skz = ''           akz = '' ) ).
 
-      IF sy-subrc = 0.
-        <ls_alv>-form_name = <ls_match>-form_name.
-        READ TABLE lt_smartforms TRANSPORTING NO FIELDS
-             WITH KEY table_line = <ls_match>-form_name.
-        <ls_alv>-form_type = COND #( WHEN sy-subrc = 0 THEN 'S' ELSE 'A' ).
-      ENDIF.
+      LOOP AT lt_steps ASSIGNING FIELD-SYMBOL(<ls_step>).
+        READ TABLE lt_config ASSIGNING FIELD-SYMBOL(<ls_match>)
+             WITH KEY vbeln = <ls_step>-vbeln
+                      skz   = <ls_step>-skz
+                      akz   = <ls_step>-akz.
+        IF sy-subrc = 0.
+          <ls_alv>-form_name = <ls_match>-form_name.
+          READ TABLE lt_smartforms TRANSPORTING NO FIELDS
+               WITH KEY table_line = <ls_match>-form_name.
+          <ls_alv>-form_type = COND #( WHEN sy-subrc = 0 THEN 'S' ELSE 'A' ).
+          EXIT.
+        ENDIF.
+      ENDLOOP.
     ENDLOOP.
   ENDMETHOD.
 
@@ -532,13 +509,14 @@ CLASS lcl_mass_print IMPLEMENTATION.
 
   METHOD execute_parallel.
     CLEAR: ev_ok, ev_err.
-    DATA lt_in TYPE cl_abap_parallel=>t_in_tab.
+    DATA lt_in  TYPE cl_abap_parallel=>t_in_tab.
+    DATA lv_in  TYPE xstring.
     DATA(lv_pdf_mode) = xsdbool( iv_mode = 'PDF_SEL' OR iv_mode = 'PDF_MERGE' ).
 
     LOOP AT it_rows INTO DATA(lv_row).
       ASSIGN gt_alv[ lv_row ] TO FIELD-SYMBOL(<ls_line>).
       IF sy-subrc = 0.
-        DATA lv_in TYPE xstring.
+        CLEAR lv_in.
         EXPORT aufnr    = <ls_line>-aufnr
                pdf_mode = lv_pdf_mode TO DATA BUFFER lv_in.
         APPEND lv_in TO lt_in.
@@ -555,14 +533,6 @@ CLASS lcl_mass_print IMPLEMENTATION.
 
     lo_parallel->run( EXPORTING p_in_tab  = lt_in
                       IMPORTING p_out_tab = lt_out ).
-
-    TYPES: BEGIN OF ty_result,
-             aufnr    TYPE aufnr,
-             filename TYPE string,
-             icon     TYPE icon_d,
-             msg      TYPE string,
-             pdf_data TYPE xstring,
-           END OF ty_result.
 
     DATA lo_merger TYPE REF TO cl_rspo_pdf_merge.
     IF iv_mode = 'PDF_MERGE'.
@@ -821,43 +791,72 @@ CLASS lcl_mass_print IMPLEMENTATION.
           ENDTRY.
         ENDLOOP.
 
-        CALL FUNCTION 'FP_JOB_CLOSE' EXCEPTIONS OTHERS = 0.
+        CALL FUNCTION 'FP_JOB_CLOSE'
+          EXCEPTIONS
+            OTHERS = 1.
+        IF sy-subrc <> 0.
+          /ctdi/cl_print_driver_log=>log_error( |FP_JOB_CLOSE failed (subrc={ sy-subrc })| ).
+        ENDIF.
       ENDIF.
     ENDIF.
 
     " --- SmartForm group: single spool via SSF_OPEN ---
     IF lt_smart IS NOT INITIAL.
-      CALL FUNCTION 'SSF_OPEN' EXCEPTIONS OTHERS = 0.
+      DATA ls_sf_ctrl   TYPE ssfctrlop.
+      DATA ls_sf_output TYPE ssfcompop.
 
-      LOOP AT lt_smart ASSIGNING FIELD-SYMBOL(<ls_s>).
-        cl_progress_indicator=>progress_indicate(
-            i_text               = |{ TEXT-007 } { <ls_s>-aufnr } ({ sy-tabix }/{ lines( lt_smart ) })...|
-            i_processed          = sy-tabix
-            i_total              = lines( lt_smart )
-            i_output_immediately = abap_true ).
-        TRY.
-            DATA(lr_drv_s) = /ctdi/cl_print_driver_base=>factory( iv_repair_id = <ls_s>-aufnr ).
-            lr_drv_s->set_external_job( abap_true ).
-            lr_drv_s->execute( iv_save_as_pdf = abap_false
-                               iv_no_dialog   = abap_true
-                               iv_preview     = abap_false ).
-            ASSIGN gt_alv[ aufnr = <ls_s>-aufnr ] TO FIELD-SYMBOL(<ls_alv_s>).
-            IF sy-subrc = 0.
-              <ls_alv_s>-icon = icon_led_green.
-              <ls_alv_s>-msg  = TEXT-010.
-            ENDIF.
-            ev_ok = ev_ok + 1.
-          CATCH cx_root INTO DATA(lx_s).
-            ASSIGN gt_alv[ aufnr = <ls_s>-aufnr ] TO <ls_alv_s>.
-            IF sy-subrc = 0.
-              <ls_alv_s>-icon = icon_led_red.
-              <ls_alv_s>-msg  = lx_s->get_text( ).
-            ENDIF.
-            ev_err = ev_err + 1.
-        ENDTRY.
-      ENDLOOP.
+      ls_sf_ctrl-no_dialog    = abap_true.
+      ls_sf_output-tddest     = lv_printer.
+      ls_sf_output-tdnewid    = abap_true.
+      ls_sf_output-tdimmed    = abap_true.
+      ls_sf_output-tddelete   = abap_false.
+      ls_sf_output-tdcovtitle = |Mass Print SmartForms { sy-datum }|.
 
-      CALL FUNCTION 'SSF_CLOSE' EXCEPTIONS OTHERS = 0.
+      CALL FUNCTION 'SSF_OPEN'
+        EXPORTING
+          control_parameters = ls_sf_ctrl
+          output_options     = ls_sf_output
+          user_settings      = abap_false
+        EXCEPTIONS
+          OTHERS             = 1.
+      IF sy-subrc <> 0.
+        MESSAGE |SSF_OPEN failed (subrc={ sy-subrc })| TYPE 'S' DISPLAY LIKE 'E'.
+      ELSE.
+        LOOP AT lt_smart ASSIGNING FIELD-SYMBOL(<ls_s>).
+          cl_progress_indicator=>progress_indicate(
+              i_text               = |{ TEXT-007 } { <ls_s>-aufnr } ({ sy-tabix }/{ lines( lt_smart ) })...|
+              i_processed          = sy-tabix
+              i_total              = lines( lt_smart )
+              i_output_immediately = abap_true ).
+          TRY.
+              DATA(lr_drv_s) = /ctdi/cl_print_driver_base=>factory( iv_repair_id = <ls_s>-aufnr ).
+              lr_drv_s->set_external_job( abap_true ).
+              lr_drv_s->execute( iv_save_as_pdf = abap_false
+                                 iv_no_dialog   = abap_true
+                                 iv_preview     = abap_false ).
+              ASSIGN gt_alv[ aufnr = <ls_s>-aufnr ] TO FIELD-SYMBOL(<ls_alv_s>).
+              IF sy-subrc = 0.
+                <ls_alv_s>-icon = icon_led_green.
+                <ls_alv_s>-msg  = TEXT-010.
+              ENDIF.
+              ev_ok = ev_ok + 1.
+            CATCH cx_root INTO DATA(lx_s).
+              ASSIGN gt_alv[ aufnr = <ls_s>-aufnr ] TO <ls_alv_s>.
+              IF sy-subrc = 0.
+                <ls_alv_s>-icon = icon_led_red.
+                <ls_alv_s>-msg  = lx_s->get_text( ).
+              ENDIF.
+              ev_err = ev_err + 1.
+          ENDTRY.
+        ENDLOOP.
+
+        CALL FUNCTION 'SSF_CLOSE'
+          EXCEPTIONS
+            OTHERS = 1.
+        IF sy-subrc <> 0.
+          /ctdi/cl_print_driver_log=>log_error( |SSF_CLOSE failed (subrc={ sy-subrc })| ).
+        ENDIF.
+      ENDIF.
     ENDIF.
   ENDMETHOD.
 
