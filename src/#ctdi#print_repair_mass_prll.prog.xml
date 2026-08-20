@@ -2121,6 +2121,12 @@
        <LENGTH>99</LENGTH>
       </item>
       <item>
+       <ID>I</ID>
+       <KEY>018</KEY>
+       <ENTRY>Druckoptionen</ENTRY>
+       <LENGTH>23</LENGTH>
+      </item>
+      <item>
        <ID>R</ID>
        <ENTRY>Massendruck Reparaturaufträge</ENTRY>
        <LENGTH>70</LENGTH>
@@ -2135,6 +2141,12 @@
        <ID>S</ID>
        <KEY>P_PDF</KEY>
        <ENTRY>Als PDF speichern</ENTRY>
+       <LENGTH>38</LENGTH>
+      </item>
+      <item>
+       <ID>S</ID>
+       <KEY>P_SPOOL</KEY>
+       <ENTRY>Einzelner Spool-Auftrag (Bündelung)</ENTRY>
        <LENGTH>38</LENGTH>
       </item>
       <item>
