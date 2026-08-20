@@ -69,6 +69,7 @@ CLASS lcl_tests DEFINITION FOR TESTING
     METHODS: get_config_no_config_exc FOR TESTING.
     METHODS: normalize_class_name FOR TESTING.
     METHODS: set_get_download_dir FOR TESTING.
+    METHODS: test_build_pdf_filename FOR TESTING.
 ENDCLASS.       "lcl_tests
 
 
@@ -423,6 +424,18 @@ CLASS lcl_tests IMPLEMENTATION.
       act = /ctdi/cl_print_driver_base=>get_download_dir( )
       exp = 'C:\TestFolder\'
       msg = 'Directory should be normalized with trailing backslash' ).
+  ENDMETHOD.
+
+  METHOD test_build_pdf_filename.
+    f_cut->mv_repair_order = '000000800123'.
+    f_cut->ms_repair-ctdi_order_no = '100234-01'.
+    f_cut->ms_repair-new_serial_no = 'SN/99:88'.
+
+    DATA(lv_filename) = f_cut->build_pdf_filename( ).
+    cl_abap_unit_assert=>assert_equals(
+      act = lv_filename
+      exp = '10023401_800123_SN_99_88'
+      msg = 'Filename should strip hyphen from order, remove leading zeros, append serial, and sanitize special characters' ).
   ENDMETHOD.
 
 ENDCLASS.

@@ -59,6 +59,13 @@ CLASS /ctdi/cl_print_driver_base DEFINITION
     METHODS set_external_job
       IMPORTING iv_external TYPE abap_bool.
 
+    "! Builds the PDF filename (without extension) from repair data.
+    "! Used for file download name and spool cover title.
+    "!
+    "! @parameter rv_filename |
+    METHODS build_pdf_filename
+      RETURNING VALUE(rv_filename) TYPE string.
+
     "! Executes the full print pipeline (read data + render form).
     "!
     "! @parameter iv_save_as_pdf |
@@ -183,12 +190,7 @@ CLASS /ctdi/cl_print_driver_base DEFINITION
       IMPORTING iv_pdf_data TYPE xstring
       RAISING   /ctdi/cx_print_driver_error.
 
-    "! Builds the PDF filename (without extension) from repair data.
-    "! Used for file download name and spool cover title.
-    "!
-    "! @parameter rv_filename |
-    METHODS build_pdf_filename
-      RETURNING VALUE(rv_filename) TYPE string.
+
 
     "! Builds the parameter + exception tables for an Adobe Form dynamic call.
     "!
@@ -725,6 +727,13 @@ CLASS /ctdi/cl_print_driver_base IMPLEMENTATION.
       lv_devtype = gc_devtype_fallback.
     ENDIF.
     ls_output_options-tdprinter = lv_devtype.
+
+    " When managed externally (SSF_OPEN / SSF_CLOSE), do not open/close separate spools
+    IF mv_external_job = abap_true.
+      ls_control_params-no_open  = abap_true.
+      ls_control_params-no_close = abap_true.
+      ls_output_options-tdnewid  = abap_false.
+    ENDIF.
 
     " Configure print dialog and preview mode
     ls_control_params-no_dialog = iv_no_dialog.
