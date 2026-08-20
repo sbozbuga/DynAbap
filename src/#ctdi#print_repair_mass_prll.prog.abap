@@ -34,7 +34,7 @@
 " Datum      Entwickler  Bemerkung                                     -
 " 17.08.2026 SBOZBUGA    Initial version — mass print with ALV
 " -----------------------------------------------------------------------
-REPORT /ctdi/print_repair_mass.
+REPORT /ctdi/print_repair_mass_prll.
 
 " -----------------------------------------------------------------------
 " Global Data for SELECT-OPTIONS references
@@ -89,12 +89,83 @@ TYPES: BEGIN OF ty_alv_line,
          msg         TYPE string,         " Message (success/error)
        END OF ty_alv_line.
 
+" Result structure shared between parallel tasks and main program
+TYPES: BEGIN OF ty_result,
+         aufnr    TYPE aufnr,
+         filename TYPE string,
+         icon     TYPE icon_d,
+         msg      TYPE string,
+         pdf_data TYPE xstring,
+       END OF ty_result.
+
 TYPES: BEGIN OF ty_step,
          vbeln TYPE vbeln_va,
          skz   TYPE bemot,
          akz   TYPE char4,
        END OF ty_step.
 TYPES ty_step_tab TYPE STANDARD TABLE OF ty_step WITH EMPTY KEY.
+
+" -----------------------------------------------------------------------
+" Parallel Processing Class (for 50+ orders)
+" -----------------------------------------------------------------------
+CLASS lcl_parallel_print DEFINITION FINAL
+  INHERITING FROM cl_abap_parallel.
+  PUBLIC SECTION.
+    METHODS do REDEFINITION.
+ENDCLASS.
+
+CLASS lcl_parallel_print IMPLEMENTATION.
+  METHOD do.
+    DATA lv_aufnr    TYPE aufnr.
+    DATA lv_pdf_mode TYPE abap_bool.
+    IMPORT aufnr    = lv_aufnr
+           pdf_mode = lv_pdf_mode FROM DATA BUFFER p_in.
+
+    DATA ls_result TYPE ty_result.
+    ls_result-aufnr = lv_aufnr.
+
+    TRY.
+        DATA(lr_driver) = /ctdi/cl_print_driver_base=>factory( iv_repair_id = lv_aufnr ).
+
+        IF lv_pdf_mode = abap_true.
+          lr_driver->set_collect_pdf( abap_true ).
+        ENDIF.
+
+        lr_driver->execute( iv_save_as_pdf = lv_pdf_mode
+                            iv_no_dialog   = abap_true
+                            iv_preview     = abap_false ).
+
+        ls_result-icon = icon_led_green.
+        ls_result-msg  = 'OK'.
+
+        IF lv_pdf_mode = abap_true.
+          ls_result-pdf_data = lr_driver->get_last_pdf( ).
+          ls_result-filename = lr_driver->build_pdf_filename( ).
+        ENDIF.
+
+      CATCH /ctdi/cx_no_config_found INTO DATA(lx_noconf).
+        ls_result-icon = icon_led_yellow.
+        ls_result-msg  = COND #( WHEN lx_noconf->previous IS BOUND
+                                 THEN lx_noconf->previous->get_text( )
+                                 ELSE lx_noconf->get_text( ) ).
+
+      CATCH /ctdi/cx_print_driver_error INTO DATA(lx_driver).
+        ls_result-icon = icon_led_red.
+        ls_result-msg  = COND #( WHEN lx_driver->previous IS BOUND
+                                 THEN lx_driver->previous->get_text( )
+                                 ELSE lx_driver->get_text( ) ).
+
+      CATCH cx_root INTO DATA(lx_root).
+        ls_result-icon = icon_led_red.
+        ls_result-msg  = COND #( WHEN lx_root->previous IS BOUND
+                                 THEN lx_root->previous->get_text( )
+                                 ELSE lx_root->get_text( ) ).
+    ENDTRY.
+
+    EXPORT result = ls_result TO DATA BUFFER p_out.
+  ENDMETHOD.
+ENDCLASS.
+
 
 " -----------------------------------------------------------------------
 " Main Application Class
@@ -123,6 +194,12 @@ CLASS lcl_mass_print DEFINITION FINAL.
                 iv_merge       TYPE abap_bool DEFAULT abap_false
       EXPORTING ev_ok          TYPE i
                 ev_err         TYPE i.
+
+    CLASS-METHODS execute_parallel
+      IMPORTING it_rows TYPE salv_t_row
+                iv_mode TYPE char10
+      EXPORTING ev_ok   TYPE i
+                ev_err  TYPE i.
 
     CLASS-METHODS execute_print_bundled
       IMPORTING it_rows TYPE salv_t_row
@@ -357,6 +434,11 @@ CLASS lcl_mass_print IMPLEMENTATION.
           execute_print_bundled( EXPORTING it_rows = lt_rows
                                  IMPORTING ev_ok   = lv_count_ok
                                            ev_err  = lv_count_err ).
+        ELSEIF lines( lt_rows ) > 50.
+          execute_parallel( EXPORTING it_rows = lt_rows
+                                      iv_mode = 'PRINT'
+                            IMPORTING ev_ok   = lv_count_ok
+                                      ev_err  = lv_count_err ).
         ELSE.
           execute_print( EXPORTING it_rows        = lt_rows
                                    iv_save_as_pdf = abap_false
@@ -365,16 +447,28 @@ CLASS lcl_mass_print IMPLEMENTATION.
         ENDIF.
 
       WHEN 'PDF_SEL'.
-        execute_print( EXPORTING it_rows        = lt_rows
-                                 iv_save_as_pdf = abap_true
-                       IMPORTING ev_ok          = lv_count_ok
-                                 ev_err         = lv_count_err ).
+        IF lines( lt_rows ) > 50.
+          execute_parallel( EXPORTING it_rows = lt_rows
+                                      iv_mode = 'PDF_SEL'
+                            IMPORTING ev_ok   = lv_count_ok
+                                      ev_err  = lv_count_err ).
+        ELSE.
+          execute_print( EXPORTING it_rows        = lt_rows
+                                   iv_save_as_pdf = abap_true
+                         IMPORTING ev_ok          = lv_count_ok
+                                   ev_err         = lv_count_err ).
+        ENDIF.
 
       WHEN 'PDF_MERGE'.
         IF all_adobe( lt_rows ).
           execute_pdf_merge_ads( EXPORTING it_rows = lt_rows
                                  IMPORTING ev_ok   = lv_count_ok
                                            ev_err  = lv_count_err ).
+        ELSEIF lines( lt_rows ) > 50.
+          execute_parallel( EXPORTING it_rows = lt_rows
+                                      iv_mode = 'PDF_MERGE'
+                            IMPORTING ev_ok   = lv_count_ok
+                                      ev_err  = lv_count_err ).
         ELSE.
           execute_print( EXPORTING it_rows        = lt_rows
                                    iv_save_as_pdf = abap_true
@@ -411,6 +505,105 @@ CLASS lcl_mass_print IMPLEMENTATION.
       CATCH cx_root INTO DATA(lx).
         MESSAGE lx->get_text( ) TYPE 'S' DISPLAY LIKE 'E'.
     ENDTRY.
+  ENDMETHOD.
+
+  METHOD execute_parallel.
+    CLEAR: ev_ok, ev_err.
+    DATA lt_in  TYPE cl_abap_parallel=>t_in_tab.
+    DATA lv_in  TYPE xstring.
+    DATA(lv_pdf_mode) = xsdbool( iv_mode = 'PDF_SEL' OR iv_mode = 'PDF_MERGE' ).
+
+    LOOP AT it_rows INTO DATA(lv_row).
+      ASSIGN gt_alv[ lv_row ] TO FIELD-SYMBOL(<ls_line>).
+      IF sy-subrc = 0.
+        CLEAR lv_in.
+        EXPORT aufnr    = <ls_line>-aufnr
+               pdf_mode = lv_pdf_mode TO DATA BUFFER lv_in.
+        APPEND lv_in TO lt_in.
+      ENDIF.
+    ENDLOOP.
+
+    DATA(lo_parallel) = NEW lcl_parallel_print( p_num_tasks  = 10
+                                                p_percentage = 50 ).
+    DATA lt_out TYPE cl_abap_parallel=>t_out_tab.
+
+    cl_progress_indicator=>progress_indicate(
+        i_text               = |Parallel processing { lines( lt_in ) } orders...|
+        i_output_immediately = abap_true ).
+
+    lo_parallel->run( EXPORTING p_in_tab  = lt_in
+                      IMPORTING p_out_tab = lt_out ).
+
+    DATA lo_merger TYPE REF TO cl_rspo_pdf_merge.
+    IF iv_mode = 'PDF_MERGE'.
+      TRY.
+          CREATE OBJECT lo_merger.
+        CATCH cx_rspo_pdf_merge.
+          MESSAGE TEXT-014 TYPE 'S' DISPLAY LIKE 'E'.
+          RETURN.
+      ENDTRY.
+    ENDIF.
+
+    IF iv_mode = 'PDF_SEL' AND p_pdf = abap_true AND p_dir IS NOT INITIAL.
+      /ctdi/cl_print_driver_base=>set_download_dir( p_dir ).
+    ENDIF.
+
+    LOOP AT lt_out INTO DATA(ls_out).
+      DATA ls_result TYPE ty_result.
+      CLEAR ls_result.
+
+      IF ls_out-result IS NOT INITIAL.
+        IMPORT result = ls_result FROM DATA BUFFER ls_out-result.
+      ELSE.
+        ls_result-icon = icon_led_red.
+        ls_result-msg  = COND #( WHEN ls_out-message IS NOT INITIAL
+                                 THEN ls_out-message
+                                 ELSE |Parallel task failed| ).
+        IF ls_out-index > 0.
+          DATA lv_aufnr TYPE aufnr.
+          DATA(lv_in_buf) = lt_in[ ls_out-index ].
+          IMPORT aufnr = lv_aufnr FROM DATA BUFFER lv_in_buf.
+          ls_result-aufnr = lv_aufnr.
+        ENDIF.
+      ENDIF.
+
+      IF iv_mode = 'PDF_MERGE' AND ls_result-pdf_data IS NOT INITIAL.
+        lo_merger->add_document( ls_result-pdf_data ).
+      ELSEIF iv_mode = 'PDF_SEL' AND ls_result-pdf_data IS NOT INITIAL.
+        DATA(lv_fname) = COND string( WHEN ls_result-filename IS NOT INITIAL
+                                      THEN |{ ls_result-filename }.pdf|
+                                      ELSE |Repair_{ ls_result-aufnr ALPHA = OUT }.pdf| ).
+        download_pdf_file( iv_pdf_data = ls_result-pdf_data
+                           iv_filename = lv_fname ).
+      ENDIF.
+
+      ASSIGN gt_alv[ aufnr = ls_result-aufnr ] TO FIELD-SYMBOL(<ls_alv>).
+      IF sy-subrc = 0.
+        <ls_alv>-icon = ls_result-icon.
+        <ls_alv>-msg  = COND #( WHEN ls_result-icon = icon_led_green
+                                 THEN COND #( WHEN lv_pdf_mode = abap_true THEN TEXT-011 ELSE TEXT-010 )
+                                 ELSE ls_result-msg ).
+        IF ls_result-icon = icon_led_green.
+          ev_ok = ev_ok + 1.
+        ELSE.
+          ev_err = ev_err + 1.
+        ENDIF.
+      ENDIF.
+    ENDLOOP.
+
+    IF iv_mode = 'PDF_MERGE' AND ev_ok > 0.
+      DATA lv_merged TYPE xstring.
+      DATA lv_rc     TYPE i.
+      lo_merger->merge_documents( IMPORTING merged_document = lv_merged
+                                            rc              = lv_rc ).
+      IF lv_rc = 0 AND lv_merged IS NOT INITIAL.
+        download_pdf_file( iv_pdf_data = lv_merged
+                           iv_filename = |Repair_Merged_{ sy-datum }.pdf|
+                           iv_prompt   = abap_true ).
+      ELSE.
+        MESSAGE TEXT-015 TYPE 'S' DISPLAY LIKE 'E'.
+      ENDIF.
+    ENDIF.
   ENDMETHOD.
 
   METHOD execute_print.
