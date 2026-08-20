@@ -54,6 +54,11 @@ CLASS /ctdi/cl_print_driver_base DEFINITION
     METHODS set_collect_pdf
       IMPORTING iv_collect TYPE abap_bool.
 
+    "! When set to true, the driver skips FP_JOB_OPEN/CLOSE and SSF_OPEN/CLOSE.
+    "! The caller is responsible for managing the spool/ADS job externally.
+    METHODS set_external_job
+      IMPORTING iv_external TYPE abap_bool.
+
     "! Executes the full print pipeline (read data + render form).
     "!
     "! @parameter iv_save_as_pdf |
@@ -76,6 +81,7 @@ CLASS /ctdi/cl_print_driver_base DEFINITION
     DATA mv_form_name          TYPE fpname.
     DATA mv_last_pdf           TYPE xstring.
     DATA mv_collect_pdf        TYPE abap_bool.
+    DATA mv_external_job       TYPE abap_bool.
     DATA ms_repair             TYPE /ctdi/repair.
     DATA ms_project            TYPE /ctdi/rep_projec.
     DATA mt_errors             TYPE /ctdi/repair_error_tt.
@@ -586,18 +592,20 @@ CLASS /ctdi/cl_print_driver_base IMPLEMENTATION.
     ENDIF.
     ls_outputparams-covtitle = build_pdf_filename( ).
 
-    " Open Adobe print job
-    CALL FUNCTION 'FP_JOB_OPEN'
-      CHANGING
-        ie_outputparams = ls_outputparams
-      EXCEPTIONS
-        cancel          = 1
-        usage_error     = 2
-        system_error    = 3
-        internal_error  = 4
-        OTHERS          = 5.
-    IF sy-subrc <> 0.
-      raise_driver_error( |FP_JOB_OPEN failed (subrc={ sy-subrc })| ).
+    " Open Adobe print job (skip if managed externally)
+    IF mv_external_job = abap_false.
+      CALL FUNCTION 'FP_JOB_OPEN'
+        CHANGING
+          ie_outputparams = ls_outputparams
+        EXCEPTIONS
+          cancel          = 1
+          usage_error     = 2
+          system_error    = 3
+          internal_error  = 4
+          OTHERS          = 5.
+      IF sy-subrc <> 0.
+        raise_driver_error( |FP_JOB_OPEN failed (subrc={ sy-subrc })| ).
+      ENDIF.
     ENDIF.
 
     " Resolve generated function module name
@@ -608,9 +616,11 @@ CLASS /ctdi/cl_print_driver_base IMPLEMENTATION.
           IMPORTING
             e_funcname = lv_fm_name.
       CATCH cx_fp_api INTO DATA(lx_fp).
-        CALL FUNCTION 'FP_JOB_CLOSE'
-          EXCEPTIONS
-            OTHERS = 0.
+        IF mv_external_job = abap_false.
+          CALL FUNCTION 'FP_JOB_CLOSE'
+            EXCEPTIONS
+              OTHERS = 0.
+        ENDIF.
         raise_driver_error( iv_message  = |Adobe Form FM resolution failed for { mv_form_name }|
                             ix_previous = lx_fp ).
     ENDTRY.
@@ -643,18 +653,20 @@ CLASS /ctdi/cl_print_driver_base IMPLEMENTATION.
       raise_driver_error( |Adobe Form { mv_form_name } call failed (subrc={ lv_subrc })| ).
     ENDIF.
 
-    " Close the print job
-    CALL FUNCTION 'FP_JOB_CLOSE'
-      IMPORTING
-        e_result       = ls_joboutput
-      EXCEPTIONS
-        usage_error    = 1
-        system_error   = 2
-        internal_error = 3
-        OTHERS         = 4.
+    " Close the print job (skip if managed externally)
+    IF mv_external_job = abap_false.
+      CALL FUNCTION 'FP_JOB_CLOSE'
+        IMPORTING
+          e_result       = ls_joboutput
+        EXCEPTIONS
+          usage_error    = 1
+          system_error   = 2
+          internal_error = 3
+          OTHERS         = 4.
 
-    IF sy-subrc <> 0.
-      raise_driver_error( |Adobe Form { mv_form_name } close failed (subrc={ sy-subrc })| ).
+      IF sy-subrc <> 0.
+        raise_driver_error( |Adobe Form { mv_form_name } close failed (subrc={ sy-subrc })| ).
+      ENDIF.
     ENDIF.
 
     /ctdi/cl_print_driver_log=>log_info( |Adobe Form { mv_form_name } executed successfully| ).
@@ -898,6 +910,11 @@ CLASS /ctdi/cl_print_driver_base IMPLEMENTATION.
 
   METHOD set_collect_pdf.
     mv_collect_pdf = iv_collect.
+  ENDMETHOD.
+
+
+  METHOD set_external_job.
+    mv_external_job = iv_external.
   ENDMETHOD.
 
   METHOD get_user_print_defaults.
