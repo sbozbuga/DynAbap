@@ -117,11 +117,15 @@ CLASS lcl_tests IMPLEMENTATION.
 
     " 2. Collect mode: should store PDF data in mv_last_pdf without frontend calls
     f_cut->mv_collect_pdf = abap_true.
-    f_cut->download_pdf( 'CAFEBABE' ).
-    cl_abap_unit_assert=>assert_equals(
-      act = f_cut->mv_last_pdf
-      exp = 'CAFEBABE'
-      msg = 'Collect mode should store PDF in mv_last_pdf' ).
+    TRY.
+        f_cut->download_pdf( 'CAFEBABE' ).
+        cl_abap_unit_assert=>assert_equals(
+          act = f_cut->mv_last_pdf
+          exp = 'CAFEBABE'
+          msg = 'Collect mode should store PDF in mv_last_pdf' ).
+      CATCH /ctdi/cx_print_driver_error INTO DATA(lx_err2).
+        cl_abap_unit_assert=>fail( msg = lx_err2->get_text( ) ).
+    ENDTRY.
   ENDMETHOD.
 
 
