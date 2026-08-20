@@ -3,72 +3,103 @@ CLASS /ctdi/cl_print_data_ctdi DEFINITION LOCAL FRIENDS lcl_test_data_ctdi.
 
 CLASS lcl_test_data_ctdi DEFINITION
   FOR TESTING RISK LEVEL HARMLESS DURATION SHORT.
-  " ?﻿<asx:abap xmlns:asx="http://www.sap.com/abapxml" version="1.0">
-  " ?<asx:values>
-  " ?<TESTCLASS_OPTIONS>
-  " ?<TEST_CLASS>lcl_Test_Data_Ctdi
-  " ?</TEST_CLASS>
-  " ?<TEST_MEMBER>f_Cut
-  " ?</TEST_MEMBER>
-  " ?<OBJECT_UNDER_TEST>/CTDI/CL_PRINT_DATA_CTDI
-  " ?</OBJECT_UNDER_TEST>
-  " ?<OBJECT_IS_LOCAL/>
-  " ?<GENERATE_FIXTURE>X
-  " ?</GENERATE_FIXTURE>
-  " ?<GENERATE_CLASS_FIXTURE>X
-  " ?</GENERATE_CLASS_FIXTURE>
-  " ?<GENERATE_INVOCATION>X
-  " ?</GENERATE_INVOCATION>
-  " ?<GENERATE_ASSERT_EQUAL>X
-  " ?</GENERATE_ASSERT_EQUAL>
-  " ?</TESTCLASS_OPTIONS>
-  " ?</asx:values>
-  " ?</asx:abap>
 
   PRIVATE SECTION.
-    DATA f_cut TYPE REF TO /ctdi/cl_print_data_ctdi. " class under test
-
-    CLASS-METHODS class_setup.
-    CLASS-METHODS class_teardown.
+    DATA f_cut TYPE REF TO /ctdi/cl_print_data_ctdi.
 
     METHODS setup.
     METHODS teardown.
-    METHODS get_repair_result FOR TESTING.
-    METHODS map_legacy_data   FOR TESTING.
-    METHODS read_data         FOR TESTING.
+    METHODS test_map_legacy_fields FOR TESTING.
+    METHODS test_map_legacy_errors_dedup FOR TESTING.
+    METHODS test_map_legacy_comments FOR TESTING.
+    METHODS test_read_data_invalid_order FOR TESTING.
 ENDCLASS.
 
 
 CLASS lcl_test_data_ctdi IMPLEMENTATION.
-  METHOD class_setup.
-  ENDMETHOD.
-
-  METHOD class_teardown.
-  ENDMETHOD.
-
   METHOD setup.
     CREATE OBJECT f_cut.
   ENDMETHOD.
 
   METHOD teardown.
+    CLEAR f_cut.
   ENDMETHOD.
 
-  METHOD get_repair_result.
-    f_cut->get_repair_result( ).
-  ENDMETHOD.
+  METHOD test_map_legacy_fields.
+    f_cut->ms_legacy-csaufnr       = '000000123456'.
+    f_cut->ms_legacy-ctdi_order_no = '100234-01'.
+    f_cut->ms_legacy-po_no         = 'PO4500001'.
+    f_cut->ms_legacy-new_serial_no = 'SN9988'.
 
-  METHOD map_legacy_data.
     f_cut->map_legacy_data( ).
+
+    cl_abap_unit_assert=>assert_equals(
+      act = f_cut->ms_repair-csaufnr
+      exp = '000000123456'
+      msg = 'csaufnr should be mapped to ms_repair' ).
+
+    cl_abap_unit_assert=>assert_equals(
+      act = f_cut->ms_repair-ctdi_order_no
+      exp = '100234-01'
+      msg = 'ctdi_order_no should be mapped to ms_repair' ).
+
+    cl_abap_unit_assert=>assert_equals(
+      act = f_cut->ms_repair-po_no
+      exp = 'PO4500001'
+      msg = 'po_no should be mapped to ms_repair' ).
+
+    cl_abap_unit_assert=>assert_equals(
+      act = f_cut->ms_repair-new_serial_no
+      exp = 'SN9988'
+      msg = 'new_serial_no should be mapped to ms_repair' ).
   ENDMETHOD.
 
-  METHOD read_data.
-    DATA iv_aufnr TYPE aufnr.
+  METHOD test_map_legacy_errors_dedup.
+    f_cut->mt_legacy_error = VALUE #(
+      ( oteil_ktxt = 'Display' fecod_ktxt = 'Glass cracked' )
+      ( oteil_ktxt = 'Battery' fecod_ktxt = 'No charge' )
+      ( oteil_ktxt = 'Display' fecod_ktxt = 'Glass cracked' ) ).
 
+    f_cut->map_legacy_data( ).
+
+    cl_abap_unit_assert=>assert_equals(
+      act = lines( f_cut->mt_repair_error )
+      exp = 2
+      msg = 'Duplicate errors should be eliminated after formatting' ).
+
+    READ TABLE f_cut->mt_repair_error ASSIGNING FIELD-SYMBOL(<ls_err1>) INDEX 1.
+    cl_abap_unit_assert=>assert_equals(
+      act = <ls_err1>-error_text
+      exp = 'Battery / No charge'
+      msg = 'First error should be sorted and formatted correctly' ).
+
+    READ TABLE f_cut->mt_repair_error ASSIGNING FIELD-SYMBOL(<ls_err2>) INDEX 2.
+    cl_abap_unit_assert=>assert_equals(
+      act = <ls_err2>-error_text
+      exp = 'Display / Glass cracked'
+      msg = 'Second error should be sorted and formatted correctly' ).
+  ENDMETHOD.
+
+  METHOD test_map_legacy_comments.
+    f_cut->mt_comment_lines = VALUE #(
+      ( tdformat = '*' tdline = 'Comment line 1' )
+      ( tdformat = '/' tdline = 'Comment line 2' ) ).
+
+    f_cut->map_legacy_data( ).
+
+    cl_abap_unit_assert=>assert_equals(
+      act = lines( f_cut->mt_comments )
+      exp = 2
+      msg = 'Comments table should be populated from legacy comments' ).
+  ENDMETHOD.
+
+  METHOD test_read_data_invalid_order.
     TRY.
-        f_cut->read_data( iv_aufnr = iv_aufnr
-*                          IV_SERNR = iv_Sernr
-        ).
-      CATCH /ctdi/cx_print_driver_error ##NO_HANDLER.
+        f_cut->read_data( iv_aufnr = '999999999999' ).
+      CATCH /ctdi/cx_print_driver_error INTO DATA(lx_err).
+        cl_abap_unit_assert=>assert_not_initial(
+          act = lx_err->get_text( )
+          msg = 'Invalid repair order should raise informative error' ).
     ENDTRY.
   ENDMETHOD.
 ENDCLASS.

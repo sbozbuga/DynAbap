@@ -105,13 +105,23 @@ CLASS lcl_tests IMPLEMENTATION.
 
   METHOD download_pdf.
     DATA: iv_pdf_data TYPE xstring.
-    " Empty input PDF data should return immediately in download_pdf
+    " 1. Empty input PDF data should return immediately without setting last_pdf
     TRY.
         f_cut->download_pdf( iv_pdf_data ).
-        cl_abap_unit_assert=>assert_true( abap_true ).
-      CATCH /ctdi/cx_print_driver_error.
-        cl_abap_unit_assert=>fail( msg = 'Empty input PDF data should return immediately in download_pdf' ).
+        cl_abap_unit_assert=>assert_initial(
+          act = f_cut->mv_last_pdf
+          msg = 'Empty input should not populate mv_last_pdf' ).
+      CATCH /ctdi/cx_print_driver_error INTO DATA(lx_err).
+        cl_abap_unit_assert=>fail( msg = lx_err->get_text( ) ).
     ENDTRY.
+
+    " 2. Collect mode: should store PDF data in mv_last_pdf without frontend calls
+    f_cut->mv_collect_pdf = abap_true.
+    f_cut->download_pdf( 'CAFEBABE' ).
+    cl_abap_unit_assert=>assert_equals(
+      act = f_cut->mv_last_pdf
+      exp = 'CAFEBABE'
+      msg = 'Collect mode should store PDF in mv_last_pdf' ).
   ENDMETHOD.
 
 
@@ -133,8 +143,10 @@ CLASS lcl_tests IMPLEMENTATION.
     TRY.
         f_cut->execute_adobeform( abap_false ).
         cl_abap_unit_assert=>fail( msg = 'execute_adobeform should fail for invalid configuration' ).
-      CATCH /ctdi/cx_print_driver_error.
-        cl_abap_unit_assert=>assert_true( abap_true ).
+      CATCH /ctdi/cx_print_driver_error INTO DATA(lx_err).
+        cl_abap_unit_assert=>assert_not_initial(
+          act = lx_err->get_text( )
+          msg = 'execute_adobeform should raise exception with diagnostic message' ).
     ENDTRY.
   ENDMETHOD.
 
@@ -144,8 +156,10 @@ CLASS lcl_tests IMPLEMENTATION.
     TRY.
         f_cut->execute_smartform( abap_false ).
         cl_abap_unit_assert=>fail( msg = 'execute_smartform should fail for invalid configuration' ).
-      CATCH /ctdi/cx_print_driver_error.
-        cl_abap_unit_assert=>assert_true( abap_true ).
+      CATCH /ctdi/cx_print_driver_error INTO DATA(lx_err).
+        cl_abap_unit_assert=>assert_not_initial(
+          act = lx_err->get_text( )
+          msg = 'execute_smartform should raise exception with diagnostic message' ).
     ENDTRY.
   ENDMETHOD.
 
@@ -155,10 +169,14 @@ CLASS lcl_tests IMPLEMENTATION.
     TRY.
         lo_driver = /ctdi/cl_print_driver_base=>factory( iv_repair_id = '9999999999' ).
         cl_abap_unit_assert=>fail( msg = 'factory should fail for invalid repair order' ).
-      CATCH /ctdi/cx_print_driver_error.
-        cl_abap_unit_assert=>assert_true( abap_true ).
-      CATCH /ctdi/cx_no_config_found.
-        cl_abap_unit_assert=>assert_true( abap_true ).
+      CATCH /ctdi/cx_print_driver_error INTO DATA(lx_drv).
+        cl_abap_unit_assert=>assert_not_initial(
+          act = lx_drv->get_text( )
+          msg = 'Driver error should contain message' ).
+      CATCH /ctdi/cx_no_config_found INTO DATA(lx_noconf).
+        cl_abap_unit_assert=>assert_not_initial(
+          act = lx_noconf->get_text( )
+          msg = 'No config error should contain message' ).
     ENDTRY.
   ENDMETHOD.
 
