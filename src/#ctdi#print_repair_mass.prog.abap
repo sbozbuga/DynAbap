@@ -303,8 +303,8 @@ CLASS lcl_mass_print IMPLEMENTATION.
   ENDMETHOD.
 
   METHOD resolve_form_types.
-    " 1. Read all config entries from /CTDI/REP_FORMS
-    SELECT * FROM /ctdi/rep_forms INTO TABLE @DATA(lt_config) ##SUBRC_OK. "#EC CI_ALL_FIELDS_NEEDED
+    " 1. Read all config entries from /CTDI/REP_FORMS (Customizing buffer)
+    SELECT * FROM /ctdi/rep_forms INTO TABLE @DATA(lt_config) ##SUBRC_OK. "#EC CI_NOWHERE "#EC CI_ALL_FIELDS_NEEDED
 
     IF lt_config IS INITIAL.
       RETURN.
