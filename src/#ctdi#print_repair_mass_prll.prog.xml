@@ -1,4 +1,4 @@
-<?xml version="1.0" encoding="utf-8"?>
+﻿<?xml version="1.0" encoding="utf-8"?>
 <abapGit version="v1.0.0" serializer="LCL_OBJECT_PROG" serializer_version="v1.0.0">
  <asx:abap xmlns:asx="http://www.sap.com/abapxml" version="1.0">
   <asx:values>
@@ -2147,7 +2147,7 @@
        <ID>S</ID>
        <KEY>P_SPOOL</KEY>
        <ENTRY>Einzelner Spool-Auftrag (Bündelung)</ENTRY>
-       <LENGTH>38</LENGTH>
+       <LENGTH>43</LENGTH>
       </item>
       <item>
        <ID>S</ID>
@@ -2215,150 +2215,6 @@
      </TEXTPOOL>
     </item>
    </I18N_TPOOL>
-   <LONGTEXTS>
-    <item>
-     <DOKIL>
-      <ID>RE</ID>
-      <OBJECT>/CTDI/PRINT_REPAIR_MASS</OBJECT>
-      <LANGU>D</LANGU>
-      <TYP>E</TYP>
-      <VERSION>0001</VERSION>
-      <TXTLINES>00012</TXTLINES>
-     </DOKIL>
-     <HEAD>
-      <TDOBJECT>DOKU</TDOBJECT>
-      <TDNAME>/CTDI/PRINT_REPAIR_MASS</TDNAME>
-      <TDID>RE</TDID>
-      <TDSPRAS>D</TDSPRAS>
-      <TDFORM>S_DOCU_SHOW</TDFORM>
-      <TDSTYLE>S_DOCUS1</TDSTYLE>
-      <TDVERSION>00001</TDVERSION>
-      <TDLINESIZE>072</TDLINESIZE>
-     </HEAD>
-     <LINES>
-      <TLINE>
-       <TDFORMAT>U1</TDFORMAT>
-       <TDLINE>&amp;PURPOSE&amp;</TDLINE>
-      </TLINE>
-      <TLINE>
-       <TDFORMAT>AS</TDFORMAT>
-       <TDLINE>Das Programm /CTDI/PRINT_REPAIR_MASS dient zur Massenverarbeitung und</TDLINE>
-      </TLINE>
-      <TLINE>
-       <TDLINE> zum Massendruck von Reparaturaufträgen über ein interaktives ALV-Grid.</TDLINE>
-      </TLINE>
-      <TLINE>
-       <TDFORMAT>U1</TDFORMAT>
-       <TDLINE>HAUPTMERKMALE</TDLINE>
-      </TLINE>
-      <TLINE>
-       <TDFORMAT>B1</TDFORMAT>
-       <TDLINE>Selektion von Reparaturaufträgen anhand von Auftragsnummer, Auftragsart,</TDLINE>
-      </TLINE>
-      <TLINE>
-       <TDLINE> Werk und Erfassungsdatum.</TDLINE>
-      </TLINE>
-      <TLINE>
-       <TDFORMAT>B1</TDFORMAT>
-       <TDLINE>Interaktives ALV-Grid mit Mehrfachauswahl und Statusanzeige.</TDLINE>
-      </TLINE>
-      <TLINE>
-       <TDFORMAT>B1</TDFORMAT>
-       <TDLINE>Massendruck auf Spool oder lokaler Download als PDF-Dateien.</TDLINE>
-      </TLINE>
-      <TLINE>
-       <TDFORMAT>B1</TDFORMAT>
-       <TDLINE>Verwendung des Drucktreiber-Frameworks /CTDI/CL_PRINT_DRIVER_BASE.</TDLINE>
-      </TLINE>
-      <TLINE>
-       <TDFORMAT>U1</TDFORMAT>
-       <TDLINE>VORGEHENSWEISE</TDLINE>
-      </TLINE>
-      <TLINE>
-       <TDFORMAT>AS</TDFORMAT>
-       <TDLINE>1. Selektionsparameter eingeben und Report ausführen.</TDLINE>
-      </TLINE>
-      <TLINE>
-       <TDFORMAT>AS</TDFORMAT>
-       <TDLINE>2. Gewünschte Reparaturaufträge im ALV-Grid markieren.</TDLINE>
-      </TLINE>
-      <TLINE>
-       <TDFORMAT>AS</TDFORMAT>
-       <TDLINE>3. Funktion &apos;Markierte drucken&apos; oder &apos;Als PDF speichern&apos; wählen.</TDLINE>
-      </TLINE>
-     </LINES>
-    </item>
-    <item>
-     <DOKIL>
-      <ID>RE</ID>
-      <OBJECT>/CTDI/PRINT_REPAIR_MASS</OBJECT>
-      <LANGU>E</LANGU>
-      <TYP>E</TYP>
-      <VERSION>0001</VERSION>
-      <MASTERLANG>X</MASTERLANG>
-      <TXTLINES>00011</TXTLINES>
-     </DOKIL>
-     <HEAD>
-      <TDOBJECT>DOKU</TDOBJECT>
-      <TDNAME>/CTDI/PRINT_REPAIR_MASS</TDNAME>
-      <TDID>RE</TDID>
-      <TDSPRAS>E</TDSPRAS>
-      <TDFORM>S_DOCU_SHOW</TDFORM>
-      <TDSTYLE>S_DOCUS1</TDSTYLE>
-      <TDVERSION>00001</TDVERSION>
-      <TDLINESIZE>072</TDLINESIZE>
-     </HEAD>
-     <LINES>
-      <TLINE>
-       <TDFORMAT>U1</TDFORMAT>
-       <TDLINE>&amp;PURPOSE&amp;</TDLINE>
-      </TLINE>
-      <TLINE>
-       <TDFORMAT>AS</TDFORMAT>
-       <TDLINE>The /CTDI/PRINT_REPAIR_MASS program provides mass printing and PDF expor</TDLINE>
-      </TLINE>
-      <TLINE>
-       <TDLINE> functionality for repair orders using an interactive ALV grid.</TDLINE>
-      </TLINE>
-      <TLINE>
-       <TDFORMAT>U1</TDFORMAT>
-       <TDLINE>FEATURES</TDLINE>
-      </TLINE>
-      <TLINE>
-       <TDFORMAT>B1</TDFORMAT>
-       <TDLINE>Filtering repair orders by order number, order type, plant, and creation</TDLINE>
-      </TLINE>
-      <TLINE>
-       <TDFORMAT>B1</TDFORMAT>
-       <TDLINE>Interactive ALV grid with multi-row selection and status indication.</TDLINE>
-      </TLINE>
-      <TLINE>
-       <TDFORMAT>B1</TDFORMAT>
-       <TDLINE>Mass printing to spool or local download as PDF files.</TDLINE>
-      </TLINE>
-      <TLINE>
-       <TDFORMAT>B1</TDFORMAT>
-       <TDLINE>Dynamic output execution via /CTDI/CL_PRINT_DRIVER_BASE framework.</TDLINE>
-      </TLINE>
-      <TLINE>
-       <TDFORMAT>U1</TDFORMAT>
-       <TDLINE>PROCEDURE</TDLINE>
-      </TLINE>
-      <TLINE>
-       <TDFORMAT>AS</TDFORMAT>
-       <TDLINE>1. Enter selection parameters and execute the report.</TDLINE>
-      </TLINE>
-      <TLINE>
-       <TDFORMAT>AS</TDFORMAT>
-       <TDLINE>2. Select the desired repair orders in the ALV table.</TDLINE>
-      </TLINE>
-      <TLINE>
-       <TDFORMAT>AS</TDFORMAT>
-       <TDLINE>3. Click &apos;Print selected&apos; or &apos;Save as PDF&apos; to process.</TDLINE>
-      </TLINE>
-     </LINES>
-    </item>
-   </LONGTEXTS>
   </asx:values>
  </asx:abap>
 </abapGit>

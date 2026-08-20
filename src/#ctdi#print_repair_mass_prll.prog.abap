@@ -46,24 +46,24 @@ DATA gv_contr TYPE jvbelncontract.
 " Selection Screen
 " -----------------------------------------------------------------------
 SELECTION-SCREEN BEGIN OF BLOCK b1 WITH FRAME TITLE TEXT-001.
-SELECT-OPTIONS: s_aufnr FOR aufk-aufnr,                 " Repair Order
-                s_kdauf FOR aufk-kdauf,                 " Sales Order
-                s_contr FOR gv_contr,                   " Contract
-                s_qmnum FOR qmel-qmnum,                " Notification
-                s_auart FOR aufk-auart DEFAULT 'ZM03',  " Order Type
-                s_werks FOR aufk-werks,                 " Plant
-                s_erdat FOR aufk-erdat,                 " Creation Date
-                s_vornr FOR afru-vornr DEFAULT '9010',  " Operation (WFER)
-                s_qmart FOR qmel-qmart.                 " QM Notification Type
+  SELECT-OPTIONS: s_aufnr FOR aufk-aufnr,                 " Repair Order
+                  s_kdauf FOR aufk-kdauf,                 " Sales Order
+                  s_contr FOR gv_contr,                   " Contract
+                  s_qmnum FOR qmel-qmnum,                " Notification
+                  s_auart FOR aufk-auart DEFAULT 'ZM03',  " Order Type
+                  s_werks FOR aufk-werks,                 " Plant
+                  s_erdat FOR aufk-erdat,                 " Creation Date
+                  s_vornr FOR afru-vornr DEFAULT '9010',  " Operation (WFER)
+                  s_qmart FOR qmel-qmart.                 " QM Notification Type
 SELECTION-SCREEN END OF BLOCK b1.
 
 SELECTION-SCREEN BEGIN OF BLOCK b2 WITH FRAME TITLE TEXT-002.
-PARAMETERS: p_pdf TYPE sap_bool AS CHECKBOX USER-COMMAND pdf_toggle, " Save as PDF
-            p_dir TYPE string LOWER CASE MODIF ID pdf.               " Target Directory
+  PARAMETERS: p_pdf TYPE sap_bool AS CHECKBOX USER-COMMAND pdf_toggle, " Save as PDF
+              p_dir TYPE string LOWER CASE MODIF ID pdf.               " Target Directory
 SELECTION-SCREEN END OF BLOCK b2.
 
 SELECTION-SCREEN BEGIN OF BLOCK b3 WITH FRAME TITLE TEXT-018.
-PARAMETERS: p_spool TYPE sap_bool AS CHECKBOX.                         " Single Spool (bundle)
+  PARAMETERS p_spool TYPE sap_bool AS CHECKBOX.                         " Single Spool (bundle)
 SELECTION-SCREEN END OF BLOCK b3.
 
 " -----------------------------------------------------------------------
@@ -81,11 +81,11 @@ TYPES: BEGIN OF ty_alv_line,
          qmnum       TYPE qmnum,          " Notification (QMEL)
          qmart       TYPE qmart,          " Notification Type
          vbap_qmnum  TYPE qmnum,          " Notification (VBAP)
-         feession    TYPE fenum,           " Item/Position (VBAP)
+         feession    TYPE fenum,          " Item/Position (VBAP)
          skz         TYPE bemot,          " SKZ (Confirmation reason)
          akz         TYPE qmcod,          " AKZ (QM Code)
-         form_name   TYPE fpname,          " Form Name
-         form_type   TYPE char1,           " Form Type (S=SmartForm, A=Adobe)
+         form_name   TYPE fpname,         " Form Name
+         form_type   TYPE char1,          " Form Type (S=SmartForm, A=Adobe)
          msg         TYPE string,         " Message (success/error)
        END OF ty_alv_line.
 
@@ -108,16 +108,19 @@ TYPES ty_step_tab TYPE STANDARD TABLE OF ty_step WITH EMPTY KEY.
 " -----------------------------------------------------------------------
 " Parallel Processing Class (for 50+ orders)
 " -----------------------------------------------------------------------
-CLASS lcl_parallel_print DEFINITION FINAL
-  INHERITING FROM cl_abap_parallel.
+CLASS lcl_parallel_print DEFINITION
+  INHERITING FROM cl_abap_parallel FINAL.
+
   PUBLIC SECTION.
     METHODS do REDEFINITION.
 ENDCLASS.
+
 
 CLASS lcl_parallel_print IMPLEMENTATION.
   METHOD do.
     DATA lv_aufnr    TYPE aufnr.
     DATA lv_pdf_mode TYPE abap_bool.
+
     IMPORT aufnr    = lv_aufnr
            pdf_mode = lv_pdf_mode FROM DATA BUFFER p_in.
 
@@ -186,7 +189,7 @@ CLASS lcl_mass_print DEFINITION FINAL.
       IMPORTING e_salv_function.
 
     CLASS-METHODS on_double_click FOR EVENT double_click OF cl_salv_events_table
-      IMPORTING row column.
+      IMPORTING !row !column.
 
     CLASS-METHODS execute_print
       IMPORTING it_rows        TYPE salv_t_row
@@ -219,9 +222,9 @@ CLASS lcl_mass_print DEFINITION FINAL.
       RETURNING VALUE(rv_result) TYPE abap_bool.
 
     CLASS-METHODS download_pdf_file
-      IMPORTING iv_pdf_data TYPE xstring
-                iv_filename TYPE string
-                iv_prompt   TYPE abap_bool DEFAULT abap_false
+      IMPORTING iv_pdf_data  TYPE xstring
+                iv_filename  TYPE string
+                iv_prompt    TYPE abap_bool DEFAULT abap_false
       RETURNING VALUE(rv_ok) TYPE abap_bool.
 
     CLASS-METHODS show_summary
@@ -334,26 +337,24 @@ CLASS lcl_mass_print IMPLEMENTATION.
 
     " 3. For each ALV line: find matching config via 8-step fallback sequence
     LOOP AT gt_alv ASSIGNING FIELD-SYMBOL(<ls_alv>).
-      DATA(lt_steps) = VALUE ty_step_tab(
-        ( vbeln = <ls_alv>-contract_id skz = <ls_alv>-skz akz = <ls_alv>-akz )
-        ( vbeln = <ls_alv>-contract_id skz = <ls_alv>-skz akz = '' )
-        ( vbeln = <ls_alv>-contract_id skz = ''           akz = <ls_alv>-akz )
-        ( vbeln = <ls_alv>-contract_id skz = ''           akz = '' )
-        ( vbeln = ''                   skz = <ls_alv>-skz akz = <ls_alv>-akz )
-        ( vbeln = ''                   skz = <ls_alv>-skz akz = '' )
-        ( vbeln = ''                   skz = ''           akz = <ls_alv>-akz )
-        ( vbeln = ''                   skz = ''           akz = '' ) ).
+      DATA(lt_steps) = VALUE ty_step_tab( ( vbeln = <ls_alv>-contract_id skz = <ls_alv>-skz akz = <ls_alv>-akz )
+                                          ( vbeln = <ls_alv>-contract_id skz = <ls_alv>-skz akz = '' )
+                                          ( vbeln = <ls_alv>-contract_id skz = ''           akz = <ls_alv>-akz )
+                                          ( vbeln = <ls_alv>-contract_id skz = ''           akz = '' )
+                                          ( vbeln = ''                   skz = <ls_alv>-skz akz = <ls_alv>-akz )
+                                          ( vbeln = ''                   skz = <ls_alv>-skz akz = '' )
+                                          ( vbeln = ''                   skz = ''           akz = <ls_alv>-akz )
+                                          ( vbeln = ''                   skz = ''           akz = '' ) ).
 
       LOOP AT lt_steps ASSIGNING FIELD-SYMBOL(<ls_step>).
-        READ TABLE lt_config ASSIGNING FIELD-SYMBOL(<ls_match>)
-             WITH KEY vbeln = <ls_step>-vbeln
-                      skz   = <ls_step>-skz
-                      akz   = <ls_step>-akz.
+        ASSIGN lt_config[ vbeln = <ls_step>-vbeln
+                          skz   = <ls_step>-skz
+                          akz   = <ls_step>-akz ] TO FIELD-SYMBOL(<ls_match>).
         IF sy-subrc = 0.
           <ls_alv>-form_name = <ls_match>-form_name.
-          READ TABLE lt_smartforms TRANSPORTING NO FIELDS
-               WITH KEY table_line = <ls_match>-form_name.
-          <ls_alv>-form_type = COND #( WHEN sy-subrc = 0 THEN 'S' ELSE 'A' ).
+          <ls_alv>-form_type = COND #( WHEN line_exists( lt_smartforms[ table_line = <ls_match>-form_name ] )
+                                       THEN 'S'
+                                       ELSE 'A' ).
           EXIT.
         ENDIF.
       ENDLOOP.
@@ -508,9 +509,10 @@ CLASS lcl_mass_print IMPLEMENTATION.
   ENDMETHOD.
 
   METHOD execute_parallel.
-    CLEAR: ev_ok, ev_err.
-    DATA lt_in  TYPE cl_abap_parallel=>t_in_tab.
-    DATA lv_in  TYPE xstring.
+    CLEAR: ev_ok,
+           ev_err.
+    DATA lt_in TYPE cl_abap_parallel=>t_in_tab.
+    DATA lv_in TYPE xstring.
     DATA(lv_pdf_mode) = xsdbool( iv_mode = 'PDF_SEL' OR iv_mode = 'PDF_MERGE' ).
 
     LOOP AT it_rows INTO DATA(lv_row).
@@ -527,9 +529,8 @@ CLASS lcl_mass_print IMPLEMENTATION.
                                                 p_percentage = 50 ).
     DATA lt_out TYPE cl_abap_parallel=>t_out_tab.
 
-    cl_progress_indicator=>progress_indicate(
-        i_text               = |Parallel processing { lines( lt_in ) } orders...|
-        i_output_immediately = abap_true ).
+    cl_progress_indicator=>progress_indicate( i_text               = |Parallel processing { lines( lt_in ) } orders...|
+                                              i_output_immediately = abap_true ).
 
     lo_parallel->run( EXPORTING p_in_tab  = lt_in
                       IMPORTING p_out_tab = lt_out ).
@@ -537,7 +538,7 @@ CLASS lcl_mass_print IMPLEMENTATION.
     DATA lo_merger TYPE REF TO cl_rspo_pdf_merge.
     IF iv_mode = 'PDF_MERGE'.
       TRY.
-          CREATE OBJECT lo_merger.
+          lo_merger = NEW #( ).
         CATCH cx_rspo_pdf_merge.
           MESSAGE TEXT-014 TYPE 'S' DISPLAY LIKE 'E'.
           RETURN.
@@ -581,8 +582,8 @@ CLASS lcl_mass_print IMPLEMENTATION.
       IF sy-subrc = 0.
         <ls_alv>-icon = ls_result-icon.
         <ls_alv>-msg  = COND #( WHEN ls_result-icon = icon_led_green
-                                 THEN COND #( WHEN lv_pdf_mode = abap_true THEN TEXT-011 ELSE TEXT-010 )
-                                 ELSE ls_result-msg ).
+                                THEN COND #( WHEN lv_pdf_mode = abap_true THEN TEXT-011 ELSE TEXT-010 )
+                                ELSE ls_result-msg ).
         IF ls_result-icon = icon_led_green.
           ev_ok = ev_ok + 1.
         ELSE.
@@ -607,7 +608,8 @@ CLASS lcl_mass_print IMPLEMENTATION.
   ENDMETHOD.
 
   METHOD execute_print.
-    CLEAR: ev_ok, ev_err.
+    CLEAR: ev_ok,
+           ev_err.
 
     IF iv_save_as_pdf = abap_true AND p_pdf = abap_true AND p_dir IS NOT INITIAL AND iv_merge = abap_false.
       /ctdi/cl_print_driver_base=>set_download_dir( p_dir ).
@@ -616,7 +618,7 @@ CLASS lcl_mass_print IMPLEMENTATION.
     DATA lo_merger TYPE REF TO cl_rspo_pdf_merge.
     IF iv_save_as_pdf = abap_true AND iv_merge = abap_true.
       TRY.
-          CREATE OBJECT lo_merger.
+          lo_merger = NEW #( ).
         CATCH cx_rspo_pdf_merge.
           MESSAGE TEXT-014 TYPE 'S' DISPLAY LIKE 'E'.
           RETURN.
@@ -713,7 +715,8 @@ CLASS lcl_mass_print IMPLEMENTATION.
   ENDMETHOD.
 
   METHOD execute_print_bundled.
-    CLEAR: ev_ok, ev_err.
+    CLEAR: ev_ok,
+           ev_err.
 
     DATA lt_adobe TYPE TABLE OF ty_alv_line.
     DATA lt_smart TYPE TABLE OF ty_alv_line.
@@ -736,12 +739,9 @@ CLASS lcl_mass_print IMPLEMENTATION.
       DATA ls_user_defaults TYPE usdefaults.
 
       CALL FUNCTION 'SUSR_USER_DEFAULTS_GET'
-        EXPORTING
-          user_name     = sy-uname
-        IMPORTING
-          user_defaults = ls_user_defaults
-        EXCEPTIONS
-          OTHERS        = 0.
+        EXPORTING  user_name     = sy-uname
+        IMPORTING  user_defaults = ls_user_defaults
+        EXCEPTIONS OTHERS        = 0.
       GET PARAMETER ID '/CELLAG/PAFR' FIELD lv_printer.
       IF lv_printer IS INITIAL.
         lv_printer = ls_user_defaults-spld.
@@ -756,10 +756,8 @@ CLASS lcl_mass_print IMPLEMENTATION.
       ls_outputparams-covtitle = |Mass Print { sy-datum }|.
 
       CALL FUNCTION 'FP_JOB_OPEN'
-        CHANGING
-          ie_outputparams = ls_outputparams
-        EXCEPTIONS
-          OTHERS          = 5.
+        CHANGING   ie_outputparams = ls_outputparams
+        EXCEPTIONS OTHERS          = 5.
       IF sy-subrc <> 0.
         MESSAGE |FP_JOB_OPEN failed (subrc={ sy-subrc })| TYPE 'S' DISPLAY LIKE 'E'.
       ELSE.
@@ -792,8 +790,7 @@ CLASS lcl_mass_print IMPLEMENTATION.
         ENDLOOP.
 
         CALL FUNCTION 'FP_JOB_CLOSE'
-          EXCEPTIONS
-            OTHERS = 1.
+          EXCEPTIONS OTHERS = 1.
         IF sy-subrc <> 0.
           /ctdi/cl_print_driver_log=>log_error( |FP_JOB_CLOSE failed (subrc={ sy-subrc })| ).
         ENDIF.
@@ -813,12 +810,10 @@ CLASS lcl_mass_print IMPLEMENTATION.
       ls_sf_output-tdcovtitle = |Mass Print SmartForms { sy-datum }|.
 
       CALL FUNCTION 'SSF_OPEN'
-        EXPORTING
-          control_parameters = ls_sf_ctrl
-          output_options     = ls_sf_output
-          user_settings      = abap_false
-        EXCEPTIONS
-          OTHERS             = 1.
+        EXPORTING  control_parameters = ls_sf_ctrl
+                   output_options     = ls_sf_output
+                   user_settings      = abap_false
+        EXCEPTIONS OTHERS             = 1.
       IF sy-subrc <> 0.
         MESSAGE |SSF_OPEN failed (subrc={ sy-subrc })| TYPE 'S' DISPLAY LIKE 'E'.
       ELSE.
@@ -851,8 +846,7 @@ CLASS lcl_mass_print IMPLEMENTATION.
         ENDLOOP.
 
         CALL FUNCTION 'SSF_CLOSE'
-          EXCEPTIONS
-            OTHERS = 1.
+          EXCEPTIONS OTHERS = 1.
         IF sy-subrc <> 0.
           /ctdi/cl_print_driver_log=>log_error( |SSF_CLOSE failed (subrc={ sy-subrc })| ).
         ENDIF.
@@ -861,7 +855,8 @@ CLASS lcl_mass_print IMPLEMENTATION.
   ENDMETHOD.
 
   METHOD execute_pdf_merge_ads.
-    CLEAR: ev_ok, ev_err.
+    CLEAR: ev_ok,
+           ev_err.
 
     DATA ls_outputparams TYPE sfpoutputparams.
     ls_outputparams-nodialog = abap_true.
@@ -872,11 +867,9 @@ CLASS lcl_mass_print IMPLEMENTATION.
     ls_outputparams-reqfinal = abap_true.
 
     CALL FUNCTION 'FP_JOB_OPEN'
-      CHANGING
-        ie_outputparams = ls_outputparams
-      EXCEPTIONS
-        cancel          = 1
-        OTHERS          = 5.
+      CHANGING   ie_outputparams = ls_outputparams
+      EXCEPTIONS cancel          = 1
+                 OTHERS          = 5.
     IF sy-subrc <> 0.
       MESSAGE TEXT-014 TYPE 'S' DISPLAY LIKE 'E'.
       RETURN.
@@ -911,12 +904,12 @@ CLASS lcl_mass_print IMPLEMENTATION.
       ENDTRY.
     ENDLOOP.
 
-    CALL FUNCTION 'FP_JOB_CLOSE' EXCEPTIONS OTHERS = 0.
+    CALL FUNCTION 'FP_JOB_CLOSE'
+      EXCEPTIONS OTHERS = 0.
 
     DATA lt_pdf_table TYPE tfpcontent.
     CALL FUNCTION 'FP_GET_PDF_TABLE'
-      IMPORTING
-        e_pdf_table = lt_pdf_table.
+      IMPORTING e_pdf_table = lt_pdf_table.
 
     IF lt_pdf_table IS NOT INITIAL.
       download_pdf_file( iv_pdf_data = lt_pdf_table[ 1 ]
@@ -938,12 +931,9 @@ CLASS lcl_mass_print IMPLEMENTATION.
     DATA lv_fpath    TYPE string.
 
     CALL FUNCTION 'SCMS_XSTRING_TO_BINARY'
-      EXPORTING
-        buffer     = iv_pdf_data
-      TABLES
-        binary_tab = lt_data
-      EXCEPTIONS
-        OTHERS     = 1.
+      EXPORTING  buffer     = iv_pdf_data
+      TABLES     binary_tab = lt_data
+      EXCEPTIONS OTHERS     = 1.
     IF sy-subrc <> 0.
       RETURN.
     ENDIF.
@@ -954,15 +944,14 @@ CLASS lcl_mass_print IMPLEMENTATION.
       DATA lv_path     TYPE string.
       DATA lv_fullpath TYPE string.
 
-      cl_gui_frontend_services=>file_save_dialog(
-        EXPORTING  default_file_name = iv_filename
-                   default_extension = 'pdf'
-                   file_filter       = 'PDF Files (*.pdf)|*.pdf'
-        CHANGING   filename          = lv_filename
-                   path              = lv_path
-                   fullpath          = lv_fullpath
-                   user_action       = lv_action
-        EXCEPTIONS OTHERS            = 1 ).
+      cl_gui_frontend_services=>file_save_dialog( EXPORTING  default_file_name = iv_filename
+                                                             default_extension = 'pdf'
+                                                             file_filter       = 'PDF Files (*.pdf)|*.pdf'
+                                                  CHANGING   filename          = lv_filename
+                                                             path              = lv_path
+                                                             fullpath          = lv_fullpath
+                                                             user_action       = lv_action
+                                                  EXCEPTIONS OTHERS            = 1 ).
 
       IF lv_action <> cl_gui_frontend_services=>action_ok OR lv_fullpath IS INITIAL.
         RETURN.
@@ -974,12 +963,11 @@ CLASS lcl_mass_print IMPLEMENTATION.
     ENDIF.
 
     lv_filesize = xstrlen( iv_pdf_data ).
-    cl_gui_frontend_services=>gui_download(
-      EXPORTING  filename     = lv_fpath
-                 filetype     = 'BIN'
-                 bin_filesize = lv_filesize
-      CHANGING   data_tab     = lt_data
-      EXCEPTIONS OTHERS       = 19 ).
+    cl_gui_frontend_services=>gui_download( EXPORTING  filename     = lv_fpath
+                                                       filetype     = 'BIN'
+                                                       bin_filesize = lv_filesize
+                                            CHANGING   data_tab     = lt_data
+                                            EXCEPTIONS OTHERS       = 19 ).
 
     rv_ok = xsdbool( sy-subrc = 0 ).
   ENDMETHOD.
