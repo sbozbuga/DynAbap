@@ -46,6 +46,14 @@ CLASS /ctdi/cl_print_driver_base DEFINITION
     CLASS-METHODS get_download_dir
       RETURNING VALUE(rv_dir) TYPE string.
 
+    "! Returns the last generated PDF data (available after execute with iv_save_as_pdf = true).
+    METHODS get_last_pdf
+      RETURNING VALUE(rv_pdf) TYPE xstring.
+
+    "! When set to true, download_pdf stores the PDF but does not trigger file download.
+    METHODS set_collect_pdf
+      IMPORTING iv_collect TYPE abap_bool.
+
     "! Executes the full print pipeline (read data + render form).
     "!
     "! @parameter iv_save_as_pdf |
@@ -66,6 +74,8 @@ CLASS /ctdi/cl_print_driver_base DEFINITION
     DATA mv_repair_order       TYPE aufnr.
     DATA mv_sernr              TYPE equi-sernr.
     DATA mv_form_name          TYPE fpname.
+    DATA mv_last_pdf           TYPE xstring.
+    DATA mv_collect_pdf        TYPE abap_bool.
     DATA ms_repair             TYPE /ctdi/repair.
     DATA ms_project            TYPE /ctdi/rep_projec.
     DATA mt_errors             TYPE /ctdi/repair_error_tt.
@@ -410,6 +420,17 @@ CLASS /ctdi/cl_print_driver_base IMPLEMENTATION.
     IF ms_repair-new_serial_no IS NOT INITIAL.
       rv_filename = |{ rv_filename }_{ ms_repair-new_serial_no }|.
     ENDIF.
+
+    " Remove characters that are invalid in file paths
+    REPLACE ALL OCCURRENCES OF '/' IN rv_filename WITH '_'.
+    REPLACE ALL OCCURRENCES OF '\' IN rv_filename WITH '_'.
+    REPLACE ALL OCCURRENCES OF ':' IN rv_filename WITH '_'.
+    REPLACE ALL OCCURRENCES OF '*' IN rv_filename WITH '_'.
+    REPLACE ALL OCCURRENCES OF '?' IN rv_filename WITH '_'.
+    REPLACE ALL OCCURRENCES OF '"' IN rv_filename WITH '_'.
+    REPLACE ALL OCCURRENCES OF '<' IN rv_filename WITH '_'.
+    REPLACE ALL OCCURRENCES OF '>' IN rv_filename WITH '_'.
+    REPLACE ALL OCCURRENCES OF '|' IN rv_filename WITH '_'.
   ENDMETHOD.
 
   METHOD detect_form_type.
@@ -433,6 +454,14 @@ CLASS /ctdi/cl_print_driver_base IMPLEMENTATION.
     DATA lt_data     TYPE solix_tab.
 
     IF iv_pdf_data IS INITIAL.
+      RETURN.
+    ENDIF.
+
+    " Always store last generated PDF for potential merge scenarios
+    mv_last_pdf = iv_pdf_data.
+
+    " Collect mode: store only, don't download
+    IF mv_collect_pdf = abap_true.
       RETURN.
     ENDIF.
 
@@ -861,6 +890,16 @@ CLASS /ctdi/cl_print_driver_base IMPLEMENTATION.
     rv_dir = mv_download_dir.
   ENDMETHOD.
 
+
+  METHOD get_last_pdf.
+    rv_pdf = mv_last_pdf.
+  ENDMETHOD.
+
+
+  METHOD set_collect_pdf.
+    mv_collect_pdf = iv_collect.
+  ENDMETHOD.
+
   METHOD get_user_print_defaults.
     DATA ls_user_defaults TYPE usdefaults.
     DATA lv_user_printer  TYPE char40.
@@ -889,7 +928,7 @@ CLASS /ctdi/cl_print_driver_base IMPLEMENTATION.
 
     " 5. Hardcoded values from legacy print_sf subroutine
     ev_immed  = abap_true.
-    ev_delete = abap_true.
+    ev_delete = abap_false.
   ENDMETHOD.
 
   METHOD map_and_register_data.

@@ -156,7 +156,7 @@
       <FPPARAMETER>GV_TEST_PRINT</FPPARAMETER>
      </OUTPUT_PARAMETERS>
      <INITIALIZATION>
-      <FPCLINE>*BREAK nhs003381.</FPCLINE>
+      <FPCLINE>&quot;BREAK nhs003381.</FPCLINE>
       <FPCLINE>CALL METHOD cl_ssf_xsf_utilities=&gt;get_bds_graphic_as_bmp</FPCLINE>
       <FPCLINE>  EXPORTING</FPCLINE>
       <FPCLINE>    p_object = &apos;GRAPHICS&apos;</FPCLINE>
@@ -173,8 +173,6 @@
       <FPCLINE>IF sy-sysid EQ &apos;PA1&apos;.</FPCLINE>
       <FPCLINE>  CLEAR gv_test_print.</FPCLINE>
       <FPCLINE>ENDIF.</FPCLINE>
-      <FPCLINE/>
-      <FPCLINE/>
       <FPCLINE/>
       <FPCLINE/>
       <FPCLINE/>

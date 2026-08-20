@@ -39,18 +39,21 @@ REPORT /ctdi/print_repair_mass.
 " -----------------------------------------------------------------------
 " Global Data for SELECT-OPTIONS references
 " -----------------------------------------------------------------------
-TABLES aufk.
-
+TABLES: aufk, afru, qmel, vbak.
+DATA gv_contr TYPE jvbelncontract.
 " -----------------------------------------------------------------------
 " Selection Screen
 " -----------------------------------------------------------------------
 SELECTION-SCREEN BEGIN OF BLOCK b1 WITH FRAME TITLE TEXT-001.
 SELECT-OPTIONS: s_aufnr FOR aufk-aufnr,                 " Repair Order
+                s_kdauf FOR aufk-kdauf,                 " Sales Order
+                s_contr FOR gv_contr,                   " Contract
+                s_qmnum FOR qmel-qmnum,                " Notification
                 s_auart FOR aufk-auart DEFAULT 'ZM03',  " Order Type
                 s_werks FOR aufk-werks,                 " Plant
-                s_erdat FOR aufk-erdat.                 " Creation Date
-PARAMETERS: p_vornr TYPE afru-vornr DEFAULT '9010',     " Operation (WFER)
-            p_qmart TYPE qmel-qmart DEFAULT 'Z2'.       " QM Notification Type
+                s_erdat FOR aufk-erdat,                 " Creation Date
+                s_vornr FOR afru-vornr DEFAULT '9010',  " Operation (WFER)
+                s_qmart FOR qmel-qmart.                 " QM Notification Type
 SELECTION-SCREEN END OF BLOCK b1.
 
 SELECTION-SCREEN BEGIN OF BLOCK b2 WITH FRAME TITLE TEXT-002.
@@ -62,17 +65,21 @@ SELECTION-SCREEN END OF BLOCK b2.
 " ALV output structure
 " -----------------------------------------------------------------------
 TYPES: BEGIN OF ty_alv_line,
-         icon        TYPE icon_d,    " Status icon
-         aufnr       TYPE aufnr,     " Repair Order
-         auart       TYPE aufart,    " Order Type
-         erdat       TYPE auferfdat, " Creation Date
-         werks       TYPE werks_d,   " Plant
-         ktext       TYPE auftext,   " Order short text
-         kdauf       TYPE kdauf,     " Sales Order
-         contract_id TYPE vbeln_va,  " Contract
-         skz         TYPE bemot,     " SKZ (Confirmation reason)
-         akz         TYPE qmcod,     " AKZ (QM Code)
-         msg         TYPE string,    " Message (success/error)
+         icon        TYPE icon_d,         " Status icon
+         aufnr       TYPE aufnr,          " Repair Order
+         auart       TYPE aufart,         " Order Type
+         erdat       TYPE auferfdat,      " Creation Date
+         werks       TYPE werks_d,        " Plant
+         ktext       TYPE auftext,        " Order short text
+         kdauf       TYPE kdauf,          " Sales Order
+         contract_id TYPE jvbelncontract, " Contract
+         qmnum       TYPE qmnum,          " Notification (QMEL)
+         qmart       TYPE qmart,          " Notification Type
+         vbap_qmnum  TYPE qmnum,          " Notification (VBAP)
+         feession    TYPE fenum,          " Item/Position (VBAP)
+         skz         TYPE bemot,          " SKZ (Confirmation reason)
+         akz         TYPE qmcod,          " AKZ (QM Code)
+         msg         TYPE string,         " Message (success/error)
        END OF ty_alv_line.
 
 " -----------------------------------------------------------------------
@@ -93,7 +100,8 @@ CLASS lcl_mass_print DEFINITION FINAL.
       IMPORTING e_salv_function.
 
     CLASS-METHODS execute_print
-      IMPORTING iv_save_as_pdf TYPE abap_bool.
+      IMPORTING iv_save_as_pdf TYPE abap_bool
+                iv_merge       TYPE abap_bool DEFAULT abap_false.
 ENDCLASS.
 
 
@@ -114,27 +122,38 @@ CLASS lcl_mass_print IMPLEMENTATION.
                     a~werks,
                     a~ktext,
                     a~kdauf,
-                    o~vgbel AS contract_id,
-                    f~bemot AS skz,
-                    q~qmcod AS akz
+                    o~vgbel         AS contract_id,
+                    q~qmnum,
+                    q~qmart,
+                    p~/cellag/qmnum AS vbap_qmnum,
+                    p~/cellag/fenum AS feession,
+                    f~bemot         AS skz,
+                    q~qmcod         AS akz
       FROM aufk AS a
              INNER JOIN
-               vbak AS o ON o~vbeln = a~kdauf
+               qmel AS q ON q~aufnr = a~aufnr
                  INNER JOIN
-                   vbak AS c ON  c~vbeln = o~vgbel
-                             AND c~vbtyp = 'G'
-                     LEFT OUTER JOIN
-                       afru AS f ON  f~aufnr = a~aufnr
-                                 AND f~vornr = @p_vornr
-                                 AND f~stokz = @space
-                                 AND f~stzhl = '00000000'
+                   vbak AS o ON o~vbeln = a~kdauf
+                     INNER JOIN
+                       vbak AS c ON  c~vbeln = o~vgbel
+                                 AND c~vbtyp = 'G'
                          LEFT OUTER JOIN
-                           qmel AS q ON  q~aufnr = a~aufnr
-                                     AND q~qmart = @p_qmart
+                           vbap AS p ON  p~vbeln = a~kdauf
+                                     AND p~posnr = a~kdpos
+                             LEFT OUTER JOIN
+                               afru AS f ON  f~aufnr = a~aufnr
+                                         AND f~stokz = @space
+                                         AND f~stzhl = '00000000'
+
       WHERE a~aufnr IN @s_aufnr
+        AND a~kdauf IN @s_kdauf
         AND a~auart IN @s_auart
         AND a~werks IN @s_werks
         AND a~erdat IN @s_erdat
+        AND o~vgbel IN @s_contr
+        AND f~vornr IN @s_vornr
+        AND q~qmart IN @s_qmart
+        AND q~qmnum IN @s_qmnum
       ORDER BY a~aufnr
       INTO TABLE @DATA(lt_orders) ##SUBRC_OK.
 
@@ -148,15 +167,13 @@ CLASS lcl_mass_print IMPLEMENTATION.
                                 ktext       = <ls_order>-ktext
                                 kdauf       = <ls_order>-kdauf
                                 contract_id = <ls_order>-contract_id
+                                qmnum       = <ls_order>-qmnum
+                                qmart       = <ls_order>-qmart
+                                vbap_qmnum  = <ls_order>-vbap_qmnum
+                                feession    = <ls_order>-feession
                                 skz         = <ls_order>-skz
                                 akz         = <ls_order>-akz ) TO gt_alv.
     ENDLOOP.
-
-    " Force minimum 80-char width for MSG column using non-breaking spaces (U+00A0)
-    IF gt_alv IS NOT INITIAL.
-      ASSIGN gt_alv[ 1 ] TO FIELD-SYMBOL(<ls_first>).
-      <ls_first>-msg = repeat( val = cl_abap_conv_in_ce=>uccp( '00A0' ) occ = 80 ).
-    ENDIF.
   ENDMETHOD.
 
   METHOD display_alv.
@@ -192,6 +209,12 @@ CLASS lcl_mass_print IMPLEMENTATION.
                                     text     = CONV #( TEXT-005 )
                                     tooltip  = CONV #( TEXT-005 )
                                     position = if_salv_c_function_position=>right_of_salv_functions ).
+
+        lo_functions->add_function( name     = 'PDF_MERGE'
+                                    icon     = CONV #( icon_stack )
+                                    text     = CONV #( TEXT-016 )
+                                    tooltip  = CONV #( TEXT-016 )
+                                    position = if_salv_c_function_position=>right_of_salv_functions ).
       CATCH cx_salv_existing
             cx_salv_wrong_call.
     ENDTRY.
@@ -221,6 +244,9 @@ CLASS lcl_mass_print IMPLEMENTATION.
     lo_events = go_salv->get_event( ).
     SET HANDLER on_user_command FOR lo_events.
 
+    " Set title with record count
+    sy-title = |{ sy-title } ({ lines( gt_alv ) })|.
+
     " Display
     go_salv->display( ).
 
@@ -231,12 +257,25 @@ CLASS lcl_mass_print IMPLEMENTATION.
   METHOD on_user_command.
     CASE e_salv_function.
       WHEN 'PRINT_SEL'.
-        execute_print( iv_save_as_pdf = abap_false ).
-        go_salv->refresh( ).
+        execute_print( iv_save_as_pdf = abap_false
+                       iv_merge       = abap_false ).
+        go_salv->get_columns( )->set_optimize( abap_true ).
+        go_salv->refresh( s_stable = VALUE #( row = abap_true
+                                              col = abap_true ) ).
 
       WHEN 'PDF_SEL'.
-        execute_print( iv_save_as_pdf = abap_true ).
-        go_salv->refresh( ).
+        execute_print( iv_save_as_pdf = abap_true
+                       iv_merge       = abap_false ).
+        go_salv->get_columns( )->set_optimize( abap_true ).
+        go_salv->refresh( s_stable = VALUE #( row = abap_true
+                                              col = abap_true ) ).
+
+      WHEN 'PDF_MERGE'.
+        execute_print( iv_save_as_pdf = abap_true
+                       iv_merge       = abap_true ).
+        go_salv->get_columns( )->set_optimize( abap_true ).
+        go_salv->refresh( s_stable = VALUE #( row = abap_true
+                                              col = abap_true ) ).
     ENDCASE.
   ENDMETHOD.
 
@@ -253,8 +292,23 @@ CLASS lcl_mass_print IMPLEMENTATION.
     ENDIF.
 
     " Pre-set download directory from selection screen if PDF checkbox was checked
-    IF iv_save_as_pdf = abap_true AND p_pdf = abap_true AND p_dir IS NOT INITIAL.
+    IF     iv_save_as_pdf = abap_true AND p_pdf = abap_true AND p_dir IS NOT INITIAL
+       AND iv_merge       = abap_false.
       /ctdi/cl_print_driver_base=>set_download_dir( p_dir ).
+    ENDIF.
+
+    " Merge mode: collect PDFs, merge at the end
+    DATA lv_merge_mode TYPE abap_bool.
+    DATA lo_merger     TYPE REF TO cl_rspo_pdf_merge.
+
+    IF iv_save_as_pdf = abap_true AND iv_merge = abap_true.
+      lv_merge_mode = abap_true.
+      TRY.
+          CREATE OBJECT lo_merger.
+        CATCH cx_rspo_pdf_merge.
+          MESSAGE TEXT-014 TYPE 'S' DISPLAY LIKE 'E'.
+          RETURN.
+      ENDTRY.
     ENDIF.
 
     LOOP AT lt_rows INTO DATA(lv_row).
@@ -263,16 +317,31 @@ CLASS lcl_mass_print IMPLEMENTATION.
         CONTINUE.
       ENDIF.
 
-      cl_progress_indicator=>progress_indicate( i_text               = |{ TEXT-007 } { <ls_line>-aufnr }...|
-                                                i_processed          = sy-tabix
-                                                i_total              = lines( lt_rows )
-                                                i_output_immediately = abap_true ).
+      cl_progress_indicator=>progress_indicate(
+          i_text               = |{ TEXT-007 } { <ls_line>-aufnr } ({ sy-tabix }/{ lines( lt_rows ) })...|
+          i_processed          = sy-tabix
+          i_total              = lines( lt_rows )
+          i_output_immediately = abap_true ).
 
       TRY.
           DATA(lr_driver) = /ctdi/cl_print_driver_base=>factory( iv_repair_id = <ls_line>-aufnr ).
+
+          " In merge mode: collect PDF without downloading
+          IF lv_merge_mode = abap_true.
+            lr_driver->set_collect_pdf( abap_true ).
+          ENDIF.
+
           lr_driver->execute( iv_save_as_pdf = iv_save_as_pdf
                               iv_no_dialog   = abap_true
                               iv_preview     = abap_false ).
+
+          " Add to merger if in merge mode
+          IF lv_merge_mode = abap_true.
+            DATA(lv_pdf) = lr_driver->get_last_pdf( ).
+            IF lv_pdf IS NOT INITIAL.
+              lo_merger->add_document( lv_pdf ).
+            ENDIF.
+          ENDIF.
 
           <ls_line>-icon = icon_led_green.
           <ls_line>-msg  = COND #( WHEN iv_save_as_pdf = abap_true
@@ -303,6 +372,52 @@ CLASS lcl_mass_print IMPLEMENTATION.
       ENDTRY.
     ENDLOOP.
 
+    " Merge and download combined PDF
+    IF lv_merge_mode = abap_true AND lv_count_ok > 0.
+      DATA lv_merged TYPE xstring.
+      DATA lv_rc     TYPE i.
+
+      lo_merger->merge_documents( IMPORTING merged_document = lv_merged
+                                            rc              = lv_rc ).
+      IF lv_rc = 0 AND lv_merged IS NOT INITIAL.
+        " Download merged file
+        DATA lv_filesize TYPE i.
+        DATA lt_data     TYPE solix_tab.
+        DATA lv_action   TYPE i.
+        DATA lv_filename TYPE string.
+        DATA lv_path     TYPE string.
+        DATA lv_fpath    TYPE string.
+
+        CALL FUNCTION 'SCMS_XSTRING_TO_BINARY'
+          EXPORTING
+            buffer     = lv_merged
+          TABLES
+            binary_tab = lt_data
+          EXCEPTIONS
+            OTHERS     = 1. "#EC CI_SUBRC
+
+        cl_gui_frontend_services=>file_save_dialog( EXPORTING  default_file_name = |Repair_Merged_{ sy-datum }.pdf|
+                                                               default_extension = 'pdf'
+                                                               file_filter       = 'PDF Files (*.pdf)|*.pdf'
+                                                    CHANGING   filename          = lv_filename
+                                                               path              = lv_path
+                                                               fullpath          = lv_fpath
+                                                               user_action       = lv_action
+                                                    EXCEPTIONS OTHERS            = 1 ).
+
+        IF lv_action = cl_gui_frontend_services=>action_ok AND lv_fpath IS NOT INITIAL.
+          lv_filesize = xstrlen( lv_merged ).
+          cl_gui_frontend_services=>gui_download( EXPORTING  filename     = lv_fpath
+                                                             filetype     = 'BIN'
+                                                             bin_filesize = lv_filesize
+                                                  CHANGING   data_tab     = lt_data
+                                                  EXCEPTIONS OTHERS       = 19 ).
+        ENDIF.
+      ELSE.
+        MESSAGE TEXT-015 TYPE 'S' DISPLAY LIKE 'E'.
+      ENDIF.
+    ENDIF.
+
     MESSAGE |{ TEXT-012 }: { lv_count_ok } OK, { lv_count_err } { TEXT-013 }.| TYPE 'S'.
   ENDMETHOD.
 ENDCLASS.
@@ -311,6 +426,9 @@ ENDCLASS.
 " -----------------------------------------------------------------------
 
 INITIALIZATION.
+  " Default qmart pattern: Z*
+  s_qmart[] = VALUE #( ( sign = 'I' option = 'CP' low = 'Z*' ) ).
+
   DATA lv_desktop_dir TYPE string.
 
   cl_gui_frontend_services=>get_desktop_directory( CHANGING   desktop_directory = lv_desktop_dir

@@ -85,9 +85,27 @@
      <LENGTH>20</LENGTH>
     </item>
     <item>
+     <ID>I</ID>
+     <KEY>014</KEY>
+     <ENTRY>PDF merge initialization failed (ADS connection error)</ENTRY>
+     <LENGTH>108</LENGTH>
+    </item>
+    <item>
+     <ID>I</ID>
+     <KEY>015</KEY>
+     <ENTRY>PDF merge failed</ENTRY>
+     <LENGTH>26</LENGTH>
+    </item>
+    <item>
+     <ID>I</ID>
+     <KEY>016</KEY>
+     <ENTRY>PDF Merged</ENTRY>
+     <LENGTH>20</LENGTH>
+    </item>
+    <item>
      <ID>R</ID>
      <ENTRY>Mass Print Repair Orders</ENTRY>
-     <LENGTH>70</LENGTH>
+     <LENGTH>24</LENGTH>
     </item>
     <item>
      <ID>S</ID>
@@ -100,20 +118,6 @@
      <KEY>P_PDF</KEY>
      <ENTRY>Save as PDF</ENTRY>
      <LENGTH>20</LENGTH>
-    </item>
-    <item>
-     <ID>S</ID>
-     <KEY>P_QMART</KEY>
-     <ENTRY>.</ENTRY>
-     <LENGTH>9</LENGTH>
-     <SPLIT>D</SPLIT>
-    </item>
-    <item>
-     <ID>S</ID>
-     <KEY>P_VORNR</KEY>
-     <ENTRY>.</ENTRY>
-     <LENGTH>9</LENGTH>
-     <SPLIT>D</SPLIT>
     </item>
     <item>
      <ID>S</ID>
@@ -131,7 +135,42 @@
     </item>
     <item>
      <ID>S</ID>
+     <KEY>S_CONTR</KEY>
+     <ENTRY>.</ENTRY>
+     <LENGTH>9</LENGTH>
+     <SPLIT>D</SPLIT>
+    </item>
+    <item>
+     <ID>S</ID>
      <KEY>S_ERDAT</KEY>
+     <ENTRY>.</ENTRY>
+     <LENGTH>9</LENGTH>
+     <SPLIT>D</SPLIT>
+    </item>
+    <item>
+     <ID>S</ID>
+     <KEY>S_KDAUF</KEY>
+     <ENTRY>.</ENTRY>
+     <LENGTH>9</LENGTH>
+     <SPLIT>D</SPLIT>
+    </item>
+    <item>
+     <ID>S</ID>
+     <KEY>S_QMART</KEY>
+     <ENTRY>.</ENTRY>
+     <LENGTH>9</LENGTH>
+     <SPLIT>D</SPLIT>
+    </item>
+    <item>
+     <ID>S</ID>
+     <KEY>S_QMNUM</KEY>
+     <ENTRY>.</ENTRY>
+     <LENGTH>9</LENGTH>
+     <SPLIT>D</SPLIT>
+    </item>
+    <item>
+     <ID>S</ID>
+     <KEY>S_VORNR</KEY>
      <ENTRY>.</ENTRY>
      <LENGTH>9</LENGTH>
      <SPLIT>D</SPLIT>
@@ -221,6 +260,24 @@
        <LENGTH>20</LENGTH>
       </item>
       <item>
+       <ID>I</ID>
+       <KEY>014</KEY>
+       <ENTRY>Initialisierung der PDF-Zusammenführung fehlgeschlagen (ADS-Verbindungsfehler)</ENTRY>
+       <LENGTH>108</LENGTH>
+      </item>
+      <item>
+       <ID>I</ID>
+       <KEY>015</KEY>
+       <ENTRY>PDF-Zusammenführung fehlg.</ENTRY>
+       <LENGTH>26</LENGTH>
+      </item>
+      <item>
+       <ID>I</ID>
+       <KEY>016</KEY>
+       <ENTRY>PDFs zusammengeführt</ENTRY>
+       <LENGTH>20</LENGTH>
+      </item>
+      <item>
        <ID>R</ID>
        <ENTRY>Massendruck Reparaturaufträge</ENTRY>
        <LENGTH>70</LENGTH>
@@ -239,20 +296,6 @@
       </item>
       <item>
        <ID>S</ID>
-       <KEY>P_QMART</KEY>
-       <ENTRY>.</ENTRY>
-       <LENGTH>9</LENGTH>
-       <SPLIT>D</SPLIT>
-      </item>
-      <item>
-       <ID>S</ID>
-       <KEY>P_VORNR</KEY>
-       <ENTRY>.</ENTRY>
-       <LENGTH>9</LENGTH>
-       <SPLIT>D</SPLIT>
-      </item>
-      <item>
-       <ID>S</ID>
        <KEY>S_AUART</KEY>
        <ENTRY>.</ENTRY>
        <LENGTH>9</LENGTH>
@@ -267,7 +310,42 @@
       </item>
       <item>
        <ID>S</ID>
+       <KEY>S_CONTR</KEY>
+       <ENTRY>.</ENTRY>
+       <LENGTH>9</LENGTH>
+       <SPLIT>D</SPLIT>
+      </item>
+      <item>
+       <ID>S</ID>
        <KEY>S_ERDAT</KEY>
+       <ENTRY>.</ENTRY>
+       <LENGTH>9</LENGTH>
+       <SPLIT>D</SPLIT>
+      </item>
+      <item>
+       <ID>S</ID>
+       <KEY>S_KDAUF</KEY>
+       <ENTRY>.</ENTRY>
+       <LENGTH>9</LENGTH>
+       <SPLIT>D</SPLIT>
+      </item>
+      <item>
+       <ID>S</ID>
+       <KEY>S_QMART</KEY>
+       <ENTRY>.</ENTRY>
+       <LENGTH>9</LENGTH>
+       <SPLIT>D</SPLIT>
+      </item>
+      <item>
+       <ID>S</ID>
+       <KEY>S_QMNUM</KEY>
+       <ENTRY>.</ENTRY>
+       <LENGTH>9</LENGTH>
+       <SPLIT>D</SPLIT>
+      </item>
+      <item>
+       <ID>S</ID>
+       <KEY>S_VORNR</KEY>
        <ENTRY>.</ENTRY>
        <LENGTH>9</LENGTH>
        <SPLIT>D</SPLIT>
@@ -291,7 +369,6 @@
       <TYP>E</TYP>
       <VERSION>0001</VERSION>
       <TXTLINES>00012</TXTLINES>
-      <DOKSTATE>A</DOKSTATE>
      </DOKIL>
      <HEAD>
       <TDOBJECT>DOKU</TDOBJECT>
@@ -365,7 +442,6 @@
       <VERSION>0001</VERSION>
       <MASTERLANG>X</MASTERLANG>
       <TXTLINES>00011</TXTLINES>
-      <DOKSTATE>A</DOKSTATE>
      </DOKIL>
      <HEAD>
       <TDOBJECT>DOKU</TDOBJECT>

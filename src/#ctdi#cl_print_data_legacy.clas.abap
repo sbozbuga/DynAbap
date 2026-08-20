@@ -370,6 +370,9 @@ CLASS /ctdi/cl_print_data_legacy IMPLEMENTATION.
         OTHERS   = 8. "#EC CI_SUBRC
 
     mt_comment_lines = lt_lines.
+
+    " Remove empty lines
+    DELETE mt_comment_lines WHERE tdline IS INITIAL OR tdline CO ' '.
   ENDMETHOD.
 
   METHOD get_equipment_model.
@@ -579,10 +582,12 @@ CLASS /ctdi/cl_print_data_legacy IMPLEMENTATION.
       get_astatus_data( EXPORTING iv_objnr     = ls_aufk-objnr
                         IMPORTING ev_wfer_date = DATA(lv_wfer_date)
                                   ev_wfer_time = DATA(lv_wfer_time) ).
+      /ctdi/cl_print_driver_log=>log_info( |  get_astatus_data completed for { mv_aufnr }| ).
 
       get_rlf_wedate( EXPORTING iv_vbeln_vl = mv_retlief_nr
                       IMPORTING ev_vl_erdat = DATA(lv_vl_erdat)
                                 ev_vl_zeit  = DATA(lv_vl_erzet) ).
+      /ctdi/cl_print_driver_log=>log_info( |  get_rlf_wedate completed for { mv_aufnr }| ).
 
       mv_time_received = lv_vl_erzet.
       mv_time_repaired = lv_wfer_time.
@@ -660,9 +665,13 @@ CLASS /ctdi/cl_print_data_legacy IMPLEMENTATION.
 
   METHOD get_part_data.
     DATA(lv_equnr) = resolve_equipment_number( ).
+    /ctdi/cl_print_driver_log=>log_info( |  resolve_equipment_number completed for { mv_aufnr }| ).
 
     determine_serial_and_part( lv_equnr ).
+    /ctdi/cl_print_driver_log=>log_info( |  determine_serial_and_part completed for { mv_aufnr }| ).
+
     fallback_part_numbers( lv_equnr ).
+    /ctdi/cl_print_driver_log=>log_info( |  fallback_part_numbers completed for { mv_aufnr }| ).
 
     ms_legacy-old_serial_no = mv_old_serial.
     ms_legacy-new_serial_no = mv_new_serial.
@@ -670,7 +679,10 @@ CLASS /ctdi/cl_print_data_legacy IMPLEMENTATION.
     ms_legacy-new_part_no   = mv_new_part.
 
     get_equipment_model( lv_equnr ).
+    /ctdi/cl_print_driver_log=>log_info( |  get_equipment_model completed for { mv_aufnr }| ).
+
     get_equipment_stands( ).
+    /ctdi/cl_print_driver_log=>log_info( |  get_equipment_stands completed for { mv_aufnr }| ).
   ENDMETHOD.
 
   METHOD get_repair_result.
@@ -747,11 +759,22 @@ CLASS /ctdi/cl_print_data_legacy IMPLEMENTATION.
     ENDIF.
 
     check_sernr_swap( ).
+    /ctdi/cl_print_driver_log=>log_info( |check_sernr_swap completed for { mv_aufnr }| ).
+
     get_kddata( ).
+    /ctdi/cl_print_driver_log=>log_info( |get_kddata completed for { mv_aufnr }| ).
+
     get_part_data( ).
+    /ctdi/cl_print_driver_log=>log_info( |get_part_data completed for { mv_aufnr }| ).
+
     get_error_description( ).
+    /ctdi/cl_print_driver_log=>log_info( |get_error_description completed for { mv_aufnr }| ).
+
     get_repair_result( ).
+    /ctdi/cl_print_driver_log=>log_info( |get_repair_result completed for { mv_aufnr }| ).
+
     get_comment( ).
+    /ctdi/cl_print_driver_log=>log_info( |get_comment completed for { mv_aufnr }| ).
   ENDMETHOD.
 
   METHOD resolve_equipment_number.
