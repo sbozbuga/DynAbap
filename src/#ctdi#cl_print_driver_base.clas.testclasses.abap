@@ -456,8 +456,8 @@ CLASS lcl_tests IMPLEMENTATION.
     DATA(lv_filename) = f_cut->build_pdf_filename( ).
     cl_abap_unit_assert=>assert_equals(
       act = lv_filename
-      exp = '10023401_800123_SN_99_88'
-      msg = 'Filename should strip hyphen from order, remove leading zeros, append serial, and sanitize special characters' ).
+      exp = '10023401_000000800123_SN_99_88'
+      msg = 'Filename should strip hyphen from order, preserve exact order number, append serial, and sanitize special characters' ).
   ENDMETHOD.
 
 ENDCLASS.

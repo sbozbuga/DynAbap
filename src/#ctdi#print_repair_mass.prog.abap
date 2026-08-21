@@ -524,8 +524,8 @@ CLASS lcl_mass_print IMPLEMENTATION.
     IF iv_save_as_pdf = abap_true AND iv_merge = abap_false AND sy-batch IS INITIAL.
       ASSIGN gt_alv[ it_rows[ 1 ] ] TO FIELD-SYMBOL(<ls_first>).
       DATA(lv_sample_file) = COND string( WHEN sy-subrc = 0
-                                          THEN |Repair_{ <ls_first>-aufnr ALPHA = OUT }.pdf|
-                                          ELSE 'Repair.pdf' ).
+                                          THEN |{ condense( CONV string( <ls_first>-aufnr ) ) }.pdf|
+                                          ELSE 'order.pdf' ).
       DATA lv_action   TYPE i.
       DATA lv_filename TYPE string.
       DATA lv_path     TYPE string.

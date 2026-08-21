@@ -573,7 +573,7 @@ CLASS lcl_mass_print IMPLEMENTATION.
       ELSEIF iv_mode = 'PDF_SEL' AND ls_result-pdf_data IS NOT INITIAL.
         DATA(lv_fname) = COND string( WHEN ls_result-filename IS NOT INITIAL
                                       THEN |{ ls_result-filename }.pdf|
-                                      ELSE |Repair_{ ls_result-aufnr ALPHA = OUT }.pdf| ).
+                                      ELSE |{ condense( CONV string( ls_result-aufnr ) ) }.pdf| ).
         download_pdf_file( iv_pdf_data = ls_result-pdf_data
                            iv_filename = lv_fname ).
       ENDIF.

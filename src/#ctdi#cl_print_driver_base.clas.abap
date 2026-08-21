@@ -413,21 +413,26 @@ CLASS /ctdi/cl_print_driver_base IMPLEMENTATION.
   ENDMETHOD.
 
   METHOD build_pdf_filename.
-    DATA(lv_aufnr_out) = |{ mv_repair_order ALPHA = OUT }|.
-    CONDENSE lv_aufnr_out.
+    DATA(lv_aufnr) = condense( CONV string( mv_repair_order ) ).
 
-    IF ms_repair-ctdi_order_no IS NOT INITIAL.
-      DATA(lv_order_no) = CONV string( ms_repair-ctdi_order_no ).
-      REPLACE ALL OCCURRENCES OF '-' IN lv_order_no WITH ''.
-      CONDENSE lv_order_no.
-      rv_filename = |{ lv_order_no }_{ lv_aufnr_out }|.
+    DATA(lv_order_no) = CONV string( ms_repair-ctdi_order_no ).
+    REPLACE ALL OCCURRENCES OF '-' IN lv_order_no WITH ''.
+    lv_order_no = condense( lv_order_no ).
+
+    IF lv_order_no IS NOT INITIAL.
+      rv_filename = |{ lv_order_no }_{ lv_aufnr }|.
     ELSE.
-      rv_filename = lv_aufnr_out.
+      rv_filename = lv_aufnr.
     ENDIF.
 
     IF ms_repair-new_serial_no IS NOT INITIAL.
-      rv_filename = |{ rv_filename }_{ ms_repair-new_serial_no }|.
+      DATA(lv_sernr) = condense( CONV string( ms_repair-new_serial_no ) ).
+      IF lv_sernr IS NOT INITIAL.
+        rv_filename = |{ rv_filename }_{ lv_sernr }|.
+      ENDIF.
     ENDIF.
+
+    rv_filename = condense( rv_filename ).
 
     " Remove characters that are invalid in file paths
     REPLACE ALL OCCURRENCES OF '/' IN rv_filename WITH '_'.
@@ -439,6 +444,7 @@ CLASS /ctdi/cl_print_driver_base IMPLEMENTATION.
     REPLACE ALL OCCURRENCES OF '<' IN rv_filename WITH '_'.
     REPLACE ALL OCCURRENCES OF '>' IN rv_filename WITH '_'.
     REPLACE ALL OCCURRENCES OF '|' IN rv_filename WITH '_'.
+    REPLACE ALL OCCURRENCES OF ' ' IN rv_filename WITH '_'.
   ENDMETHOD.
 
   METHOD detect_form_type.

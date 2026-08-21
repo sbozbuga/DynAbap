@@ -593,24 +593,26 @@ CLASS /ctdi/cl_print_data_legacy IMPLEMENTATION.
       mv_time_repaired = lv_wfer_time.
       mv_time_thisdate = sy-uzeit.
 
+      DATA lv_qmart TYPE qmel-qmart.
+
       IF ls_aufk-kdauf IS NOT INITIAL.
         SELECT SINGLE k~kvgr1,
                       k~qmnum,
+                      p~/cellag/qmnum AS vbap_qmnum,
                       p~/cellag/fenum AS fenum,
                       p~posex         AS po_pos,
-                      d~bstkd         AS po_nr,
-                      q~qmart
+                      d~bstkd         AS po_nr
           FROM vbak AS k
                  LEFT OUTER JOIN
                    vbap AS p ON p~vbeln = k~vbeln AND p~posnr = @ls_aufk-kdpos
                      LEFT OUTER JOIN
                        vbkd AS d ON d~vbeln = k~vbeln AND d~posnr = @ls_aufk-kdpos
-                         LEFT OUTER JOIN
-                           qmel AS q ON q~qmnum = k~qmnum
           WHERE k~vbeln = @ls_aufk-kdauf
           INTO @DATA(ls_vbak).
 
-        mv_qmnum  = ls_vbak-qmnum.
+        mv_qmnum  = COND #( WHEN ls_vbak-qmnum IS NOT INITIAL
+                            THEN ls_vbak-qmnum
+                            ELSE ls_vbak-vbap_qmnum ).
         mv_fenum  = ls_vbak-fenum.
         mv_po_nr  = ls_vbak-po_nr.
         mv_po_pos = ls_vbak-po_pos.
@@ -618,9 +620,28 @@ CLASS /ctdi/cl_print_data_legacy IMPLEMENTATION.
         ms_legacy-kvgr1 = ls_vbak-kvgr1.
       ENDIF.
 
-      DATA(lv_qmart) = COND qmel-qmart( WHEN ls_aufk-kdauf IS NOT INITIAL THEN ls_vbak-qmart ).
+      " Fallback 1: If QMNUM still initial, fetch directly from QMEL linked to Order
+      IF mv_qmnum IS INITIAL.
+        SELECT SINGLE qmnum, qmart FROM qmel
+          WHERE aufnr = @mv_aufnr
+            AND qmart = @co_qmart
+          INTO ( @mv_qmnum, @lv_qmart ).
+        IF sy-subrc <> 0.
+          SELECT SINGLE qmnum, qmart FROM qmel
+            WHERE aufnr = @mv_aufnr
+            INTO ( @mv_qmnum, @lv_qmart ) ##SUBRC_OK.
+        ENDIF.
+      ELSE.
+        SELECT SINGLE qmart FROM qmel WHERE qmnum = @mv_qmnum INTO @lv_qmart ##SUBRC_OK.
+      ENDIF.
 
-      IF lv_qmart = co_zx_qmart.
+      " Fallback 2: If FENUM still initial and QMNUM is known, fetch first item from QMFE
+      IF mv_fenum IS INITIAL AND mv_qmnum IS NOT INITIAL.
+        SELECT SINGLE fenum FROM qmfe WHERE qmnum = @mv_qmnum INTO @mv_fenum ##SUBRC_OK.
+      ENDIF.
+
+      " Intercompany resolution (safe overwrite only when secondary order found)
+      IF lv_qmart = co_zx_qmart AND mv_qmnum IS NOT INITIAL AND mv_fenum IS NOT INITIAL.
         SELECT SINGLE e~aufnr,
                       p~/cellag/qmnum AS qmnum_u,
                       p~/cellag/fenum AS fenum_u,
@@ -639,9 +660,6 @@ CLASS /ctdi/cl_print_data_legacy IMPLEMENTATION.
             AND q~fenum = @mv_fenum
           INTO @DATA(ls_qmfe).
 
-        CLEAR: mv_qmnum,
-               mv_fenum.
-
         IF ls_qmfe-aufnr IS NOT INITIAL.
           mv_fenum  = ls_qmfe-fenum_u.
           mv_qmnum  = ls_qmfe-qmnum_u.
@@ -650,7 +668,15 @@ CLASS /ctdi/cl_print_data_legacy IMPLEMENTATION.
         ENDIF.
       ENDIF.
 
-      mv_ctdi_odernr = |{ mv_qmnum }-{ mv_fenum }|.
+      IF mv_qmnum IS NOT INITIAL.
+        DATA(lv_qm) = condense( CONV string( mv_qmnum ) ).
+        DATA(lv_fe) = condense( CONV string( mv_fenum ) ).
+        mv_ctdi_odernr = COND #( WHEN lv_fe IS NOT INITIAL
+                                 THEN |{ lv_qm }-{ lv_fe }|
+                                 ELSE lv_qm ).
+      ELSE.
+        CLEAR mv_ctdi_odernr.
+      ENDIF.
     ENDIF.
 
     ms_legacy-csaufnr       = mv_aufnr.
