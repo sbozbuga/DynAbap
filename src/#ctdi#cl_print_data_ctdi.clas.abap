@@ -138,21 +138,18 @@ CLASS /CTDI/CL_PRINT_DATA_CTDI IMPLEMENTATION.
                     tauschfall = space ) TO lt_steps.
 
     " Read all config for the current contract or empty contract records
+    DATA lt_results TYPE SORTED TABLE OF /ctdi/rep_result WITH NON-UNIQUE KEY vbeln bemot akz tauschfall.
     SELECT * FROM /ctdi/rep_result
       WHERE vbeln = @lv_contract
          OR vbeln = @space
-      INTO TABLE @DATA(lt_results).
+      INTO TABLE @lt_results ##SUBRC_OK.
 
     IF lt_results IS NOT INITIAL AND lt_steps IS NOT INITIAL.
-      SORT lt_results BY vbeln
-                         bemot
-                         akz
-                         tauschfall.
       LOOP AT lt_steps ASSIGNING FIELD-SYMBOL(<ls_step>).
-        READ TABLE lt_results ASSIGNING FIELD-SYMBOL(<ls_result>) WITH KEY vbeln      = <ls_step>-vbeln
-                                                                           bemot      = <ls_step>-bemot
-                                                                           akz        = <ls_step>-akz
-                                                                           tauschfall = <ls_step>-tauschfall BINARY SEARCH.
+        ASSIGN lt_results[ vbeln      = <ls_step>-vbeln
+                           bemot      = <ls_step>-bemot
+                           akz        = <ls_step>-akz
+                           tauschfall = <ls_step>-tauschfall ] TO FIELD-SYMBOL(<ls_result>).
         IF sy-subrc = 0.
           lf_repres_txt = <ls_result>-repres_txt.
           EXIT.
@@ -170,14 +167,11 @@ CLASS /CTDI/CL_PRINT_DATA_CTDI IMPLEMENTATION.
            mt_repair_error,
            mt_comments.
 
-    MOVE-CORRESPONDING ms_legacy TO ms_repair.
+    ms_repair = CORRESPONDING #( ms_legacy ).
 
-    LOOP AT mt_legacy_error ASSIGNING FIELD-SYMBOL(<ls_error>).
-      APPEND INITIAL LINE TO mt_repair_error ASSIGNING FIELD-SYMBOL(<ls_repair_error>).
-      MOVE-CORRESPONDING <ls_error> TO <ls_repair_error>.
-      <ls_repair_error>-error_text = |{ <ls_repair_error>-oteil_ktxt } / { <ls_repair_error>-fecod_ktxt }|.
-      CONDENSE <ls_repair_error>-error_text.
-    ENDLOOP.
+    mt_repair_error = VALUE #( FOR <err> IN mt_legacy_error
+                               ( VALUE #( BASE CORRESPONDING #( <err> )
+                                          error_text = condense( |{ <err>-oteil_ktxt } / { <err>-fecod_ktxt }| ) ) ) ).
 
     SORT mt_repair_error BY error_text.
     DELETE ADJACENT DUPLICATES FROM mt_repair_error COMPARING error_text.

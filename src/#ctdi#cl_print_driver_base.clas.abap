@@ -442,10 +442,9 @@ CLASS /ctdi/cl_print_driver_base IMPLEMENTATION.
   ENDMETHOD.
 
   METHOD detect_form_type.
-    SELECT SINGLE formname FROM stxfadm              "#EC CI_SEL_NESTED
+    SELECT SINGLE @abap_true FROM stxfadm              "#EC CI_SEL_NESTED
       WHERE formname = @mv_form_name
-      " TODO: variable is assigned but never used (ABAP cleaner)
-      INTO @DATA(lv_ssf_name).
+      INTO @DATA(lv_exists).
     IF sy-subrc = 0.
       rv_type = 'S'.          " Smart Form exists in STXFADM
     ELSE.
@@ -565,8 +564,6 @@ CLASS /ctdi/cl_print_driver_base IMPLEMENTATION.
     DATA ls_outputparams TYPE sfpoutputparams.
     DATA ls_docparams    TYPE sfpdocparams.
     DATA ls_formoutput   TYPE fpformoutput.
-    " TODO: variable is assigned but never used (ABAP cleaner)
-    DATA ls_joboutput    TYPE sfpjoboutput.
     DATA lv_subrc        TYPE sysubrc.
     DATA lv_printer      TYPE rspopname.
     DATA lv_immed        TYPE c LENGTH 1.
@@ -658,8 +655,6 @@ CLASS /ctdi/cl_print_driver_base IMPLEMENTATION.
     " Close the print job (skip if managed externally)
     IF mv_external_job = abap_false.
       CALL FUNCTION 'FP_JOB_CLOSE'
-        IMPORTING
-          e_result       = ls_joboutput
         EXCEPTIONS
           usage_error    = 1
           system_error   = 2
@@ -958,7 +953,27 @@ CLASS /ctdi/cl_print_driver_base IMPLEMENTATION.
   ENDMETHOD.
 
   METHOD map_and_register_data.
-    " Default: no-op. Subclasses redefine this to map data structures.
+    " Common parameter auto-registration for populated structures
+    IF ms_repair IS NOT INITIAL.
+      register_custom_parameter( iv_name = gc_param_repair
+                                 iv_kind = abap_func_exporting
+                                 ir_data = REF #( ms_repair ) ).
+    ENDIF.
+    IF ms_project IS NOT INITIAL.
+      register_custom_parameter( iv_name = gc_param_project
+                                 iv_kind = abap_func_exporting
+                                 ir_data = REF #( ms_project ) ).
+    ENDIF.
+    IF mt_errors IS NOT INITIAL.
+      register_custom_parameter( iv_name = gc_param_repair_errors
+                                 iv_kind = abap_func_tables
+                                 ir_data = REF #( mt_errors ) ).
+    ENDIF.
+    IF mt_comments IS NOT INITIAL.
+      register_custom_parameter( iv_name = gc_param_comments
+                                 iv_kind = abap_func_tables
+                                 ir_data = REF #( mt_comments ) ).
+    ENDIF.
   ENDMETHOD.
 
   METHOD raise_driver_error.

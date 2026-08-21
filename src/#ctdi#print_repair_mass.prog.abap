@@ -262,30 +262,29 @@ CLASS lcl_mass_print IMPLEMENTATION.
                       qmnum DESCENDING.
     DELETE ADJACENT DUPLICATES FROM lt_orders COMPARING aufnr.
 
-    CLEAR gt_alv.
-    LOOP AT lt_orders ASSIGNING FIELD-SYMBOL(<ls_order>).
-      APPEND VALUE ty_alv_line( icon        = icon_led_inactive
-                                aufnr       = <ls_order>-aufnr
-                                auart       = <ls_order>-auart
-                                erdat       = <ls_order>-erdat
-                                werks       = <ls_order>-werks
-                                ktext       = <ls_order>-ktext
-                                kdauf       = <ls_order>-kdauf
-                                contract_id = <ls_order>-contract_id
-                                qmnum       = <ls_order>-qmnum
-                                qmart       = <ls_order>-qmart
-                                vbap_qmnum  = <ls_order>-vbap_qmnum
-                                feession    = <ls_order>-feession
-                                skz         = <ls_order>-skz
-                                akz         = <ls_order>-akz ) TO gt_alv.
-    ENDLOOP.
+    gt_alv = VALUE #( FOR <ls_order> IN lt_orders
+                      ( icon        = icon_led_inactive
+                        aufnr       = <ls_order>-aufnr
+                        auart       = <ls_order>-auart
+                        erdat       = <ls_order>-erdat
+                        werks       = <ls_order>-werks
+                        ktext       = <ls_order>-ktext
+                        kdauf       = <ls_order>-kdauf
+                        contract_id = <ls_order>-contract_id
+                        qmnum       = <ls_order>-qmnum
+                        qmart       = <ls_order>-qmart
+                        vbap_qmnum  = <ls_order>-vbap_qmnum
+                        feession    = <ls_order>-feession
+                        skz         = <ls_order>-skz
+                        akz         = <ls_order>-akz ) ).
 
     resolve_form_types( ).
   ENDMETHOD.
 
   METHOD resolve_form_types.
-    " 1. Read all config entries from /CTDI/REP_FORMS (Customizing buffer)
-    SELECT * FROM /ctdi/rep_forms INTO TABLE @DATA(lt_config) ##SUBRC_OK. "#EC CI_NOWHERE "#EC CI_ALL_FIELDS_NEEDED
+    " 1. Read all config entries from /CTDI/REP_FORMS (Customizing buffer with sorted key)
+    DATA lt_config TYPE SORTED TABLE OF /ctdi/rep_forms WITH NON-UNIQUE KEY vbeln skz akz.
+    SELECT * FROM /ctdi/rep_forms INTO TABLE @lt_config ##SUBRC_OK. "#EC CI_NOWHERE "#EC CI_ALL_FIELDS_NEEDED
 
     IF lt_config IS INITIAL.
       RETURN.
@@ -366,7 +365,7 @@ CLASS lcl_mass_print IMPLEMENTATION.
         lo_col_msg->set_medium_text( CONV #( TEXT-006 ) ).
         lo_col_msg->set_long_text( CONV #( TEXT-006 ) ).
         lo_col_msg->set_output_length( 40 ).
-        lo_col_msg->set_fixed_header_text( 's' ).
+        lo_col_msg->set_fixed_header_text( 'S' ).
 
         " Hotspot columns for navigation
         CAST cl_salv_column_table( lo_columns->get_column( 'AUFNR' ) )->set_cell_type( if_salv_c_cell_type=>hotspot ).
@@ -520,6 +519,32 @@ CLASS lcl_mass_print IMPLEMENTATION.
   METHOD execute_print.
     CLEAR: ev_ok,
            ev_err.
+
+    IF iv_save_as_pdf = abap_true AND iv_merge = abap_false AND sy-batch IS INITIAL.
+      ASSIGN gt_alv[ it_rows[ 1 ] ] TO FIELD-SYMBOL(<ls_first>).
+      DATA(lv_sample_file) = COND string( WHEN sy-subrc = 0
+                                          THEN |Repair_{ <ls_first>-aufnr ALPHA = OUT }.pdf|
+                                          ELSE 'Repair.pdf' ).
+      DATA lv_action       TYPE i.
+      DATA lv_filename     TYPE string.
+      DATA lv_path         TYPE string.
+      DATA lv_fullpath     TYPE string.
+      DATA(lv_init_dir)    = /ctdi/cl_print_driver_base=>get_download_dir( ).
+
+      cl_gui_frontend_services=>file_save_dialog( EXPORTING  default_file_name = lv_sample_file
+                                                             default_extension = 'pdf'
+                                                             file_filter       = CONV #( TEXT-031 ) " PDF Files (*.pdf)|*.pdf
+                                                             initial_directory = lv_init_dir
+                                                  CHANGING   filename          = lv_filename
+                                                             path              = lv_path
+                                                             fullpath          = lv_fullpath
+                                                             user_action       = lv_action
+                                                  EXCEPTIONS OTHERS            = 1 ).
+      IF lv_action <> cl_gui_frontend_services=>action_ok OR lv_fullpath IS INITIAL.
+        RETURN.
+      ENDIF.
+      /ctdi/cl_print_driver_base=>set_download_dir( lv_path ).
+    ENDIF.
 
     DATA lo_merger TYPE REF TO cl_rspo_pdf_merge.
     IF iv_save_as_pdf = abap_true AND iv_merge = abap_true.
@@ -861,14 +886,16 @@ CLASS lcl_mass_print IMPLEMENTATION.
     ENDIF.
 
     IF iv_prompt = abap_true OR /ctdi/cl_print_driver_base=>get_download_dir( ) IS INITIAL.
-      DATA lv_action   TYPE i.
-      DATA lv_filename TYPE string.
-      DATA lv_path     TYPE string.
-      DATA lv_fullpath TYPE string.
+      DATA lv_action    TYPE i.
+      DATA lv_filename  TYPE string.
+      DATA lv_path      TYPE string.
+      DATA lv_fullpath  TYPE string.
+      DATA(lv_init_dir) = /ctdi/cl_print_driver_base=>get_download_dir( ).
 
       cl_gui_frontend_services=>file_save_dialog( EXPORTING  default_file_name = iv_filename
                                                              default_extension = 'pdf'
                                                              file_filter       = CONV #( TEXT-031 ) " PDF Files (*.pdf)|*.pdf
+                                                             initial_directory = lv_init_dir
                                                   CHANGING   filename          = lv_filename
                                                              path              = lv_path
                                                              fullpath          = lv_fullpath

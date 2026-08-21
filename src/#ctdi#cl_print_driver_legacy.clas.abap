@@ -33,12 +33,8 @@ CLASS /ctdi/cl_print_driver_legacy IMPLEMENTATION.
     mt_alcarep_error  = mr_provider->mt_legacy_error.
     mt_comments       = mr_provider->mt_comment_lines.
 
-    MOVE-CORRESPONDING ms_alcarep_legacy TO ms_repair.
-
-    LOOP AT mt_alcarep_error ASSIGNING FIELD-SYMBOL(<ls_err>).
-      APPEND INITIAL LINE TO mt_errors ASSIGNING FIELD-SYMBOL(<ls_target_err>).
-      MOVE-CORRESPONDING <ls_err> TO <ls_target_err>.
-    ENDLOOP.
+    ms_repair = CORRESPONDING #( ms_alcarep_legacy ).
+    mt_errors = CORRESPONDING #( mt_alcarep_error ).
 
     " Register legacy structures for dynamic Smart Form parameter injection
     register_custom_parameter( iv_name = gc_param_legacy_rep
@@ -50,6 +46,8 @@ CLASS /ctdi/cl_print_driver_legacy IMPLEMENTATION.
     register_custom_parameter( iv_name = gc_param_legacy_comm
                                iv_kind = abap_func_tables
                                ir_data = REF #( mt_comments ) ).
+
+    super->map_and_register_data( ).
   ENDMETHOD.
 
   METHOD unpack_io_data.
