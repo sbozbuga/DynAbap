@@ -46,24 +46,24 @@ DATA gv_contr TYPE jvbelncontract.
 " Selection Screen
 " -----------------------------------------------------------------------
 SELECTION-SCREEN BEGIN OF BLOCK b1 WITH FRAME TITLE TEXT-001.
-  SELECT-OPTIONS: s_aufnr FOR aufk-aufnr,                 " Repair Order
-                  s_kdauf FOR aufk-kdauf,                 " Sales Order
-                  s_contr FOR gv_contr,                   " Contract
-                  s_qmnum FOR qmel-qmnum,                " Notification
-                  s_auart FOR aufk-auart DEFAULT 'ZM03',  " Order Type
-                  s_werks FOR aufk-werks,                 " Plant
-                  s_erdat FOR aufk-erdat,                 " Creation Date
-                  s_vornr FOR afru-vornr DEFAULT '9010',  " Operation (WFER)
-                  s_qmart FOR qmel-qmart.                 " QM Notification Type
+SELECT-OPTIONS: s_aufnr FOR aufk-aufnr,                 " Repair Order
+                s_kdauf FOR aufk-kdauf,                 " Sales Order
+                s_contr FOR gv_contr,                   " Contract
+                s_qmnum FOR qmel-qmnum,                " Notification
+                s_auart FOR aufk-auart DEFAULT 'ZM03',  " Order Type
+                s_werks FOR aufk-werks,                 " Plant
+                s_erdat FOR aufk-erdat,                 " Creation Date
+                s_vornr FOR afru-vornr DEFAULT '9010',  " Operation (WFER)
+                s_qmart FOR qmel-qmart.                 " QM Notification Type
 SELECTION-SCREEN END OF BLOCK b1.
 
 SELECTION-SCREEN BEGIN OF BLOCK b2 WITH FRAME TITLE TEXT-002.
-  PARAMETERS: p_pdf TYPE sap_bool AS CHECKBOX USER-COMMAND pdf_toggle, " Save as PDF
-              p_dir TYPE string LOWER CASE MODIF ID pdf.               " Target Directory
+PARAMETERS: p_pdf TYPE sap_bool AS CHECKBOX USER-COMMAND pdf_toggle, " Save as PDF
+            p_dir TYPE string LOWER CASE MODIF ID pdf.               " Target Directory
 SELECTION-SCREEN END OF BLOCK b2.
 
 SELECTION-SCREEN BEGIN OF BLOCK b3 WITH FRAME TITLE TEXT-018.
-  PARAMETERS p_spool TYPE sap_bool AS CHECKBOX.                         " Single Spool (bundle)
+PARAMETERS p_spool TYPE sap_bool AS CHECKBOX.                         " Single Spool (bundle)
 SELECTION-SCREEN END OF BLOCK b3.
 
 " -----------------------------------------------------------------------
@@ -346,7 +346,7 @@ CLASS lcl_mass_print IMPLEMENTATION.
                                           ( vbeln = ''                   skz = ''           akz = <ls_alv>-akz )
                                           ( vbeln = ''                   skz = ''           akz = '' ) ).
 
-      LOOP AT lt_steps ASSIGNING FIELD-SYMBOL(<ls_step>).
+      LOOP AT lt_steps ASSIGNING FIELD-SYMBOL(<ls_step>). "#EC CI_NESTED
         ASSIGN lt_config[ vbeln = <ls_step>-vbeln
                           skz   = <ls_step>-skz
                           akz   = <ls_step>-akz ] TO FIELD-SYMBOL(<ls_match>).
@@ -739,9 +739,12 @@ CLASS lcl_mass_print IMPLEMENTATION.
       DATA ls_user_defaults TYPE usdefaults.
 
       CALL FUNCTION 'SUSR_USER_DEFAULTS_GET'
-        EXPORTING  user_name     = sy-uname
-        IMPORTING  user_defaults = ls_user_defaults
-        EXCEPTIONS OTHERS        = 0.
+        EXPORTING
+          user_name     = sy-uname
+        IMPORTING
+          user_defaults = ls_user_defaults
+        EXCEPTIONS
+          OTHERS        = 0.
       GET PARAMETER ID '/CELLAG/PAFR' FIELD lv_printer.
       IF lv_printer IS INITIAL.
         lv_printer = ls_user_defaults-spld.
@@ -756,8 +759,10 @@ CLASS lcl_mass_print IMPLEMENTATION.
       ls_outputparams-covtitle = |Mass Print { sy-datum }|.
 
       CALL FUNCTION 'FP_JOB_OPEN'
-        CHANGING   ie_outputparams = ls_outputparams
-        EXCEPTIONS OTHERS          = 5.
+        CHANGING
+          ie_outputparams = ls_outputparams
+        EXCEPTIONS
+          OTHERS          = 5.
       IF sy-subrc <> 0.
         MESSAGE |FP_JOB_OPEN failed (subrc={ sy-subrc })| TYPE 'S' DISPLAY LIKE 'E'.
       ELSE.
@@ -790,7 +795,8 @@ CLASS lcl_mass_print IMPLEMENTATION.
         ENDLOOP.
 
         CALL FUNCTION 'FP_JOB_CLOSE'
-          EXCEPTIONS OTHERS = 1.
+          EXCEPTIONS
+            OTHERS = 1.
         IF sy-subrc <> 0.
           /ctdi/cl_print_driver_log=>log_error( |FP_JOB_CLOSE failed (subrc={ sy-subrc })| ).
         ENDIF.
@@ -810,10 +816,12 @@ CLASS lcl_mass_print IMPLEMENTATION.
       ls_sf_output-tdcovtitle = |Mass Print SmartForms { sy-datum }|.
 
       CALL FUNCTION 'SSF_OPEN'
-        EXPORTING  control_parameters = ls_sf_ctrl
-                   output_options     = ls_sf_output
-                   user_settings      = abap_false
-        EXCEPTIONS OTHERS             = 1.
+        EXPORTING
+          control_parameters = ls_sf_ctrl
+          output_options     = ls_sf_output
+          user_settings      = abap_false
+        EXCEPTIONS
+          OTHERS             = 1.
       IF sy-subrc <> 0.
         MESSAGE |SSF_OPEN failed (subrc={ sy-subrc })| TYPE 'S' DISPLAY LIKE 'E'.
       ELSE.
@@ -846,7 +854,8 @@ CLASS lcl_mass_print IMPLEMENTATION.
         ENDLOOP.
 
         CALL FUNCTION 'SSF_CLOSE'
-          EXCEPTIONS OTHERS = 1.
+          EXCEPTIONS
+            OTHERS = 1.
         IF sy-subrc <> 0.
           /ctdi/cl_print_driver_log=>log_error( |SSF_CLOSE failed (subrc={ sy-subrc })| ).
         ENDIF.
@@ -867,9 +876,11 @@ CLASS lcl_mass_print IMPLEMENTATION.
     ls_outputparams-reqfinal = abap_true.
 
     CALL FUNCTION 'FP_JOB_OPEN'
-      CHANGING   ie_outputparams = ls_outputparams
-      EXCEPTIONS cancel          = 1
-                 OTHERS          = 5.
+      CHANGING
+        ie_outputparams = ls_outputparams
+      EXCEPTIONS
+        cancel          = 1
+        OTHERS          = 5.
     IF sy-subrc <> 0.
       MESSAGE TEXT-014 TYPE 'S' DISPLAY LIKE 'E'.
       RETURN.
@@ -905,11 +916,13 @@ CLASS lcl_mass_print IMPLEMENTATION.
     ENDLOOP.
 
     CALL FUNCTION 'FP_JOB_CLOSE'
-      EXCEPTIONS OTHERS = 0.
+      EXCEPTIONS
+        OTHERS = 0.
 
     DATA lt_pdf_table TYPE tfpcontent.
     CALL FUNCTION 'FP_GET_PDF_TABLE'
-      IMPORTING e_pdf_table = lt_pdf_table.
+      IMPORTING
+        e_pdf_table = lt_pdf_table.
 
     IF lt_pdf_table IS NOT INITIAL.
       download_pdf_file( iv_pdf_data = lt_pdf_table[ 1 ]
@@ -931,9 +944,12 @@ CLASS lcl_mass_print IMPLEMENTATION.
     DATA lv_fpath    TYPE string.
 
     CALL FUNCTION 'SCMS_XSTRING_TO_BINARY'
-      EXPORTING  buffer     = iv_pdf_data
-      TABLES     binary_tab = lt_data
-      EXCEPTIONS OTHERS     = 1.
+      EXPORTING
+        buffer     = iv_pdf_data
+      TABLES
+        binary_tab = lt_data
+      EXCEPTIONS
+        OTHERS     = 1.
     IF sy-subrc <> 0.
       RETURN.
     ENDIF.

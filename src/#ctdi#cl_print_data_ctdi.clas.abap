@@ -25,7 +25,10 @@ CLASS /ctdi/cl_print_data_ctdi DEFINITION
 ENDCLASS.
 
 
-CLASS /ctdi/cl_print_data_ctdi IMPLEMENTATION.
+
+CLASS /CTDI/CL_PRINT_DATA_CTDI IMPLEMENTATION.
+
+
   METHOD get_repair_result.
     DATA lf_repres     TYPE /cellag/repair_result.
     DATA lf_repres_txt TYPE /cellag/repair_result_txt.
@@ -61,8 +64,7 @@ CLASS /ctdi/cl_print_data_ctdi IMPLEMENTATION.
     DATA lv_vbtyp TYPE vbak-vbtyp.
 
     IF mv_kdauf IS NOT INITIAL.
-      " ⚡ Bolt Optimization: Consolidate sequential vbak lookups into a single JOIN
-      " to eliminate an unnecessary database round-trip while preserving fallback logic.
+
       SELECT SINGLE a~vgbel, b~vbtyp
         FROM vbak AS a
                LEFT OUTER JOIN
@@ -70,12 +72,10 @@ CLASS /ctdi/cl_print_data_ctdi IMPLEMENTATION.
         WHERE a~vbeln = @mv_kdauf
         INTO ( @lv_contract, @lv_vbtyp ).
 
-      IF sy-subrc = 0 AND lv_contract IS NOT INITIAL.
-        " Verify the linked document is actually a contract (vbtyp = 'G')
         IF lv_vbtyp <> 'G'.
           CLEAR lv_contract.
         ENDIF.
-      ENDIF.
+
     ENDIF.
 
     IF lv_contract IS NOT INITIAL.
@@ -164,6 +164,7 @@ CLASS /ctdi/cl_print_data_ctdi IMPLEMENTATION.
     ms_legacy-repair_result_txt = lf_repres_txt.
   ENDMETHOD.
 
+
   METHOD map_legacy_data.
     CLEAR: ms_repair,
            mt_repair_error,
@@ -184,6 +185,7 @@ CLASS /ctdi/cl_print_data_ctdi IMPLEMENTATION.
     mt_comments = mt_comment_lines.
   ENDMETHOD.
 
+
   METHOD read_data.
     " 1. Call super class logic to fetch raw legacy data into ms_legacy, mt_legacy_error, etc.
     super->read_data( iv_aufnr = iv_aufnr
@@ -193,4 +195,3 @@ CLASS /ctdi/cl_print_data_ctdi IMPLEMENTATION.
     map_legacy_data( ).
   ENDMETHOD.
 ENDCLASS.
-

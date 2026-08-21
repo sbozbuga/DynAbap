@@ -50,8 +50,8 @@
       <TEXT_TYPE>S</TEXT_TYPE>
       <TEXT_NAME>ICON_SEARCH</TEXT_NAME>
       <ICON_ID>@13@</ICON_ID>
-      <FUN_TEXT>Search</FUN_TEXT>
-      <PATH>E</PATH>
+      <FUN_TEXT>Find</FUN_TEXT>
+      <PATH>F</PATH>
      </RSMPE_FUNT>
      <RSMPE_FUNT>
       <CODE>%SC+</CODE>
@@ -278,7 +278,7 @@
       <TEXT_NAME>ICON_FILTER</TEXT_NAME>
       <ICON_ID>@4G@</ICON_ID>
       <FUN_TEXT>Set Filter</FUN_TEXT>
-      <PATH>F</PATH>
+      <PATH>E</PATH>
      </RSMPE_FUNT>
      <RSMPE_FUNT>
       <CODE>&amp;INFO</CODE>

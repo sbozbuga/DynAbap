@@ -315,7 +315,7 @@ CLASS lcl_mass_print IMPLEMENTATION.
                                           ( vbeln = ''                   skz = ''           akz = <ls_alv>-akz )
                                           ( vbeln = ''                   skz = ''           akz = '' ) ).
 
-      LOOP AT lt_steps ASSIGNING FIELD-SYMBOL(<ls_step>).
+      LOOP AT lt_steps ASSIGNING FIELD-SYMBOL(<ls_step>). "#EC CI_NESTED
         ASSIGN lt_config[ vbeln = <ls_step>-vbeln
                           skz   = <ls_step>-skz
                           akz   = <ls_step>-akz ] TO FIELD-SYMBOL(<ls_match>).
