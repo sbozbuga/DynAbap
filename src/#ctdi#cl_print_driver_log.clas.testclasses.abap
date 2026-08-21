@@ -1,4 +1,5 @@
 CLASS lcl_test_driver_log DEFINITION DEFERRED.
+
 CLASS /ctdi/cl_print_driver_log DEFINITION LOCAL FRIENDS lcl_test_driver_log.
 
 CLASS lcl_test_driver_log DEFINITION
@@ -11,7 +12,6 @@ CLASS lcl_test_driver_log DEFINITION
     METHODS test_log_methods_safe FOR TESTING.
     METHODS test_log_exception_safe FOR TESTING.
 ENDCLASS.
-
 
 CLASS lcl_test_driver_log IMPLEMENTATION.
   METHOD setup.
@@ -50,6 +50,7 @@ CLASS lcl_test_driver_log IMPLEMENTATION.
 
   METHOD test_log_exception_safe.
     DATA lx_test TYPE REF TO cx_root.
+
     lx_test = NEW /ctdi/cx_print_driver_error( message = 'Test exception message' ).
 
     /ctdi/cl_print_driver_log=>log_exception( lx_test ).
