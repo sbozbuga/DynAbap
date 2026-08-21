@@ -46,24 +46,21 @@ DATA gv_contr TYPE jvbelncontract.
 " Selection Screen
 " -----------------------------------------------------------------------
 SELECTION-SCREEN BEGIN OF BLOCK b1 WITH FRAME TITLE TEXT-001.
-  SELECT-OPTIONS: s_aufnr FOR aufk-aufnr,                 " Repair Order
-                  s_kdauf FOR aufk-kdauf,                 " Sales Order
-                  s_contr FOR gv_contr,                   " Contract
-                  s_qmnum FOR qmel-qmnum,                " Notification
-                  s_auart FOR aufk-auart DEFAULT 'ZM03',  " Order Type
-                  s_werks FOR aufk-werks,                 " Plant
-                  s_erdat FOR aufk-erdat,                 " Creation Date
-                  s_vornr FOR afru-vornr DEFAULT '9010',  " Operation (WFER)
-                  s_qmart FOR qmel-qmart.                 " QM Notification Type
+SELECT-OPTIONS: s_aufnr FOR aufk-aufnr,                 " Repair Order
+                s_kdauf FOR aufk-kdauf,                 " Sales Order
+                s_contr FOR gv_contr,                   " Contract
+                s_qmnum FOR qmel-qmnum,                " Notification
+                s_auart FOR aufk-auart DEFAULT 'ZM03',  " Order Type
+                s_werks FOR aufk-werks,                 " Plant
+                s_erdat FOR aufk-erdat,                 " Creation Date
+                s_vornr FOR afru-vornr DEFAULT '9010',  " Operation (WFER)
+                s_qmart FOR qmel-qmart.                 " QM Notification Type
 SELECTION-SCREEN END OF BLOCK b1.
 
-SELECTION-SCREEN BEGIN OF BLOCK b2 WITH FRAME TITLE TEXT-002.
-  PARAMETERS: p_pdf TYPE sap_bool AS CHECKBOX USER-COMMAND pdf_toggle, " Save as PDF
-              p_dir TYPE string LOWER CASE MODIF ID pdf.               " Target Directory
-SELECTION-SCREEN END OF BLOCK b2.
-
 SELECTION-SCREEN BEGIN OF BLOCK b3 WITH FRAME TITLE TEXT-018.
-  PARAMETERS p_spool TYPE sap_bool AS CHECKBOX.                         " Single Spool (bundle)
+PARAMETERS: p_indiv RADIOBUTTON GROUP spl DEFAULT 'X',  " Individual Spool
+            p_bundl RADIOBUTTON GROUP spl,              " Bundled Spool (per form type)
+            p_merge RADIOBUTTON GROUP spl.              " Merged Spool (single PDF)
 SELECTION-SCREEN END OF BLOCK b3.
 
 " -----------------------------------------------------------------------
@@ -104,12 +101,18 @@ CLASS lcl_mass_print DEFINITION FINAL.
     CLASS-METHODS run.
 
   PRIVATE SECTION.
-    CLASS-DATA gt_alv  TYPE TABLE OF ty_alv_line.
-    CLASS-DATA go_salv TYPE REF TO cl_salv_table.
+    CONSTANTS: c_mode_individual TYPE i VALUE 1,
+               c_mode_bundled    TYPE i VALUE 2,
+               c_mode_merged     TYPE i VALUE 3.
+
+    CLASS-DATA gt_alv        TYPE TABLE OF ty_alv_line.
+    CLASS-DATA go_salv       TYPE REF TO cl_salv_table.
+    CLASS-DATA gv_spool_mode TYPE i.
 
     CLASS-METHODS select_orders.
     CLASS-METHODS resolve_form_types.
     CLASS-METHODS display_alv.
+    CLASS-METHODS toggle_spool_mode.
 
     CLASS-METHODS on_user_command FOR EVENT added_function OF cl_salv_events_table
       IMPORTING e_salv_function.
@@ -128,9 +131,10 @@ CLASS lcl_mass_print DEFINITION FINAL.
                 ev_err         TYPE i.
 
     CLASS-METHODS execute_print_bundled
-      IMPORTING it_rows TYPE salv_t_row
-      EXPORTING ev_ok   TYPE i
-                ev_err  TYPE i.
+      IMPORTING it_rows  TYPE salv_t_row
+                iv_merge TYPE abap_bool DEFAULT abap_false
+      EXPORTING ev_ok    TYPE i
+                ev_err   TYPE i.
 
     CLASS-METHODS execute_pdf_merge_ads
       IMPORTING it_rows TYPE salv_t_row
@@ -153,6 +157,48 @@ CLASS lcl_mass_print DEFINITION FINAL.
     CLASS-METHODS show_summary
       IMPORTING iv_ok  TYPE i
                 iv_err TYPE i.
+
+    CLASS-METHODS build_error_msg
+      IMPORTING ix_error      TYPE REF TO cx_root
+      RETURNING VALUE(rv_msg) TYPE string.
+
+    CLASS-METHODS show_progress
+      IMPORTING iv_aufnr   TYPE aufnr
+                iv_current TYPE i
+                iv_total   TYPE i.
+
+    CLASS-METHODS mark_rows_error
+      IMPORTING it_lines TYPE ANY TABLE
+                iv_msg   TYPE string
+      CHANGING  cv_err   TYPE i.
+
+    CLASS-METHODS print_single_order
+      IMPORTING iv_aufnr       TYPE aufnr
+                iv_external    TYPE abap_bool DEFAULT abap_true
+                iv_collect_pdf TYPE abap_bool DEFAULT abap_false
+                iv_save_as_pdf TYPE abap_bool DEFAULT abap_false
+      EXPORTING ev_pdf         TYPE xstring
+      CHANGING  cs_alv         TYPE ty_alv_line
+      RETURNING VALUE(rv_ok)   TYPE abap_bool.
+
+    CLASS-METHODS resolve_printer
+      RETURNING VALUE(rv_printer) TYPE rspopname.
+
+    CLASS-METHODS navigate_to_transaction
+      IMPORTING iv_tcode TYPE tcode
+                iv_param TYPE memoryid
+                iv_value TYPE clike.
+
+    CLASS-METHODS build_job_error_msg
+      IMPORTING iv_context    TYPE string
+                iv_subrc      TYPE sy-subrc
+      RETURNING VALUE(rv_msg) TYPE string.
+
+    CLASS-METHODS send_pdf_to_spool
+      IMPORTING iv_pdf       TYPE xstring
+                iv_printer   TYPE rspopname
+                iv_title     TYPE clike
+      RETURNING VALUE(rv_ok) TYPE abap_bool.
 ENDCLASS.
 
 
@@ -297,6 +343,11 @@ CLASS lcl_mass_print IMPLEMENTATION.
         RETURN.
     ENDTRY.
 
+    " Initialize spool mode from selection screen
+    gv_spool_mode = COND #( WHEN p_merge = abap_true THEN c_mode_merged
+                            WHEN p_bundl = abap_true THEN c_mode_bundled
+                            ELSE c_mode_individual ).
+
     go_salv->set_screen_status( pfstatus      = 'MASS_ALV'
                                 report        = sy-repid
                                 set_functions = go_salv->c_functions_all ).
@@ -342,6 +393,12 @@ CLASS lcl_mass_print IMPLEMENTATION.
   ENDMETHOD.
 
   METHOD on_user_command.
+    " Handle spool mode toggle first (no row selection needed)
+    IF e_salv_function = 'SPOOL_MODE'.
+      toggle_spool_mode( ).
+      RETURN.
+    ENDIF.
+
     DATA(lt_rows) = go_salv->get_selections( )->get_selected_rows( ).
 
     IF e_salv_function = 'PREVIEW'.
@@ -363,16 +420,23 @@ CLASS lcl_mass_print IMPLEMENTATION.
 
     CASE e_salv_function.
       WHEN 'PRINT_SEL'.
-        IF p_spool = abap_true.
-          execute_print_bundled( EXPORTING it_rows = lt_rows
-                                 IMPORTING ev_ok   = lv_count_ok
-                                           ev_err  = lv_count_err ).
-        ELSE.
-          execute_print( EXPORTING it_rows        = lt_rows
-                                   iv_save_as_pdf = abap_false
-                         IMPORTING ev_ok          = lv_count_ok
-                                   ev_err         = lv_count_err ).
-        ENDIF.
+        CASE gv_spool_mode.
+          WHEN c_mode_merged.
+            execute_print_bundled( EXPORTING it_rows  = lt_rows
+                                             iv_merge = abap_true
+                                   IMPORTING ev_ok    = lv_count_ok
+                                             ev_err   = lv_count_err ).
+          WHEN c_mode_bundled.
+            execute_print_bundled( EXPORTING it_rows  = lt_rows
+                                             iv_merge = abap_false
+                                   IMPORTING ev_ok    = lv_count_ok
+                                             ev_err   = lv_count_err ).
+          WHEN c_mode_individual.
+            execute_print( EXPORTING it_rows        = lt_rows
+                                     iv_save_as_pdf = abap_false
+                           IMPORTING ev_ok          = lv_count_ok
+                                     ev_err         = lv_count_err ).
+        ENDCASE.
 
       WHEN 'PDF_SEL'.
         execute_print( EXPORTING it_rows        = lt_rows
@@ -415,39 +479,25 @@ CLASS lcl_mass_print IMPLEMENTATION.
 
     CASE column.
       WHEN 'AUFNR'.
-        " Display workshop order (IW33)
-        IF <ls>-aufnr IS NOT INITIAL.
-          SET PARAMETER ID 'ANR' FIELD <ls>-aufnr.
-          CALL TRANSACTION 'IW33' AND SKIP FIRST SCREEN.
-        ENDIF.
-
+        navigate_to_transaction( iv_tcode = 'IW33'
+                                 iv_param = 'ANR'
+                                 iv_value = <ls>-aufnr ).
       WHEN 'QMNUM'.
-        " Display notification (IW43)
-        IF <ls>-qmnum IS NOT INITIAL.
-          SET PARAMETER ID 'IQM' FIELD <ls>-qmnum.
-          CALL TRANSACTION 'IW43' AND SKIP FIRST SCREEN.
-        ENDIF.
-
+        navigate_to_transaction( iv_tcode = 'IW43'
+                                 iv_param = 'IQM'
+                                 iv_value = <ls>-qmnum ).
       WHEN 'VBAP_QMNUM'.
-        " Display notification (IW53)
-        IF <ls>-vbap_qmnum IS NOT INITIAL.
-          SET PARAMETER ID 'IQM' FIELD <ls>-vbap_qmnum.
-          CALL TRANSACTION 'IW53' AND SKIP FIRST SCREEN.
-        ENDIF.
-
+        navigate_to_transaction( iv_tcode = 'IW53'
+                                 iv_param = 'IQM'
+                                 iv_value = <ls>-vbap_qmnum ).
       WHEN 'CONTRACT_ID'.
-        " Display SD contract (VA43)
-        IF <ls>-contract_id IS NOT INITIAL.
-          SET PARAMETER ID 'KTN' FIELD <ls>-contract_id.
-          CALL TRANSACTION 'VA43' AND SKIP FIRST SCREEN.
-        ENDIF.
-
+        navigate_to_transaction( iv_tcode = 'VA43'
+                                 iv_param = 'KTN'
+                                 iv_value = <ls>-contract_id ).
       WHEN 'KDAUF'.
-        " Display sales order (VA03)
-        IF <ls>-kdauf IS NOT INITIAL.
-          SET PARAMETER ID 'AUN' FIELD <ls>-kdauf.
-          CALL TRANSACTION 'VA03' AND SKIP FIRST SCREEN.
-        ENDIF.
+        navigate_to_transaction( iv_tcode = 'VA03'
+                                 iv_param = 'AUN'
+                                 iv_value = <ls>-kdauf ).
     ENDCASE.
   ENDMETHOD.
 
@@ -471,10 +521,6 @@ CLASS lcl_mass_print IMPLEMENTATION.
     CLEAR: ev_ok,
            ev_err.
 
-    IF iv_save_as_pdf = abap_true AND p_pdf = abap_true AND p_dir IS NOT INITIAL AND iv_merge = abap_false.
-      /ctdi/cl_print_driver_base=>set_download_dir( p_dir ).
-    ENDIF.
-
     DATA lo_merger TYPE REF TO cl_rspo_pdf_merge.
     IF iv_save_as_pdf = abap_true AND iv_merge = abap_true.
       TRY.
@@ -485,75 +531,32 @@ CLASS lcl_mass_print IMPLEMENTATION.
       ENDTRY.
     ENDIF.
 
+    DATA lv_pdf TYPE xstring.
+
     LOOP AT it_rows INTO DATA(lv_row).
+      DATA(lv_idx) = sy-tabix.
       ASSIGN gt_alv[ lv_row ] TO FIELD-SYMBOL(<ls_line>).
       IF sy-subrc <> 0.
         CONTINUE.
       ENDIF.
 
-      cl_progress_indicator=>progress_indicate(
-          i_text               = |{ TEXT-007 } { <ls_line>-aufnr } ({ sy-tabix }/{ lines( it_rows ) })...|
-          i_processed          = sy-tabix
-          i_total              = lines( it_rows )
-          i_output_immediately = abap_true ).
+      show_progress( iv_aufnr   = <ls_line>-aufnr
+                     iv_current = lv_idx
+                     iv_total   = lines( it_rows ) ).
 
-      TRY.
-          DATA(lr_driver) = /ctdi/cl_print_driver_base=>factory( iv_repair_id = <ls_line>-aufnr ).
-
-          IF iv_merge = abap_true.
-            lr_driver->set_collect_pdf( abap_true ).
-          ENDIF.
-
-          lr_driver->execute( iv_save_as_pdf = iv_save_as_pdf
-                              iv_no_dialog   = abap_true
-                              iv_preview     = abap_false ).
-
-          IF iv_merge = abap_true.
-            DATA(lv_pdf) = lr_driver->get_last_pdf( ).
-            IF lv_pdf IS NOT INITIAL.
-              lo_merger->add_document( lv_pdf ).
-            ENDIF.
-          ENDIF.
-
-          <ls_line>-icon = icon_led_green.
-          <ls_line>-msg  = COND #( WHEN iv_save_as_pdf = abap_true
-                                   THEN TEXT-011
-                                   ELSE TEXT-010 ).
-          ev_ok = ev_ok + 1.
-
-        CATCH /ctdi/cx_no_config_found INTO DATA(lx_noconf).
-          <ls_line>-icon = icon_led_yellow.
-          <ls_line>-msg  = COND #( WHEN lx_noconf->previous IS BOUND
-                                   THEN lx_noconf->previous->get_text( )
-                                   ELSE lx_noconf->get_text( ) ).
-          ev_err = ev_err + 1.
-
-        CATCH /ctdi/cx_print_driver_error INTO DATA(lx_driver).
-          DATA lv_ads_trace_d TYPE string.
-          CALL FUNCTION 'FP_GET_LAST_ADS_TRACE'
-            IMPORTING e_adstrace = lv_ads_trace_d.
-          <ls_line>-icon = icon_led_red.
-          DATA(lv_drv_msg) = COND string( WHEN lx_driver->previous IS BOUND
-                                          THEN lx_driver->previous->get_text( )
-                                          ELSE lx_driver->get_text( ) ).
-          <ls_line>-msg = COND #( WHEN lv_ads_trace_d IS NOT INITIAL
-                                  THEN |{ lv_drv_msg } [ADS: { lv_ads_trace_d }]|
-                                  ELSE lv_drv_msg ).
-          ev_err = ev_err + 1.
-
-        CATCH cx_root INTO DATA(lx_root).
-          DATA lv_ads_trace_r TYPE string.
-          CALL FUNCTION 'FP_GET_LAST_ADS_TRACE'
-            IMPORTING e_adstrace = lv_ads_trace_r.
-          <ls_line>-icon = icon_led_red.
-          DATA(lv_root_msg) = COND string( WHEN lx_root->previous IS BOUND
-                                           THEN lx_root->previous->get_text( )
-                                           ELSE lx_root->get_text( ) ).
-          <ls_line>-msg = COND #( WHEN lv_ads_trace_r IS NOT INITIAL
-                                  THEN |{ lv_root_msg } [ADS: { lv_ads_trace_r }]|
-                                  ELSE lv_root_msg ).
-          ev_err = ev_err + 1.
-      ENDTRY.
+      IF print_single_order( EXPORTING iv_aufnr       = <ls_line>-aufnr
+                                       iv_external    = abap_false
+                                       iv_collect_pdf = iv_merge
+                                       iv_save_as_pdf = iv_save_as_pdf
+                             IMPORTING ev_pdf         = lv_pdf
+                             CHANGING  cs_alv         = <ls_line> ) = abap_true.
+        IF iv_merge = abap_true AND lv_pdf IS NOT INITIAL.
+          lo_merger->add_document( lv_pdf ).
+        ENDIF.
+        ev_ok = ev_ok + 1.
+      ELSE.
+        ev_err = ev_err + 1.
+      ENDIF.
     ENDLOOP.
 
     IF iv_merge = abap_true AND ev_ok > 0.
@@ -563,7 +566,7 @@ CLASS lcl_mass_print IMPLEMENTATION.
                                             rc              = lv_rc ).
       IF lv_rc = 0 AND lv_merged IS NOT INITIAL.
         download_pdf_file( iv_pdf_data = lv_merged
-                           iv_filename = |Repair_Merged_{ sy-datum }_{ sy-uzeit }.pdf|
+                           iv_filename = |Repair_Merged_{ ev_ok }_{ sy-datum }_{ sy-uzeit }.pdf|
                            iv_prompt   = abap_true ).
       ELSE.
         MESSAGE TEXT-015 TYPE 'S' DISPLAY LIKE 'E'.
@@ -590,173 +593,191 @@ CLASS lcl_mass_print IMPLEMENTATION.
     CLEAR: ev_ok,
            ev_err.
 
-    " --- Resolve printer first (used by both Adobe and SmartForm groups) ---
-    DATA lv_printer       TYPE rspopname.
-    DATA ls_user_defaults TYPE usdefaults.
-    CALL FUNCTION 'SUSR_USER_DEFAULTS_GET'
-      EXPORTING  user_name     = sy-uname
-      IMPORTING  user_defaults = ls_user_defaults
-      EXCEPTIONS OTHERS        = 0.
-    GET PARAMETER ID '/CELLAG/PAFR' FIELD lv_printer.
-    IF lv_printer IS INITIAL.
-      lv_printer = ls_user_defaults-spld.
-    ENDIF.
+    DATA(lv_printer) = resolve_printer( ).
 
-    DATA lt_adobe TYPE TABLE OF ty_alv_line.
-    DATA lt_smart TYPE TABLE OF ty_alv_line.
+    IF iv_merge = abap_true.
+      " =================================================================
+      " Option 2: Merge ALL forms into single PDF → send to spool
+      " (No Adobe/SmartForm split needed — all produce PDF via driver)
+      " =================================================================
+      DATA lt_pdfs   TYPE TABLE OF xstring.
+      DATA lv_mg_pdf TYPE xstring.
 
-    LOOP AT it_rows INTO DATA(lv_row).
-      ASSIGN gt_alv[ lv_row ] TO FIELD-SYMBOL(<ls>).
-      IF sy-subrc = 0.
-        IF <ls>-form_type = 'S'.
-          APPEND <ls> TO lt_smart.
+      LOOP AT it_rows INTO DATA(lv_mg_row).
+        DATA(lv_mg_idx) = sy-tabix.
+        ASSIGN gt_alv[ lv_mg_row ] TO FIELD-SYMBOL(<ls_mg>).
+        IF sy-subrc <> 0.
+          CONTINUE.
+        ENDIF.
+
+        show_progress( iv_aufnr   = <ls_mg>-aufnr
+                       iv_current = lv_mg_idx
+                       iv_total   = lines( it_rows ) ).
+
+        IF print_single_order( EXPORTING iv_aufnr       = <ls_mg>-aufnr
+                                         iv_external    = abap_false
+                                         iv_collect_pdf = abap_true
+                                         iv_save_as_pdf = abap_true
+                               IMPORTING ev_pdf         = lv_mg_pdf
+                               CHANGING  cs_alv         = <ls_mg> ) = abap_true.
+          IF lv_mg_pdf IS NOT INITIAL.
+            APPEND lv_mg_pdf TO lt_pdfs.
+          ENDIF.
+          ev_ok = ev_ok + 1.
         ELSE.
-          APPEND <ls> TO lt_adobe.
-        ENDIF.
-      ENDIF.
-    ENDLOOP.
-
-    " --- Adobe group: single spool via FP_JOB_OPEN ---
-    IF lt_adobe IS NOT INITIAL.
-      DATA ls_outputparams TYPE sfpoutputparams.
-
-      ls_outputparams-reqnew     = abap_true.
-      ls_outputparams-reqfinal   = abap_true.
-      ls_outputparams-dest       = lv_printer.
-      ls_outputparams-reqimm     = abap_true.
-      ls_outputparams-reqdel     = abap_false.
-      ls_outputparams-nodialog   = abap_true.
-      ls_outputparams-adstrlevel = '02'.       " Medium ADS trace
-      ls_outputparams-covtitle   = |Mass Print { sy-datum }|.
-
-      CALL FUNCTION 'FP_JOB_OPEN'
-        CHANGING   ie_outputparams = ls_outputparams
-        EXCEPTIONS cancel          = 1
-                   usage_error     = 2
-                   system_error    = 3
-                   internal_error  = 4
-                   OTHERS          = 5.
-      IF sy-subrc <> 0.
-        DATA(lv_subrc) = sy-subrc.
-        DATA lv_ads_trace_open TYPE string.
-        CALL FUNCTION 'FP_GET_LAST_ADS_TRACE'
-          IMPORTING e_adstrace = lv_ads_trace_open.
-        DATA(lv_fp_msg) = COND string( WHEN lv_ads_trace_open IS NOT INITIAL
-                                       THEN |FP_JOB_OPEN failed (subrc={ lv_subrc }) [ADS: { lv_ads_trace_open }]|
-                                       ELSE |FP_JOB_OPEN failed (subrc={ lv_subrc })| ).
-        LOOP AT lt_adobe ASSIGNING FIELD-SYMBOL(<ls_err_a>).
-          ASSIGN gt_alv[ aufnr = <ls_err_a>-aufnr ] TO FIELD-SYMBOL(<ls_alv_err_a>).
-          IF sy-subrc = 0.
-            <ls_alv_err_a>-icon = icon_led_red.
-            <ls_alv_err_a>-msg  = lv_fp_msg.
-          ENDIF.
           ev_err = ev_err + 1.
-        ENDLOOP.
-      ELSE.
-        LOOP AT lt_adobe ASSIGNING FIELD-SYMBOL(<ls_a>).
-          cl_progress_indicator=>progress_indicate(
-              i_text               = |{ TEXT-007 } { <ls_a>-aufnr } ({ sy-tabix }/{ lines( lt_adobe ) })...|
-              i_processed          = sy-tabix
-              i_total              = lines( lt_adobe )
-              i_output_immediately = abap_true ).
-          TRY.
-              DATA(lr_drv_a) = /ctdi/cl_print_driver_base=>factory( iv_repair_id = <ls_a>-aufnr ).
-              lr_drv_a->set_external_job( abap_true ).
-              lr_drv_a->execute( iv_save_as_pdf = abap_false
-                                 iv_no_dialog   = abap_true
-                                 iv_preview     = abap_false ).
-              ASSIGN gt_alv[ aufnr = <ls_a>-aufnr ] TO FIELD-SYMBOL(<ls_alv_a>).
-              IF sy-subrc = 0.
-                <ls_alv_a>-icon = icon_led_green.
-                <ls_alv_a>-msg  = TEXT-010.
-              ENDIF.
-              ev_ok = ev_ok + 1.
-            CATCH cx_root INTO DATA(lx_a).
-              DATA lv_ads_trace_a TYPE string.
-              CALL FUNCTION 'FP_GET_LAST_ADS_TRACE'
-                IMPORTING e_adstrace = lv_ads_trace_a.
-              ASSIGN gt_alv[ aufnr = <ls_a>-aufnr ] TO <ls_alv_a>.
-              IF sy-subrc = 0.
-                <ls_alv_a>-icon = icon_led_red.
-                <ls_alv_a>-msg  = COND #( WHEN lv_ads_trace_a IS NOT INITIAL
-                                          THEN |{ lx_a->get_text( ) } [ADS: { lv_ads_trace_a }]|
-                                          ELSE lx_a->get_text( ) ).
-              ENDIF.
-              ev_err = ev_err + 1.
-          ENDTRY.
-        ENDLOOP.
-
-        CALL FUNCTION 'FP_JOB_CLOSE'
-          EXCEPTIONS OTHERS = 1.
-        IF sy-subrc <> 0.
-          /ctdi/cl_print_driver_log=>log_error( |FP_JOB_CLOSE failed (subrc={ sy-subrc })| ).
         ENDIF.
-      ENDIF.
-    ENDIF.
+      ENDLOOP.
 
-    " --- SmartForm group: single spool via SSF_OPEN ---
-    IF lt_smart IS NOT INITIAL.
-      DATA ls_sf_ctrl   TYPE ssfctrlop.
-      DATA ls_sf_output TYPE ssfcompop.
-
-      ls_sf_ctrl-no_dialog    = abap_true.
-      ls_sf_output-tddest     = lv_printer.
-      ls_sf_output-tdnewid    = abap_true.
-      ls_sf_output-tdimmed    = abap_true.
-      ls_sf_output-tddelete   = abap_false.
-      ls_sf_output-tdcovtitle = |Mass Print SmartForms { sy-datum }|.
-
-      CALL FUNCTION 'SSF_OPEN'
-        EXPORTING  control_parameters = ls_sf_ctrl
-                   output_options     = ls_sf_output
-                   user_settings      = abap_false
-        EXCEPTIONS OTHERS             = 1.
-      IF sy-subrc <> 0.
-        DATA(lv_ssf_msg) = |SSF_OPEN failed (subrc={ sy-subrc })|.
-        LOOP AT lt_smart ASSIGNING FIELD-SYMBOL(<ls_err_s>).
-          ASSIGN gt_alv[ aufnr = <ls_err_s>-aufnr ] TO FIELD-SYMBOL(<ls_alv_err_s>).
-          IF sy-subrc = 0.
-            <ls_alv_err_s>-icon = icon_led_red.
-            <ls_alv_err_s>-msg  = lv_ssf_msg.
+      " Merge collected PDFs and send to spool
+      IF lt_pdfs IS NOT INITIAL.
+        DATA lo_merger TYPE REF TO cl_rspo_pdf_merge.
+        TRY.
+            CREATE OBJECT lo_merger.
+          CATCH cx_rspo_pdf_merge.
+        ENDTRY.
+        IF lo_merger IS BOUND.
+          LOOP AT lt_pdfs INTO DATA(lv_pdf_piece).
+            lo_merger->add_document( lv_pdf_piece ).
+          ENDLOOP.
+          DATA lv_merged_pdf TYPE xstring.
+          DATA lv_merge_rc   TYPE i.
+          lo_merger->merge_documents( IMPORTING merged_document = lv_merged_pdf
+                                                rc              = lv_merge_rc ).
+          IF lv_merge_rc = 0 AND lv_merged_pdf IS NOT INITIAL.
+            send_pdf_to_spool( iv_pdf     = lv_merged_pdf
+                               iv_printer = lv_printer
+                               iv_title   = |Mass Print Merged { sy-datum }_{ sy-uzeit }| ).
           ENDIF.
-          ev_err = ev_err + 1.
-        ENDLOOP.
-      ELSE.
-        LOOP AT lt_smart ASSIGNING FIELD-SYMBOL(<ls_s>).
-          cl_progress_indicator=>progress_indicate(
-              i_text               = |{ TEXT-007 } { <ls_s>-aufnr } ({ sy-tabix }/{ lines( lt_smart ) })...|
-              i_processed          = sy-tabix
-              i_total              = lines( lt_smart )
-              i_output_immediately = abap_true ).
-          TRY.
-              DATA(lr_drv_s) = /ctdi/cl_print_driver_base=>factory( iv_repair_id = <ls_s>-aufnr ).
-              lr_drv_s->set_external_job( abap_true ).
-              lr_drv_s->execute( iv_save_as_pdf = abap_false
-                                 iv_no_dialog   = abap_true
-                                 iv_preview     = abap_false ).
-              ASSIGN gt_alv[ aufnr = <ls_s>-aufnr ] TO FIELD-SYMBOL(<ls_alv_s>).
-              IF sy-subrc = 0.
-                <ls_alv_s>-icon = icon_led_green.
-                <ls_alv_s>-msg  = TEXT-010.
-              ENDIF.
-              ev_ok = ev_ok + 1.
-            CATCH cx_root INTO DATA(lx_s).
-              ASSIGN gt_alv[ aufnr = <ls_s>-aufnr ] TO <ls_alv_s>.
-              IF sy-subrc = 0.
-                <ls_alv_s>-icon = icon_led_red.
-                <ls_alv_s>-msg  = lx_s->get_text( ).
-              ENDIF.
-              ev_err = ev_err + 1.
-          ENDTRY.
-        ENDLOOP.
-
-        CALL FUNCTION 'SSF_CLOSE'
-          EXCEPTIONS OTHERS = 1.
-        IF sy-subrc <> 0.
-          /ctdi/cl_print_driver_log=>log_error( |SSF_CLOSE failed (subrc={ sy-subrc })| ).
         ENDIF.
       ENDIF.
-    ENDIF.
+
+    ELSE.
+      " =================================================================
+      " Option 1: Per-form bundled spool (split Adobe / SmartForm)
+      " =================================================================
+      DATA lt_adobe TYPE TABLE OF ty_alv_line.
+      DATA lt_smart TYPE TABLE OF ty_alv_line.
+
+      LOOP AT it_rows INTO DATA(lv_row).
+        ASSIGN gt_alv[ lv_row ] TO FIELD-SYMBOL(<ls>).
+        IF sy-subrc = 0.
+          IF <ls>-form_type = 'S'.
+            APPEND <ls> TO lt_smart.
+          ELSE.
+            APPEND <ls> TO lt_adobe.
+          ENDIF.
+        ENDIF.
+      ENDLOOP.
+
+      " --- Adobe group: single spool via FP_JOB_OPEN ---
+      IF lt_adobe IS NOT INITIAL.
+        DATA ls_outputparams TYPE sfpoutputparams.
+
+        ls_outputparams-reqnew     = abap_true.
+        ls_outputparams-reqfinal   = abap_true.
+        ls_outputparams-dest       = lv_printer.
+        ls_outputparams-reqimm     = abap_true.
+        ls_outputparams-reqdel     = abap_false.
+        ls_outputparams-nodialog   = abap_true.
+        ls_outputparams-bumode     = 'X'.        " Simple Bundling
+        ls_outputparams-adstrlevel = '02'.       " Medium ADS trace
+        ls_outputparams-covtitle   = |Mass Print Adobe { sy-datum }_{ sy-uzeit }|.
+
+        CALL FUNCTION 'FP_JOB_OPEN'
+          CHANGING
+            ie_outputparams = ls_outputparams
+          EXCEPTIONS
+            cancel          = 1
+            usage_error     = 2
+            system_error    = 3
+            internal_error  = 4
+            OTHERS          = 5.
+        IF sy-subrc <> 0.
+          mark_rows_error( EXPORTING it_lines = lt_adobe
+                                     iv_msg   = build_job_error_msg( iv_context = 'FP_JOB_OPEN'
+                                                                     iv_subrc   = sy-subrc )
+                           CHANGING  cv_err   = ev_err ).
+        ELSE.
+          LOOP AT lt_adobe ASSIGNING FIELD-SYMBOL(<ls_a>).
+            show_progress( iv_aufnr   = <ls_a>-aufnr
+                           iv_current = sy-tabix
+                           iv_total   = lines( lt_adobe ) ).
+
+            ASSIGN gt_alv[ aufnr = <ls_a>-aufnr ] TO FIELD-SYMBOL(<ls_alv_a>).
+            IF sy-subrc = 0.
+              IF print_single_order( EXPORTING iv_aufnr       = <ls_a>-aufnr
+                                               iv_external    = abap_true
+                                               iv_save_as_pdf = abap_false
+                                     CHANGING  cs_alv         = <ls_alv_a> ) = abap_true.
+                ev_ok = ev_ok + 1.
+              ELSE.
+                ev_err = ev_err + 1.
+              ENDIF.
+            ENDIF.
+          ENDLOOP.
+
+          CALL FUNCTION 'FP_JOB_CLOSE'
+            EXCEPTIONS
+              OTHERS = 1.
+          IF sy-subrc <> 0.
+            /ctdi/cl_print_driver_log=>log_error( |FP_JOB_CLOSE failed (subrc={ sy-subrc })| ).
+          ENDIF.
+        ENDIF.   " IF sy-subrc (FP_JOB_OPEN)
+      ENDIF.     " IF lt_adobe IS NOT INITIAL
+
+      " --- SmartForm group: single spool via SSF_OPEN ---
+      IF lt_smart IS NOT INITIAL.
+        DATA ls_sf_ctrl   TYPE ssfctrlop.
+        DATA ls_sf_output TYPE ssfcompop.
+
+        ls_sf_ctrl-no_dialog    = abap_true.
+        ls_sf_output-tddest     = lv_printer.
+        ls_sf_output-tdnewid    = abap_true.
+        ls_sf_output-tdimmed    = abap_true.
+        ls_sf_output-tddelete   = abap_false.
+        ls_sf_output-tdcovtitle = |Mass Print SmartForms { sy-datum }_{ sy-uzeit }|.
+
+        CALL FUNCTION 'SSF_OPEN'
+          EXPORTING
+            control_parameters = ls_sf_ctrl
+            output_options     = ls_sf_output
+            user_settings      = abap_false
+          EXCEPTIONS
+            OTHERS             = 1.
+        IF sy-subrc <> 0.
+          DATA(lv_ssf_msg) = |SSF_OPEN failed (subrc={ sy-subrc })|.
+          mark_rows_error( EXPORTING it_lines = lt_smart
+                                     iv_msg   = lv_ssf_msg
+                           CHANGING  cv_err   = ev_err ).
+        ELSE.
+          LOOP AT lt_smart ASSIGNING FIELD-SYMBOL(<ls_s>).
+            show_progress( iv_aufnr   = <ls_s>-aufnr
+                           iv_current = sy-tabix
+                           iv_total   = lines( lt_smart ) ).
+
+            ASSIGN gt_alv[ aufnr = <ls_s>-aufnr ] TO FIELD-SYMBOL(<ls_alv_s>).
+            IF sy-subrc = 0.
+              IF print_single_order( EXPORTING iv_aufnr       = <ls_s>-aufnr
+                                               iv_external    = abap_true
+                                               iv_save_as_pdf = abap_false
+                                     CHANGING  cs_alv         = <ls_alv_s> ) = abap_true.
+                ev_ok = ev_ok + 1.
+              ELSE.
+                ev_err = ev_err + 1.
+              ENDIF.
+            ENDIF.
+          ENDLOOP.
+
+          CALL FUNCTION 'SSF_CLOSE'
+            EXCEPTIONS
+              OTHERS = 1.
+          IF sy-subrc <> 0.
+            /ctdi/cl_print_driver_log=>log_error( |SSF_CLOSE failed (subrc={ sy-subrc })| ).
+          ENDIF.
+        ENDIF.
+      ENDIF.
+    ENDIF.   " IF iv_merge / ELSE
   ENDMETHOD.
 
   METHOD execute_pdf_merge_ads.
@@ -772,17 +793,14 @@ CLASS lcl_mass_print IMPLEMENTATION.
     ls_outputparams-reqfinal = abap_true.
 
     CALL FUNCTION 'FP_JOB_OPEN'
-      CHANGING   ie_outputparams = ls_outputparams
-      EXCEPTIONS cancel          = 1
-                 OTHERS          = 5.
+      CHANGING
+        ie_outputparams = ls_outputparams
+      EXCEPTIONS
+        cancel          = 1
+        OTHERS          = 5.
     IF sy-subrc <> 0.
-      DATA(lv_subrc_m) = sy-subrc.
-      DATA lv_ads_trace_merge TYPE string.
-      CALL FUNCTION 'FP_GET_LAST_ADS_TRACE'
-        IMPORTING e_adstrace = lv_ads_trace_merge.
-      DATA(lv_merge_msg) = COND string( WHEN lv_ads_trace_merge IS NOT INITIAL
-                                        THEN |FP_JOB_OPEN failed for PDF merge (subrc={ lv_subrc_m }) [ADS: { lv_ads_trace_merge }]|
-                                        ELSE |FP_JOB_OPEN failed for PDF merge (subrc={ lv_subrc_m })| ).
+      DATA(lv_merge_msg) = build_job_error_msg( iv_context = 'FP_JOB_OPEN for PDF merge'
+                                                iv_subrc   = sy-subrc ).
       LOOP AT it_rows INTO DATA(lv_err_row).
         ASSIGN gt_alv[ lv_err_row ] TO FIELD-SYMBOL(<ls_err>).
         IF sy-subrc = 0.
@@ -795,49 +813,39 @@ CLASS lcl_mass_print IMPLEMENTATION.
     ENDIF.
 
     LOOP AT it_rows INTO DATA(lv_row).
+      DATA(lv_idx) = sy-tabix.
       ASSIGN gt_alv[ lv_row ] TO FIELD-SYMBOL(<ls_line>).
       IF sy-subrc <> 0.
         CONTINUE.
       ENDIF.
 
-      cl_progress_indicator=>progress_indicate(
-          i_text               = |{ TEXT-007 } { <ls_line>-aufnr } ({ sy-tabix }/{ lines( it_rows ) })...|
-          i_processed          = sy-tabix
-          i_total              = lines( it_rows )
-          i_output_immediately = abap_true ).
-      TRY.
-          DATA(lr_driver) = /ctdi/cl_print_driver_base=>factory( iv_repair_id = <ls_line>-aufnr ).
-          lr_driver->set_external_job( abap_true ).
-          lr_driver->set_collect_pdf( abap_true ).
-          lr_driver->execute( iv_save_as_pdf = abap_true
-                              iv_no_dialog   = abap_true
-                              iv_preview     = abap_false ).
-          <ls_line>-icon = icon_led_green.
-          <ls_line>-msg  = TEXT-011.
-          ev_ok = ev_ok + 1.
+      show_progress( iv_aufnr   = <ls_line>-aufnr
+                     iv_current = lv_idx
+                     iv_total   = lines( it_rows ) ).
 
-        CATCH cx_root INTO DATA(lx).
-          DATA lv_ads_trace TYPE string.
-          CALL FUNCTION 'FP_GET_LAST_ADS_TRACE'
-            IMPORTING e_adstrace = lv_ads_trace.
-          <ls_line>-icon = icon_led_red.
-          <ls_line>-msg  = COND #( WHEN lv_ads_trace IS NOT INITIAL
-                                   THEN |{ lx->get_text( ) } [ADS: { lv_ads_trace }]|
-                                   ELSE lx->get_text( ) ).
-          ev_err = ev_err + 1.
-      ENDTRY.
+      IF print_single_order( EXPORTING iv_aufnr       = <ls_line>-aufnr
+                                       iv_external    = abap_true
+                                       iv_collect_pdf = abap_true
+                                       iv_save_as_pdf = abap_true
+                             CHANGING  cs_alv         = <ls_line> ) = abap_true.
+        ev_ok = ev_ok + 1.
+      ELSE.
+        ev_err = ev_err + 1.
+      ENDIF.
     ENDLOOP.
 
     CALL FUNCTION 'FP_JOB_CLOSE'
-      EXCEPTIONS OTHERS = 0.
+      EXCEPTIONS
+        OTHERS = 0.
 
     DATA lt_pdf_table TYPE tfpcontent.
     CALL FUNCTION 'FP_GET_PDF_TABLE'
-      IMPORTING e_pdf_table = lt_pdf_table.
+      IMPORTING
+        e_pdf_table = lt_pdf_table.
 
     IF lt_pdf_table IS NOT INITIAL.
       download_pdf_file( iv_pdf_data = lt_pdf_table[ 1 ]
-                         iv_filename = |Repair_Merged_{ sy-datum }_{ sy-uzeit }.pdf|
+                         iv_filename = |Repair_Merged_{ ev_ok }_{ sy-datum }_{ sy-uzeit }.pdf|
                          iv_prompt   = abap_true ).
     ELSE.
       MESSAGE TEXT-015 TYPE 'S' DISPLAY LIKE 'E'.
@@ -855,9 +863,12 @@ CLASS lcl_mass_print IMPLEMENTATION.
     DATA lv_fpath    TYPE string.
 
     CALL FUNCTION 'SCMS_XSTRING_TO_BINARY'
-      EXPORTING  buffer     = iv_pdf_data
-      TABLES     binary_tab = lt_data
-      EXCEPTIONS OTHERS     = 1.
+      EXPORTING
+        buffer     = iv_pdf_data
+      TABLES
+        binary_tab = lt_data
+      EXCEPTIONS
+        OTHERS     = 1.
     IF sy-subrc <> 0.
       RETURN.
     ENDIF.
@@ -899,49 +910,185 @@ CLASS lcl_mass_print IMPLEMENTATION.
   METHOD show_summary.
     MESSAGE |{ TEXT-012 }: { iv_ok } OK, { iv_err } { TEXT-013 }.| TYPE 'S'.
   ENDMETHOD.
-ENDCLASS.
 
+  METHOD toggle_spool_mode.
+    DATA lv_button TYPE c LENGTH 1.
+
+    DATA(lv_ind) = COND string( WHEN gv_spool_mode = c_mode_individual THEN ' <<' ).
+    DATA(lv_bnd) = COND string( WHEN gv_spool_mode = c_mode_bundled THEN ' <<' ).
+    DATA(lv_mrg) = COND string( WHEN gv_spool_mode = c_mode_merged THEN ' <<' ).
+
+    CALL FUNCTION 'POPUP_FOR_INTERACTION'
+      EXPORTING
+        headline       = 'Spool Mode'
+        text1          = 'Select spool mode for printing:'
+        text2          = ' '
+        text3          = |Individual: 1 spool per order{ lv_ind }|
+        text4          = |Bundled: grouped by form type{ lv_bnd }|
+        text5          = |Merged: single PDF spool{ lv_mrg }|
+        ticon          = 'Q'
+        button_1       = 'Individual'
+        button_2       = 'Bundled'
+        button_3       = 'Merged'
+      IMPORTING
+        button_pressed = lv_button.
+
+    IF lv_button IS NOT INITIAL AND lv_button <> 'A'.
+      gv_spool_mode = SWITCH #( lv_button
+                                WHEN '1' THEN c_mode_individual
+                                WHEN '2' THEN c_mode_bundled
+                                WHEN '3' THEN c_mode_merged ).
+
+      DATA(lv_mode_text) = SWITCH string( gv_spool_mode
+                                          WHEN c_mode_individual THEN 'Individual Spool'
+                                          WHEN c_mode_bundled    THEN 'Bundled Spool'
+                                          WHEN c_mode_merged     THEN 'Merged Spool' ).
+      MESSAGE |Spool mode: { lv_mode_text }| TYPE 'S'.
+    ENDIF.
+  ENDMETHOD.
+
+  METHOD build_error_msg.
+    DATA lv_ads_trace TYPE string.
+
+    CALL FUNCTION 'FP_GET_LAST_ADS_TRACE'
+      IMPORTING
+        e_adstrace = lv_ads_trace.
+
+    DATA(lv_base) = COND string( WHEN ix_error->previous IS BOUND
+                                 THEN ix_error->previous->get_text( )
+                                 ELSE ix_error->get_text( ) ).
+
+    rv_msg = COND #( WHEN lv_ads_trace IS NOT INITIAL
+                     THEN |{ lv_base } [ADS: { lv_ads_trace }]|
+                     ELSE lv_base ).
+  ENDMETHOD.
+
+  METHOD show_progress.
+    cl_progress_indicator=>progress_indicate(
+        i_text               = |{ TEXT-007 } { iv_aufnr } ({ iv_current }/{ iv_total })...|
+        i_processed          = iv_current
+        i_total              = iv_total
+        i_output_immediately = abap_true ).
+  ENDMETHOD.
+
+  METHOD mark_rows_error.
+    FIELD-SYMBOLS <ls_line> TYPE ty_alv_line.
+
+    LOOP AT it_lines ASSIGNING <ls_line>.
+      ASSIGN gt_alv[ aufnr = <ls_line>-aufnr ] TO FIELD-SYMBOL(<ls_alv>).
+      IF sy-subrc = 0.
+        <ls_alv>-icon = icon_led_red.
+        <ls_alv>-msg  = iv_msg.
+      ENDIF.
+      cv_err = cv_err + 1.
+    ENDLOOP.
+  ENDMETHOD.
+
+  METHOD print_single_order.
+    rv_ok = abap_false.
+    CLEAR ev_pdf.
+
+    TRY.
+        DATA(lr_driver) = /ctdi/cl_print_driver_base=>factory( iv_repair_id = iv_aufnr ).
+
+        IF iv_external = abap_true.
+          lr_driver->set_external_job( abap_true ).
+        ENDIF.
+        IF iv_collect_pdf = abap_true.
+          lr_driver->set_collect_pdf( abap_true ).
+        ENDIF.
+
+        lr_driver->execute( iv_save_as_pdf = iv_save_as_pdf
+                            iv_no_dialog   = abap_true
+                            iv_preview     = abap_false ).
+
+        IF iv_collect_pdf = abap_true.
+          ev_pdf = lr_driver->get_last_pdf( ).
+        ENDIF.
+
+        cs_alv-icon = icon_led_green.
+        cs_alv-msg  = COND #( WHEN iv_save_as_pdf = abap_true
+                              THEN TEXT-011
+                              ELSE TEXT-010 ).
+        rv_ok = abap_true.
+
+      CATCH /ctdi/cx_no_config_found INTO DATA(lx_noconf).
+        cs_alv-icon = icon_led_yellow.
+        cs_alv-msg  = COND #( WHEN lx_noconf->previous IS BOUND
+                              THEN lx_noconf->previous->get_text( )
+                              ELSE lx_noconf->get_text( ) ).
+
+      CATCH cx_root INTO DATA(lx).
+        cs_alv-icon = icon_led_red.
+        cs_alv-msg  = build_error_msg( lx ).
+    ENDTRY.
+  ENDMETHOD.
+
+  METHOD resolve_printer.
+    DATA ls_user_defaults TYPE usdefaults.
+
+    CALL FUNCTION 'SUSR_USER_DEFAULTS_GET'
+      EXPORTING
+        user_name     = sy-uname
+      IMPORTING
+        user_defaults = ls_user_defaults
+      EXCEPTIONS
+        OTHERS        = 0.
+
+    GET PARAMETER ID '/CELLAG/PAFR' FIELD rv_printer.
+    IF rv_printer IS INITIAL.
+      rv_printer = ls_user_defaults-spld.
+    ENDIF.
+  ENDMETHOD.
+
+  METHOD navigate_to_transaction.
+    IF iv_value IS NOT INITIAL.
+      SET PARAMETER ID iv_param FIELD iv_value.
+      CALL TRANSACTION iv_tcode AND SKIP FIRST SCREEN.
+    ENDIF.
+  ENDMETHOD.
+
+  METHOD build_job_error_msg.
+    DATA lv_ads_trace TYPE string.
+
+    CALL FUNCTION 'FP_GET_LAST_ADS_TRACE'
+      IMPORTING
+        e_adstrace = lv_ads_trace.
+
+    rv_msg = COND #( WHEN lv_ads_trace IS NOT INITIAL
+                     THEN |{ iv_context } failed (subrc={ iv_subrc }) [ADS: { lv_ads_trace }]|
+                     ELSE |{ iv_context } failed (subrc={ iv_subrc })| ).
+  ENDMETHOD.
+
+  METHOD send_pdf_to_spool.
+    rv_ok = abap_false.
+
+    IF iv_pdf IS INITIAL OR iv_printer IS INITIAL.
+      RETURN.
+    ENDIF.
+
+    DATA(lv_title) = CONV tsp01-rqtitle( iv_title ).
+
+    CALL FUNCTION 'ADS_CREATE_PDF_SPOOLJOB'
+      EXPORTING
+        dest            = iv_printer
+        pages           = 0
+        pdf_data        = iv_pdf
+        immediate_print = 'X'
+        auto_delete     = ' '
+        titleline       = lv_title
+      EXCEPTIONS
+        OTHERS          = 1.
+
+    rv_ok = xsdbool( sy-subrc = 0 ).
+  ENDMETHOD.
+ENDCLASS.
 
 " -----------------------------------------------------------------------
 
 INITIALIZATION.
   " Default qmart pattern: Z*
   s_qmart[] = VALUE #( ( sign = 'I' option = 'CP' low = 'Z*' ) ).
-  p_dir     = 'C:\temp\'.
-
-  IF sy-batch IS INITIAL.
-    DATA lv_desktop_dir TYPE string.
-    cl_gui_frontend_services=>get_desktop_directory( CHANGING   desktop_directory = lv_desktop_dir
-                                                     EXCEPTIONS OTHERS            = 1 ).
-    IF sy-subrc = 0 AND lv_desktop_dir IS NOT INITIAL.
-      cl_gui_cfw=>flush( ).
-      p_dir = lv_desktop_dir.
-    ENDIF.
-  ENDIF.
-
-AT SELECTION-SCREEN OUTPUT.
-  LOOP AT SCREEN.
-    IF screen-group1 = 'PDF'.
-      IF p_pdf = abap_true.
-        screen-active    = '1'.
-        screen-invisible = '0'.
-      ELSE.
-        screen-active    = '0'.
-        screen-invisible = '1'.
-      ENDIF.
-      MODIFY SCREEN.
-    ENDIF.
-  ENDLOOP.
-
-AT SELECTION-SCREEN ON VALUE-REQUEST FOR p_dir.
-  DATA lv_browse_folder TYPE string.
-
-  cl_gui_frontend_services=>directory_browse( EXPORTING  initial_folder  = p_dir
-                                              CHANGING   selected_folder = lv_browse_folder
-                                              EXCEPTIONS OTHERS          = 1 ).
-  IF sy-subrc = 0 AND lv_browse_folder IS NOT INITIAL.
-    p_dir = lv_browse_folder.
-  ENDIF.
 
 START-OF-SELECTION.
   lcl_mass_print=>run( ).

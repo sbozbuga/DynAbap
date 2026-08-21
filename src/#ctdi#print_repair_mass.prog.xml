@@ -520,6 +520,58 @@
       <TEXT_TYPE>S</TEXT_TYPE>
       <FUN_TEXT>Text-004</FUN_TEXT>
      </RSMPE_FUNT>
+     <RSMPE_FUNT>
+      <CODE>SPMODE</CODE>
+      <TEXTNO>001</TEXTNO>
+      <TEXT_TYPE>D</TEXT_TYPE>
+      <TEXT_NAME>GV_SPOOL_MODE</TEXT_NAME>
+     </RSMPE_FUNT>
+     <RSMPE_FUNT>
+      <CODE>SPOOL_BND</CODE>
+      <TEXTNO>001</TEXTNO>
+      <TEXT_TYPE>S</TEXT_TYPE>
+      <TEXT_NAME>ICON_SPOOL_REQUEST</TEXT_NAME>
+      <ICON_ID>@EQ@</ICON_ID>
+      <FUN_TEXT>Spool: Bundle</FUN_TEXT>
+      <ICON_TEXT>Spool: Bundle</ICON_TEXT>
+      <INFO_TEXT>Current: bundled by form</INFO_TEXT>
+     </RSMPE_FUNT>
+     <RSMPE_FUNT>
+      <CODE>SPOOL_IND</CODE>
+      <TEXTNO>001</TEXTNO>
+      <TEXT_TYPE>S</TEXT_TYPE>
+      <TEXT_NAME>ICON_SPOOL_REQUEST</TEXT_NAME>
+      <ICON_ID>@EQ@</ICON_ID>
+      <FUN_TEXT>Spool: Individual</FUN_TEXT>
+      <ICON_TEXT>Spool: Individual</ICON_TEXT>
+      <INFO_TEXT>Current: 1 spool per order</INFO_TEXT>
+     </RSMPE_FUNT>
+     <RSMPE_FUNT>
+      <CODE>SPOOL_MODE</CODE>
+      <TEXTNO>001</TEXTNO>
+      <TEXT_TYPE>S</TEXT_TYPE>
+      <TEXT_NAME>ICON_SPOOL_REQUEST</TEXT_NAME>
+      <ICON_ID>@EQ@</ICON_ID>
+      <FUN_TEXT>Spool Settings</FUN_TEXT>
+      <ICON_TEXT>Spool Settings</ICON_TEXT>
+      <INFO_TEXT>Spool Settings</INFO_TEXT>
+     </RSMPE_FUNT>
+     <RSMPE_FUNT>
+      <CODE>SPOOL_MRG</CODE>
+      <TEXTNO>001</TEXTNO>
+      <TEXT_TYPE>S</TEXT_TYPE>
+      <TEXT_NAME>ICON_SPOOL_REQUEST</TEXT_NAME>
+      <ICON_ID>@EQ@</ICON_ID>
+      <FUN_TEXT>Spool: Merge</FUN_TEXT>
+      <ICON_TEXT>Spool: Merge</ICON_TEXT>
+      <INFO_TEXT>Current: single merged PDF</INFO_TEXT>
+     </RSMPE_FUNT>
+     <RSMPE_FUNT>
+      <CODE>SSSS</CODE>
+      <TEXTNO>001</TEXTNO>
+      <TEXT_TYPE>D</TEXT_TYPE>
+      <TEXT_NAME>GV_SPOOL_MODE</TEXT_NAME>
+     </RSMPE_FUNT>
     </FUN>
     <MEN>
      <RSMPE_MEN>
@@ -1011,25 +1063,49 @@
       <PFK_CODE>000001</PFK_CODE>
       <CODE>0001</CODE>
       <NO>18</NO>
-      <PFNO>13</PFNO>
+      <PFNO>S</PFNO>
      </RSMPE_BUT>
      <RSMPE_BUT>
       <PFK_CODE>000001</PFK_CODE>
       <CODE>0001</CODE>
       <NO>19</NO>
-      <PFNO>14</PFNO>
+      <PFNO>13</PFNO>
      </RSMPE_BUT>
      <RSMPE_BUT>
       <PFK_CODE>000001</PFK_CODE>
       <CODE>0001</CODE>
       <NO>20</NO>
-      <PFNO>16</PFNO>
+      <PFNO>14</PFNO>
      </RSMPE_BUT>
      <RSMPE_BUT>
       <PFK_CODE>000001</PFK_CODE>
       <CODE>0001</CODE>
       <NO>21</NO>
+      <PFNO>16</PFNO>
+     </RSMPE_BUT>
+     <RSMPE_BUT>
+      <PFK_CODE>000001</PFK_CODE>
+      <CODE>0001</CODE>
+      <NO>22</NO>
       <PFNO>17</PFNO>
+     </RSMPE_BUT>
+     <RSMPE_BUT>
+      <PFK_CODE>000001</PFK_CODE>
+      <CODE>0001</CODE>
+      <NO>23</NO>
+      <PFNO>S</PFNO>
+     </RSMPE_BUT>
+     <RSMPE_BUT>
+      <PFK_CODE>000001</PFK_CODE>
+      <CODE>0001</CODE>
+      <NO>24</NO>
+      <PFNO>09</PFNO>
+     </RSMPE_BUT>
+     <RSMPE_BUT>
+      <PFK_CODE>000001</PFK_CODE>
+      <CODE>0001</CODE>
+      <NO>25</NO>
+      <PFNO>07</PFNO>
      </RSMPE_BUT>
     </BUT>
     <PFK>
@@ -1067,6 +1143,24 @@
       <CODE>000001</CODE>
       <PFNO>06</PFNO>
       <FUNCODE>&amp;SAL</FUNCODE>
+      <FUNNO>001</FUNNO>
+     </RSMPE_PFK>
+     <RSMPE_PFK>
+      <CODE>000001</CODE>
+      <PFNO>07</PFNO>
+      <FUNCODE>SPMODE</FUNCODE>
+      <FUNNO>001</FUNNO>
+     </RSMPE_PFK>
+     <RSMPE_PFK>
+      <CODE>000001</CODE>
+      <PFNO>08</PFNO>
+      <FUNCODE>SSSS</FUNCODE>
+      <FUNNO>001</FUNNO>
+     </RSMPE_PFK>
+     <RSMPE_PFK>
+      <CODE>000001</CODE>
+      <PFNO>09</PFNO>
+      <FUNCODE>SPOOL_MODE</FUNCODE>
       <FUNNO>001</FUNNO>
      </RSMPE_PFK>
      <RSMPE_PFK>
@@ -1119,8 +1213,20 @@
      </RSMPE_PFK>
      <RSMPE_PFK>
       <CODE>000001</CODE>
+      <PFNO>20</PFNO>
+      <FUNCODE>SPOOL_IND</FUNCODE>
+      <FUNNO>001</FUNNO>
+     </RSMPE_PFK>
+     <RSMPE_PFK>
+      <CODE>000001</CODE>
       <PFNO>21</PFNO>
       <FUNCODE>&amp;XXL</FUNCODE>
+      <FUNNO>001</FUNNO>
+     </RSMPE_PFK>
+     <RSMPE_PFK>
+      <CODE>000001</CODE>
+      <PFNO>22</PFNO>
+      <FUNCODE>SPOOL_BND</FUNCODE>
       <FUNNO>001</FUNNO>
      </RSMPE_PFK>
      <RSMPE_PFK>
@@ -1194,6 +1300,12 @@
       <PFNO>34</PFNO>
       <FUNCODE>&amp;AVE</FUNCODE>
       <FUNNO>002</FUNNO>
+     </RSMPE_PFK>
+     <RSMPE_PFK>
+      <CODE>000001</CODE>
+      <PFNO>35</PFNO>
+      <FUNCODE>SPOOL_MRG</FUNCODE>
+      <FUNNO>001</FUNNO>
      </RSMPE_PFK>
      <RSMPE_PFK>
       <CODE>000001</CODE>
@@ -1801,6 +1913,30 @@
      </RSMPE_STAF>
      <RSMPE_STAF>
       <STATUS>MASS_ALV</STATUS>
+      <FUNCTION>SPMODE</FUNCTION>
+     </RSMPE_STAF>
+     <RSMPE_STAF>
+      <STATUS>MASS_ALV</STATUS>
+      <FUNCTION>SPOOL_BND</FUNCTION>
+     </RSMPE_STAF>
+     <RSMPE_STAF>
+      <STATUS>MASS_ALV</STATUS>
+      <FUNCTION>SPOOL_IND</FUNCTION>
+     </RSMPE_STAF>
+     <RSMPE_STAF>
+      <STATUS>MASS_ALV</STATUS>
+      <FUNCTION>SPOOL_MODE</FUNCTION>
+     </RSMPE_STAF>
+     <RSMPE_STAF>
+      <STATUS>MASS_ALV</STATUS>
+      <FUNCTION>SPOOL_MRG</FUNCTION>
+     </RSMPE_STAF>
+     <RSMPE_STAF>
+      <STATUS>MASS_ALV</STATUS>
+      <FUNCTION>SSSS</FUNCTION>
+     </RSMPE_STAF>
+     <RSMPE_STAF>
+      <STATUS>MASS_ALV</STATUS>
       <FUNCTION>SUMC</FUNCTION>
      </RSMPE_STAF>
      <RSMPE_STAF>
@@ -1940,21 +2076,21 @@
     </item>
     <item>
      <ID>S</ID>
-     <KEY>P_DIR</KEY>
-     <ENTRY>Target folder</ENTRY>
-     <LENGTH>23</LENGTH>
+     <KEY>P_BUNDL</KEY>
+     <ENTRY>Bundled Spool (per formtype)</ENTRY>
+     <LENGTH>36</LENGTH>
     </item>
     <item>
      <ID>S</ID>
-     <KEY>P_PDF</KEY>
-     <ENTRY>Save as PDF</ENTRY>
-     <LENGTH>20</LENGTH>
+     <KEY>P_INDIV</KEY>
+     <ENTRY>Individual Spool</ENTRY>
+     <LENGTH>36</LENGTH>
     </item>
     <item>
      <ID>S</ID>
-     <KEY>P_SPOOL</KEY>
-     <ENTRY>Single Spool (bundle)</ENTRY>
-     <LENGTH>29</LENGTH>
+     <KEY>P_MERGE</KEY>
+     <ENTRY>Merged Spool (single PDF)</ENTRY>
+     <LENGTH>35</LENGTH>
     </item>
     <item>
      <ID>S</ID>

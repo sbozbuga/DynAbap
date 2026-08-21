@@ -54,13 +54,18 @@
 " -----------------------------------------------------------------------
 REPORT /ctdi/print_repair.
 
-SELECTION-SCREEN BEGIN OF BLOCK b1 WITH FRAME TITLE TEXT-002.
-PARAMETERS: p_aufnr  TYPE aufk-aufnr OBLIGATORY, " Repair / Order ID
-            p_sernr  TYPE equi-sernr,           " Serial number (optional)
-            p_shwlog TYPE sap_bool AS CHECKBOX, " Show logs
-            p_sf     TYPE sap_bool NO-DISPLAY.  " Save as PDF
-SELECTION-SCREEN END OF BLOCK b1.
+TABLES sscrfields.
 
+SELECTION-SCREEN FUNCTION KEY 1.
+
+SELECTION-SCREEN BEGIN OF BLOCK b1 WITH FRAME TITLE TEXT-002.
+PARAMETERS: p_aufnr TYPE aufk-aufnr OBLIGATORY, " Repair / Order ID
+            p_sernr TYPE equi-sernr.           " Serial number (optional)
+SELECTION-SCREEN BEGIN OF BLOCK b1a WITH FRAME.
+PARAMETERS: p_shwlog TYPE sap_bool AS CHECKBOX, " Show logs
+            p_sf     TYPE sap_bool NO-DISPLAY.  " Save as PDF
+SELECTION-SCREEN END OF BLOCK b1a.
+SELECTION-SCREEN END OF BLOCK b1.
 " ---------------------------------------------------------------------
 CLASS lcl_app DEFINITION FINAL.
   PUBLIC SECTION.
@@ -105,6 +110,14 @@ CLASS lcl_app IMPLEMENTATION.
     ENDIF.
   ENDMETHOD.
 ENDCLASS.
+
+INITIALIZATION.
+  sscrfields-functxt_01 = '@HB@ Mass Print'.
+
+AT SELECTION-SCREEN.
+  IF sscrfields-ucomm = 'FC01'.
+    SUBMIT /ctdi/print_repair_mass VIA SELECTION-SCREEN AND RETURN.
+  ENDIF.
 
 START-OF-SELECTION.
   lcl_app=>run( ).
