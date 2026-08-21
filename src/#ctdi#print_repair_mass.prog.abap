@@ -439,6 +439,7 @@ CLASS lcl_mass_print IMPLEMENTATION.
         ENDCASE.
 
       WHEN 'PDF_SEL'.
+        /ctdi/cl_print_driver_base=>set_download_dir( space ).
         execute_print( EXPORTING it_rows        = lt_rows
                                  iv_save_as_pdf = abap_true
                        IMPORTING ev_ok          = lv_count_ok
@@ -520,32 +521,6 @@ CLASS lcl_mass_print IMPLEMENTATION.
   METHOD execute_print.
     CLEAR: ev_ok,
            ev_err.
-
-    IF iv_save_as_pdf = abap_true AND iv_merge = abap_false AND sy-batch IS INITIAL.
-      ASSIGN gt_alv[ it_rows[ 1 ] ] TO FIELD-SYMBOL(<ls_first>).
-      DATA(lv_sample_file) = COND string( WHEN sy-subrc = 0
-                                          THEN |{ condense( CONV string( <ls_first>-aufnr ) ) }.pdf|
-                                          ELSE 'order.pdf' ).
-      DATA lv_action   TYPE i.
-      DATA lv_filename TYPE string.
-      DATA lv_path     TYPE string.
-      DATA lv_fullpath TYPE string.
-      DATA(lv_init_dir) = /ctdi/cl_print_driver_base=>get_download_dir( ).
-
-      cl_gui_frontend_services=>file_save_dialog( EXPORTING  default_file_name = lv_sample_file
-                                                             default_extension = 'pdf'
-                                                             file_filter       = CONV #( TEXT-031 ) " PDF Files (*.pdf)|*.pdf
-                                                             initial_directory = lv_init_dir
-                                                  CHANGING   filename          = lv_filename
-                                                             path              = lv_path
-                                                             fullpath          = lv_fullpath
-                                                             user_action       = lv_action
-                                                  EXCEPTIONS OTHERS            = 1 ).
-      IF lv_action <> cl_gui_frontend_services=>action_ok OR lv_fullpath IS INITIAL.
-        RETURN.
-      ENDIF.
-      /ctdi/cl_print_driver_base=>set_download_dir( lv_path ).
-    ENDIF.
 
     DATA lo_merger TYPE REF TO cl_rspo_pdf_merge.
     IF iv_save_as_pdf = abap_true AND iv_merge = abap_true.
