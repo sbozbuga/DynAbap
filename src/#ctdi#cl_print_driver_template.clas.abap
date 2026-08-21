@@ -20,10 +20,7 @@ CLASS /ctdi/cl_print_driver_template DEFINITION
 ENDCLASS.
 
 
-
-CLASS /CTDI/CL_PRINT_DRIVER_TEMPLATE IMPLEMENTATION.
-
-
+CLASS /ctdi/cl_print_driver_template IMPLEMENTATION.
   METHOD fetch_data_from_db.
     " =========================================================================
     " ACTION HOOK: fetch_data_from_db
@@ -65,7 +62,6 @@ CLASS /CTDI/CL_PRINT_DRIVER_TEMPLATE IMPLEMENTATION.
     "   |Loaded { lines( mt_errors ) } error/defect lines for Repair { mv_repair_order }| ).
   ENDMETHOD.
 
-
   METHOD map_and_register_data.
     " =========================================================================
     " ACTION HOOK: map_and_register_data
@@ -90,7 +86,6 @@ CLASS /CTDI/CL_PRINT_DRIVER_TEMPLATE IMPLEMENTATION.
     " REPAIR_ERRORS, COMMENT_LINES).
     super->map_and_register_data( ).
   ENDMETHOD.
-
 
   METHOD render_form.
     " =========================================================================
@@ -126,7 +121,6 @@ CLASS /CTDI/CL_PRINT_DRIVER_TEMPLATE IMPLEMENTATION.
     " UPDATE /ctdi/repair SET print_status = 'PRINTED' WHERE aufnr = @mv_repair_order.
     " COMMIT WORK.
   ENDMETHOD.
-
 
   METHOD unpack_io_data.
     " =========================================================================

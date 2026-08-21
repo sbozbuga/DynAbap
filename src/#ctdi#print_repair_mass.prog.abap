@@ -284,6 +284,7 @@ CLASS lcl_mass_print IMPLEMENTATION.
   METHOD resolve_form_types.
     " 1. Read all config entries from /CTDI/REP_FORMS (Customizing buffer with sorted key)
     DATA lt_config TYPE SORTED TABLE OF /ctdi/rep_forms WITH NON-UNIQUE KEY vbeln skz akz.
+
     SELECT * FROM /ctdi/rep_forms INTO TABLE @lt_config ##SUBRC_OK. "#EC CI_NOWHERE "#EC CI_ALL_FIELDS_NEEDED
 
     IF lt_config IS INITIAL.
@@ -525,11 +526,11 @@ CLASS lcl_mass_print IMPLEMENTATION.
       DATA(lv_sample_file) = COND string( WHEN sy-subrc = 0
                                           THEN |Repair_{ <ls_first>-aufnr ALPHA = OUT }.pdf|
                                           ELSE 'Repair.pdf' ).
-      DATA lv_action       TYPE i.
-      DATA lv_filename     TYPE string.
-      DATA lv_path         TYPE string.
-      DATA lv_fullpath     TYPE string.
-      DATA(lv_init_dir)    = /ctdi/cl_print_driver_base=>get_download_dir( ).
+      DATA lv_action   TYPE i.
+      DATA lv_filename TYPE string.
+      DATA lv_path     TYPE string.
+      DATA lv_fullpath TYPE string.
+      DATA(lv_init_dir) = /ctdi/cl_print_driver_base=>get_download_dir( ).
 
       cl_gui_frontend_services=>file_save_dialog( EXPORTING  default_file_name = lv_sample_file
                                                              default_extension = 'pdf'
@@ -746,7 +747,7 @@ CLASS lcl_mass_print IMPLEMENTATION.
             /ctdi/cl_print_driver_log=>log_error( |FP_JOB_CLOSE failed (subrc={ sy-subrc })| ).
           ENDIF.
         ENDIF.   " IF sy-subrc (FP_JOB_OPEN)
-      ENDIF.     " IF lt_adobe IS NOT INITIAL
+      ENDIF.
 
       " --- SmartForm group: single spool via SSF_OPEN ---
       IF lt_smart IS NOT INITIAL.
@@ -886,10 +887,10 @@ CLASS lcl_mass_print IMPLEMENTATION.
     ENDIF.
 
     IF iv_prompt = abap_true OR /ctdi/cl_print_driver_base=>get_download_dir( ) IS INITIAL.
-      DATA lv_action    TYPE i.
-      DATA lv_filename  TYPE string.
-      DATA lv_path      TYPE string.
-      DATA lv_fullpath  TYPE string.
+      DATA lv_action   TYPE i.
+      DATA lv_filename TYPE string.
+      DATA lv_path     TYPE string.
+      DATA lv_fullpath TYPE string.
       DATA(lv_init_dir) = /ctdi/cl_print_driver_base=>get_download_dir( ).
 
       cl_gui_frontend_services=>file_save_dialog( EXPORTING  default_file_name = iv_filename

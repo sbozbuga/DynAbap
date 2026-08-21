@@ -25,10 +25,7 @@ CLASS /ctdi/cl_print_data_ctdi DEFINITION
 ENDCLASS.
 
 
-
-CLASS /CTDI/CL_PRINT_DATA_CTDI IMPLEMENTATION.
-
-
+CLASS /ctdi/cl_print_data_ctdi IMPLEMENTATION.
   METHOD get_repair_result.
     DATA lf_repres     TYPE /cellag/repair_result.
     DATA lf_repres_txt TYPE /cellag/repair_result_txt.
@@ -61,20 +58,21 @@ CLASS /CTDI/CL_PRINT_DATA_CTDI IMPLEMENTATION.
            END OF ty_query_step.
     DATA lt_steps    TYPE TABLE OF ty_query_step.
     DATA lv_contract TYPE vbak-vgbel.
-    DATA lv_vbtyp TYPE vbak-vbtyp.
+    DATA lv_vbtyp    TYPE vbak-vbtyp.
 
     IF mv_kdauf IS NOT INITIAL.
 
-      SELECT SINGLE a~vgbel, b~vbtyp
+      SELECT SINGLE a~vgbel,
+                    b~vbtyp
         FROM vbak AS a
                LEFT OUTER JOIN
                  vbak AS b ON b~vbeln = a~vgbel
         WHERE a~vbeln = @mv_kdauf
         INTO ( @lv_contract, @lv_vbtyp ).
 
-        IF lv_vbtyp <> 'G'.
-          CLEAR lv_contract.
-        ENDIF.
+      IF lv_vbtyp <> 'G'.
+        CLEAR lv_contract.
+      ENDIF.
 
     ENDIF.
 
@@ -161,7 +159,6 @@ CLASS /CTDI/CL_PRINT_DATA_CTDI IMPLEMENTATION.
     ms_legacy-repair_result_txt = lf_repres_txt.
   ENDMETHOD.
 
-
   METHOD map_legacy_data.
     CLEAR: ms_repair,
            mt_repair_error,
@@ -178,7 +175,6 @@ CLASS /CTDI/CL_PRINT_DATA_CTDI IMPLEMENTATION.
 
     mt_comments = mt_comment_lines.
   ENDMETHOD.
-
 
   METHOD read_data.
     " 1. Call super class logic to fetch raw legacy data into ms_legacy, mt_legacy_error, etc.

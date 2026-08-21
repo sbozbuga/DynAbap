@@ -47,15 +47,21 @@ CLASS /ctdi/cl_print_driver_base DEFINITION
       RETURNING VALUE(rv_dir) TYPE string.
 
     "! Returns the last generated PDF data (available after execute with iv_save_as_pdf = true).
+    "!
+    "! @parameter rv_pdf |
     METHODS get_last_pdf
       RETURNING VALUE(rv_pdf) TYPE xstring.
 
     "! When set to true, download_pdf stores the PDF but does not trigger file download.
+    "!
+    "! @parameter iv_collect |
     METHODS set_collect_pdf
       IMPORTING iv_collect TYPE abap_bool.
 
     "! When set to true, the driver skips FP_JOB_OPEN/CLOSE and SSF_OPEN/CLOSE.
     "! The caller is responsible for managing the spool/ADS job externally.
+    "!
+    "! @parameter iv_external |
     METHODS set_external_job
       IMPORTING iv_external TYPE abap_bool.
 
@@ -189,8 +195,6 @@ CLASS /ctdi/cl_print_driver_base DEFINITION
     METHODS download_pdf
       IMPORTING iv_pdf_data TYPE xstring
       RAISING   /ctdi/cx_print_driver_error.
-
-
 
     "! Builds the parameter + exception tables for an Adobe Form dynamic call.
     "!
@@ -392,19 +396,15 @@ CLASS /ctdi/cl_print_driver_base IMPLEMENTATION.
     lt_otf = it_otfdata.
 
     CALL FUNCTION 'CONVERT_OTF'
-      EXPORTING
-        format                = 'PDF'
-      IMPORTING
-        bin_file              = lv_pdf_xstring
-      TABLES
-        otf                   = lt_otf
-        lines                 = lt_pdf_lines
-      EXCEPTIONS
-        err_max_linewidth     = 1
-        err_format            = 2
-        err_conv_not_possible = 3
-        err_bad_otf           = 4
-        OTHERS                = 5.
+      EXPORTING  format                = 'PDF'
+      IMPORTING  bin_file              = lv_pdf_xstring
+      TABLES     otf                   = lt_otf
+                 lines                 = lt_pdf_lines
+      EXCEPTIONS err_max_linewidth     = 1
+                 err_format            = 2
+                 err_conv_not_possible = 3
+                 err_bad_otf           = 4
+                 OTHERS                = 5.
     IF sy-subrc <> 0.
       raise_driver_error( |CONVERT_OTF failed for { mv_form_name } (subrc={ sy-subrc })| ).
     ENDIF.
@@ -444,6 +444,7 @@ CLASS /ctdi/cl_print_driver_base IMPLEMENTATION.
   METHOD detect_form_type.
     SELECT SINGLE @abap_true FROM stxfadm              "#EC CI_SEL_NESTED
       WHERE formname = @mv_form_name
+      " TODO: variable is assigned but never used (ABAP cleaner)
       INTO @DATA(lv_exists).
     IF sy-subrc = 0.
       rv_type = 'S'.          " Smart Form exists in STXFADM
@@ -483,12 +484,9 @@ CLASS /ctdi/cl_print_driver_base IMPLEMENTATION.
 
     " Convert XSTRING to binary table
     CALL FUNCTION 'SCMS_XSTRING_TO_BINARY'
-      EXPORTING
-        buffer     = iv_pdf_data
-      TABLES
-        binary_tab = lt_data
-      EXCEPTIONS
-        OTHERS     = 1.
+      EXPORTING  buffer     = iv_pdf_data
+      TABLES     binary_tab = lt_data
+      EXCEPTIONS OTHERS     = 1.
     IF sy-subrc <> 0.
       RETURN.
     ENDIF.
@@ -594,14 +592,12 @@ CLASS /ctdi/cl_print_driver_base IMPLEMENTATION.
     " Open Adobe print job (skip if managed externally)
     IF mv_external_job = abap_false.
       CALL FUNCTION 'FP_JOB_OPEN'
-        CHANGING
-          ie_outputparams = ls_outputparams
-        EXCEPTIONS
-          cancel          = 1
-          usage_error     = 2
-          system_error    = 3
-          internal_error  = 4
-          OTHERS          = 5.
+        CHANGING   ie_outputparams = ls_outputparams
+        EXCEPTIONS cancel          = 1
+                   usage_error     = 2
+                   system_error    = 3
+                   internal_error  = 4
+                   OTHERS          = 5.
       IF sy-subrc <> 0.
         raise_driver_error( |FP_JOB_OPEN failed (subrc={ sy-subrc })| ).
       ENDIF.
@@ -610,15 +606,12 @@ CLASS /ctdi/cl_print_driver_base IMPLEMENTATION.
     " Resolve generated function module name
     TRY.
         CALL FUNCTION 'FP_FUNCTION_MODULE_NAME'
-          EXPORTING
-            i_name     = mv_form_name
-          IMPORTING
-            e_funcname = lv_fm_name.
+          EXPORTING i_name     = mv_form_name
+          IMPORTING e_funcname = lv_fm_name.
       CATCH cx_fp_api INTO DATA(lx_fp).
         IF mv_external_job = abap_false.
           CALL FUNCTION 'FP_JOB_CLOSE'
-            EXCEPTIONS
-              OTHERS = 0.
+            EXCEPTIONS OTHERS = 0.
         ENDIF.
         raise_driver_error( iv_message  = |Adobe Form FM resolution failed for { mv_form_name }|
                             ix_previous = lx_fp ).
@@ -655,11 +648,10 @@ CLASS /ctdi/cl_print_driver_base IMPLEMENTATION.
     " Close the print job (skip if managed externally)
     IF mv_external_job = abap_false.
       CALL FUNCTION 'FP_JOB_CLOSE'
-        EXCEPTIONS
-          usage_error    = 1
-          system_error   = 2
-          internal_error = 3
-          OTHERS         = 4.
+        EXCEPTIONS usage_error    = 1
+                   system_error   = 2
+                   internal_error = 3
+                   OTHERS         = 4.
 
       IF sy-subrc <> 0.
         raise_driver_error( |Adobe Form { mv_form_name } close failed (subrc={ sy-subrc })| ).
@@ -685,14 +677,11 @@ CLASS /ctdi/cl_print_driver_base IMPLEMENTATION.
 
     " Resolve generated function module name
     CALL FUNCTION 'SSF_FUNCTION_MODULE_NAME'
-      EXPORTING
-        formname           = mv_form_name
-      IMPORTING
-        fm_name            = lv_fm_name
-      EXCEPTIONS
-        no_form            = 1
-        no_function_module = 2
-        OTHERS             = 3.
+      EXPORTING  formname           = mv_form_name
+      IMPORTING  fm_name            = lv_fm_name
+      EXCEPTIONS no_form            = 1
+                 no_function_module = 2
+                 OTHERS             = 3.
     IF sy-subrc <> 0.
       raise_driver_error( |Smart Form FM resolution failed for { mv_form_name } (subrc={ sy-subrc })| ).
     ENDIF.
@@ -712,12 +701,9 @@ CLASS /ctdi/cl_print_driver_base IMPLEMENTATION.
     " Dynamic device type based on logon language
     DATA lv_devtype TYPE rspoptype.
     CALL FUNCTION 'SSF_GET_DEVICE_TYPE'
-      EXPORTING
-        i_language = sy-langu
-      IMPORTING
-        e_devtype  = lv_devtype
-      EXCEPTIONS
-        OTHERS     = 1.
+      EXPORTING  i_language = sy-langu
+      IMPORTING  e_devtype  = lv_devtype
+      EXCEPTIONS OTHERS     = 1.
     IF sy-subrc <> 0.
       lv_devtype = gc_devtype_fallback.
     ENDIF.
@@ -794,10 +780,9 @@ CLASS /ctdi/cl_print_driver_base IMPLEMENTATION.
         ro_driver->ms_project      = ls_project_db.
       CATCH cx_sy_create_object_error INTO DATA(lx_create).
         RAISE EXCEPTION TYPE /ctdi/cx_print_driver_error
-          EXPORTING
-            repair_id = iv_repair_id
-            message   = |Cannot instantiate class { lv_class_name }|
-            previous  = lx_create.
+          EXPORTING repair_id = iv_repair_id
+                    message   = |Cannot instantiate class { lv_class_name }|
+                    previous  = lx_create.
     ENDTRY.
   ENDMETHOD.
 
@@ -906,16 +891,13 @@ CLASS /ctdi/cl_print_driver_base IMPLEMENTATION.
     rv_dir = mv_download_dir.
   ENDMETHOD.
 
-
   METHOD get_last_pdf.
     rv_pdf = mv_last_pdf.
   ENDMETHOD.
 
-
   METHOD set_collect_pdf.
     mv_collect_pdf = iv_collect.
   ENDMETHOD.
-
 
   METHOD set_external_job.
     mv_external_job = iv_external.
@@ -927,12 +909,9 @@ CLASS /ctdi/cl_print_driver_base IMPLEMENTATION.
 
     " 1. Fetch user defaults via standard API
     CALL FUNCTION 'SUSR_USER_DEFAULTS_GET'
-      EXPORTING
-        user_name     = sy-uname
-      IMPORTING
-        user_defaults = ls_user_defaults
-      EXCEPTIONS
-        OTHERS        = 0.
+      EXPORTING  user_name     = sy-uname
+      IMPORTING  user_defaults = ls_user_defaults
+      EXCEPTIONS OTHERS        = 0.
 
     " 2. Check SET/GET parameter override (/CELLAG/PAFR)
     GET PARAMETER ID '/CELLAG/PAFR' FIELD lv_user_printer.
@@ -983,10 +962,9 @@ CLASS /ctdi/cl_print_driver_base IMPLEMENTATION.
     /ctdi/cl_print_driver_log=>log_error( iv_message ).
 
     RAISE EXCEPTION TYPE /ctdi/cx_print_driver_error
-      EXPORTING
-        repair_id = mv_repair_order
-        message   = iv_message
-        previous  = ix_previous.
+      EXPORTING repair_id = mv_repair_order
+                message   = iv_message
+                previous  = ix_previous.
   ENDMETHOD.
 
   METHOD read_data.
@@ -1087,9 +1065,8 @@ CLASS /ctdi/cl_print_driver_base IMPLEMENTATION.
       DATA(lv_err) = |Repair Order { iv_repair_id } not found in system|.
       /ctdi/cl_print_driver_log=>log_error( lv_err ).
       RAISE EXCEPTION TYPE /ctdi/cx_print_driver_error
-        EXPORTING
-          repair_id = iv_repair_id
-          message   = lv_err.
+        EXPORTING repair_id = iv_repair_id
+                  message   = lv_err.
     ENDIF.
   ENDMETHOD.
 
