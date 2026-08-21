@@ -444,7 +444,6 @@ CLASS /ctdi/cl_print_driver_base IMPLEMENTATION.
     REPLACE ALL OCCURRENCES OF '<' IN rv_filename WITH '_'.
     REPLACE ALL OCCURRENCES OF '>' IN rv_filename WITH '_'.
     REPLACE ALL OCCURRENCES OF '|' IN rv_filename WITH '_'.
-    REPLACE ALL OCCURRENCES OF ' ' IN rv_filename WITH '_'.
   ENDMETHOD.
 
   METHOD detect_form_type.
