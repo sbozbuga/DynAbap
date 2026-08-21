@@ -906,16 +906,16 @@ CLASS lcl_mass_print IMPLEMENTATION.
     DATA(lv_mrg) = COND string( WHEN gv_spool_mode = c_mode_merged THEN ' <<' ).
 
     CALL FUNCTION 'POPUP_FOR_INTERACTION'
-      EXPORTING headline       = CONV char40( TEXT-019 )                  " Spool Mode
-                text1          = CONV char60( TEXT-020 )                  " Select spool mode for printing:
+      EXPORTING headline       = TEXT-019                  " Spool Mode
+                text1          = TEXT-020                  " Select spool mode for printing:
                 text2          = ' '
-                text3          = CONV char60( |{ TEXT-021 }{ lv_ind }| )  " Individual: 1 spool per order
-                text4          = CONV char60( |{ TEXT-022 }{ lv_bnd }| )  " Bundled: grouped by form type
-                text5          = CONV char60( |{ TEXT-023 }{ lv_mrg }| )  " Merged: single PDF spool
+                text3          = |{ TEXT-021 }{ lv_ind }|  " Individual: 1 spool per order
+                text4          = |{ TEXT-022 }{ lv_bnd }|  " Bundled: grouped by form type
+                text5          = |{ TEXT-023 }{ lv_mrg }|  " Merged: single PDF spool
                 ticon          = 'Q'
-                button_1       = CONV char12( TEXT-024 )                  " Individual
-                button_2       = CONV char12( TEXT-025 )                  " Bundled
-                button_3       = CONV char12( TEXT-026 )                  " Merged
+                button_1       = TEXT-024                  " Individual
+                button_2       = TEXT-025                  " Bundled
+                button_3       = TEXT-026                  " Merged
       IMPORTING button_pressed = lv_button.
 
     IF lv_button IS NOT INITIAL AND lv_button <> 'A'.
