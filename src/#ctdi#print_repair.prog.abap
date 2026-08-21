@@ -112,7 +112,7 @@ CLASS lcl_app IMPLEMENTATION.
 ENDCLASS.
 
 INITIALIZATION.
-  sscrfields-functxt_01 = '@HB@ Mass Print'.
+  sscrfields-functxt_01 = |@HB@ { TEXT-009 }|. " Mass Print
 
 AT SELECTION-SCREEN.
   IF sscrfields-ucomm = 'FC01'.

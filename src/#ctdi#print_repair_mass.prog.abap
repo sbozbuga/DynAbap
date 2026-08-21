@@ -357,7 +357,7 @@ CLASS lcl_mass_print IMPLEMENTATION.
 
     TRY.
         DATA(lo_col_icon) = CAST cl_salv_column_table( lo_columns->get_column( 'ICON' ) ).
-        lo_col_icon->set_short_text( 'Status' ).
+        lo_col_icon->set_short_text( CONV #( TEXT-030 ) ). " Status
         lo_col_icon->set_icon( abap_true ).
         lo_col_icon->set_alignment( if_salv_c_alignment=>centered ).
 
@@ -647,7 +647,7 @@ CLASS lcl_mass_print IMPLEMENTATION.
           IF lv_merge_rc = 0 AND lv_merged_pdf IS NOT INITIAL.
             send_pdf_to_spool( iv_pdf     = lv_merged_pdf
                                iv_printer = lv_printer
-                               iv_title   = |Mass Print Merged { sy-datum }_{ sy-uzeit }| ).
+                               iv_title   = |{ TEXT-033 } { sy-datum }_{ sy-uzeit }| ). " Mass Print Merged
           ENDIF.
         ENDIF.
       ENDIF.
@@ -682,7 +682,7 @@ CLASS lcl_mass_print IMPLEMENTATION.
         ls_outputparams-nodialog   = abap_true.
         ls_outputparams-bumode     = 'X'.        " Simple Bundling
         ls_outputparams-adstrlevel = '02'.       " Medium ADS trace
-        ls_outputparams-covtitle   = |Mass Print Adobe { sy-datum }_{ sy-uzeit }|.
+        ls_outputparams-covtitle   = |{ TEXT-034 } { sy-datum }_{ sy-uzeit }|. " Mass Print Adobe
 
         CALL FUNCTION 'FP_JOB_OPEN'
           CHANGING
@@ -736,7 +736,7 @@ CLASS lcl_mass_print IMPLEMENTATION.
         ls_sf_output-tdnewid    = abap_true.
         ls_sf_output-tdimmed    = abap_true.
         ls_sf_output-tddelete   = abap_false.
-        ls_sf_output-tdcovtitle = |Mass Print SmartForms { sy-datum }_{ sy-uzeit }|.
+        ls_sf_output-tdcovtitle = |{ TEXT-035 } { sy-datum }_{ sy-uzeit }|. " Mass Print SmartForms
 
         CALL FUNCTION 'SSF_OPEN'
           EXPORTING
@@ -799,7 +799,7 @@ CLASS lcl_mass_print IMPLEMENTATION.
         cancel          = 1
         OTHERS          = 5.
     IF sy-subrc <> 0.
-      DATA(lv_merge_msg) = build_job_error_msg( iv_context = 'FP_JOB_OPEN for PDF merge'
+      DATA(lv_merge_msg) = build_job_error_msg( iv_context = CONV #( TEXT-032 ) " PDF merge job opening
                                                 iv_subrc   = sy-subrc ).
       LOOP AT it_rows INTO DATA(lv_err_row).
         ASSIGN gt_alv[ lv_err_row ] TO FIELD-SYMBOL(<ls_err>).
@@ -881,7 +881,7 @@ CLASS lcl_mass_print IMPLEMENTATION.
 
       cl_gui_frontend_services=>file_save_dialog( EXPORTING  default_file_name = iv_filename
                                                              default_extension = 'pdf'
-                                                             file_filter       = 'PDF Files (*.pdf)|*.pdf'
+                                                             file_filter       = CONV #( TEXT-031 ) " PDF Files (*.pdf)|*.pdf
                                                   CHANGING   filename          = lv_filename
                                                              path              = lv_path
                                                              fullpath          = lv_fullpath
@@ -919,19 +919,17 @@ CLASS lcl_mass_print IMPLEMENTATION.
     DATA(lv_mrg) = COND string( WHEN gv_spool_mode = c_mode_merged THEN ' <<' ).
 
     CALL FUNCTION 'POPUP_FOR_INTERACTION'
-      EXPORTING
-        headline       = 'Spool Mode'
-        text1          = 'Select spool mode for printing:'
-        text2          = ' '
-        text3          = |Individual: 1 spool per order{ lv_ind }|
-        text4          = |Bundled: grouped by form type{ lv_bnd }|
-        text5          = |Merged: single PDF spool{ lv_mrg }|
-        ticon          = 'Q'
-        button_1       = 'Individual'
-        button_2       = 'Bundled'
-        button_3       = 'Merged'
-      IMPORTING
-        button_pressed = lv_button.
+      EXPORTING headline       = CONV char40( TEXT-019 )                  " Spool Mode
+                text1          = CONV char60( TEXT-020 )                  " Select spool mode for printing:
+                text2          = ' '
+                text3          = CONV char60( |{ TEXT-021 }{ lv_ind }| )  " Individual: 1 spool per order
+                text4          = CONV char60( |{ TEXT-022 }{ lv_bnd }| )  " Bundled: grouped by form type
+                text5          = CONV char60( |{ TEXT-023 }{ lv_mrg }| )  " Merged: single PDF spool
+                ticon          = 'Q'
+                button_1       = CONV char12( TEXT-024 )                  " Individual
+                button_2       = CONV char12( TEXT-025 )                  " Bundled
+                button_3       = CONV char12( TEXT-026 )                  " Merged
+      IMPORTING button_pressed = lv_button.
 
     IF lv_button IS NOT INITIAL AND lv_button <> 'A'.
       gv_spool_mode = SWITCH #( lv_button
@@ -940,10 +938,11 @@ CLASS lcl_mass_print IMPLEMENTATION.
                                 WHEN '3' THEN c_mode_merged ).
 
       DATA(lv_mode_text) = SWITCH string( gv_spool_mode
-                                          WHEN c_mode_individual THEN 'Individual Spool'
-                                          WHEN c_mode_bundled    THEN 'Bundled Spool'
-                                          WHEN c_mode_merged     THEN 'Merged Spool' ).
-      MESSAGE |Spool mode: { lv_mode_text }| TYPE 'S'.
+                                          WHEN c_mode_individual THEN TEXT-027 " Individual Spool
+                                          WHEN c_mode_bundled    THEN TEXT-028 " Bundled Spool
+                                          WHEN c_mode_merged     THEN TEXT-029 " Merged Spool
+                                        ).
+      MESSAGE |{ TEXT-019 }: { lv_mode_text }| TYPE 'S'.
     ENDIF.
   ENDMETHOD.
 

@@ -1,4 +1,4 @@
-﻿<?xml version="1.0" encoding="utf-8"?>
+<?xml version="1.0" encoding="utf-8"?>
 <abapGit version="v1.0.0" serializer="LCL_OBJECT_PROG" serializer_version="v1.0.0">
  <asx:abap xmlns:asx="http://www.sap.com/abapxml" version="1.0">
   <asx:values>
@@ -23,6 +23,12 @@
      <LENGTH>31</LENGTH>
     </item>
     <item>
+     <ID>I</ID>
+     <KEY>009</KEY>
+     <ENTRY>Mass Print</ENTRY>
+     <LENGTH>20</LENGTH>
+    </item>
+    <item>
      <ID>R</ID>
      <ENTRY>Repair Printouts</ENTRY>
      <LENGTH>16</LENGTH>
@@ -38,6 +44,12 @@
      <KEY>P_SERNR</KEY>
      <ENTRY>Serial number (optional)</ENTRY>
      <LENGTH>32</LENGTH>
+    </item>
+    <item>
+     <ID>S</ID>
+     <KEY>P_SF</KEY>
+     <ENTRY>Save as PDF</ENTRY>
+     <LENGTH>19</LENGTH>
     </item>
     <item>
      <ID>S</ID>
@@ -63,6 +75,12 @@
        <LENGTH>31</LENGTH>
       </item>
       <item>
+       <ID>I</ID>
+       <KEY>009</KEY>
+       <ENTRY>Massendruck</ENTRY>
+       <LENGTH>20</LENGTH>
+      </item>
+      <item>
        <ID>R</ID>
        <ENTRY>Reparaturausdrucke</ENTRY>
        <LENGTH>70</LENGTH>
@@ -78,6 +96,12 @@
        <KEY>P_SERNR</KEY>
        <ENTRY>Seriennummer</ENTRY>
        <LENGTH>38</LENGTH>
+      </item>
+      <item>
+       <ID>S</ID>
+       <KEY>P_SF</KEY>
+       <ENTRY>Als PDF speichern</ENTRY>
+       <LENGTH>25</LENGTH>
       </item>
       <item>
        <ID>S</ID>

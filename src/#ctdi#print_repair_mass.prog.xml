@@ -1,4 +1,4 @@
-﻿<?xml version="1.0" encoding="utf-8"?>
+<?xml version="1.0" encoding="utf-8"?>
 <abapGit version="v1.0.0" serializer="LCL_OBJECT_PROG" serializer_version="v1.0.0">
  <asx:abap xmlns:asx="http://www.sap.com/abapxml" version="1.0">
   <asx:values>
@@ -2070,6 +2070,108 @@
      <LENGTH>23</LENGTH>
     </item>
     <item>
+     <ID>I</ID>
+     <KEY>019</KEY>
+     <ENTRY>Spool Mode</ENTRY>
+     <LENGTH>40</LENGTH>
+    </item>
+    <item>
+     <ID>I</ID>
+     <KEY>020</KEY>
+     <ENTRY>Select spool mode for printing:</ENTRY>
+     <LENGTH>60</LENGTH>
+    </item>
+    <item>
+     <ID>I</ID>
+     <KEY>021</KEY>
+     <ENTRY>Individual: 1 spool per order</ENTRY>
+     <LENGTH>60</LENGTH>
+    </item>
+    <item>
+     <ID>I</ID>
+     <KEY>022</KEY>
+     <ENTRY>Bundled: grouped by form type</ENTRY>
+     <LENGTH>60</LENGTH>
+    </item>
+    <item>
+     <ID>I</ID>
+     <KEY>023</KEY>
+     <ENTRY>Merged: single PDF spool</ENTRY>
+     <LENGTH>60</LENGTH>
+    </item>
+    <item>
+     <ID>I</ID>
+     <KEY>024</KEY>
+     <ENTRY>Individual</ENTRY>
+     <LENGTH>12</LENGTH>
+    </item>
+    <item>
+     <ID>I</ID>
+     <KEY>025</KEY>
+     <ENTRY>Bundled</ENTRY>
+     <LENGTH>12</LENGTH>
+    </item>
+    <item>
+     <ID>I</ID>
+     <KEY>026</KEY>
+     <ENTRY>Merged</ENTRY>
+     <LENGTH>12</LENGTH>
+    </item>
+    <item>
+     <ID>I</ID>
+     <KEY>027</KEY>
+     <ENTRY>Individual Spool</ENTRY>
+     <LENGTH>30</LENGTH>
+    </item>
+    <item>
+     <ID>I</ID>
+     <KEY>028</KEY>
+     <ENTRY>Bundled Spool</ENTRY>
+     <LENGTH>30</LENGTH>
+    </item>
+    <item>
+     <ID>I</ID>
+     <KEY>029</KEY>
+     <ENTRY>Merged Spool</ENTRY>
+     <LENGTH>30</LENGTH>
+    </item>
+    <item>
+     <ID>I</ID>
+     <KEY>030</KEY>
+     <ENTRY>Status</ENTRY>
+     <LENGTH>10</LENGTH>
+    </item>
+    <item>
+     <ID>I</ID>
+     <KEY>031</KEY>
+     <ENTRY>PDF Files (*.pdf)|*.pdf</ENTRY>
+     <LENGTH>30</LENGTH>
+    </item>
+    <item>
+     <ID>I</ID>
+     <KEY>032</KEY>
+     <ENTRY>PDF merge job opening</ENTRY>
+     <LENGTH>35</LENGTH>
+    </item>
+    <item>
+     <ID>I</ID>
+     <KEY>033</KEY>
+     <ENTRY>Mass Print Merged</ENTRY>
+     <LENGTH>30</LENGTH>
+    </item>
+    <item>
+     <ID>I</ID>
+     <KEY>034</KEY>
+     <ENTRY>Mass Print Adobe</ENTRY>
+     <LENGTH>30</LENGTH>
+    </item>
+    <item>
+     <ID>I</ID>
+     <KEY>035</KEY>
+     <ENTRY>Mass Print SmartForms</ENTRY>
+     <LENGTH>30</LENGTH>
+    </item>
+    <item>
      <ID>R</ID>
      <ENTRY>Mass Print Repair Orders</ENTRY>
      <LENGTH>24</LENGTH>
@@ -2263,28 +2365,130 @@
        <LENGTH>23</LENGTH>
       </item>
       <item>
+       <ID>I</ID>
+       <KEY>019</KEY>
+       <ENTRY>Spool-Modus</ENTRY>
+       <LENGTH>40</LENGTH>
+      </item>
+      <item>
+       <ID>I</ID>
+       <KEY>020</KEY>
+       <ENTRY>Spool-Modus für Druck auswählen:</ENTRY>
+       <LENGTH>60</LENGTH>
+      </item>
+      <item>
+       <ID>I</ID>
+       <KEY>021</KEY>
+       <ENTRY>Einzeln: 1 Spool pro Auftrag</ENTRY>
+       <LENGTH>60</LENGTH>
+      </item>
+      <item>
+       <ID>I</ID>
+       <KEY>022</KEY>
+       <ENTRY>Gebündelt: je Formulartyp gruppiert</ENTRY>
+       <LENGTH>60</LENGTH>
+      </item>
+      <item>
+       <ID>I</ID>
+       <KEY>023</KEY>
+       <ENTRY>Zusammengeführt: einzelner PDF-Spool</ENTRY>
+       <LENGTH>60</LENGTH>
+      </item>
+      <item>
+       <ID>I</ID>
+       <KEY>024</KEY>
+       <ENTRY>Einzeln</ENTRY>
+       <LENGTH>12</LENGTH>
+      </item>
+      <item>
+       <ID>I</ID>
+       <KEY>025</KEY>
+       <ENTRY>Gebündelt</ENTRY>
+       <LENGTH>12</LENGTH>
+      </item>
+      <item>
+       <ID>I</ID>
+       <KEY>026</KEY>
+       <ENTRY>Zusammen</ENTRY>
+       <LENGTH>12</LENGTH>
+      </item>
+      <item>
+       <ID>I</ID>
+       <KEY>027</KEY>
+       <ENTRY>Einzelner Spool</ENTRY>
+       <LENGTH>30</LENGTH>
+      </item>
+      <item>
+       <ID>I</ID>
+       <KEY>028</KEY>
+       <ENTRY>Gebündelter Spool</ENTRY>
+       <LENGTH>30</LENGTH>
+      </item>
+      <item>
+       <ID>I</ID>
+       <KEY>029</KEY>
+       <ENTRY>Zusammengeführter Spool</ENTRY>
+       <LENGTH>30</LENGTH>
+      </item>
+      <item>
+       <ID>I</ID>
+       <KEY>030</KEY>
+       <ENTRY>Status</ENTRY>
+       <LENGTH>10</LENGTH>
+      </item>
+      <item>
+       <ID>I</ID>
+       <KEY>031</KEY>
+       <ENTRY>PDF-Dateien (*.pdf)|*.pdf</ENTRY>
+       <LENGTH>30</LENGTH>
+      </item>
+      <item>
+       <ID>I</ID>
+       <KEY>032</KEY>
+       <ENTRY>Öffnen des PDF-Merge-Auftrags</ENTRY>
+       <LENGTH>35</LENGTH>
+      </item>
+      <item>
+       <ID>I</ID>
+       <KEY>033</KEY>
+       <ENTRY>Massendruck Zusammengeführt</ENTRY>
+       <LENGTH>35</LENGTH>
+      </item>
+      <item>
+       <ID>I</ID>
+       <KEY>034</KEY>
+       <ENTRY>Massendruck Adobe</ENTRY>
+       <LENGTH>30</LENGTH>
+      </item>
+      <item>
+       <ID>I</ID>
+       <KEY>035</KEY>
+       <ENTRY>Massendruck SmartForms</ENTRY>
+       <LENGTH>30</LENGTH>
+      </item>
+      <item>
        <ID>R</ID>
        <ENTRY>Massendruck Reparaturaufträge</ENTRY>
        <LENGTH>70</LENGTH>
       </item>
       <item>
-       <ID>S</ID>
-       <KEY>P_DIR</KEY>
-       <ENTRY>Zielverzeichnis</ENTRY>
-       <LENGTH>38</LENGTH>
-      </item>
-      <item>
-       <ID>S</ID>
-       <KEY>P_PDF</KEY>
-       <ENTRY>Als PDF speichern</ENTRY>
-       <LENGTH>38</LENGTH>
-      </item>
-      <item>
-       <ID>S</ID>
-       <KEY>P_SPOOL</KEY>
-       <ENTRY>Einzelner Spool-Auftrag (Bündelung)</ENTRY>
-       <LENGTH>43</LENGTH>
-      </item>
+        <ID>S</ID>
+        <KEY>P_BUNDL</KEY>
+        <ENTRY>Gebündelter Spool (je Formulartyp)</ENTRY>
+        <LENGTH>36</LENGTH>
+       </item>
+       <item>
+        <ID>S</ID>
+        <KEY>P_INDIV</KEY>
+        <ENTRY>Einzelner Spool-Auftrag</ENTRY>
+        <LENGTH>36</LENGTH>
+       </item>
+       <item>
+        <ID>S</ID>
+        <KEY>P_MERGE</KEY>
+        <ENTRY>Zusammengeführter Spool (einzelnes PDF)</ENTRY>
+        <LENGTH>45</LENGTH>
+       </item>
       <item>
        <ID>S</ID>
        <KEY>S_AUART</KEY>
