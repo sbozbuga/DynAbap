@@ -46,21 +46,21 @@ DATA gv_contr TYPE jvbelncontract.
 " Selection Screen
 " -----------------------------------------------------------------------
 SELECTION-SCREEN BEGIN OF BLOCK b1 WITH FRAME TITLE TEXT-001.
-SELECT-OPTIONS: s_aufnr FOR aufk-aufnr,                 " Repair Order
-                s_kdauf FOR aufk-kdauf,                 " Sales Order
-                s_contr FOR gv_contr,                   " Contract
-                s_qmnum FOR qmel-qmnum,                " Notification
-                s_auart FOR aufk-auart DEFAULT 'ZM03',  " Order Type
-                s_werks FOR aufk-werks,                 " Plant
-                s_erdat FOR aufk-erdat,                 " Creation Date
-                s_vornr FOR afru-vornr DEFAULT '9010',  " Operation (WFER)
-                s_qmart FOR qmel-qmart.                 " QM Notification Type
+  SELECT-OPTIONS: s_aufnr FOR aufk-aufnr,                 " Repair Order
+                  s_kdauf FOR aufk-kdauf,                 " Sales Order
+                  s_contr FOR gv_contr,                   " Contract
+                  s_qmnum FOR qmel-qmnum,                " Notification
+                  s_auart FOR aufk-auart DEFAULT 'ZM03',  " Order Type
+                  s_werks FOR aufk-werks,                 " Plant
+                  s_erdat FOR aufk-erdat,                 " Creation Date
+                  s_vornr FOR afru-vornr DEFAULT '9010',  " Operation (WFER)
+                  s_qmart FOR qmel-qmart.                 " QM Notification Type
 SELECTION-SCREEN END OF BLOCK b1.
 
 SELECTION-SCREEN BEGIN OF BLOCK b3 WITH FRAME TITLE TEXT-018.
-PARAMETERS: p_indiv RADIOBUTTON GROUP spl DEFAULT 'X',  " Individual Spool
-            p_bundl RADIOBUTTON GROUP spl,              " Bundled Spool (per form type)
-            p_merge RADIOBUTTON GROUP spl.              " Merged Spool (single PDF)
+  PARAMETERS: p_indiv RADIOBUTTON GROUP spl DEFAULT 'X',  " Individual Spool
+              p_bundl RADIOBUTTON GROUP spl,              " Bundled Spool (per form type)
+              p_merge RADIOBUTTON GROUP spl.              " Merged Spool (single PDF)
 SELECTION-SCREEN END OF BLOCK b3.
 
 " -----------------------------------------------------------------------
@@ -101,9 +101,9 @@ CLASS lcl_mass_print DEFINITION FINAL.
     CLASS-METHODS run.
 
   PRIVATE SECTION.
-    CONSTANTS: c_mode_individual TYPE i VALUE 1,
-               c_mode_bundled    TYPE i VALUE 2,
-               c_mode_merged     TYPE i VALUE 3.
+    CONSTANTS c_mode_individual TYPE i VALUE 1.
+    CONSTANTS c_mode_bundled    TYPE i VALUE 2.
+    CONSTANTS c_mode_merged     TYPE i VALUE 3.
 
     CLASS-DATA gt_alv        TYPE TABLE OF ty_alv_line.
     CLASS-DATA go_salv       TYPE REF TO cl_salv_table.
@@ -346,7 +346,7 @@ CLASS lcl_mass_print IMPLEMENTATION.
     " Initialize spool mode from selection screen
     gv_spool_mode = COND #( WHEN p_merge = abap_true THEN c_mode_merged
                             WHEN p_bundl = abap_true THEN c_mode_bundled
-                            ELSE c_mode_individual ).
+                            ELSE                          c_mode_individual ).
 
     go_salv->set_screen_status( pfstatus      = 'MASS_ALV'
                                 report        = sy-repid
@@ -685,14 +685,12 @@ CLASS lcl_mass_print IMPLEMENTATION.
         ls_outputparams-covtitle   = |{ TEXT-034 } { sy-datum }_{ sy-uzeit }|. " Mass Print Adobe
 
         CALL FUNCTION 'FP_JOB_OPEN'
-          CHANGING
-            ie_outputparams = ls_outputparams
-          EXCEPTIONS
-            cancel          = 1
-            usage_error     = 2
-            system_error    = 3
-            internal_error  = 4
-            OTHERS          = 5.
+          CHANGING   ie_outputparams = ls_outputparams
+          EXCEPTIONS cancel          = 1
+                     usage_error     = 2
+                     system_error    = 3
+                     internal_error  = 4
+                     OTHERS          = 5.
         IF sy-subrc <> 0.
           mark_rows_error( EXPORTING it_lines = lt_adobe
                                      iv_msg   = build_job_error_msg( iv_context = 'FP_JOB_OPEN'
@@ -718,8 +716,7 @@ CLASS lcl_mass_print IMPLEMENTATION.
           ENDLOOP.
 
           CALL FUNCTION 'FP_JOB_CLOSE'
-            EXCEPTIONS
-              OTHERS = 1.
+            EXCEPTIONS OTHERS = 1.
           IF sy-subrc <> 0.
             /ctdi/cl_print_driver_log=>log_error( |FP_JOB_CLOSE failed (subrc={ sy-subrc })| ).
           ENDIF.
@@ -739,12 +736,10 @@ CLASS lcl_mass_print IMPLEMENTATION.
         ls_sf_output-tdcovtitle = |{ TEXT-035 } { sy-datum }_{ sy-uzeit }|. " Mass Print SmartForms
 
         CALL FUNCTION 'SSF_OPEN'
-          EXPORTING
-            control_parameters = ls_sf_ctrl
-            output_options     = ls_sf_output
-            user_settings      = abap_false
-          EXCEPTIONS
-            OTHERS             = 1.
+          EXPORTING  control_parameters = ls_sf_ctrl
+                     output_options     = ls_sf_output
+                     user_settings      = abap_false
+          EXCEPTIONS OTHERS             = 1.
         IF sy-subrc <> 0.
           DATA(lv_ssf_msg) = |SSF_OPEN failed (subrc={ sy-subrc })|.
           mark_rows_error( EXPORTING it_lines = lt_smart
@@ -770,8 +765,7 @@ CLASS lcl_mass_print IMPLEMENTATION.
           ENDLOOP.
 
           CALL FUNCTION 'SSF_CLOSE'
-            EXCEPTIONS
-              OTHERS = 1.
+            EXCEPTIONS OTHERS = 1.
           IF sy-subrc <> 0.
             /ctdi/cl_print_driver_log=>log_error( |SSF_CLOSE failed (subrc={ sy-subrc })| ).
           ENDIF.
@@ -793,11 +787,9 @@ CLASS lcl_mass_print IMPLEMENTATION.
     ls_outputparams-reqfinal = abap_true.
 
     CALL FUNCTION 'FP_JOB_OPEN'
-      CHANGING
-        ie_outputparams = ls_outputparams
-      EXCEPTIONS
-        cancel          = 1
-        OTHERS          = 5.
+      CHANGING   ie_outputparams = ls_outputparams
+      EXCEPTIONS cancel          = 1
+                 OTHERS          = 5.
     IF sy-subrc <> 0.
       DATA(lv_merge_msg) = build_job_error_msg( iv_context = CONV #( TEXT-032 ) " PDF merge job opening
                                                 iv_subrc   = sy-subrc ).
@@ -835,13 +827,11 @@ CLASS lcl_mass_print IMPLEMENTATION.
     ENDLOOP.
 
     CALL FUNCTION 'FP_JOB_CLOSE'
-      EXCEPTIONS
-        OTHERS = 0.
+      EXCEPTIONS OTHERS = 0.
 
     DATA lt_pdf_table TYPE tfpcontent.
     CALL FUNCTION 'FP_GET_PDF_TABLE'
-      IMPORTING
-        e_pdf_table = lt_pdf_table.
+      IMPORTING e_pdf_table = lt_pdf_table.
 
     IF lt_pdf_table IS NOT INITIAL.
       download_pdf_file( iv_pdf_data = lt_pdf_table[ 1 ]
@@ -863,12 +853,9 @@ CLASS lcl_mass_print IMPLEMENTATION.
     DATA lv_fpath    TYPE string.
 
     CALL FUNCTION 'SCMS_XSTRING_TO_BINARY'
-      EXPORTING
-        buffer     = iv_pdf_data
-      TABLES
-        binary_tab = lt_data
-      EXCEPTIONS
-        OTHERS     = 1.
+      EXPORTING  buffer     = iv_pdf_data
+      TABLES     binary_tab = lt_data
+      EXCEPTIONS OTHERS     = 1.
     IF sy-subrc <> 0.
       RETURN.
     ENDIF.
@@ -940,8 +927,7 @@ CLASS lcl_mass_print IMPLEMENTATION.
       DATA(lv_mode_text) = SWITCH string( gv_spool_mode
                                           WHEN c_mode_individual THEN TEXT-027 " Individual Spool
                                           WHEN c_mode_bundled    THEN TEXT-028 " Bundled Spool
-                                          WHEN c_mode_merged     THEN TEXT-029 " Merged Spool
-                                        ).
+                                          WHEN c_mode_merged     THEN TEXT-029 ). " Merged Spool
       MESSAGE |{ TEXT-019 }: { lv_mode_text }| TYPE 'S'.
     ENDIF.
   ENDMETHOD.
@@ -950,8 +936,7 @@ CLASS lcl_mass_print IMPLEMENTATION.
     DATA lv_ads_trace TYPE string.
 
     CALL FUNCTION 'FP_GET_LAST_ADS_TRACE'
-      IMPORTING
-        e_adstrace = lv_ads_trace.
+      IMPORTING e_adstrace = lv_ads_trace.
 
     DATA(lv_base) = COND string( WHEN ix_error->previous IS BOUND
                                  THEN ix_error->previous->get_text( )
@@ -1027,12 +1012,9 @@ CLASS lcl_mass_print IMPLEMENTATION.
     DATA ls_user_defaults TYPE usdefaults.
 
     CALL FUNCTION 'SUSR_USER_DEFAULTS_GET'
-      EXPORTING
-        user_name     = sy-uname
-      IMPORTING
-        user_defaults = ls_user_defaults
-      EXCEPTIONS
-        OTHERS        = 0.
+      EXPORTING  user_name     = sy-uname
+      IMPORTING  user_defaults = ls_user_defaults
+      EXCEPTIONS OTHERS        = 0.
 
     GET PARAMETER ID '/CELLAG/PAFR' FIELD rv_printer.
     IF rv_printer IS INITIAL.
@@ -1051,8 +1033,7 @@ CLASS lcl_mass_print IMPLEMENTATION.
     DATA lv_ads_trace TYPE string.
 
     CALL FUNCTION 'FP_GET_LAST_ADS_TRACE'
-      IMPORTING
-        e_adstrace = lv_ads_trace.
+      IMPORTING e_adstrace = lv_ads_trace.
 
     rv_msg = COND #( WHEN lv_ads_trace IS NOT INITIAL
                      THEN |{ iv_context } failed (subrc={ iv_subrc }) [ADS: { lv_ads_trace }]|
@@ -1069,15 +1050,13 @@ CLASS lcl_mass_print IMPLEMENTATION.
     DATA(lv_title) = CONV tsp01-rqtitle( iv_title ).
 
     CALL FUNCTION 'ADS_CREATE_PDF_SPOOLJOB'
-      EXPORTING
-        dest            = iv_printer
-        pages           = 0
-        pdf_data        = iv_pdf
-        immediate_print = 'X'
-        auto_delete     = ' '
-        titleline       = lv_title
-      EXCEPTIONS
-        OTHERS          = 1.
+      EXPORTING  dest            = iv_printer
+                 pages           = 0
+                 pdf_data        = iv_pdf
+                 immediate_print = 'X'
+                 auto_delete     = ' '
+                 titleline       = lv_title
+      EXCEPTIONS OTHERS          = 1.
 
     rv_ok = xsdbool( sy-subrc = 0 ).
   ENDMETHOD.
