@@ -10,3 +10,6 @@
 ## 2025-01-29 - Consolidate sequential self-lookups into single DB hit (vbak)
 **Learning:** Sequential `SELECT SINGLE` queries on the exact same database table (like fetching `vbak-vgbel` first, then querying `vbak` again to check `vbtyp` of the result) cause unnecessary database latency.
 **Action:** Use a self `LEFT OUTER JOIN` (e.g., `vbak AS a LEFT OUTER JOIN vbak AS b ON b~vbeln = a~vgbel`) to fetch both the initial and related document fields in a single query, preserving explicit application fallback behaviors.
+## 2025-02-04 - Consolidate equi and mara independent sequential lookups into single DB hit
+**Learning:** Sequential `SELECT SINGLE` queries on different tables (like `equi` and `mara`) where the result of the first query is used as the key for the second query can cause N+1-style DB roundtrips.
+**Action:** Use `LEFT OUTER JOIN`s to fetch dependent properties simultaneously in a single query by joining the tables using the intermediate key, eliminating unnecessary database round-trips while preserving the explicit fallback behaviors.
