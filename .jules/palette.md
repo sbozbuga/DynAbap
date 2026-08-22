@@ -20,3 +20,6 @@
 ## 2026-08-20 - Missing text for background job parameters
 **Learning:** In ABAP, background selection screen parameters defined with `NO-DISPLAY` (e.g., `P_SF`) still require text descriptions in the text pool (e.g., `<TPOOL>`). This ensures proper labeling in background job scheduling screens, parameter variants, and dynamic UIs, improving UX and accessibility for administrators.
 **Action:** Always check `NO-DISPLAY` parameters and ensure they have corresponding entries in the program's XML text pool.
+## 2026-09-05 - Avoid hard aborts in ALV generation
+**Learning:** Hard-abort `TYPE 'E'` messages during ALV table creation (e.g., catching `cx_salv_msg` from `cl_salv_table=>factory`) can severely disrupt the user flow by locking the selection screen or causing the application to freeze, requiring the user to restart the transaction.
+**Action:** Replace `TYPE 'E'` messages with `TYPE 'S' DISPLAY LIKE 'E'` when catching exceptions during UI component initialization to provide non-blocking visual feedback and keep the interface responsive.
