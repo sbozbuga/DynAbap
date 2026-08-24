@@ -283,7 +283,7 @@ CLASS /ctdi/cl_print_data_legacy IMPLEMENTATION.
   METHOD fallback_part_numbers.
     IF mv_new_part IS INITIAL.
       IF mv_new_matnr IS INITIAL.
-        " ⚡ Bolt Optimization: Consolidate sequential equi and mara lookups into a single JOIN to reduce DB latency
+        "Consolidated sequential equi and mara lookups into a single JOIN
         SELECT SINGLE e~matnr, m~mfrpn
           FROM equi AS e
           LEFT OUTER JOIN mara AS m ON m~matnr = e~matnr
@@ -296,7 +296,7 @@ CLASS /ctdi/cl_print_data_legacy IMPLEMENTATION.
 
     IF mv_old_part IS INITIAL.
       IF mv_old_matnr IS INITIAL.
-        " ⚡ Bolt Optimization: Consolidate sequential equi and mara lookups into a single JOIN to reduce DB latency
+        "Consolidated sequential equi and mara lookups into a single JOIN
         SELECT SINGLE e~matnr, m~mfrpn
           FROM equi AS e
           LEFT OUTER JOIN mara AS m ON m~matnr = e~matnr
