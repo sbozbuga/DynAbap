@@ -46,21 +46,21 @@ DATA gv_contr TYPE jvbelncontract.
 " Selection Screen
 " -----------------------------------------------------------------------
 SELECTION-SCREEN BEGIN OF BLOCK b1 WITH FRAME TITLE TEXT-001.
-  SELECT-OPTIONS: s_aufnr FOR aufk-aufnr,                 " Repair Order
-                  s_kdauf FOR aufk-kdauf,                 " Sales Order
-                  s_contr FOR gv_contr,                   " Contract
-                  s_qmnum FOR qmel-qmnum,                " Notification
-                  s_auart FOR aufk-auart DEFAULT 'ZM03',  " Order Type
-                  s_werks FOR aufk-werks,                 " Plant
-                  s_erdat FOR aufk-erdat,                 " Creation Date
-                  s_vornr FOR afru-vornr DEFAULT '9010',  " Operation (WFER)
-                  s_qmart FOR qmel-qmart.                 " QM Notification Type
+SELECT-OPTIONS: s_aufnr FOR aufk-aufnr,                 " Repair Order
+                s_kdauf FOR aufk-kdauf,                 " Sales Order
+                s_contr FOR gv_contr,                   " Contract
+                s_qmnum FOR qmel-qmnum,                " Notification
+                s_auart FOR aufk-auart DEFAULT 'ZM03',  " Order Type
+                s_werks FOR aufk-werks,                 " Plant
+                s_erdat FOR aufk-erdat,                 " Creation Date
+                s_vornr FOR afru-vornr DEFAULT '9010',  " Operation (WFER)
+                s_qmart FOR qmel-qmart.                 " QM Notification Type
 SELECTION-SCREEN END OF BLOCK b1.
 
 SELECTION-SCREEN BEGIN OF BLOCK b3 WITH FRAME TITLE TEXT-018.
-  PARAMETERS: p_indiv RADIOBUTTON GROUP spl DEFAULT 'X',  " Individual Spool
-              p_bundl RADIOBUTTON GROUP spl,              " Bundled Spool (per form type)
-              p_merge RADIOBUTTON GROUP spl.              " Merged Spool (single PDF)
+PARAMETERS: p_indiv RADIOBUTTON GROUP spl DEFAULT 'X',  " Individual Spool
+            p_bundl RADIOBUTTON GROUP spl,              " Bundled Spool (per form type)
+            p_merge RADIOBUTTON GROUP spl.              " Merged Spool (single PDF)
 SELECTION-SCREEN END OF BLOCK b3.
 
 " -----------------------------------------------------------------------
@@ -77,8 +77,6 @@ TYPES: BEGIN OF ty_alv_line,
          contract_id TYPE jvbelncontract, " Contract
          qmnum       TYPE qmnum,          " Notification (QMEL)
          qmart       TYPE qmart,          " Notification Type
-         vbap_qmnum  TYPE qmnum,          " Notification (VBAP)
-         feession    TYPE fenum,          " Item/Position (VBAP)
          skz         TYPE bemot,          " SKZ (Confirmation reason)
          akz         TYPE qmcod,          " AKZ (QM Code)
          form_name   TYPE fpname,         " Form Name
@@ -222,8 +220,6 @@ CLASS lcl_mass_print IMPLEMENTATION.
                     o~vgbel         AS contract_id,
                     q~qmnum,
                     q~qmart,
-                    p~/cellag/qmnum AS vbap_qmnum,
-                    p~/cellag/fenum AS feession,
                     f~bemot         AS skz,
                     q~qmcod         AS akz
       FROM aufk AS a
@@ -235,12 +231,9 @@ CLASS lcl_mass_print IMPLEMENTATION.
                        vbak AS c ON  c~vbeln = o~vgbel
                                  AND c~vbtyp = 'G'
                          LEFT OUTER JOIN
-                           vbap AS p ON  p~vbeln = a~kdauf
-                                     AND p~posnr = a~kdpos
-                             LEFT OUTER JOIN
-                               afru AS f ON  f~aufnr = a~aufnr
-                                         AND f~stokz = @space
-                                         AND f~stzhl = '00000000'
+                           afru AS f ON  f~aufnr = a~aufnr
+                                     AND f~stokz = @space
+                                     AND f~stzhl = '00000000'
 
       WHERE a~aufnr IN @s_aufnr
         AND a~kdauf IN @s_kdauf
@@ -273,8 +266,6 @@ CLASS lcl_mass_print IMPLEMENTATION.
                         contract_id = <ls_order>-contract_id
                         qmnum       = <ls_order>-qmnum
                         qmart       = <ls_order>-qmart
-                        vbap_qmnum  = <ls_order>-vbap_qmnum
-                        feession    = <ls_order>-feession
                         skz         = <ls_order>-skz
                         akz         = <ls_order>-akz ) ).
 
@@ -368,10 +359,19 @@ CLASS lcl_mass_print IMPLEMENTATION.
         lo_col_msg->set_output_length( 40 ).
         lo_col_msg->set_fixed_header_text( 'S' ).
 
+        DATA(lo_col_ftype) = CAST cl_salv_column_table( lo_columns->get_column( 'FORM_TYPE' ) ).
+        lo_col_ftype->set_short_text( 'Type' ).
+        lo_col_ftype->set_medium_text( 'Form Type' ).
+        lo_col_ftype->set_long_text( 'Form Type' ).
+
+        DATA(lo_col_fname) = CAST cl_salv_column_table( lo_columns->get_column( 'FORM_NAME' ) ).
+        lo_col_fname->set_short_text( 'Form' ).
+        lo_col_fname->set_medium_text( 'Form Name' ).
+        lo_col_fname->set_long_text( 'Form Name' ).
+
         " Hotspot columns for navigation
         CAST cl_salv_column_table( lo_columns->get_column( 'AUFNR' ) )->set_cell_type( if_salv_c_cell_type=>hotspot ).
         CAST cl_salv_column_table( lo_columns->get_column( 'QMNUM' ) )->set_cell_type( if_salv_c_cell_type=>hotspot ).
-        CAST cl_salv_column_table( lo_columns->get_column( 'VBAP_QMNUM' ) )->set_cell_type( if_salv_c_cell_type=>hotspot ).
         CAST cl_salv_column_table( lo_columns->get_column( 'CONTRACT_ID' ) )->set_cell_type(
                                                                                if_salv_c_cell_type=>hotspot ).
         CAST cl_salv_column_table( lo_columns->get_column( 'KDAUF' ) )->set_cell_type( if_salv_c_cell_type=>hotspot ).
@@ -478,19 +478,20 @@ CLASS lcl_mass_print IMPLEMENTATION.
       RETURN.
     ENDIF.
 
+    SET PARAMETER ID: 'ANR' FIELD '',
+                      'RCK' FIELD '',
+                      'IQM' FIELD '',
+                      'KTN' FIELD '',
+                      'AUN' FIELD ''.
     CASE column.
       WHEN 'AUFNR'.
         navigate_to_transaction( iv_tcode = 'IW33'
                                  iv_param = 'ANR'
                                  iv_value = <ls>-aufnr ).
       WHEN 'QMNUM'.
-        navigate_to_transaction( iv_tcode = 'IW43'
-                                 iv_param = 'IQM'
-                                 iv_value = <ls>-qmnum ).
-      WHEN 'VBAP_QMNUM'.
         navigate_to_transaction( iv_tcode = 'IW53'
                                  iv_param = 'IQM'
-                                 iv_value = <ls>-vbap_qmnum ).
+                                 iv_value = <ls>-qmnum ).
       WHEN 'CONTRACT_ID'.
         navigate_to_transaction( iv_tcode = 'VA43'
                                  iv_param = 'KTN'
@@ -686,12 +687,14 @@ CLASS lcl_mass_print IMPLEMENTATION.
         ls_outputparams-covtitle   = |{ TEXT-034 } { sy-datum }_{ sy-uzeit }|. " Mass Print Adobe
 
         CALL FUNCTION 'FP_JOB_OPEN'
-          CHANGING   ie_outputparams = ls_outputparams
-          EXCEPTIONS cancel          = 1
-                     usage_error     = 2
-                     system_error    = 3
-                     internal_error  = 4
-                     OTHERS          = 5.
+          CHANGING
+            ie_outputparams = ls_outputparams
+          EXCEPTIONS
+            cancel          = 1
+            usage_error     = 2
+            system_error    = 3
+            internal_error  = 4
+            OTHERS          = 5.
         IF sy-subrc <> 0.
           mark_rows_error( EXPORTING it_lines = lt_adobe
                                      iv_msg   = build_job_error_msg( iv_context = 'FP_JOB_OPEN'
@@ -717,7 +720,8 @@ CLASS lcl_mass_print IMPLEMENTATION.
           ENDLOOP.
 
           CALL FUNCTION 'FP_JOB_CLOSE'
-            EXCEPTIONS OTHERS = 1.
+            EXCEPTIONS
+              OTHERS = 1.
           IF sy-subrc <> 0.
             /ctdi/cl_print_driver_log=>log_error( |FP_JOB_CLOSE failed (subrc={ sy-subrc })| ).
           ENDIF.
@@ -737,10 +741,12 @@ CLASS lcl_mass_print IMPLEMENTATION.
         ls_sf_output-tdcovtitle = |{ TEXT-035 } { sy-datum }_{ sy-uzeit }|. " Mass Print SmartForms
 
         CALL FUNCTION 'SSF_OPEN'
-          EXPORTING  control_parameters = ls_sf_ctrl
-                     output_options     = ls_sf_output
-                     user_settings      = abap_false
-          EXCEPTIONS OTHERS             = 1.
+          EXPORTING
+            control_parameters = ls_sf_ctrl
+            output_options     = ls_sf_output
+            user_settings      = abap_false
+          EXCEPTIONS
+            OTHERS             = 1.
         IF sy-subrc <> 0.
           DATA(lv_ssf_msg) = |SSF_OPEN failed (subrc={ sy-subrc })|.
           mark_rows_error( EXPORTING it_lines = lt_smart
@@ -766,7 +772,8 @@ CLASS lcl_mass_print IMPLEMENTATION.
           ENDLOOP.
 
           CALL FUNCTION 'SSF_CLOSE'
-            EXCEPTIONS OTHERS = 1.
+            EXCEPTIONS
+              OTHERS = 1.
           IF sy-subrc <> 0.
             /ctdi/cl_print_driver_log=>log_error( |SSF_CLOSE failed (subrc={ sy-subrc })| ).
           ENDIF.
@@ -788,9 +795,11 @@ CLASS lcl_mass_print IMPLEMENTATION.
     ls_outputparams-reqfinal = abap_true.
 
     CALL FUNCTION 'FP_JOB_OPEN'
-      CHANGING   ie_outputparams = ls_outputparams
-      EXCEPTIONS cancel          = 1
-                 OTHERS          = 5.
+      CHANGING
+        ie_outputparams = ls_outputparams
+      EXCEPTIONS
+        cancel          = 1
+        OTHERS          = 5.
     IF sy-subrc <> 0.
       DATA(lv_merge_msg) = build_job_error_msg( iv_context = CONV #( TEXT-032 ) " PDF merge job opening
                                                 iv_subrc   = sy-subrc ).
@@ -828,11 +837,13 @@ CLASS lcl_mass_print IMPLEMENTATION.
     ENDLOOP.
 
     CALL FUNCTION 'FP_JOB_CLOSE'
-      EXCEPTIONS OTHERS = 0.
+      EXCEPTIONS
+        OTHERS = 0.
 
     DATA lt_pdf_table TYPE tfpcontent.
     CALL FUNCTION 'FP_GET_PDF_TABLE'
-      IMPORTING e_pdf_table = lt_pdf_table.
+      IMPORTING
+        e_pdf_table = lt_pdf_table.
 
     IF lt_pdf_table IS NOT INITIAL.
       download_pdf_file( iv_pdf_data = lt_pdf_table[ 1 ]
@@ -854,9 +865,12 @@ CLASS lcl_mass_print IMPLEMENTATION.
     DATA lv_fpath    TYPE string.
 
     CALL FUNCTION 'SCMS_XSTRING_TO_BINARY'
-      EXPORTING  buffer     = iv_pdf_data
-      TABLES     binary_tab = lt_data
-      EXCEPTIONS OTHERS     = 1.
+      EXPORTING
+        buffer     = iv_pdf_data
+      TABLES
+        binary_tab = lt_data
+      EXCEPTIONS
+        OTHERS     = 1.
     IF sy-subrc <> 0.
       RETURN.
     ENDIF.
@@ -909,17 +923,19 @@ CLASS lcl_mass_print IMPLEMENTATION.
     DATA(lv_mrg) = COND string( WHEN gv_spool_mode = c_mode_merged THEN ' <<' ).
 
     CALL FUNCTION 'POPUP_FOR_INTERACTION'
-      EXPORTING headline       = TEXT-019                  " Spool Mode
-                text1          = TEXT-020                  " Select spool mode for printing:
-                text2          = ' '
-                text3          = |{ TEXT-021 }{ lv_ind }|  " Individual: 1 spool per order
-                text4          = |{ TEXT-022 }{ lv_bnd }|  " Bundled: grouped by form type
-                text5          = |{ TEXT-023 }{ lv_mrg }|  " Merged: single PDF spool
-                ticon          = 'Q'
-                button_1       = TEXT-024                  " Individual
-                button_2       = TEXT-025                  " Bundled
-                button_3       = TEXT-026                  " Merged
-      IMPORTING button_pressed = lv_button.
+      EXPORTING
+        headline       = TEXT-019                  " Spool Mode
+        text1          = TEXT-020                  " Select spool mode for printing:
+        text2          = ' '
+        text3          = |{ TEXT-021 }{ lv_ind }|  " Individual: 1 spool per order
+        text4          = |{ TEXT-022 }{ lv_bnd }|  " Bundled: grouped by form type
+        text5          = |{ TEXT-023 }{ lv_mrg }|  " Merged: single PDF spool
+        ticon          = 'Q'
+        button_1       = TEXT-024                  " Individual
+        button_2       = TEXT-025                  " Bundled
+        button_3       = TEXT-026                  " Merged
+      IMPORTING
+        button_pressed = lv_button.
 
     IF lv_button IS NOT INITIAL AND lv_button <> 'A'.
       gv_spool_mode = SWITCH #( lv_button
@@ -939,7 +955,8 @@ CLASS lcl_mass_print IMPLEMENTATION.
     DATA lv_ads_trace TYPE string.
 
     CALL FUNCTION 'FP_GET_LAST_ADS_TRACE'
-      IMPORTING e_adstrace = lv_ads_trace.
+      IMPORTING
+        e_adstrace = lv_ads_trace.
 
     DATA(lv_base) = COND string( WHEN ix_error->previous IS BOUND
                                  THEN ix_error->previous->get_text( )
@@ -1015,9 +1032,12 @@ CLASS lcl_mass_print IMPLEMENTATION.
     DATA ls_user_defaults TYPE usdefaults.
 
     CALL FUNCTION 'SUSR_USER_DEFAULTS_GET'
-      EXPORTING  user_name     = sy-uname
-      IMPORTING  user_defaults = ls_user_defaults
-      EXCEPTIONS OTHERS        = 0.
+      EXPORTING
+        user_name     = sy-uname
+      IMPORTING
+        user_defaults = ls_user_defaults
+      EXCEPTIONS
+        OTHERS        = 0.
 
     GET PARAMETER ID '/CELLAG/PAFR' FIELD rv_printer.
     IF rv_printer IS INITIAL.
@@ -1036,7 +1056,8 @@ CLASS lcl_mass_print IMPLEMENTATION.
     DATA lv_ads_trace TYPE string.
 
     CALL FUNCTION 'FP_GET_LAST_ADS_TRACE'
-      IMPORTING e_adstrace = lv_ads_trace.
+      IMPORTING
+        e_adstrace = lv_ads_trace.
 
     rv_msg = COND #( WHEN lv_ads_trace IS NOT INITIAL
                      THEN |{ iv_context } failed (subrc={ iv_subrc }) [ADS: { lv_ads_trace }]|
@@ -1053,13 +1074,15 @@ CLASS lcl_mass_print IMPLEMENTATION.
     DATA(lv_title) = CONV tsp01-rqtitle( iv_title ).
 
     CALL FUNCTION 'ADS_CREATE_PDF_SPOOLJOB'
-      EXPORTING  dest            = iv_printer
-                 pages           = 0
-                 pdf_data        = iv_pdf
-                 immediate_print = 'X'
-                 auto_delete     = ' '
-                 titleline       = lv_title
-      EXCEPTIONS OTHERS          = 1.
+      EXPORTING
+        dest            = iv_printer
+        pages           = 0
+        pdf_data        = iv_pdf
+        immediate_print = 'X'
+        auto_delete     = ' '
+        titleline       = lv_title
+      EXCEPTIONS
+        OTHERS          = 1.
 
     rv_ok = xsdbool( sy-subrc = 0 ).
   ENDMETHOD.

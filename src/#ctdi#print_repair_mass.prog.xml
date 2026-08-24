@@ -1,4 +1,4 @@
-<?xml version="1.0" encoding="utf-8"?>
+﻿<?xml version="1.0" encoding="utf-8"?>
 <abapGit version="v1.0.0" serializer="LCL_OBJECT_PROG" serializer_version="v1.0.0">
  <asx:abap xmlns:asx="http://www.sap.com/abapxml" version="1.0">
   <asx:values>
@@ -2472,23 +2472,23 @@
        <LENGTH>70</LENGTH>
       </item>
       <item>
-        <ID>S</ID>
-        <KEY>P_BUNDL</KEY>
-        <ENTRY>Gebündelter Spool (je Formulartyp)</ENTRY>
-        <LENGTH>36</LENGTH>
-       </item>
-       <item>
-        <ID>S</ID>
-        <KEY>P_INDIV</KEY>
-        <ENTRY>Einzelner Spool-Auftrag</ENTRY>
-        <LENGTH>36</LENGTH>
-       </item>
-       <item>
-        <ID>S</ID>
-        <KEY>P_MERGE</KEY>
-        <ENTRY>Zusammengeführter Spool (einzelnes PDF)</ENTRY>
-        <LENGTH>45</LENGTH>
-       </item>
+       <ID>S</ID>
+       <KEY>P_BUNDL</KEY>
+       <ENTRY>Gebündelter Spool (je Formulartyp)</ENTRY>
+       <LENGTH>42</LENGTH>
+      </item>
+      <item>
+       <ID>S</ID>
+       <KEY>P_INDIV</KEY>
+       <ENTRY>Einzelner Spool-Auftrag</ENTRY>
+       <LENGTH>36</LENGTH>
+      </item>
+      <item>
+       <ID>S</ID>
+       <KEY>P_MERGE</KEY>
+       <ENTRY>Zusammengeführter Spool (einzelnes PDF)</ENTRY>
+       <LENGTH>47</LENGTH>
+      </item>
       <item>
        <ID>S</ID>
        <KEY>S_AUART</KEY>

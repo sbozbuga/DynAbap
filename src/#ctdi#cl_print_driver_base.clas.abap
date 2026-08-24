@@ -273,7 +273,10 @@ CLASS /ctdi/cl_print_driver_base DEFINITION
 ENDCLASS.
 
 
-CLASS /ctdi/cl_print_driver_base IMPLEMENTATION.
+
+CLASS /CTDI/CL_PRINT_DRIVER_BASE IMPLEMENTATION.
+
+
   METHOD build_adobeform_params.
     DATA ls_ptab TYPE abap_func_parmbind.
     DATA ls_etab TYPE abap_func_excpbind.
@@ -324,6 +327,42 @@ CLASS /ctdi/cl_print_driver_base IMPLEMENTATION.
     ls_etab-value = 4.
     INSERT ls_etab INTO TABLE et_etab.
   ENDMETHOD.
+
+
+  METHOD build_pdf_filename.
+    DATA(lv_aufnr) = condense( |{ mv_repair_order ALPHA = OUT }| ).
+
+    DATA(lv_order_no) = CONV string( ms_repair-ctdi_order_no ).
+    REPLACE ALL OCCURRENCES OF '-' IN lv_order_no WITH ''.
+    lv_order_no = condense( lv_order_no ).
+
+    IF lv_order_no IS NOT INITIAL.
+      rv_filename = |{ lv_order_no }_{ lv_aufnr }|.
+    ELSE.
+      rv_filename = lv_aufnr.
+    ENDIF.
+
+    IF ms_repair-new_serial_no IS NOT INITIAL.
+      DATA(lv_sernr) = condense( CONV string( ms_repair-new_serial_no ) ).
+      IF lv_sernr IS NOT INITIAL.
+        rv_filename = |{ rv_filename }_{ lv_sernr }|.
+      ENDIF.
+    ENDIF.
+
+    rv_filename = condense( rv_filename ).
+
+    " Remove characters that are invalid in file paths
+    REPLACE ALL OCCURRENCES OF '/' IN rv_filename WITH '_'.
+    REPLACE ALL OCCURRENCES OF '\' IN rv_filename WITH '_'.
+    REPLACE ALL OCCURRENCES OF ':' IN rv_filename WITH '_'.
+    REPLACE ALL OCCURRENCES OF '*' IN rv_filename WITH '_'.
+    REPLACE ALL OCCURRENCES OF '?' IN rv_filename WITH '_'.
+    REPLACE ALL OCCURRENCES OF '"' IN rv_filename WITH '_'.
+    REPLACE ALL OCCURRENCES OF '<' IN rv_filename WITH '_'.
+    REPLACE ALL OCCURRENCES OF '>' IN rv_filename WITH '_'.
+    REPLACE ALL OCCURRENCES OF '|' IN rv_filename WITH '_'.
+  ENDMETHOD.
+
 
   METHOD build_smartform_params.
     DATA ls_ptab TYPE abap_func_parmbind.
@@ -388,6 +427,7 @@ CLASS /ctdi/cl_print_driver_base IMPLEMENTATION.
     INSERT ls_etab INTO TABLE et_etab.
   ENDMETHOD.
 
+
   METHOD convert_otf_to_pdf.
     DATA lt_otf         TYPE TABLE OF itcoo.
     DATA lv_pdf_xstring TYPE xstring.
@@ -412,39 +452,6 @@ CLASS /ctdi/cl_print_driver_base IMPLEMENTATION.
     download_pdf( iv_pdf_data = lv_pdf_xstring ).
   ENDMETHOD.
 
-  METHOD build_pdf_filename.
-    DATA(lv_aufnr) = condense( CONV string( mv_repair_order ) ).
-
-    DATA(lv_order_no) = CONV string( ms_repair-ctdi_order_no ).
-    REPLACE ALL OCCURRENCES OF '-' IN lv_order_no WITH ''.
-    lv_order_no = condense( lv_order_no ).
-
-    IF lv_order_no IS NOT INITIAL.
-      rv_filename = |{ lv_order_no }_{ lv_aufnr }|.
-    ELSE.
-      rv_filename = lv_aufnr.
-    ENDIF.
-
-    IF ms_repair-new_serial_no IS NOT INITIAL.
-      DATA(lv_sernr) = condense( CONV string( ms_repair-new_serial_no ) ).
-      IF lv_sernr IS NOT INITIAL.
-        rv_filename = |{ rv_filename }_{ lv_sernr }|.
-      ENDIF.
-    ENDIF.
-
-    rv_filename = condense( rv_filename ).
-
-    " Remove characters that are invalid in file paths
-    REPLACE ALL OCCURRENCES OF '/' IN rv_filename WITH '_'.
-    REPLACE ALL OCCURRENCES OF '\' IN rv_filename WITH '_'.
-    REPLACE ALL OCCURRENCES OF ':' IN rv_filename WITH '_'.
-    REPLACE ALL OCCURRENCES OF '*' IN rv_filename WITH '_'.
-    REPLACE ALL OCCURRENCES OF '?' IN rv_filename WITH '_'.
-    REPLACE ALL OCCURRENCES OF '"' IN rv_filename WITH '_'.
-    REPLACE ALL OCCURRENCES OF '<' IN rv_filename WITH '_'.
-    REPLACE ALL OCCURRENCES OF '>' IN rv_filename WITH '_'.
-    REPLACE ALL OCCURRENCES OF '|' IN rv_filename WITH '_'.
-  ENDMETHOD.
 
   METHOD detect_form_type.
     SELECT SINGLE @abap_true FROM stxfadm              "#EC CI_SEL_NESTED
@@ -457,6 +464,7 @@ CLASS /ctdi/cl_print_driver_base IMPLEMENTATION.
       rv_type = 'A'.          " Default to Adobe Form
     ENDIF.
   ENDMETHOD.
+
 
   METHOD download_pdf.
     DATA lv_action   TYPE i.
@@ -544,6 +552,7 @@ CLASS /ctdi/cl_print_driver_base IMPLEMENTATION.
     ENDIF.
   ENDMETHOD.
 
+
   METHOD execute.
     MESSAGE i001(/ctdi/print_repair) WITH mv_repair_order mv_form_name iv_save_as_pdf
             INTO DATA(lv_msg_started).
@@ -561,6 +570,7 @@ CLASS /ctdi/cl_print_driver_base IMPLEMENTATION.
             INTO DATA(lv_msg_completed).
     /ctdi/cl_print_driver_log=>log_info( lv_msg_completed ).
   ENDMETHOD.
+
 
   METHOD execute_adobeform.
     DATA lv_fm_name      TYPE rs38l_fnam.
@@ -671,6 +681,7 @@ CLASS /ctdi/cl_print_driver_base IMPLEMENTATION.
     ENDIF.
   ENDMETHOD.
 
+
   METHOD execute_smartform.
     DATA lv_fm_name        TYPE rs38l_fnam.
     DATA ls_control_params TYPE ssfctrlop.
@@ -765,6 +776,7 @@ CLASS /ctdi/cl_print_driver_base IMPLEMENTATION.
     ENDIF.
   ENDMETHOD.
 
+
   METHOD factory.
     DATA lv_form_name  TYPE fpname.
     DATA lv_class_name TYPE seoclsname.
@@ -791,9 +803,11 @@ CLASS /ctdi/cl_print_driver_base IMPLEMENTATION.
     ENDTRY.
   ENDMETHOD.
 
+
   METHOD fetch_data_from_db.
     " Default: no-op. Subclasses redefine this to load data from database.
   ENDMETHOD.
+
 
   METHOD get_config_from_db.
     DATA lv_contract TYPE vbeln_va.
@@ -892,21 +906,16 @@ CLASS /ctdi/cl_print_driver_base IMPLEMENTATION.
       INTO @es_project.                              "#EC CI_SEL_NESTED
   ENDMETHOD.
 
+
   METHOD get_download_dir.
     rv_dir = mv_download_dir.
   ENDMETHOD.
+
 
   METHOD get_last_pdf.
     rv_pdf = mv_last_pdf.
   ENDMETHOD.
 
-  METHOD set_collect_pdf.
-    mv_collect_pdf = iv_collect.
-  ENDMETHOD.
-
-  METHOD set_external_job.
-    mv_external_job = iv_external.
-  ENDMETHOD.
 
   METHOD get_user_print_defaults.
     DATA ls_user_defaults TYPE usdefaults.
@@ -936,6 +945,7 @@ CLASS /ctdi/cl_print_driver_base IMPLEMENTATION.
     ev_delete = abap_false.
   ENDMETHOD.
 
+
   METHOD map_and_register_data.
     " Common parameter auto-registration for populated structures
     IF ms_repair IS NOT INITIAL.
@@ -960,6 +970,7 @@ CLASS /ctdi/cl_print_driver_base IMPLEMENTATION.
     ENDIF.
   ENDMETHOD.
 
+
   METHOD raise_driver_error.
     IF ix_previous IS BOUND.
       /ctdi/cl_print_driver_log=>log_exception( ix_previous ).
@@ -971,6 +982,7 @@ CLASS /ctdi/cl_print_driver_base IMPLEMENTATION.
                 message   = iv_message
                 previous  = ix_previous.
   ENDMETHOD.
+
 
   METHOD read_data.
     " 1. Initialize data state
@@ -996,6 +1008,7 @@ CLASS /ctdi/cl_print_driver_base IMPLEMENTATION.
     map_and_register_data( ).
   ENDMETHOD.
 
+
   METHOD register_custom_parameter.
     DATA ls_param TYPE abap_func_parmbind.
 
@@ -1004,6 +1017,7 @@ CLASS /ctdi/cl_print_driver_base IMPLEMENTATION.
     ls_param-value = ir_data.
     INSERT ls_param INTO TABLE mt_custom_form_params.
   ENDMETHOD.
+
 
   METHOD render_form.
     " Ensure passed repair header is valid
@@ -1027,6 +1041,7 @@ CLASS /ctdi/cl_print_driver_base IMPLEMENTATION.
                          iv_preview     = iv_preview ).
     ENDIF.
   ENDMETHOD.
+
 
   METHOD resolve_contract.
     DATA(lv_aufnr) = |{ iv_repair_id ALPHA = IN }|.
@@ -1075,6 +1090,12 @@ CLASS /ctdi/cl_print_driver_base IMPLEMENTATION.
     ENDIF.
   ENDMETHOD.
 
+
+  METHOD set_collect_pdf.
+    mv_collect_pdf = iv_collect.
+  ENDMETHOD.
+
+
   METHOD set_download_dir.
     mv_download_dir = iv_dir.
     IF mv_download_dir IS NOT INITIAL.
@@ -1087,8 +1108,13 @@ CLASS /ctdi/cl_print_driver_base IMPLEMENTATION.
     ENDIF.
   ENDMETHOD.
 
+
+  METHOD set_external_job.
+    mv_external_job = iv_external.
+  ENDMETHOD.
+
+
   METHOD unpack_io_data.
     " Default: no-op. Subclasses redefine this to unpack custom objects.
   ENDMETHOD.
 ENDCLASS.
-
