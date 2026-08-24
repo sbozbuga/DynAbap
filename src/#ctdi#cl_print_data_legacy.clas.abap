@@ -579,9 +579,24 @@ CLASS /ctdi/cl_print_data_legacy IMPLEMENTATION.
            mv_fenum,
            mv_ctdi_odernr.
 
-    SELECT SINGLE kdauf, kdpos, objnr
-      FROM aufk
-      WHERE aufnr = @mv_aufnr
+    " ⚡ Bolt Optimization: Consolidate conditional sequential aufk and vbak lookups into a single DB hit
+    SELECT SINGLE a~kdauf,
+                  a~kdpos,
+                  a~objnr,
+                  k~kvgr1,
+                  k~qmnum AS vbak_qmnum,
+                  p~/cellag/qmnum AS vbap_qmnum,
+                  p~/cellag/fenum AS fenum,
+                  p~posex         AS po_pos,
+                  d~bstkd         AS po_nr
+      FROM aufk AS a
+             LEFT OUTER JOIN
+               vbak AS k ON k~vbeln = a~kdauf
+                 LEFT OUTER JOIN
+                   vbap AS p ON p~vbeln = a~kdauf AND p~posnr = a~kdpos
+                     LEFT OUTER JOIN
+                       vbkd AS d ON d~vbeln = a~kdauf AND d~posnr = a~kdpos
+      WHERE a~aufnr = @mv_aufnr
       INTO @DATA(ls_aufk).
 
     IF sy-subrc = 0.
@@ -604,28 +619,14 @@ CLASS /ctdi/cl_print_data_legacy IMPLEMENTATION.
       DATA lv_qmart TYPE qmel-qmart.
 
       IF ls_aufk-kdauf IS NOT INITIAL.
-        SELECT SINGLE k~kvgr1,
-                      k~qmnum,
-                      p~/cellag/qmnum AS vbap_qmnum,
-                      p~/cellag/fenum AS fenum,
-                      p~posex         AS po_pos,
-                      d~bstkd         AS po_nr
-          FROM vbak AS k
-                 LEFT OUTER JOIN
-                   vbap AS p ON p~vbeln = k~vbeln AND p~posnr = @ls_aufk-kdpos
-                     LEFT OUTER JOIN
-                       vbkd AS d ON d~vbeln = k~vbeln AND d~posnr = @ls_aufk-kdpos
-          WHERE k~vbeln = @ls_aufk-kdauf
-          INTO @DATA(ls_vbak).
+        mv_qmnum  = COND #( WHEN ls_aufk-vbak_qmnum IS NOT INITIAL
+                            THEN ls_aufk-vbak_qmnum
+                            ELSE ls_aufk-vbap_qmnum ).
+        mv_fenum  = ls_aufk-fenum.
+        mv_po_nr  = ls_aufk-po_nr.
+        mv_po_pos = ls_aufk-po_pos.
 
-        mv_qmnum  = COND #( WHEN ls_vbak-qmnum IS NOT INITIAL
-                            THEN ls_vbak-qmnum
-                            ELSE ls_vbak-vbap_qmnum ).
-        mv_fenum  = ls_vbak-fenum.
-        mv_po_nr  = ls_vbak-po_nr.
-        mv_po_pos = ls_vbak-po_pos.
-
-        ms_legacy-kvgr1 = ls_vbak-kvgr1.
+        ms_legacy-kvgr1 = ls_aufk-kvgr1.
       ENDIF.
 
       " Fallback 1: If QMNUM still initial, fetch directly from QMEL linked to Order
