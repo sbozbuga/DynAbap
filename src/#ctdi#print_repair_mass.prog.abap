@@ -330,7 +330,7 @@ CLASS lcl_mass_print IMPLEMENTATION.
         cl_salv_table=>factory( IMPORTING r_salv_table = go_salv
                                 CHANGING  t_table      = gt_alv ).
       CATCH cx_salv_msg INTO DATA(lx_msg).
-        MESSAGE lx_msg->get_text( ) TYPE 'E'.
+        MESSAGE lx_msg->get_text( ) TYPE 'S' DISPLAY LIKE 'E'.
         RETURN.
     ENDTRY.
 
