@@ -13,3 +13,9 @@
 ## 2025-01-29 - Consolidate sequential equi and mara lookups into single DB hit
 **Learning:** Sequential `SELECT SINGLE` queries on `equi` and `mara` linked by `matnr` cause N+1 database roundtrip latency.
 **Action:** Consolidate these into a single database hit using `LEFT OUTER JOIN`s, maintaining intermediate checks for when `matnr` is already populated.
+## 2025-01-29 - Bypassing table buffers with ORDER BY degrades performance
+**Learning:** Forcing a consolidated `SELECT UP TO 1 ROWS` with an `ORDER BY` clause to replace fallback `SELECT SINGLE` queries is an anti-pattern for configuration tables. `SELECT SINGLE` reads highly-optimized SAP table buffers. Adding an `ORDER BY` explicitly bypasses the buffer, causing a database roundtrip and degrading performance. Additionally, ABAP Strict Mode requires `UP TO 1 ROWS` to precede the `INTO` clause.
+**Action:** Do not consolidate fallback `SELECT SINGLE` queries into a single query using `ORDER BY` for configuration tables, as it bypasses SAP table buffering. Sequential `SELECT SINGLE` queries are faster because they leverage the buffer.
+## 2025-01-29 - Consolidate conditional sequential lookups into single DB hit
+**Learning:** Sequential `SELECT SINGLE` queries where a subsequent query is executed based on a condition (e.g., `IF kdauf IS NOT INITIAL`) cause N+1 database roundtrips when the condition is met.
+**Action:** Consolidate these into a single database hit using `LEFT OUTER JOIN`s. The database handles the conditional linking efficiently via the `ON` clause, eliminating the need for application-level conditional queries and reducing DB latency.
