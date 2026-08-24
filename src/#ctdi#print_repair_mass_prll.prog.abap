@@ -159,10 +159,9 @@ CLASS lcl_parallel_print IMPLEMENTATION.
                                  ELSE lx_driver->get_text( ) ).
 
       CATCH cx_root INTO DATA(lx_root).
+        /ctdi/cl_print_driver_log=>log_exception( lx_root ).
         ls_result-icon = icon_led_red.
-        ls_result-msg  = COND #( WHEN lx_root->previous IS BOUND
-                                 THEN lx_root->previous->get_text( )
-                                 ELSE lx_root->get_text( ) ).
+        ls_result-msg  = TEXT-008.
     ENDTRY.
 
     EXPORT result = ls_result TO DATA BUFFER p_out.
@@ -370,7 +369,8 @@ CLASS lcl_mass_print IMPLEMENTATION.
         cl_salv_table=>factory( IMPORTING r_salv_table = go_salv
                                 CHANGING  t_table      = gt_alv ).
       CATCH cx_salv_msg INTO DATA(lx_msg).
-        MESSAGE lx_msg->get_text( ) TYPE 'S' DISPLAY LIKE 'E'.
+        /ctdi/cl_print_driver_log=>log_exception( lx_msg ).
+        MESSAGE TEXT-008 TYPE 'S' DISPLAY LIKE 'E'.
         RETURN.
     ENDTRY.
 
@@ -504,7 +504,8 @@ CLASS lcl_mass_print IMPLEMENTATION.
                             iv_no_dialog   = abap_false
                             iv_preview     = abap_true ).
       CATCH cx_root INTO DATA(lx).
-        MESSAGE lx->get_text( ) TYPE 'S' DISPLAY LIKE 'E'.
+        /ctdi/cl_print_driver_log=>log_exception( lx ).
+        MESSAGE TEXT-008 TYPE 'S' DISPLAY LIKE 'E'.
     ENDTRY.
   ENDMETHOD.
 
@@ -676,10 +677,9 @@ CLASS lcl_mass_print IMPLEMENTATION.
           ev_err = ev_err + 1.
 
         CATCH cx_root INTO DATA(lx_root).
+          /ctdi/cl_print_driver_log=>log_exception( lx_root ).
           <ls_line>-icon = icon_led_red.
-          <ls_line>-msg  = COND #( WHEN lx_root->previous IS BOUND
-                                   THEN lx_root->previous->get_text( )
-                                   ELSE lx_root->get_text( ) ).
+          <ls_line>-msg  = TEXT-008.
           ev_err = ev_err + 1.
       ENDTRY.
     ENDLOOP.
@@ -785,10 +785,11 @@ CLASS lcl_mass_print IMPLEMENTATION.
               ENDIF.
               ev_ok = ev_ok + 1.
             CATCH cx_root INTO DATA(lx_a).
+              /ctdi/cl_print_driver_log=>log_exception( lx_a ).
               ASSIGN gt_alv[ aufnr = <ls_a>-aufnr ] TO <ls_alv_a>.
               IF sy-subrc = 0.
                 <ls_alv_a>-icon = icon_led_red.
-                <ls_alv_a>-msg  = lx_a->get_text( ).
+                <ls_alv_a>-msg  = TEXT-008.
               ENDIF.
               ev_err = ev_err + 1.
           ENDTRY.
@@ -844,10 +845,11 @@ CLASS lcl_mass_print IMPLEMENTATION.
               ENDIF.
               ev_ok = ev_ok + 1.
             CATCH cx_root INTO DATA(lx_s).
+              /ctdi/cl_print_driver_log=>log_exception( lx_s ).
               ASSIGN gt_alv[ aufnr = <ls_s>-aufnr ] TO <ls_alv_s>.
               IF sy-subrc = 0.
                 <ls_alv_s>-icon = icon_led_red.
-                <ls_alv_s>-msg  = lx_s->get_text( ).
+                <ls_alv_s>-msg  = TEXT-008.
               ENDIF.
               ev_err = ev_err + 1.
           ENDTRY.
@@ -909,8 +911,9 @@ CLASS lcl_mass_print IMPLEMENTATION.
           ev_ok = ev_ok + 1.
 
         CATCH cx_root INTO DATA(lx).
+          /ctdi/cl_print_driver_log=>log_exception( lx ).
           <ls_line>-icon = icon_led_red.
-          <ls_line>-msg  = lx->get_text( ).
+          <ls_line>-msg  = TEXT-008.
           ev_err = ev_err + 1.
       ENDTRY.
     ENDLOOP.

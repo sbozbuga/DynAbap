@@ -330,7 +330,8 @@ CLASS lcl_mass_print IMPLEMENTATION.
         cl_salv_table=>factory( IMPORTING r_salv_table = go_salv
                                 CHANGING  t_table      = gt_alv ).
       CATCH cx_salv_msg INTO DATA(lx_msg).
-        MESSAGE lx_msg->get_text( ) TYPE 'S' DISPLAY LIKE 'E'.
+        /ctdi/cl_print_driver_log=>log_exception( lx_msg ).
+        MESSAGE TEXT-008 TYPE 'S' DISPLAY LIKE 'E'.
         RETURN.
     ENDTRY.
 
@@ -515,7 +516,8 @@ CLASS lcl_mass_print IMPLEMENTATION.
                             iv_no_dialog   = abap_false
                             iv_preview     = abap_true ).
       CATCH cx_root INTO DATA(lx).
-        MESSAGE lx->get_text( ) TYPE 'S' DISPLAY LIKE 'E'.
+        /ctdi/cl_print_driver_log=>log_exception( lx ).
+        MESSAGE TEXT-008 TYPE 'S' DISPLAY LIKE 'E'.
     ENDTRY.
   ENDMETHOD.
 
@@ -1023,8 +1025,9 @@ CLASS lcl_mass_print IMPLEMENTATION.
                               ELSE lx_noconf->get_text( ) ).
 
       CATCH cx_root INTO DATA(lx).
+        /ctdi/cl_print_driver_log=>log_exception( lx ).
         cs_alv-icon = icon_led_red.
-        cs_alv-msg  = build_error_msg( lx ).
+        cs_alv-msg  = TEXT-008.
     ENDTRY.
   ENDMETHOD.
 
