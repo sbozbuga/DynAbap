@@ -5,6 +5,7 @@ Thumbs.db
 # IDEs and editors
 .idea/
 .vscode/
+.kiro/
 *.suo
 *.ntvs*
 *.njsproj
