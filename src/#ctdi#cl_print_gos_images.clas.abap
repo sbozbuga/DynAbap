@@ -100,7 +100,7 @@ CLASS /ctdi/cl_print_gos_images DEFINITION
     "! @parameter it_attachments | Raw table of attachments
     "! @parameter rt_unique      | Deduplicated table of attachments
     CLASS-METHODS deduplicate_attachments
-      IMPORTING it_attachments  TYPE tt_image_attachments
+      IMPORTING it_attachments   TYPE tt_image_attachments
       RETURNING VALUE(rt_unique) TYPE tt_image_attachments.
 
   PROTECTED SECTION.
@@ -180,7 +180,10 @@ CLASS /ctdi/cl_print_gos_images DEFINITION
 ENDCLASS.
 
 
-CLASS /ctdi/cl_print_gos_images IMPLEMENTATION.
+
+CLASS /CTDI/CL_PRINT_GOS_IMAGES IMPLEMENTATION.
+
+
   METHOD append_images.
     rv_pdf = iv_pdf.
 
@@ -222,31 +225,40 @@ CLASS /ctdi/cl_print_gos_images IMPLEMENTATION.
     ENDTRY.
   ENDMETHOD.
 
+
   METHOD append_obj_bin.
     APPEND xstrlen( cv_pdf ) TO ct_offsets.
 
-    DATA(lv_head) = |{ iv_obj_num } 0 obj\n<< { iv_dict } >>\nstream\n|.
-    DATA(lv_head_x) = cl_bcs_convert=>string_to_xstring(
-      iv_string   = lv_head
-      iv_codepage = '1100' ).
+    TRY.
+        DATA(lv_head) = |{ iv_obj_num } 0 obj\n<< { iv_dict } >>\nstream\n|.
+        DATA(lv_head_x) = cl_bcs_convert=>string_to_xstring(
+          iv_string   = lv_head
+          iv_codepage = '1100' ).
 
-    DATA(lv_tail_x) = cl_bcs_convert=>string_to_xstring(
-      iv_string   = |\nendstream\nendobj\n|
-      iv_codepage = '1100' ).
+        DATA(lv_tail_x) = cl_bcs_convert=>string_to_xstring(
+          iv_string   = |\nendstream\nendobj\n|
+          iv_codepage = '1100' ).
 
-    CONCATENATE cv_pdf lv_head_x iv_stream lv_tail_x INTO cv_pdf IN BYTE MODE.
+        CONCATENATE cv_pdf lv_head_x iv_stream lv_tail_x INTO cv_pdf IN BYTE MODE.
+      CATCH cx_bcs ##NO_HANDLER.
+    ENDTRY.
   ENDMETHOD.
+
 
   METHOD append_obj_str.
     APPEND xstrlen( cv_pdf ) TO ct_offsets.
 
-    DATA(lv_full) = |{ iv_obj_num } 0 obj\n{ iv_content }\nendobj\n|.
-    DATA(lv_x) = cl_bcs_convert=>string_to_xstring(
-      iv_string   = lv_full
-      iv_codepage = '1100' ).
+    TRY.
+        DATA(lv_full) = |{ iv_obj_num } 0 obj\n{ iv_content }\nendobj\n|.
+        DATA(lv_x) = cl_bcs_convert=>string_to_xstring(
+          iv_string   = lv_full
+          iv_codepage = '1100' ).
 
-    CONCATENATE cv_pdf lv_x INTO cv_pdf IN BYTE MODE.
+        CONCATENATE cv_pdf lv_x INTO cv_pdf IN BYTE MODE.
+      CATCH cx_bcs ##NO_HANDLER.
+    ENDTRY.
   ENDMETHOD.
+
 
   METHOD convert_images_to_pdf.
     CLEAR rv_pdf.
@@ -465,9 +477,13 @@ CLASS /ctdi/cl_print_gos_images IMPLEMENTATION.
       lv_cs_obj_id = 2 + lv_num_pages + lv_p.
       READ TABLE lt_cstreams INTO lv_page_cs INDEX lv_p.
 
-      DATA(lv_cs_x) = cl_bcs_convert=>string_to_xstring(
-        iv_string   = lv_page_cs
-        iv_codepage = '1100' ).
+      TRY.
+          DATA(lv_cs_x) = cl_bcs_convert=>string_to_xstring(
+            iv_string   = lv_page_cs
+            iv_codepage = '1100' ).
+        CATCH cx_bcs.
+          CONTINUE.
+      ENDTRY.
 
       append_obj_bin( EXPORTING iv_obj_num = lv_cs_obj_id
                                 iv_dict    = |/Length { xstrlen( lv_cs_x ) }|
@@ -513,17 +529,21 @@ CLASS /ctdi/cl_print_gos_images IMPLEMENTATION.
 
     lv_xref = lv_xref && |trailer\n<< /Size { lv_total_cnt + 1 } /Root 1 0 R >>\nstartxref\n{ lv_startxref }\n%%EOF\n|.
 
-    DATA(lv_xref_x) = cl_bcs_convert=>string_to_xstring(
-      iv_string   = lv_xref
-      iv_codepage = '1100' ).
+    TRY.
+        DATA(lv_xref_x) = cl_bcs_convert=>string_to_xstring(
+          iv_string   = lv_xref
+          iv_codepage = '1100' ).
 
-    CONCATENATE rv_pdf lv_xref_x INTO rv_pdf IN BYTE MODE.
+        CONCATENATE rv_pdf lv_xref_x INTO rv_pdf IN BYTE MODE.
+      CATCH cx_bcs ##NO_HANDLER.
+    ENDTRY.
   ENDMETHOD.
+
 
   METHOD convert_to_jpeg.
     CLEAR rv_jpeg.
 
-    DATA(lv_ext_upper) = to_upper( condense( CONV string( iv_ext ) ) ).
+    DATA(lv_ext_upper) = to_upper( condense( iv_ext ) ).
 
     " Already JPEG — return as-is
     IF lv_ext_upper = 'JPG' OR lv_ext_upper = 'JPEG'.
@@ -577,13 +597,64 @@ CLASS /ctdi/cl_print_gos_images IMPLEMENTATION.
         " Convert binary table back to xstring via CL_BCS_CONVERT
         rv_jpeg = cl_bcs_convert=>solix_to_xstring(
           it_solix = lt_output
-          iv_size  = CONV i( lv_output_size ) ).
+          iv_size  = lv_output_size ).
 
       CATCH cx_root INTO DATA(lx_err).
         /ctdi/cl_print_driver_log=>log_warning(
             |Image conversion error for { lv_ext_upper }: { lx_err->get_text( ) }| ).
         CLEAR rv_jpeg.
     ENDTRY.
+  ENDMETHOD.
+
+
+  METHOD deduplicate_attachments.
+    CLEAR rt_unique.
+
+    IF it_attachments IS INITIAL.
+      RETURN.
+    ENDIF.
+
+    TYPES: BEGIN OF ty_seen_hash,
+             hash TYPE string,
+           END OF ty_seen_hash.
+
+    DATA lt_seen_hashes TYPE HASHED TABLE OF ty_seen_hash WITH UNIQUE KEY hash.
+    DATA lt_seen_ids    TYPE HASHED TABLE OF string WITH UNIQUE KEY table_line.
+
+    LOOP AT it_attachments ASSIGNING FIELD-SYMBOL(<ls_att>).
+      " 1. Fast ID Check (Skips exact duplicate GOS/ArchiveLink pointers)
+      IF <ls_att>-atta_id IS NOT INITIAL.
+        INSERT <ls_att>-atta_id INTO TABLE lt_seen_ids.
+        IF sy-subrc <> 0.
+          CONTINUE. " ID already processed
+        ENDIF.
+      ENDIF.
+
+      " 2. Binary Hash Check (Skips identical images under different IDs)
+      DATA(lv_hash) = ||.
+      TRY.
+          cl_abap_message_digest=>calculate_hash_for_raw(
+            EXPORTING
+              if_algorithm  = 'SHA256'
+              if_data       = <ls_att>-content
+            IMPORTING
+              ef_hashstring = lv_hash ).
+        CATCH cx_abap_message_digest.
+          " Fallback if digest fails: byte length + sample slice
+          DATA(lv_slice) = COND xstring( WHEN xstrlen( <ls_att>-content ) >= 16
+                                         THEN <ls_att>-content(16)
+                                         ELSE <ls_att>-content ).
+          lv_hash = |{ xstrlen( <ls_att>-content ) }_{ lv_slice }|.
+      ENDTRY.
+
+      INSERT VALUE #( hash = lv_hash ) INTO TABLE lt_seen_hashes.
+      IF sy-subrc <> 0.
+        CONTINUE. " Exact binary duplicate already included
+      ENDIF.
+
+      " 3. Keep unique item in original sequence
+      APPEND <ls_att> TO rt_unique.
+    ENDLOOP.
   ENDMETHOD.
 
 
@@ -594,6 +665,7 @@ CLASS /ctdi/cl_print_gos_images IMPLEMENTATION.
     REPLACE ALL OCCURRENCES OF ')' IN lv_s WITH '\)'.
     rv_hex = |({ lv_s })|.
   ENDMETHOD.
+
 
   METHOD extract_image_dimensions.
     CLEAR: ev_width,
@@ -639,6 +711,7 @@ CLASS /ctdi/cl_print_gos_images IMPLEMENTATION.
     ENDIF.
   ENDMETHOD.
 
+
   METHOD filter_image_attachments.
     CLEAR rt_filtered.
     LOOP AT it_raw ASSIGNING FIELD-SYMBOL(<ls_raw>).
@@ -647,6 +720,7 @@ CLASS /ctdi/cl_print_gos_images IMPLEMENTATION.
       ENDIF.
     ENDLOOP.
   ENDMETHOD.
+
 
   METHOD get_attachments.
     CLEAR rt_attachments.
@@ -708,57 +782,6 @@ CLASS /ctdi/cl_print_gos_images IMPLEMENTATION.
   ENDMETHOD.
 
 
-  METHOD deduplicate_attachments.
-    CLEAR rt_unique.
-
-    IF it_attachments IS INITIAL.
-      RETURN.
-    ENDIF.
-
-    TYPES: BEGIN OF ty_seen_hash,
-             hash TYPE string,
-           END OF ty_seen_hash.
-
-    DATA lt_seen_hashes TYPE HASHED TABLE OF ty_seen_hash WITH UNIQUE KEY hash.
-    DATA lt_seen_ids    TYPE HASHED TABLE OF string WITH UNIQUE KEY table_line.
-
-    LOOP AT it_attachments ASSIGNING FIELD-SYMBOL(<ls_att>).
-      " 1. Fast ID Check (Skips exact duplicate GOS/ArchiveLink pointers)
-      IF <ls_att>-atta_id IS NOT INITIAL.
-        INSERT <ls_att>-atta_id INTO TABLE lt_seen_ids.
-        IF sy-subrc <> 0.
-          CONTINUE. " ID already processed
-        ENDIF.
-      ENDIF.
-
-      " 2. Binary Hash Check (Skips identical images under different IDs)
-      DATA(lv_hash) = ||.
-      TRY.
-          cl_abap_message_digest=>calculate_hash_for_raw(
-            EXPORTING
-              if_algorithm  = 'SHA256'
-              if_data       = <ls_att>-content
-            IMPORTING
-              ef_hashstring = lv_hash ).
-        CATCH cx_abap_message_digest.
-          " Fallback if digest fails: byte length + sample slice
-          DATA(lv_slice) = COND xstring( WHEN xstrlen( <ls_att>-content ) >= 16
-                                         THEN <ls_att>-content(16)
-                                         ELSE <ls_att>-content ).
-          lv_hash = |{ xstrlen( <ls_att>-content ) }_{ lv_slice }|.
-      ENDTRY.
-
-      INSERT VALUE #( hash = lv_hash ) INTO TABLE lt_seen_hashes.
-      IF sy-subrc <> 0.
-        CONTINUE. " Exact binary duplicate already included
-      ENDIF.
-
-      " 3. Keep unique item in original sequence
-      APPEND <ls_att> TO rt_unique.
-    ENDLOOP.
-  ENDMETHOD.
-
-
   METHOD get_content_server_attachments.
     CLEAR rt_attachments.
 
@@ -811,7 +834,7 @@ CLASS /ctdi/cl_print_gos_images IMPLEMENTATION.
       ENDIF.
 
       " Retrieve binary content from Content Server
-      DATA lt_bindata TYPE solix_tab.
+      DATA lt_bindata TYPE TABLE OF tbl1024.
       DATA lv_length  TYPE i.
 
       CLEAR: lt_bindata, lv_length.
@@ -837,10 +860,13 @@ CLASS /ctdi/cl_print_gos_images IMPLEMENTATION.
         CONTINUE.
       ENDIF.
 
-      " ABAP 7.50 native conversion: Handles byte padding and lengths automatically
-      DATA(lv_content) = cl_bcs_convert=>solix_to_xstring(
-        it_solix = lt_bindata
-        iv_size  = lv_length ).
+      " Convert binary table to xstring
+      DATA lv_content TYPE xstring.
+      CALL FUNCTION 'SCMS_BINARY_TO_XSTRING'
+        EXPORTING input_length = lv_length
+        IMPORTING buffer       = lv_content
+        TABLES    binary_tab   = lt_bindata
+        EXCEPTIONS OTHERS      = 1 ##SUBRC_OK.           "#EC CI_SUBRC
 
       IF lv_content IS INITIAL.
         CONTINUE.
@@ -933,13 +959,9 @@ CLASS /ctdi/cl_print_gos_images IMPLEMENTATION.
         CONTINUE.
       ENDIF.
 
-      " Resolve file extension: Check file_ext field -> obj_type -> filename parsing
+      " Resolve file extension: Check obj_type -> filename parsing
       DATA(lv_fname) = CONV string( ls_doc_data-obj_descr ).
-      DATA(lv_ext)   = to_upper( CONV string( ls_doc_data-file_ext ) ).
-
-      IF lv_ext IS INITIAL OR lv_ext = 'EXT'.
-        lv_ext = to_upper( CONV string( ls_doc_data-obj_type ) ).
-      ENDIF.
+      DATA(lv_ext)   = to_upper( CONV string( ls_doc_data-obj_type ) ).
 
       IF lv_ext IS INITIAL OR lv_ext = 'EXT' OR lv_ext = 'RAW'.
         DATA(lv_dot_pos) = find( val = lv_fname sub = '.' occ = -1 ).
@@ -971,10 +993,12 @@ CLASS /ctdi/cl_print_gos_images IMPLEMENTATION.
     ENDLOOP.
   ENDMETHOD.
 
+
   METHOD is_supported_image_ext.
     DATA(lv_e) = to_upper( condense( CONV string( iv_ext ) ) ).
     rv_is_image = xsdbool( lv_e = 'JPG' OR lv_e = 'JPEG' OR lv_e = 'PNG' OR lv_e = 'BMP' OR lv_e = 'TIF' OR lv_e = 'TIFF' ).
   ENDMETHOD.
+
 
   METHOD merge_pdfs.
     rv_pdf = iv_base_pdf.
@@ -1006,6 +1030,7 @@ CLASS /ctdi/cl_print_gos_images IMPLEMENTATION.
         /ctdi/cl_print_driver_log=>log_exception( lx_root ).
     ENDTRY.
   ENDMETHOD.
+
 
   METHOD resolve_notification.
     CLEAR rv_qmnum.

@@ -72,7 +72,7 @@ CLASS lcl_tests DEFINITION FOR TESTING
     METHODS: test_build_pdf_filename FOR TESTING.
     METHODS: test_get_set_append_images FOR TESTING.
     METHODS: test_process_images_bypass FOR TESTING.
-    METHODS: test_factory_override_precedence FOR TESTING.
+    METHODS: test_factory_override_prec FOR TESTING.
 ENDCLASS.       "lcl_tests
 
 
@@ -489,7 +489,7 @@ CLASS lcl_tests IMPLEMENTATION.
       msg = 'Bypassed when mv_append_images is false' ).
   ENDMETHOD.
 
-  METHOD test_factory_override_precedence.
+  METHOD test_factory_override_prec.
     " Test override constants resolution
     DATA(lv_res_yes) = COND abap_bool(
       WHEN /ctdi/cl_print_driver_base=>gc_img_override_yes = 'X' THEN abap_true

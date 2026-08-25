@@ -1,4 +1,4 @@
-<?xml version="1.0" encoding="utf-8"?>
+﻿<?xml version="1.0" encoding="utf-8"?>
 <abapGit version="v1.0.0" serializer="LCL_OBJECT_TABL" serializer_version="v1.0.0">
  <asx:abap xmlns:asx="http://www.sap.com/abapxml" version="1.0">
   <asx:values>
@@ -70,7 +70,7 @@
     </DD03P>
     <DD03P>
      <FIELDNAME>APPEND_IMAGES</FIELDNAME>
-     <ROLLNAME>SAP_BOOL</ROLLNAME>
+     <ROLLNAME>/CTDI/IMG_APPND</ROLLNAME>
      <ADMINFIELD>0</ADMINFIELD>
      <VALEXI>X</VALEXI>
      <SHLPORIGIN>F</SHLPORIGIN>
