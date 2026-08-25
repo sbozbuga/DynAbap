@@ -61,6 +61,13 @@ SELECTION-SCREEN FUNCTION KEY 1.
 SELECTION-SCREEN BEGIN OF BLOCK b1 WITH FRAME TITLE TEXT-002.
 PARAMETERS: p_aufnr TYPE aufk-aufnr OBLIGATORY, " Repair / Order ID
             p_sernr TYPE equi-sernr.           " Serial number (optional)
+
+SELECTION-SCREEN BEGIN OF BLOCK b_img WITH FRAME TITLE TEXT-020.
+PARAMETERS: p_imgdef RADIOBUTTON GROUP r_img DEFAULT 'X', " Default (Project Customizing)
+            p_imgyes RADIOBUTTON GROUP r_img,              " Force Append Images
+            p_imgno  RADIOBUTTON GROUP r_img.              " Force Suppress Images
+SELECTION-SCREEN END OF BLOCK b_img.
+
 SELECTION-SCREEN BEGIN OF BLOCK b1a WITH FRAME.
 PARAMETERS: p_shwlog TYPE sap_bool AS CHECKBOX, " Show logs
             p_sf     TYPE sap_bool NO-DISPLAY.  " Save as PDF
@@ -78,8 +85,15 @@ CLASS lcl_app IMPLEMENTATION.
     DATA lv_emsg TYPE string.
 
     TRY.
-        DATA(lr_driver) = /ctdi/cl_print_driver_base=>factory( iv_repair_id = p_aufnr
-                                                               iv_sernr     = p_sernr ).
+        DATA(lv_append_override) = COND char1(
+          WHEN p_imgyes = abap_true THEN /ctdi/cl_print_driver_base=>gc_img_override_yes
+          WHEN p_imgno  = abap_true THEN /ctdi/cl_print_driver_base=>gc_img_override_no
+          ELSE /ctdi/cl_print_driver_base=>gc_img_override_default ).
+
+        DATA(lr_driver) = /ctdi/cl_print_driver_base=>factory(
+          iv_repair_id     = p_aufnr
+          iv_sernr         = p_sernr
+          iv_append_images = lv_append_override ).
 
         " In legacy ALCAREP02, p_sf = 'X' means "Spool mode" (do NOT download PDF).
         " Also, if called from transaction IW42, it defaults to Spool mode.

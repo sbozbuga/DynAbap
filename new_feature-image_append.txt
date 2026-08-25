@@ -1,0 +1,148 @@
+# Requirements Document: GOS Image Appending for Repair Print Pipeline
+
+## Introduction
+
+This feature extends the /CTDI/ repair order print pipeline to automatically retrieve Generic Object Services (GOS) image attachments from both the repair order (AUFNR) and its linked service notification (QMNUM), convert them to formatted A4 PDF pages, and append them to the **PDF output** (file download, mass PDF merge, and PDF archiving). 
+
+### Key Operating Principles
+1. **PDF Generation Only**: Image appending applies **exclusively to PDF generation** (`iv_save_as_pdf = abap_true`). Standard physical paper / spool printing (`iv_save_as_pdf = abap_false`) does **not** include images at this time and remains completely unaltered.
+2. **Two-Tier Precedence for PDF Output**:
+   - **Base Customizing (Tier 1)**: Driven per Customer Project / Contract (`VBELN`) via customizing table `/CTDI/REP_FORMS` (field `APPEND_IMAGES`). Default in `/CTDI/REP_FORMS` is **disabled (`space`)**. When `/CTDI/PRINT_REPAIR` runs in PDF mode via standard SAP callpoints without extra parameters, it evaluates this project customizing.
+   - **Runtime Override (Tier 2)**: When running print reports manually (`/CTDI/PRINT_REPAIR` and `/CTDI/PRINT_REPAIR_MASS`), users can override the project customizing at runtime using selection screen parameters (`Default from Customizing`, `Force Append`, `Force Suppress`).
+3. **Multi-Image A4 Layout**: Multiple images SHALL be arranged on a single A4 page whenever they fit within the printable boundaries while preserving aspect ratios and auto-scaling.
+
+---
+
+## Glossary
+
+- **Print_Driver**: The class `/CTDI/CL_PRINT_DRIVER_BASE` responsible for orchestrating repair order print output generation.
+- **GOS_Image_Helper**: The helper class `/CTDI/CL_PRINT_GOS_IMAGES` responsible for retrieving, filtering, converting, and merging GOS-attached images into the PDF output.
+- **Customizing_Table**: The table `/CTDI/REP_FORMS` containing form layout, driver class, and `APPEND_IMAGES` configuration per Contract (`VBELN` = Customer Project), `SKZ`, and `AKZ`.
+- **Customer_Project**: A sales contract (`VBELN` / `JVBELNCONTRACT`) representing a customer account/project in CTDI workshop operations.
+- **Repair_Order**: A plant maintenance / service order (`AUFNR`, BOR object `BUS2007`), the primary business object for printing.
+- **Service_Notification**: A quality / service notification (`QMNUM`, BOR object `BUS2078` / `BUS2080` / `QMEL`) linked to the repair order.
+- **Image_Attachment**: A GOS attachment with an image file type (`JPG`, `JPEG`, `PNG`, `BMP`, `TIF`, `TIFF`).
+- **Image_Append_Override**: Selection screen options (`Default`, `Force Append`, `Force Suppress`) that allow manual runtime override of customizing.
+- **Final_PDF**: The PDF `xstring` stored in `mv_last_pdf` within `Print_Driver`, representing the complete print output.
+
+---
+
+## Requirements
+
+### Requirement 1: Project Customizing Control in `/CTDI/REP_FORMS` for PDF Mode
+
+**User Story:** As an application administrator, I want to configure whether GOS images are appended to PDF outputs per Customer Project / Contract in `/CTDI/REP_FORMS`, with image appending disabled by default, so that standard SAP transactional callpoints automatically apply the correct project policy for PDF generation.
+
+#### Acceptance Criteria
+1. THE `Customizing_Table` (`/CTDI/REP_FORMS`) SHALL include a flag field `APPEND_IMAGES` (type `sap_bool` / `xfeld`).
+2. THE `APPEND_IMAGES` flag SHALL default to disabled (`space`).
+3. THE `Customizing_Table` maintenance dialog (`/CTDI/WORKSHOP_M`) SHALL allow maintaining the `APPEND_IMAGES` flag per entry (`VBELN` + `SKZ` + `AKZ` down to global fallback).
+4. THE `Print_Driver` (`/CTDI/CL_PRINT_DRIVER_BASE`) SHALL retrieve `APPEND_IMAGES` during `get_config_from_db()` using the existing fallback access hierarchy.
+
+---
+
+### Requirement 2: Selection Screen Runtime Override
+
+**User Story:** As a workshop technician or planner generating PDFs, I want selection screen parameters on `/CTDI/PRINT_REPAIR` and `/CTDI/PRINT_REPAIR_MASS` to override project customizing at runtime when needed.
+
+#### Acceptance Criteria
+1. THE single print report `/CTDI/PRINT_REPAIR` SHALL provide an `Image_Append_Override` selection block with three options:
+   - `Default (Customizing)` (default selection)
+   - `Force Append Images`
+   - `Force Suppress Images`
+2. THE mass print report `/CTDI/PRINT_REPAIR_MASS` (and parallel variant `/CTDI/PRINT_REPAIR_MASS_PRLL`) SHALL provide the same `Image_Append_Override` selection block.
+3. WHEN `Default (Customizing)` is selected, THE print pipeline SHALL use the `APPEND_IMAGES` value resolved from `/CTDI/REP_FORMS`.
+4. WHEN `Force Append Images` is selected, THE print pipeline SHALL append images to the PDF regardless of `/CTDI/REP_FORMS`.
+5. WHEN `Force Suppress Images` is selected, THE print pipeline SHALL NOT append images to the PDF regardless of `/CTDI/REP_FORMS`.
+
+---
+
+### Requirement 3: Parameter Flow to Driver Factory & Precedence Evaluation
+
+**User Story:** As the print pipeline, I want the factory and driver instance to resolve the effective image append setting based on the precedence model.
+
+#### Acceptance Criteria
+1. THE `Print_Driver` factory method (`/CTDI/CL_PRINT_DRIVER_BASE=>factory`) SHALL accept an optional `iv_append_images` parameter defaulting to `gc_img_override_default` (`space`).
+2. WHEN `iv_append_images` is `gc_img_override_default`, THE `Print_Driver` SHALL set `mv_append_images` from the resolved `/CTDI/REP_FORMS-APPEND_IMAGES`.
+3. WHEN `iv_append_images` is `gc_img_override_yes` (`'X'`), THE `Print_Driver` SHALL set `mv_append_images = abap_true`.
+4. WHEN `iv_append_images` is `gc_img_override_no` (`'N'`), THE `Print_Driver` SHALL set `mv_append_images = abap_false`.
+5. THE `Print_Driver` SHALL expose getter/setter methods for `mv_append_images`.
+
+---
+
+### Requirement 4: GOS Image Retrieval from Repair Order
+
+**User Story:** As a workshop technician, I want all image attachments from my repair order included in the PDF output when image appending is active.
+
+#### Acceptance Criteria
+1. WHEN generating a PDF and `mv_append_images` is `abap_true`, THE `GOS_Image_Helper` SHALL retrieve all GOS attachments linked to the `Repair_Order` (`BUS2007`, key = 12-char zero-padded `AUFNR`).
+2. THE `GOS_Image_Helper` SHALL filter retrieved attachments to include only `Image_Attachment` files (`JPG`, `JPEG`, `PNG`, `BMP`, `TIF`, `TIFF`).
+3. THE `GOS_Image_Helper` SHALL exclude notes, URLs, PDFs, Office documents, and unsupported binary formats.
+
+---
+
+### Requirement 5: Linked Service Notification Resolution & Image Retrieval
+
+**User Story:** As a workshop technician, I want images from the linked service notification also included in the PDF, so that visual defect documentation from the initial notification accompanies the repair order.
+
+#### Acceptance Criteria
+1. WHEN generating a PDF and `mv_append_images` is `abap_true`, THE `GOS_Image_Helper` SHALL resolve the linked `Service_Notification` number (`QMNUM`) for the `Repair_Order` via `AUFK`/`AFKO`/`QMEL`.
+2. WHEN a linked `Service_Notification` exists, THE `GOS_Image_Helper` SHALL retrieve all GOS attachments linked to that notification (`BUS2078`/`BUS2080`/`QMEL`, key = 12-char zero-padded `QMNUM`).
+3. THE `GOS_Image_Helper` SHALL filter notification attachments to include only `Image_Attachment` files.
+4. IF no linked `Service_Notification` exists, THE `GOS_Image_Helper` SHALL proceed using only the `Repair_Order` image attachments.
+
+---
+
+### Requirement 6: Image-to-PDF Conversion, Sizing & Multi-Image Packing
+
+**User Story:** As the print pipeline, I want retrieved images converted into formatted A4 PDF pages with strict aspect-ratio preservation, automatic scaling for large images, and multi-image arrangement on a single page to optimize page count.
+
+#### Acceptance Criteria
+1. THE `GOS_Image_Helper` SHALL convert retrieved image attachments into PDF pages formatted for standard DIN A4 dimensions (595.28 × 841.89 pt).
+2. THE `GOS_Image_Helper` SHALL strictly preserve the original image aspect ratio (width-to-height ratio) without stretching or distortion.
+3. THE `GOS_Image_Helper` SHALL automatically calculate scaling such that the width and height of large images fit completely within the printable A4 page bounding box.
+4. THE `GOS_Image_Helper` SHALL fit multiple images on a single A4 page (e.g. 2 images vertically stacked with captions) as long as they fit within the printable page height, and start a new A4 page only when the current page area is filled.
+
+---
+
+### Requirement 7: PDF Merge into Final Output
+
+**User Story:** As a workshop technician, I want the generated image pages merged seamlessly at the end of the PDF output.
+
+#### Acceptance Criteria
+1. WHEN generating a PDF (`iv_save_as_pdf = abap_true`) and image attachments exist and are converted to PDF, THE `GOS_Image_Helper` SHALL merge the image PDF pages with the existing `Final_PDF` using `CL_RSPO_PDF_MERGE`.
+2. THE `GOS_Image_Helper` SHALL append the image pages immediately after the last page of the main form PDF.
+3. THE `Print_Driver` SHALL update `mv_last_pdf` with the merged PDF content before triggering `download_pdf()` or passing back to caller (e.g. mass print collector).
+
+---
+
+### Requirement 8: Pipeline Integration & Spool Isolation
+
+**User Story:** As a developer, I want image appending to trigger only during PDF generation while leaving physical spool printing completely untouched.
+
+#### Acceptance Criteria
+1. WHEN `iv_save_as_pdf` is `abap_true` AND `mv_append_images` is `abap_true`, THE `Print_Driver` SHALL invoke the `GOS_Image_Helper` after form rendering is completed and `mv_last_pdf` is populated.
+2. WHEN `iv_save_as_pdf` is `abap_false` (direct spool printing), THE `Print_Driver` SHALL NOT invoke the `GOS_Image_Helper` and SHALL send the standard form directly to spool as normal.
+3. IF `mv_append_images` is `abap_false` or no image attachments exist, THE `Print_Driver` SHALL leave `mv_last_pdf` unaltered.
+
+---
+
+### Requirement 9: Error Handling & Graceful Degradation
+
+**User Story:** As a workshop user, I want PDF generation to succeed even if GOS retrieval or image processing fails for an attachment, so that operations are never blocked.
+
+#### Acceptance Criteria
+1. IF no image attachments are found on the order or notification, THE `GOS_Image_Helper` SHALL return the original `mv_last_pdf` unchanged.
+2. IF GOS retrieval, conversion, or merge encounters an error, THE `GOS_Image_Helper` SHALL log the warning/error via `/CTDI/CL_PRINT_DRIVER_LOG` and return the original `mv_last_pdf` without aborting the print job.
+
+---
+
+### Requirement 10: Helper Class Packaging & Architecture
+
+**User Story:** As a developer, I want the new helper class in the `/CTDI/WORKSHOP` package following DynAbap conventions.
+
+#### Acceptance Criteria
+1. THE `GOS_Image_Helper` SHALL be implemented as class `/CTDI/CL_PRINT_GOS_IMAGES` in package `/CTDI/WORKSHOP`.
+2. THE `GOS_Image_Helper` SHALL use `CL_GOS_API` for GOS attachment retrieval.
+3. THE `GOS_Image_Helper` SHALL use `CL_RSPO_PDF_MERGE` for PDF merging operations.
+4. Comprehensive ABAP Unit tests SHALL accompany `/CTDI/CL_PRINT_GOS_IMAGES` and `/CTDI/CL_PRINT_DRIVER_BASE`.

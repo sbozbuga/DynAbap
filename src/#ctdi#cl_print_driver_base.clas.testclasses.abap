@@ -70,6 +70,9 @@ CLASS lcl_tests DEFINITION FOR TESTING
     METHODS: normalize_class_name FOR TESTING.
     METHODS: set_get_download_dir FOR TESTING.
     METHODS: test_build_pdf_filename FOR TESTING.
+    METHODS: test_get_set_append_images FOR TESTING.
+    METHODS: test_process_images_bypass FOR TESTING.
+    METHODS: test_factory_override_precedence FOR TESTING.
 ENDCLASS.       "lcl_tests
 
 
@@ -458,6 +461,49 @@ CLASS lcl_tests IMPLEMENTATION.
       act = lv_filename
       exp = '10023401_000000800123_SN_99_88'
       msg = 'Filename should strip hyphen from order, preserve exact order number, append serial, and sanitize special characters' ).
+  ENDMETHOD.
+
+  METHOD test_get_set_append_images.
+    f_cut->set_append_images( abap_true ).
+    cl_abap_unit_assert=>assert_equals(
+      act = f_cut->get_append_images( )
+      exp = abap_true
+      msg = 'get_append_images should return true after setter' ).
+
+    f_cut->set_append_images( abap_false ).
+    cl_abap_unit_assert=>assert_equals(
+      act = f_cut->get_append_images( )
+      exp = abap_false
+      msg = 'get_append_images should return false after setter' ).
+  ENDMETHOD.
+
+  METHOD test_process_images_bypass.
+    " When mv_append_images is false, process_image_attachments should not modify mv_last_pdf
+    f_cut->mv_append_images = abap_false.
+    f_cut->mv_last_pdf = '255044462D312E34'. " %PDF-1.4
+    f_cut->process_image_attachments( ).
+
+    cl_abap_unit_assert=>assert_equals(
+      act = f_cut->mv_last_pdf
+      exp = '255044462D312E34'
+      msg = 'Bypassed when mv_append_images is false' ).
+  ENDMETHOD.
+
+  METHOD test_factory_override_precedence.
+    " Test override constants resolution
+    DATA(lv_res_yes) = COND abap_bool(
+      WHEN /ctdi/cl_print_driver_base=>gc_img_override_yes = 'X' THEN abap_true
+      ELSE abap_false ).
+    cl_abap_unit_assert=>assert_true(
+      act = lv_res_yes
+      msg = 'gc_img_override_yes should be X' ).
+
+    DATA(lv_res_no) = COND abap_bool(
+      WHEN /ctdi/cl_print_driver_base=>gc_img_override_no = 'N' THEN abap_false
+      ELSE abap_true ).
+    cl_abap_unit_assert=>assert_false(
+      act = lv_res_no
+      msg = 'gc_img_override_no should be N' ).
   ENDMETHOD.
 
 ENDCLASS.

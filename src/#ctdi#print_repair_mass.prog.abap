@@ -63,6 +63,12 @@ PARAMETERS: p_indiv RADIOBUTTON GROUP spl DEFAULT 'X',  " Individual Spool
             p_merge RADIOBUTTON GROUP spl.              " Merged Spool (single PDF)
 SELECTION-SCREEN END OF BLOCK b3.
 
+SELECTION-SCREEN BEGIN OF BLOCK b4 WITH FRAME TITLE TEXT-036.
+PARAMETERS: p_imgdef RADIOBUTTON GROUP r_img DEFAULT 'X', " Default (Project Customizing)
+            p_imgyes RADIOBUTTON GROUP r_img,              " Force Append Images
+            p_imgno  RADIOBUTTON GROUP r_img.              " Force Suppress Images
+SELECTION-SCREEN END OF BLOCK b4.
+
 " -----------------------------------------------------------------------
 " ALV output structure
 " -----------------------------------------------------------------------
@@ -510,7 +516,14 @@ CLASS lcl_mass_print IMPLEMENTATION.
     ENDIF.
 
     TRY.
-        DATA(lr_driver) = /ctdi/cl_print_driver_base=>factory( iv_repair_id = <ls_line>-aufnr ).
+        DATA(lv_append_override) = COND char1(
+          WHEN p_imgyes = abap_true THEN /ctdi/cl_print_driver_base=>gc_img_override_yes
+          WHEN p_imgno  = abap_true THEN /ctdi/cl_print_driver_base=>gc_img_override_no
+          ELSE /ctdi/cl_print_driver_base=>gc_img_override_default ).
+
+        DATA(lr_driver) = /ctdi/cl_print_driver_base=>factory(
+          iv_repair_id     = <ls_line>-aufnr
+          iv_append_images = lv_append_override ).
         lr_driver->execute( iv_save_as_pdf = abap_false
                             iv_no_dialog   = abap_false
                             iv_preview     = abap_true ).
@@ -993,7 +1006,14 @@ CLASS lcl_mass_print IMPLEMENTATION.
     CLEAR ev_pdf.
 
     TRY.
-        DATA(lr_driver) = /ctdi/cl_print_driver_base=>factory( iv_repair_id = iv_aufnr ).
+        DATA(lv_append_override) = COND char1(
+          WHEN p_imgyes = abap_true THEN /ctdi/cl_print_driver_base=>gc_img_override_yes
+          WHEN p_imgno  = abap_true THEN /ctdi/cl_print_driver_base=>gc_img_override_no
+          ELSE /ctdi/cl_print_driver_base=>gc_img_override_default ).
+
+        DATA(lr_driver) = /ctdi/cl_print_driver_base=>factory(
+          iv_repair_id     = iv_aufnr
+          iv_append_images = lv_append_override ).
 
         IF iv_external = abap_true.
           lr_driver->set_external_job( abap_true ).

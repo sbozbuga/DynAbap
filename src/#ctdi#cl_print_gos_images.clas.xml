@@ -1,0 +1,42 @@
+<?xml version="1.0" encoding="utf-8"?>
+<abapGit version="v1.0.0" serializer="LCL_OBJECT_CLAS" serializer_version="v1.0.0">
+ <asx:abap xmlns:asx="http://www.sap.com/abapxml" version="1.0">
+  <asx:values>
+   <VSEOCLASS>
+    <CLSNAME>/CTDI/CL_PRINT_GOS_IMAGES</CLSNAME>
+    <LANGU>E</LANGU>
+    <DESCRIPT>Print Driver: GOS Image Retrieval and PDF Merger</DESCRIPT>
+    <STATE>1</STATE>
+    <CLSCCINCL>X</CLSCCINCL>
+    <FIXPT>X</FIXPT>
+    <UNICODE>X</UNICODE>
+    <WITH_UNIT_TESTS>X</WITH_UNIT_TESTS>
+   </VSEOCLASS>
+   <LINES>
+    <TLINE>
+     <TDFORMAT>U1</TDFORMAT>
+     <TDLINE>&amp;FUNCTIONALITY&amp;</TDLINE>
+    </TLINE>
+    <TLINE>
+     <TDFORMAT>AS</TDFORMAT>
+     <TDLINE>The /CTDI/CL_PRINT_GOS_IMAGES class retrieves GOS image attachments</TDLINE>
+    </TLINE>
+    <TLINE>
+     <TDLINE>from repair orders and linked service notifications, converts them</TDLINE>
+    </TLINE>
+    <TLINE>
+     <TDLINE>into A4 PDF pages with aspect ratio preservation and automatic</TDLINE>
+    </TLINE>
+    <TLINE>
+     <TDLINE>scaling, and merges them into the final print PDF stream.</TDLINE>
+    </TLINE>
+   </LINES>
+   <DESCRIPTIONS_SUB>
+    <SEOSUBCOTX>
+     <LANGU>D</LANGU>
+     <DESCRIPT>Druckertreiber: GOS-Bilderabruf und PDF-Zusammenfuehrung</DESCRIPT>
+    </SEOSUBCOTX>
+   </DESCRIPTIONS_SUB>
+  </asx:values>
+ </asx:abap>
+</abapGit>

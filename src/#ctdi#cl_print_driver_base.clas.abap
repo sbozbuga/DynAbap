@@ -26,16 +26,23 @@ CLASS /ctdi/cl_print_driver_base DEFINITION
     CONSTANTS gc_param_output_opt    TYPE string    VALUE 'OUTPUT_OPTIONS' ##NO_TEXT.
     CONSTANTS gc_param_job_output    TYPE string    VALUE 'JOB_OUTPUT_INFO' ##NO_TEXT.
 
+    " Image append override constants
+    CONSTANTS gc_img_override_default TYPE char1    VALUE space ##NO_TEXT.
+    CONSTANTS gc_img_override_yes     TYPE char1    VALUE 'X' ##NO_TEXT.
+    CONSTANTS gc_img_override_no      TYPE char1    VALUE 'N' ##NO_TEXT.
+
     "! Static factory to determine and instantiate the correct driver
     "!
     "! @parameter iv_repair_id |
     "! @parameter iv_sernr |
+    "! @parameter iv_append_images | Runtime override: space (Default/Customizing), 'X' (Force Append), 'N' (Force Suppress)
     "! @parameter ro_driver |
     "! @raising /ctdi/cx_print_driver_error |
     "! @raising /ctdi/cx_no_config_found |
     CLASS-METHODS factory
       IMPORTING iv_repair_id     TYPE aufnr
                 iv_sernr         TYPE equi-sernr OPTIONAL
+                iv_append_images TYPE char1      DEFAULT gc_img_override_default
       RETURNING VALUE(ro_driver) TYPE REF TO /ctdi/cl_print_driver_base
       RAISING   /ctdi/cx_print_driver_error
                 /ctdi/cx_no_config_found.
@@ -45,6 +52,14 @@ CLASS /ctdi/cl_print_driver_base DEFINITION
 
     CLASS-METHODS get_download_dir
       RETURNING VALUE(rv_dir) TYPE string.
+
+    "! Returns whether GOS image appending is active for this driver instance.
+    METHODS get_append_images
+      RETURNING VALUE(rv_append) TYPE abap_bool.
+
+    "! Sets whether GOS image appending is active for this driver instance.
+    METHODS set_append_images
+      IMPORTING iv_append TYPE abap_bool.
 
     "! Returns the last generated PDF data (available after execute with iv_save_as_pdf = true).
     "!
@@ -95,11 +110,15 @@ CLASS /ctdi/cl_print_driver_base DEFINITION
     DATA mv_last_pdf           TYPE xstring.
     DATA mv_collect_pdf        TYPE abap_bool.
     DATA mv_external_job       TYPE abap_bool.
+    DATA mv_append_images      TYPE abap_bool.
     DATA ms_repair             TYPE /ctdi/repair.
     DATA ms_project            TYPE /ctdi/rep_projec.
     DATA mt_errors             TYPE /ctdi/repair_error_tt.
     DATA mt_comments           TYPE STANDARD TABLE OF tline.
     DATA mt_custom_form_params TYPE abap_func_parmbind_tab.
+
+    "! Hook: Processes and appends GOS images to mv_last_pdf if enabled
+    METHODS process_image_attachments.
 
     "! Registers a custom parameter to be passed dynamically to the form
     "!
@@ -263,10 +282,11 @@ CLASS /ctdi/cl_print_driver_base DEFINITION
       RAISING   /ctdi/cx_print_driver_error.
 
     CLASS-METHODS get_config_from_db
-      IMPORTING iv_repair_id  TYPE aufnr
-      EXPORTING ev_form_name  TYPE fpname
-                ev_class_name TYPE seoclsname
-                es_project    TYPE /ctdi/rep_projec
+      IMPORTING iv_repair_id     TYPE aufnr
+      EXPORTING ev_form_name     TYPE fpname
+                ev_class_name    TYPE seoclsname
+                es_project       TYPE /ctdi/rep_projec
+                ev_append_images TYPE abap_bool
       RAISING   /ctdi/cx_print_driver_error
                 /ctdi/cx_no_config_found.
 
@@ -481,6 +501,11 @@ CLASS /CTDI/CL_PRINT_DRIVER_BASE IMPLEMENTATION.
     " Always store last generated PDF for potential merge scenarios
     mv_last_pdf = iv_pdf_data.
 
+    " Process GOS image appending if enabled (PDF mode only)
+    IF mv_append_images = abap_true.
+      process_image_attachments( ).
+    ENDIF.
+
     " Collect mode: store only, don't download
     IF mv_collect_pdf = abap_true.
       RETURN.
@@ -495,9 +520,9 @@ CLASS /CTDI/CL_PRINT_DRIVER_BASE IMPLEMENTATION.
     " Build filename
     DATA(lv_pdf_filename) = build_pdf_filename( ) && '.pdf'.
 
-    " Convert XSTRING to binary table
+    " Convert XSTRING to binary table (using mv_last_pdf which may contain merged images)
     CALL FUNCTION 'SCMS_XSTRING_TO_BINARY'
-      EXPORTING  buffer     = iv_pdf_data
+      EXPORTING  buffer     = mv_last_pdf
       TABLES     binary_tab = lt_data
       EXCEPTIONS OTHERS     = 1.
     IF sy-subrc <> 0.
@@ -522,7 +547,7 @@ CLASS /CTDI/CL_PRINT_DRIVER_BASE IMPLEMENTATION.
 
     lv_fpath = mv_download_dir && lv_pdf_filename.
 
-    lv_filesize = xstrlen( iv_pdf_data ).
+    lv_filesize = xstrlen( mv_last_pdf ).
 
     cl_gui_frontend_services=>gui_download( EXPORTING  filename                = lv_fpath
                                                        filetype                = 'BIN'
@@ -778,16 +803,18 @@ CLASS /CTDI/CL_PRINT_DRIVER_BASE IMPLEMENTATION.
 
 
   METHOD factory.
-    DATA lv_form_name  TYPE fpname.
-    DATA lv_class_name TYPE seoclsname.
-    DATA ls_project_db TYPE /ctdi/rep_projec.
+    DATA lv_form_name    TYPE fpname.
+    DATA lv_class_name   TYPE seoclsname.
+    DATA ls_project_db   TYPE /ctdi/rep_projec.
+    DATA lv_append_image TYPE abap_bool.
 
     /ctdi/cl_print_driver_log=>log_info( |Print driver factory invoked for Repair { iv_repair_id }, Sernr { iv_sernr }| ).
 
-    get_config_from_db( EXPORTING iv_repair_id  = iv_repair_id
-                        IMPORTING ev_form_name  = lv_form_name
-                                  ev_class_name = lv_class_name
-                                  es_project    = ls_project_db ).
+    get_config_from_db( EXPORTING iv_repair_id     = iv_repair_id
+                        IMPORTING ev_form_name     = lv_form_name
+                                  ev_class_name    = lv_class_name
+                                  es_project       = ls_project_db
+                                  ev_append_images = lv_append_image ).
 
     TRY.
         CREATE OBJECT ro_driver TYPE (lv_class_name).
@@ -795,6 +822,13 @@ CLASS /CTDI/CL_PRINT_DRIVER_BASE IMPLEMENTATION.
         ro_driver->mv_sernr        = iv_sernr.
         ro_driver->mv_form_name    = lv_form_name.
         ro_driver->ms_project      = ls_project_db.
+
+        " Precedence: Selection Screen override > Customizing in /CTDI/REP_FORMS
+        ro_driver->mv_append_images = COND #(
+          WHEN iv_append_images = gc_img_override_yes THEN abap_true
+          WHEN iv_append_images = gc_img_override_no  THEN abap_false
+          ELSE lv_append_image ).
+
       CATCH cx_sy_create_object_error INTO DATA(lx_create).
         RAISE EXCEPTION TYPE /ctdi/cx_print_driver_error
           EXPORTING repair_id = iv_repair_id
@@ -889,8 +923,9 @@ CLASS /CTDI/CL_PRINT_DRIVER_BASE IMPLEMENTATION.
     ENDLOOP.
 
     IF ls_config IS NOT INITIAL.
-      ev_form_name  = ls_config-form_name.
-      ev_class_name = /ctdi/cl_print_cust_engine=>normalize_class_name( ls_config-class_name ).
+      ev_form_name     = ls_config-form_name.
+      ev_class_name    = /ctdi/cl_print_cust_engine=>normalize_class_name( ls_config-class_name ).
+      ev_append_images = ls_config-append_images.
     ELSE.
       RAISE EXCEPTION TYPE /ctdi/cx_no_config_found
         EXPORTING
@@ -899,7 +934,7 @@ CLASS /CTDI/CL_PRINT_DRIVER_BASE IMPLEMENTATION.
 
     /ctdi/cl_print_driver_log=>log_info(
         |Config resolved — Contract: { lv_contract }, | &&
-        |SKZ: { lv_skz }, AKZ: { lv_akz }, Form: { ev_form_name }, Class: { ev_class_name }| ).
+        |SKZ: { lv_skz }, AKZ: { lv_akz }, Form: { ev_form_name }, Class: { ev_class_name }, AppendImg: { ev_append_images }| ).
 
     SELECT SINGLE * FROM /ctdi/rep_projec     "#EC CI_ALL_FIELDS_NEEDED
       WHERE vbeln = @lv_contract ##SUBRC_OK
@@ -1116,5 +1151,30 @@ CLASS /CTDI/CL_PRINT_DRIVER_BASE IMPLEMENTATION.
 
   METHOD unpack_io_data.
     " Default: no-op. Subclasses redefine this to unpack custom objects.
+  ENDMETHOD.
+
+
+  METHOD get_append_images.
+    rv_append = mv_append_images.
+  ENDMETHOD.
+
+
+  METHOD set_append_images.
+    mv_append_images = iv_append.
+  ENDMETHOD.
+
+
+  METHOD process_image_attachments.
+    IF mv_append_images = abap_false OR mv_last_pdf IS INITIAL.
+      RETURN.
+    ENDIF.
+
+    TRY.
+        DATA(lo_helper) = NEW /ctdi/cl_print_gos_images( ).
+        mv_last_pdf = lo_helper->append_images( iv_repair_order = mv_repair_order
+                                                iv_pdf          = mv_last_pdf ).
+      CATCH cx_root INTO DATA(lx_root).
+        /ctdi/cl_print_driver_log=>log_exception( lx_root ).
+    ENDTRY.
   ENDMETHOD.
 ENDCLASS.
