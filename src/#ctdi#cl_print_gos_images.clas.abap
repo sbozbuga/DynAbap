@@ -463,7 +463,7 @@ CLASS /ctdi/cl_print_gos_images IMPLEMENTATION.
     ls_object-typeid = iv_objtype.
     ls_object-instid = iv_objkey.
 
-    DATA lt_links TYPE cl_binary_relation=>t_links.
+    DATA lt_links TYPE obl_t_link.
 
     TRY.
         cl_binary_relation=>read_links(
