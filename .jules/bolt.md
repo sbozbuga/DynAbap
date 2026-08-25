@@ -19,3 +19,6 @@
 ## 2025-01-29 - Consolidate conditional sequential lookups into single DB hit
 **Learning:** Sequential `SELECT SINGLE` queries where a subsequent query is executed based on a condition (e.g., `IF kdauf IS NOT INITIAL`) cause N+1 database roundtrips when the condition is met.
 **Action:** Consolidate these into a single database hit using `LEFT OUTER JOIN`s. The database handles the conditional linking efficiently via the `ON` clause, eliminating the need for application-level conditional queries and reducing DB latency.
+## 2025-02-01 - Consolidate conditional sequential afih and objk lookups into a single DB hit
+**Learning:** Sequential `SELECT SINGLE` queries where a subsequent query on `objk` is executed based on a condition (e.g., `IF lv_qmnum IS INITIAL` after checking `afih`) cause unnecessary N+1 database roundtrips.
+**Action:** Consolidate these into a single database hit using a `LEFT OUTER JOIN` on the common key `obknr`. The database handles the linking efficiently, eliminating the application-level secondary query and reducing DB latency while preserving the conditional fallback logic in ABAP.

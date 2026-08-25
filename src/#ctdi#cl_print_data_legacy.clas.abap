@@ -390,18 +390,18 @@ CLASS /ctdi/cl_print_data_legacy IMPLEMENTATION.
   ENDMETHOD.
 
   METHOD get_equipment_stands.
-    SELECT SINGLE qmnum, obknr FROM afih
-      WHERE aufnr = @mv_aufnr
-      INTO @DATA(ls_afih).
+    " ⚡ Bolt Optimization: Consolidate conditional sequential afih and objk lookups into a single DB hit
+    SELECT SINGLE a~qmnum AS afih_qmnum,
+                  o~ihnum AS objk_qmnum
+      FROM afih AS a
+             LEFT OUTER JOIN
+               objk AS o ON o~obknr = a~obknr AND o~ihnum <> @space
+      WHERE a~aufnr = @mv_aufnr
+      INTO ( @DATA(lv_afih_qmnum), @DATA(lv_objk_qmnum) ).
 
     DATA(lv_qmnum) = COND qmel-qmnum(
-      WHEN ls_afih-qmnum IS NOT INITIAL THEN ls_afih-qmnum ).
-
-    IF lv_qmnum IS INITIAL.
-      SELECT SINGLE ihnum FROM objk
-        WHERE obknr = @ls_afih-obknr AND ihnum <> @space
-        INTO @lv_qmnum.
-    ENDIF.
+      WHEN lv_afih_qmnum IS NOT INITIAL THEN lv_afih_qmnum
+      ELSE lv_objk_qmnum ).
 
     IF lv_qmnum IS INITIAL.
       RETURN.
