@@ -95,6 +95,14 @@ CLASS /ctdi/cl_print_gos_images DEFINITION
       EXPORTING ev_width   TYPE i
                 ev_height  TYPE i.
 
+    "! Deduplicates attachments by ID and binary SHA-256 hash while preserving retrieval order.
+    "!
+    "! @parameter it_attachments | Raw table of attachments
+    "! @parameter rt_unique      | Deduplicated table of attachments
+    CLASS-METHODS deduplicate_attachments
+      IMPORTING it_attachments  TYPE tt_image_attachments
+      RETURNING VALUE(rt_unique) TYPE tt_image_attachments.
+
   PROTECTED SECTION.
     "! Retrieves GOS attachments for a generic BOR object using CL_BINARY_RELATION and SO_DOCUMENT_READ_API1.
     "!
@@ -111,12 +119,12 @@ CLASS /ctdi/cl_print_gos_images DEFINITION
     "! Retrieves image attachments from SAP Content Server via ArchiveLink (TOA01).
     "! Uses BUS2088 (CS-Order), BUS2007 (Repair), or BUS2078/QMEL (Notification) and filters to ZRS_JPG.
     "!
-    "! @parameter iv_object_id | Object ID (AUFNR / QMNUM, alpha-converted)
-    "! @parameter iv_objtype | BOR Object Type (default BUS2088)
-    "! @parameter iv_source | Source label for the attachment
+    "! @parameter iv_object_id   | Object ID (AUFNR / QMNUM, alpha-converted)
+    "! @parameter iv_objtype     | BOR Object Type (default BUS2088)
+    "! @parameter iv_source      | Source label for the attachment
     "! @parameter rt_attachments | Retrieved image attachments
     METHODS get_content_server_attachments
-      IMPORTING iv_object_id          TYPE sibfboriid
+      IMPORTING iv_object_id          TYPE saeobjid
                 iv_objtype            TYPE swo_objtyp DEFAULT gc_objtype_cs_order
                 iv_source             TYPE string
       RETURNING VALUE(rt_attachments) TYPE tt_image_attachments.
@@ -515,7 +523,7 @@ CLASS /ctdi/cl_print_gos_images IMPLEMENTATION.
   METHOD convert_to_jpeg.
     CLEAR rv_jpeg.
 
-    DATA(lv_ext_upper) = to_upper( iv_ext ).
+    DATA(lv_ext_upper) = to_upper( condense( CONV string( iv_ext ) ) ).
 
     " Already JPEG — return as-is
     IF lv_ext_upper = 'JPG' OR lv_ext_upper = 'JPEG'.
@@ -694,6 +702,60 @@ CLASS /ctdi/cl_print_gos_images IMPLEMENTATION.
       ENDIF.
       APPEND LINES OF lt_cs_notif TO rt_attachments.
     ENDIF.
+
+    " Deduplicate attachments (preserves order, eliminates cross-backend duplicates)
+    rt_attachments = deduplicate_attachments( rt_attachments ).
+  ENDMETHOD.
+
+
+  METHOD deduplicate_attachments.
+    CLEAR rt_unique.
+
+    IF it_attachments IS INITIAL.
+      RETURN.
+    ENDIF.
+
+    TYPES: BEGIN OF ty_seen_hash,
+             hash TYPE string,
+           END OF ty_seen_hash.
+
+    DATA lt_seen_hashes TYPE HASHED TABLE OF ty_seen_hash WITH UNIQUE KEY hash.
+    DATA lt_seen_ids    TYPE HASHED TABLE OF string WITH UNIQUE KEY table_line.
+
+    LOOP AT it_attachments ASSIGNING FIELD-SYMBOL(<ls_att>).
+      " 1. Fast ID Check (Skips exact duplicate GOS/ArchiveLink pointers)
+      IF <ls_att>-atta_id IS NOT INITIAL.
+        INSERT <ls_att>-atta_id INTO TABLE lt_seen_ids.
+        IF sy-subrc <> 0.
+          CONTINUE. " ID already processed
+        ENDIF.
+      ENDIF.
+
+      " 2. Binary Hash Check (Skips identical images under different IDs)
+      DATA(lv_hash) = ||.
+      TRY.
+          cl_abap_message_digest=>calculate_hash_for_raw(
+            EXPORTING
+              if_algorithm  = 'SHA256'
+              if_data       = <ls_att>-content
+            IMPORTING
+              ef_hashstring = lv_hash ).
+        CATCH cx_abap_message_digest.
+          " Fallback if digest fails: byte length + sample slice
+          DATA(lv_slice) = COND xstring( WHEN xstrlen( <ls_att>-content ) >= 16
+                                         THEN <ls_att>-content(16)
+                                         ELSE <ls_att>-content ).
+          lv_hash = |{ xstrlen( <ls_att>-content ) }_{ lv_slice }|.
+      ENDTRY.
+
+      INSERT VALUE #( hash = lv_hash ) INTO TABLE lt_seen_hashes.
+      IF sy-subrc <> 0.
+        CONTINUE. " Exact binary duplicate already included
+      ENDIF.
+
+      " 3. Keep unique item in original sequence
+      APPEND <ls_att> TO rt_unique.
+    ENDLOOP.
   ENDMETHOD.
 
 
@@ -706,8 +768,8 @@ CLASS /ctdi/cl_print_gos_images IMPLEMENTATION.
 
     cl_alink_connection=>find(
       EXPORTING
-        sap_object = iv_objtype
-        object_id  = CONV toav0-object_id( iv_object_id )
+        sap_object  = iv_objtype
+        object_id   = iv_object_id
       IMPORTING
         connections = lt_connections
       EXCEPTIONS
