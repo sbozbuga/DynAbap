@@ -463,57 +463,87 @@ CLASS /ctdi/cl_print_gos_images IMPLEMENTATION.
     ls_object-typeid = iv_objtype.
     ls_object-instid = iv_objkey.
 
+    DATA lt_links TYPE cl_binary_relation=>t_links.
+
     TRY.
-        DATA(lo_gos) = cl_gos_api=>create_instance( is_object = ls_object ).
-        DATA(lt_atta) = lo_gos->get_atta_list( ).
-      CATCH cx_gos_api INTO DATA(lx_gos).
+        cl_binary_relation=>read_links(
+          EXPORTING
+            is_object        = ls_object
+            ip_relation_type = 'ATTA'
+          IMPORTING
+            et_links         = lt_links ).
+      CATCH cx_root INTO DATA(lx_rel).
         /ctdi/cl_print_driver_log=>log_warning(
-          |GOS attachment list lookup failed for { iv_objtype } { iv_objkey }: { lx_gos->get_text( ) }| ).
-        RETURN.
-      CATCH cx_root INTO DATA(lx_root).
-        /ctdi/cl_print_driver_log=>log_warning(
-          |Generic error querying GOS for { iv_objtype } { iv_objkey }: { lx_root->get_text( ) }| ).
+          |GOS attachment link lookup failed for { iv_objtype } { iv_objkey }: { lx_rel->get_text( ) }| ).
         RETURN.
     ENDTRY.
 
-    LOOP AT lt_atta ASSIGNING FIELD-SYMBOL(<ls_atta>).
-      TRY.
-          DATA(ls_content) = lo_gos->get_atta_content( is_atta = <ls_atta> ).
-          IF ls_content-data_xstring IS NOT INITIAL.
-            DATA(lv_fname) = COND string( WHEN ls_content-filename IS NOT INITIAL
-                                          THEN CONV string( ls_content-filename )
-                                          ELSE CONV string( <ls_atta>-descr ) ).
-            DATA(lv_ext)   = COND string( WHEN ls_content-file_type IS NOT INITIAL
-                                          THEN to_upper( CONV string( ls_content-file_type ) )
-                                          ELSE space ).
-            IF lv_ext IS INITIAL.
-              DATA(lv_dot_pos) = find( val = lv_fname sub = '.' occ = -1 ).
-              IF lv_dot_pos >= 0.
-                lv_ext = to_upper( substring( val = lv_fname off = lv_dot_pos + 1 ) ).
-              ENDIF.
-            ENDIF.
+    LOOP AT lt_links ASSIGNING FIELD-SYMBOL(<ls_link>).
+      DATA(lv_doc_id) = CONV sofolenti1-doc_id( <ls_link>-instid_b ).
+      DATA ls_doc_data TYPE sofolenti1.
+      DATA lt_doc_content TYPE TABLE OF solisti1.
+      DATA lt_hex_content TYPE TABLE OF solix.
 
-            IF is_supported_image_ext( lv_ext ) = abap_true.
-              DATA ls_img TYPE ty_image_attachment.
-              ls_img-atta_id  = |{ <ls_atta>-atta_id }|.
-              ls_img-filename = lv_fname.
-              ls_img-file_ext = lv_ext.
-              ls_img-content  = ls_content-data_xstring.
-              ls_img-source   = iv_source.
-              ls_img-objkey   = iv_objkey.
+      CALL FUNCTION 'SO_DOCUMENT_READ_API1'
+        EXPORTING
+          document_id                = lv_doc_id
+        IMPORTING
+          document_data              = ls_doc_data
+        TABLES
+          object_content             = lt_doc_content
+          contents_hex               = lt_hex_content
+        EXCEPTIONS
+          document_id_not_exist      = 1
+          operation_no_authorization = 2
+          x_error                    = 3
+          OTHERS                     = 4.
 
-              extract_image_dimensions( EXPORTING iv_content = ls_img-content
-                                                  iv_ext     = ls_img-file_ext
-                                        IMPORTING ev_width   = ls_img-width
-                                                  ev_height  = ls_img-height ).
+      IF sy-subrc <> 0.
+        /ctdi/cl_print_driver_log=>log_warning(
+          |Failed to read SOFM document { lv_doc_id } for { iv_objtype } { iv_objkey }| ).
+        CONTINUE.
+      ENDIF.
 
-              APPEND ls_img TO rt_attachments.
-            ENDIF.
-          ENDIF.
-        CATCH cx_gos_api INTO DATA(lx_atta).
-          /ctdi/cl_print_driver_log=>log_warning(
-            |Failed to read GOS attachment content: { lx_atta->get_text( ) }| ).
-      ENDTRY.
+      DATA lv_content TYPE xstring.
+      CALL FUNCTION 'SCMS_BINARY_TO_XSTRING'
+        EXPORTING
+          input_length = CONV i( ls_doc_data-doc_size )
+        IMPORTING
+          buffer       = lv_content
+        TABLES
+          binary_tab   = lt_hex_content
+        EXCEPTIONS
+          OTHERS       = 1.
+
+      IF lv_content IS INITIAL.
+        CONTINUE.
+      ENDIF.
+
+      DATA(lv_fname) = CONV string( ls_doc_data-obj_descr ).
+      DATA(lv_ext)   = to_upper( CONV string( ls_doc_data-obj_type ) ).
+      IF lv_ext IS INITIAL OR lv_ext = 'EXT'.
+        DATA(lv_dot_pos) = find( val = lv_fname sub = '.' occ = -1 ).
+        IF lv_dot_pos >= 0.
+          lv_ext = to_upper( substring( val = lv_fname off = lv_dot_pos + 1 ) ).
+        ENDIF.
+      ENDIF.
+
+      IF is_supported_image_ext( lv_ext ) = abap_true.
+        DATA ls_img TYPE ty_image_attachment.
+        ls_img-atta_id  = CONV #( lv_doc_id ).
+        ls_img-filename = lv_fname.
+        ls_img-file_ext = lv_ext.
+        ls_img-content  = lv_content.
+        ls_img-source   = iv_source.
+        ls_img-objkey   = iv_objkey.
+
+        extract_image_dimensions( EXPORTING iv_content = ls_img-content
+                                            iv_ext     = ls_img-file_ext
+                                  IMPORTING ev_width   = ls_img-width
+                                            ev_height  = ls_img-height ).
+
+        APPEND ls_img TO rt_attachments.
+      ENDIF.
     ENDLOOP.
   ENDMETHOD.
 
