@@ -97,7 +97,7 @@ CLASS /ctdi/cl_print_gos_images DEFINITION
                 ev_height  TYPE i.
 
   PROTECTED SECTION.
-    "! Retrieves GOS attachments for a generic BOR object using CL_GOS_API.
+    "! Retrieves GOS attachments for a generic BOR object using CL_BINARY_RELATION and SO_DOCUMENT_READ_API1.
     METHODS get_gos_attachments
       IMPORTING iv_objtype            TYPE swo_objtyp
                 iv_objkey             TYPE swo_typeid
@@ -183,7 +183,7 @@ CLASS /ctdi/cl_print_gos_images IMPLEMENTATION.
 
     DATA lt_offsets TYPE tt_offsets.
     DATA(lv_total_imgs) = lines( it_attachments ).
-    DATA(lv_num_pages)  = ( lv_total_imgs + 1 ) / 2.
+    DATA(lv_num_pages)  = CONV i( ceil( CONV f( lv_total_imgs ) / 2 ) ).
 
     " PDF Header (%PDF-1.4 with binary marker comment)
     rv_pdf = '255044462D312E340A25E2E3CFD30A'.
@@ -478,11 +478,18 @@ CLASS /ctdi/cl_print_gos_images IMPLEMENTATION.
         RETURN.
     ENDTRY.
 
+    DATA ls_doc_data    TYPE sofolenti1.
+    DATA lt_doc_content TYPE TABLE OF solisti1.
+    DATA lt_hex_content TYPE TABLE OF solix.
+    DATA lv_content     TYPE xstring.
+
     LOOP AT lt_links ASSIGNING FIELD-SYMBOL(<ls_link>).
+      CLEAR: ls_doc_data,
+             lt_doc_content,
+             lt_hex_content,
+             lv_content.
+
       DATA(lv_doc_id) = CONV sofolenti1-doc_id( <ls_link>-instid_b ).
-      DATA ls_doc_data TYPE sofolenti1.
-      DATA lt_doc_content TYPE TABLE OF solisti1.
-      DATA lt_hex_content TYPE TABLE OF solix.
 
       CALL FUNCTION 'SO_DOCUMENT_READ_API1'
         EXPORTING
@@ -504,7 +511,6 @@ CLASS /ctdi/cl_print_gos_images IMPLEMENTATION.
         CONTINUE.
       ENDIF.
 
-      DATA lv_content TYPE xstring.
       CALL FUNCTION 'SCMS_BINARY_TO_XSTRING'
         EXPORTING
           input_length = CONV i( ls_doc_data-doc_size )
@@ -550,11 +556,7 @@ CLASS /ctdi/cl_print_gos_images IMPLEMENTATION.
 
   METHOD is_supported_image_ext.
     DATA(lv_e) = to_upper( condense( CONV string( iv_ext ) ) ).
-    IF lv_e = 'JPG' OR lv_e = 'JPEG' OR lv_e = 'PNG' OR lv_e = 'BMP' OR lv_e = 'TIF' OR lv_e = 'TIFF'.
-      rv_is_image = abap_true.
-    ELSE.
-      rv_is_image = abap_false.
-    ENDIF.
+    rv_is_image = xsdbool( lv_e = 'JPG' OR lv_e = 'JPEG' OR lv_e = 'PNG' OR lv_e = 'BMP' OR lv_e = 'TIF' OR lv_e = 'TIFF' ).
   ENDMETHOD.
 
 
