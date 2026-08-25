@@ -41,6 +41,7 @@ CLASS lcl_tests DEFINITION FOR TESTING
     METHODS test_append_images_with_mock FOR TESTING.
     METHODS test_escape_pdf_text FOR TESTING.
     METHODS test_convert_to_jpeg_passthrough FOR TESTING.
+    METHODS test_deduplicate_attachments FOR TESTING.
 ENDCLASS.
 
 
@@ -230,6 +231,53 @@ CLASS lcl_tests IMPLEMENTATION.
       act = lv_res
       exp = lv_jpeg
       msg = 'JPEG content should pass through unchanged' ).
+  ENDMETHOD.
+
+  METHOD test_deduplicate_attachments.
+    DATA lt_raw TYPE /ctdi/cl_print_gos_images=>tt_image_attachments.
+
+    " 1. Base image from Repair Order
+    APPEND VALUE #( atta_id  = 'SOFM_001'
+                    filename = 'IMG_0001.jpg'
+                    source   = 'Repair Order'
+                    content  = 'FFD8FFE000104A46494600010101006000600000FFD9' ) TO lt_raw.
+
+    " 2. Duplicate GOS pointer (same atta_id)
+    APPEND VALUE #( atta_id  = 'SOFM_001'
+                    filename = 'IMG_0001_copy.jpg'
+                    source   = 'Repair Order'
+                    content  = 'FFD8FFE000104A46494600010101006000600000FFD9' ) TO lt_raw.
+
+    " 3. Cross-protocol duplicate from ArchiveLink (different atta_id, exact same binary content)
+    APPEND VALUE #( atta_id  = 'ARC_GUID_999'
+                    filename = 'archived_defect.jpg'
+                    source   = 'Notification'
+                    content  = 'FFD8FFE000104A46494600010101006000600000FFD9' ) TO lt_raw.
+
+    " 4. Different photo that happens to share identical filename ('IMG_0001.jpg')
+    APPEND VALUE #( atta_id  = 'SOFM_002'
+                    filename = 'IMG_0001.jpg'
+                    source   = 'Notification'
+                    content  = 'FFD8FFE000104A46494600010101004800480000FFD9' ) TO lt_raw.
+
+    DATA(lt_unique) = /ctdi/cl_print_gos_images=>deduplicate_attachments( lt_raw ).
+
+    cl_abap_unit_assert=>assert_equals(
+      act = lines( lt_unique )
+      exp = 2
+      msg = 'Should drop exact ID and exact binary duplicates, keeping distinct photos' ).
+
+    ASSIGN lt_unique[ 1 ] TO FIELD-SYMBOL(<ls_first>).
+    cl_abap_unit_assert=>assert_equals(
+      act = <ls_first>-atta_id
+      exp = 'SOFM_001'
+      msg = 'Original sequence should be preserved (Repair Order first)' ).
+
+    ASSIGN lt_unique[ 2 ] TO FIELD-SYMBOL(<ls_second>).
+    cl_abap_unit_assert=>assert_equals(
+      act = <ls_second>-atta_id
+      exp = 'SOFM_002'
+      msg = 'Distinct photo with same filename should be retained' ).
   ENDMETHOD.
 
 ENDCLASS.
