@@ -468,10 +468,10 @@ CLASS /ctdi/cl_print_gos_images IMPLEMENTATION.
     TRY.
         cl_binary_relation=>read_links(
           EXPORTING
-            is_object        = ls_object
-            ip_relation_type = 'ATTA'
+            is_object  = ls_object
+            ip_reltype = 'ATTA'
           IMPORTING
-            et_links         = lt_links ).
+            et_links   = lt_links ).
       CATCH cx_root INTO DATA(lx_rel).
         /ctdi/cl_print_driver_log=>log_warning(
           |GOS attachment link lookup failed for { iv_objtype } { iv_objkey }: { lx_rel->get_text( ) }| ).
@@ -601,12 +601,21 @@ CLASS /ctdi/cl_print_gos_images IMPLEMENTATION.
 
     DATA(lv_aufnr) = |{ iv_aufnr ALPHA = IN }|.
 
-    SELECT SINGLE qmnum FROM aufk
+    " 1. Query QMEL by AUFNR
+    SELECT SINGLE qmnum FROM qmel
       WHERE aufnr = @lv_aufnr
       INTO @rv_qmnum ##WARN_OK.
 
+    " 2. Fallback: Query AFKO by AUFNR
     IF rv_qmnum IS INITIAL.
-      SELECT SINGLE qmnum FROM qmel
+      SELECT SINGLE qmnum FROM afko
+        WHERE aufnr = @lv_aufnr
+        INTO @rv_qmnum ##WARN_OK.
+    ENDIF.
+
+    " 3. Fallback: Query AFIH by AUFNR
+    IF rv_qmnum IS INITIAL.
+      SELECT SINGLE qmnum FROM afih
         WHERE aufnr = @lv_aufnr
         INTO @rv_qmnum ##WARN_OK.
     ENDIF.
