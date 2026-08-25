@@ -7,9 +7,9 @@ CLASS /ctdi/cl_print_gos_images DEFINITION
     CONSTANTS gc_objtype_qmel     TYPE swo_objtyp VALUE 'BUS2078' ##NO_TEXT.
     CONSTANTS gc_objtype_qmel_alt TYPE swo_objtyp VALUE 'QMEL' ##NO_TEXT.
 
-    CONSTANTS gc_page_width_pt TYPE f VALUE '595.28'. " DIN A4 width in pt (210mm)
-    CONSTANTS gc_page_height_pt TYPE f VALUE '841.89'. " DIN A4 height in pt (297mm)
-    CONSTANTS gc_margin_pt TYPE f VALUE '36.00'.  " 0.5 inch margins
+    CONSTANTS gc_page_width_pt    TYPE f          VALUE '595.28'.  " DIN A4 width in pt (210mm)
+    CONSTANTS gc_page_height_pt   TYPE f          VALUE '841.89'.  " DIN A4 height in pt (297mm)
+    CONSTANTS gc_margin_pt        TYPE f          VALUE '36.00'.   " 0.5 inch margins
 
     TYPES: BEGIN OF ty_image_attachment,
              atta_id  TYPE string,
@@ -27,8 +27,8 @@ CLASS /ctdi/cl_print_gos_images DEFINITION
     "! High-level entry point: retrieves images and merges them into the input PDF stream.
     "!
     "! @parameter iv_repair_order | Repair Order Number (AUFNR)
-    "! @parameter iv_pdf | Input PDF byte stream
-    "! @parameter rv_pdf | Output PDF byte stream (with images appended if found)
+    "! @parameter iv_pdf          | Input PDF byte stream
+    "! @parameter rv_pdf          | Output PDF byte stream (with images appended if found)
     METHODS append_images
       IMPORTING iv_repair_order TYPE aufnr
                 iv_pdf          TYPE xstring
@@ -37,7 +37,7 @@ CLASS /ctdi/cl_print_gos_images DEFINITION
     "! Retrieves and filters all image attachments for an order and its linked notification.
     "!
     "! @parameter iv_repair_order | Repair Order Number (AUFNR)
-    "! @parameter rt_attachments | Table of filtered image attachments
+    "! @parameter rt_attachments  | Table of filtered image attachments
     METHODS get_attachments
       IMPORTING iv_repair_order       TYPE aufnr
       RETURNING VALUE(rt_attachments) TYPE tt_image_attachments.
@@ -45,16 +45,16 @@ CLASS /ctdi/cl_print_gos_images DEFINITION
     "! Converts a table of image attachments into a valid DIN A4 PDF stream.
     "!
     "! @parameter it_attachments | Table of image attachments
-    "! @parameter rv_pdf | Generated PDF byte stream
+    "! @parameter rv_pdf         | Generated PDF byte stream
     METHODS convert_images_to_pdf
       IMPORTING it_attachments TYPE tt_image_attachments
       RETURNING VALUE(rv_pdf)  TYPE xstring.
 
     "! Merges two PDF byte streams using CL_RSPO_PDF_MERGE.
     "!
-    "! @parameter iv_base_pdf | Primary PDF content
+    "! @parameter iv_base_pdf   | Primary PDF content
     "! @parameter iv_images_pdf | Appended PDF content
-    "! @parameter rv_pdf | Merged PDF content
+    "! @parameter rv_pdf        | Merged PDF content
     METHODS merge_pdfs
       IMPORTING iv_base_pdf   TYPE xstring
                 iv_images_pdf TYPE xstring
@@ -70,7 +70,7 @@ CLASS /ctdi/cl_print_gos_images DEFINITION
 
     "! Filters raw attachments by file extension (JPG, PNG, BMP, TIFF).
     "!
-    "! @parameter it_raw | Raw attachment list
+    "! @parameter it_raw      | Raw attachment list
     "! @parameter rt_filtered | Filtered list containing only supported image files
     CLASS-METHODS filter_image_attachments
       IMPORTING it_raw             TYPE tt_image_attachments
@@ -78,7 +78,7 @@ CLASS /ctdi/cl_print_gos_images DEFINITION
 
     "! Checks whether a given file extension is a supported image type.
     "!
-    "! @parameter iv_ext | File extension (e.g. 'JPG', 'PNG')
+    "! @parameter iv_ext      | File extension (e.g. 'JPG', 'PNG')
     "! @parameter rv_is_image | True if supported image format
     CLASS-METHODS is_supported_image_ext
       IMPORTING iv_ext             TYPE clike
@@ -87,9 +87,9 @@ CLASS /ctdi/cl_print_gos_images DEFINITION
     "! Extracts width and height from image binary stream if supported.
     "!
     "! @parameter iv_content | Image binary xstring
-    "! @parameter iv_ext | File extension
-    "! @parameter ev_width | Extracted width in pixels
-    "! @parameter ev_height | Extracted height in pixels
+    "! @parameter iv_ext     | File extension
+    "! @parameter ev_width   | Extracted width in pixels
+    "! @parameter ev_height  | Extracted height in pixels
     CLASS-METHODS extract_image_dimensions
       IMPORTING iv_content TYPE xstring
                 iv_ext     TYPE string
@@ -98,6 +98,11 @@ CLASS /ctdi/cl_print_gos_images DEFINITION
 
   PROTECTED SECTION.
     "! Retrieves GOS attachments for a generic BOR object using CL_BINARY_RELATION and SO_DOCUMENT_READ_API1.
+    "!
+    "! @parameter iv_objtype |
+    "! @parameter iv_objkey |
+    "! @parameter iv_source |
+    "! @parameter rt_attachments |
     METHODS get_gos_attachments
       IMPORTING iv_objtype            TYPE swo_objtyp
                 iv_objkey             TYPE swo_typeid
@@ -108,11 +113,19 @@ CLASS /ctdi/cl_print_gos_images DEFINITION
     TYPES tt_offsets TYPE STANDARD TABLE OF i WITH EMPTY KEY.
 
     "! Formats an ASCII/ISO text string for literal PDF text output.
+    "!
+    "! @parameter iv_text |
+    "! @parameter rv_hex |
     CLASS-METHODS escape_pdf_text
       IMPORTING iv_text       TYPE string
       RETURNING VALUE(rv_hex) TYPE string.
 
     "! Appends an ASCII string as PDF object and records byte offset.
+    "!
+    "! @parameter iv_obj_num |
+    "! @parameter iv_content |
+    "! @parameter cv_pdf |
+    "! @parameter ct_offsets |
     CLASS-METHODS append_obj_str
       IMPORTING iv_obj_num TYPE i
                 iv_content TYPE string
@@ -120,6 +133,12 @@ CLASS /ctdi/cl_print_gos_images DEFINITION
                 ct_offsets TYPE tt_offsets.
 
     "! Appends a binary stream PDF object (e.g. Image XObject).
+    "!
+    "! @parameter iv_obj_num |
+    "! @parameter iv_dict |
+    "! @parameter iv_stream |
+    "! @parameter cv_pdf |
+    "! @parameter ct_offsets |
     CLASS-METHODS append_obj_bin
       IMPORTING iv_obj_num TYPE i
                 iv_dict    TYPE string
@@ -130,10 +149,7 @@ CLASS /ctdi/cl_print_gos_images DEFINITION
 ENDCLASS.
 
 
-
-CLASS /CTDI/CL_PRINT_GOS_IMAGES IMPLEMENTATION.
-
-
+CLASS /ctdi/cl_print_gos_images IMPLEMENTATION.
   METHOD append_images.
     rv_pdf = iv_pdf.
 
@@ -145,8 +161,7 @@ CLASS /CTDI/CL_PRINT_GOS_IMAGES IMPLEMENTATION.
     DATA(lt_images) = get_attachments( iv_repair_order = iv_repair_order ).
 
     IF lt_images IS INITIAL.
-      /ctdi/cl_print_driver_log=>log_info(
-        |No GOS image attachments found for Repair Order { iv_repair_order }| ).
+      /ctdi/cl_print_driver_log=>log_info( |No GOS image attachments found for Repair Order { iv_repair_order }| ).
       RETURN.
     ENDIF.
 
@@ -155,7 +170,7 @@ CLASS /CTDI/CL_PRINT_GOS_IMAGES IMPLEMENTATION.
 
     IF lv_images_pdf IS INITIAL.
       /ctdi/cl_print_driver_log=>log_warning(
-        |Failed to convert image attachments to PDF for Repair Order { iv_repair_order }| ).
+          |Failed to convert image attachments to PDF for Repair Order { iv_repair_order }| ).
       RETURN.
     ENDIF.
 
@@ -164,9 +179,8 @@ CLASS /CTDI/CL_PRINT_GOS_IMAGES IMPLEMENTATION.
                          iv_images_pdf = lv_images_pdf ).
 
     /ctdi/cl_print_driver_log=>log_info(
-      |Successfully appended { lines( lt_images ) } GOS image(s) to Repair Order { iv_repair_order } PDF| ).
+        |Successfully appended { lines( lt_images ) } GOS image(s) to Repair Order { iv_repair_order } PDF| ).
   ENDMETHOD.
-
 
   METHOD append_obj_bin.
     APPEND xstrlen( cv_pdf ) TO ct_offsets.
@@ -175,24 +189,17 @@ CLASS /CTDI/CL_PRINT_GOS_IMAGES IMPLEMENTATION.
     DATA lv_tail_x TYPE xstring.
     DATA(lv_head) = |{ iv_obj_num } 0 obj\n<< { iv_dict } >>\nstream\n|.
     CALL FUNCTION 'SCMS_STRING_TO_XSTRING'
-      EXPORTING
-        text   = lv_head
-      IMPORTING
-        buffer = lv_head_x
-      EXCEPTIONS
-        OTHERS = 1.
+      EXPORTING  text   = lv_head
+      IMPORTING  buffer = lv_head_x
+      EXCEPTIONS OTHERS = 1.
 
     CALL FUNCTION 'SCMS_STRING_TO_XSTRING'
-      EXPORTING
-        text   = |\nendstream\nendobj\n|
-      IMPORTING
-        buffer = lv_tail_x
-      EXCEPTIONS
-        OTHERS = 1.
+      EXPORTING  text   = |\nendstream\nendobj\n|
+      IMPORTING  buffer = lv_tail_x
+      EXCEPTIONS OTHERS = 1.
 
     CONCATENATE cv_pdf lv_head_x iv_stream lv_tail_x INTO cv_pdf IN BYTE MODE.
   ENDMETHOD.
-
 
   METHOD append_obj_str.
     APPEND xstrlen( cv_pdf ) TO ct_offsets.
@@ -200,16 +207,12 @@ CLASS /CTDI/CL_PRINT_GOS_IMAGES IMPLEMENTATION.
     DATA lv_x TYPE xstring.
     DATA(lv_full) = |{ iv_obj_num } 0 obj\n{ iv_content }\nendobj\n|.
     CALL FUNCTION 'SCMS_STRING_TO_XSTRING'
-      EXPORTING
-        text   = lv_full
-      IMPORTING
-        buffer = lv_x
-      EXCEPTIONS
-        OTHERS = 1.
+      EXPORTING  text   = lv_full
+      IMPORTING  buffer = lv_x
+      EXCEPTIONS OTHERS = 1.
 
     CONCATENATE cv_pdf lv_x INTO cv_pdf IN BYTE MODE.
   ENDMETHOD.
-
 
   METHOD convert_images_to_pdf.
     CLEAR rv_pdf.
@@ -244,10 +247,13 @@ CLASS /CTDI/CL_PRINT_GOS_IMAGES IMPLEMENTATION.
       lv_kids = |{ lv_kids }{ 2 + sy-index } 0 R |.
     ENDDO.
 
-    append_obj_str( EXPORTING iv_obj_num = 2
-                              iv_content = |<< /Type /Pages /Kids [ { lv_kids }] /Count { lv_num_pages } /MediaBox [ 0 0 { lc_w_page } { lc_h_page } ] >>|
-                    CHANGING  cv_pdf     = rv_pdf
-                              ct_offsets = lt_offsets ).
+    append_obj_str(
+      EXPORTING
+        iv_obj_num = 2
+        iv_content = |<< /Type /Pages /Kids [ { lv_kids }] /Count { lv_num_pages } /MediaBox [ 0 0 { lc_w_page } { lc_h_page } ] >>|
+      CHANGING
+        cv_pdf     = rv_pdf
+        ct_offsets = lt_offsets ).
 
     DATA(lv_font_obj_id) = 2 + ( 2 * lv_num_pages ) + lv_total_imgs + 1.
 
@@ -259,7 +265,8 @@ CLASS /CTDI/CL_PRINT_GOS_IMAGES IMPLEMENTATION.
       DATA(lv_page_obj_id) = 2 + lv_p.
       DATA(lv_cs_obj_id)   = 2 + lv_num_pages + lv_p.
       DATA(lv_start_idx)   = ( lv_p - 1 ) * 2 + 1.
-      DATA(lv_end_idx)     = nmin( val1 = lv_p * 2 val2 = lv_total_imgs ).
+      DATA(lv_end_idx)     = nmin( val1 = lv_p * 2
+                                   val2 = lv_total_imgs ).
 
       " Build XObject resource dictionary for this page
       DATA lv_xobj_dict TYPE string.
@@ -272,16 +279,18 @@ CLASS /CTDI/CL_PRINT_GOS_IMAGES IMPLEMENTATION.
 
       " Append Page Object
       append_obj_str(
-        EXPORTING iv_obj_num = lv_page_obj_id
-                  iv_content = |<< /Type /Page /Parent 2 0 R\n| &&
-                               |   /Resources << /Font << /F1 { lv_font_obj_id } 0 R >> /XObject << { lv_xobj_dict }>> >>\n| &&
-                               |   /Contents { lv_cs_obj_id } 0 R >>|
-        CHANGING  cv_pdf     = rv_pdf
-                  ct_offsets = lt_offsets ).
+        EXPORTING
+          iv_obj_num = lv_page_obj_id
+          iv_content = |<< /Type /Page /Parent 2 0 R\n| &&
+                       |   /Resources << /Font << /F1 { lv_font_obj_id } 0 R >> /XObject << { lv_xobj_dict }>> >>\n| &&
+                       |   /Contents { lv_cs_obj_id } 0 R >>|
+        CHANGING
+          cv_pdf     = rv_pdf
+          ct_offsets = lt_offsets ).
 
       " Generate Content Stream operators for page slots
       DATA lv_page_cs TYPE string.
-      DATA lv_slot TYPE i VALUE 0.
+      DATA lv_slot    TYPE i VALUE 0.
 
       lv_k = lv_start_idx.
       WHILE lv_k <= lv_end_idx.
@@ -304,7 +313,8 @@ CLASS /CTDI/CL_PRINT_GOS_IMAGES IMPLEMENTATION.
         DATA(lv_raw_w)   = COND f( WHEN <ls_img>-width > 0 THEN <ls_img>-width ELSE 800 ).
         DATA(lv_raw_h)   = COND f( WHEN <ls_img>-height > 0 THEN <ls_img>-height ELSE 600 ).
 
-        DATA(lv_scale) = nmin( val1 = lv_avail_w / lv_raw_w val2 = lv_avail_h / lv_raw_h ).
+        DATA(lv_scale) = nmin( val1 = lv_avail_w / lv_raw_w
+                               val2 = lv_avail_h / lv_raw_h ).
         IF lv_scale > 1.
           lv_scale = 1.
         ENDIF.
@@ -328,19 +338,18 @@ CLASS /CTDI/CL_PRINT_GOS_IMAGES IMPLEMENTATION.
       lv_cs_obj_id = 2 + lv_num_pages + lv_p.
       READ TABLE lt_cstreams INTO lv_page_cs INDEX lv_p.
 
-      append_obj_str(
-        EXPORTING iv_obj_num = lv_cs_obj_id
-                  iv_content = |<< /Length { strlen( lv_page_cs ) } >>\nstream\n{ lv_page_cs }\nendstream|
-        CHANGING  cv_pdf     = rv_pdf
-                  ct_offsets = lt_offsets ).
+      append_obj_str( EXPORTING iv_obj_num = lv_cs_obj_id
+                                iv_content = |<< /Length { strlen( lv_page_cs ) } >>\nstream\n{ lv_page_cs }\nendstream|
+                      CHANGING  cv_pdf     = rv_pdf
+                                ct_offsets = lt_offsets ).
     ENDDO.
 
     " Emit Image XObjects (Binary Embedding)
     LOOP AT it_attachments ASSIGNING <ls_img>.
-      DATA(lv_i_idx)     = sy-tabix.
-      DATA(lv_img_id)    = 2 + ( 2 * lv_num_pages ) + lv_i_idx.
-      DATA(lv_w_val)     = COND i( WHEN <ls_img>-width > 0 THEN <ls_img>-width ELSE 800 ).
-      DATA(lv_h_val)     = COND i( WHEN <ls_img>-height > 0 THEN <ls_img>-height ELSE 600 ).
+      DATA(lv_i_idx)  = sy-tabix.
+      DATA(lv_img_id) = 2 + ( 2 * lv_num_pages ) + lv_i_idx.
+      DATA(lv_w_val)  = COND i( WHEN <ls_img>-width > 0 THEN <ls_img>-width ELSE 800 ).
+      DATA(lv_h_val)  = COND i( WHEN <ls_img>-height > 0 THEN <ls_img>-height ELSE 600 ).
 
       DATA(lv_dict) =
         |/Type /XObject /Subtype /Image /Width { lv_w_val } /Height { lv_h_val } | &&
@@ -372,16 +381,12 @@ CLASS /CTDI/CL_PRINT_GOS_IMAGES IMPLEMENTATION.
 
     DATA lv_xref_x TYPE xstring.
     CALL FUNCTION 'SCMS_STRING_TO_XSTRING'
-      EXPORTING
-        text   = lv_xref
-      IMPORTING
-        buffer = lv_xref_x
-      EXCEPTIONS
-        OTHERS = 1.
+      EXPORTING  text   = lv_xref
+      IMPORTING  buffer = lv_xref_x
+      EXCEPTIONS OTHERS = 1.
 
     CONCATENATE rv_pdf lv_xref_x INTO rv_pdf IN BYTE MODE.
   ENDMETHOD.
-
 
   METHOD escape_pdf_text.
     DATA(lv_s) = iv_text.
@@ -391,9 +396,9 @@ CLASS /CTDI/CL_PRINT_GOS_IMAGES IMPLEMENTATION.
     rv_hex = |({ lv_s })|.
   ENDMETHOD.
 
-
   METHOD extract_image_dimensions.
-    CLEAR: ev_width, ev_height.
+    CLEAR: ev_width,
+           ev_height.
 
     DATA(lv_len) = xstrlen( iv_content ).
     IF lv_len < 10.
@@ -435,7 +440,6 @@ CLASS /CTDI/CL_PRINT_GOS_IMAGES IMPLEMENTATION.
     ENDIF.
   ENDMETHOD.
 
-
   METHOD filter_image_attachments.
     CLEAR rt_filtered.
     LOOP AT it_raw ASSIGNING FIELD-SYMBOL(<ls_raw>).
@@ -444,7 +448,6 @@ CLASS /CTDI/CL_PRINT_GOS_IMAGES IMPLEMENTATION.
       ENDIF.
     ENDLOOP.
   ENDMETHOD.
-
 
   METHOD get_attachments.
     CLEAR rt_attachments.
@@ -476,7 +479,6 @@ CLASS /CTDI/CL_PRINT_GOS_IMAGES IMPLEMENTATION.
     ENDIF.
   ENDMETHOD.
 
-
   METHOD get_gos_attachments.
     CLEAR rt_attachments.
 
@@ -488,15 +490,12 @@ CLASS /CTDI/CL_PRINT_GOS_IMAGES IMPLEMENTATION.
     DATA lt_links TYPE obl_t_link.
 
     TRY.
-        cl_binary_relation=>read_links_of_binrel(
-          EXPORTING
-            is_object    = ls_object
-            ip_relation  = 'ATTA'
-          IMPORTING
-            et_links     = lt_links ).
+        cl_binary_relation=>read_links_of_binrel( EXPORTING is_object   = ls_object
+                                                            ip_relation = 'ATTA'
+                                                  IMPORTING et_links    = lt_links ).
       CATCH cx_root INTO DATA(lx_rel).
         /ctdi/cl_print_driver_log=>log_warning(
-          |GOS attachment link lookup failed for { iv_objtype } { iv_objkey }: { lx_rel->get_text( ) }| ).
+            |GOS attachment link lookup failed for { iv_objtype } { iv_objkey }: { lx_rel->get_text( ) }| ).
         RETURN.
     ENDTRY.
 
@@ -514,34 +513,26 @@ CLASS /CTDI/CL_PRINT_GOS_IMAGES IMPLEMENTATION.
       DATA(lv_doc_id) = CONV sofolenti1-doc_id( <ls_link>-instid_b ).
 
       CALL FUNCTION 'SO_DOCUMENT_READ_API1'
-        EXPORTING
-          document_id                = lv_doc_id
-        IMPORTING
-          document_data              = ls_doc_data
-        TABLES
-          object_content             = lt_doc_content
-          contents_hex               = lt_hex_content
-        EXCEPTIONS
-          document_id_not_exist      = 1
-          operation_no_authorization = 2
-          x_error                    = 3
-          OTHERS                     = 4.
+        EXPORTING  document_id                = lv_doc_id
+        IMPORTING  document_data              = ls_doc_data
+        TABLES     object_content             = lt_doc_content
+                   contents_hex               = lt_hex_content
+        EXCEPTIONS document_id_not_exist      = 1
+                   operation_no_authorization = 2
+                   x_error                    = 3
+                   OTHERS                     = 4.
 
       IF sy-subrc <> 0.
         /ctdi/cl_print_driver_log=>log_warning(
-          |Failed to read SOFM document { lv_doc_id } for { iv_objtype } { iv_objkey }| ).
+            |Failed to read SOFM document { lv_doc_id } for { iv_objtype } { iv_objkey }| ).
         CONTINUE.
       ENDIF.
 
       CALL FUNCTION 'SCMS_BINARY_TO_XSTRING'
-        EXPORTING
-          input_length = CONV i( ls_doc_data-doc_size )
-        IMPORTING
-          buffer       = lv_content
-        TABLES
-          binary_tab   = lt_hex_content
-        EXCEPTIONS
-          OTHERS       = 1.
+        EXPORTING  input_length = CONV i( ls_doc_data-doc_size )
+        IMPORTING  buffer       = lv_content
+        TABLES     binary_tab   = lt_hex_content
+        EXCEPTIONS OTHERS       = 1.
 
       IF lv_content IS INITIAL.
         CONTINUE.
@@ -550,9 +541,12 @@ CLASS /CTDI/CL_PRINT_GOS_IMAGES IMPLEMENTATION.
       DATA(lv_fname) = CONV string( ls_doc_data-obj_descr ).
       DATA(lv_ext)   = to_upper( CONV string( ls_doc_data-obj_type ) ).
       IF lv_ext IS INITIAL OR lv_ext = 'EXT'.
-        DATA(lv_dot_pos) = find( val = lv_fname sub = '.' occ = -1 ).
+        DATA(lv_dot_pos) = find( val = lv_fname
+                                 sub = '.'
+                                 occ = -1 ).
         IF lv_dot_pos >= 0.
-          lv_ext = to_upper( substring( val = lv_fname off = lv_dot_pos + 1 ) ).
+          lv_ext = to_upper( substring( val = lv_fname
+                                        off = lv_dot_pos + 1 ) ).
         ENDIF.
       ENDIF.
 
@@ -575,12 +569,10 @@ CLASS /CTDI/CL_PRINT_GOS_IMAGES IMPLEMENTATION.
     ENDLOOP.
   ENDMETHOD.
 
-
   METHOD is_supported_image_ext.
     DATA(lv_e) = to_upper( condense( CONV string( iv_ext ) ) ).
     rv_is_image = xsdbool( lv_e = 'JPG' OR lv_e = 'JPEG' OR lv_e = 'PNG' OR lv_e = 'BMP' OR lv_e = 'TIF' OR lv_e = 'TIFF' ).
   ENDMETHOD.
-
 
   METHOD merge_pdfs.
     rv_pdf = iv_base_pdf.
@@ -595,7 +587,7 @@ CLASS /CTDI/CL_PRINT_GOS_IMAGES IMPLEMENTATION.
         lo_merger->add_document( iv_base_pdf ).
         lo_merger->add_document( iv_images_pdf ).
 
-        DATA lv_rc TYPE i.
+        DATA lv_rc     TYPE i.
         DATA lv_merged TYPE xstring.
 
         lo_merger->merge_documents( IMPORTING merged_document = lv_merged
@@ -612,7 +604,6 @@ CLASS /CTDI/CL_PRINT_GOS_IMAGES IMPLEMENTATION.
         /ctdi/cl_print_driver_log=>log_exception( lx_root ).
     ENDTRY.
   ENDMETHOD.
-
 
   METHOD resolve_notification.
     CLEAR rv_qmnum.
