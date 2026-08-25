@@ -458,9 +458,10 @@ CLASS /ctdi/cl_print_gos_images IMPLEMENTATION.
   METHOD get_gos_attachments.
     CLEAR rt_attachments.
 
-    DATA ls_object TYPE borident.
-    ls_object-objtype = iv_objtype.
-    ls_object-objkey  = iv_objkey.
+    DATA ls_object TYPE sibflporb.
+    ls_object-catid  = 'BO'.
+    ls_object-typeid = iv_objtype.
+    ls_object-instid = iv_objkey.
 
     TRY.
         DATA(lo_gos) = cl_gos_api=>create_instance( is_object = ls_object ).
