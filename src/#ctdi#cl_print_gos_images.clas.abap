@@ -7,20 +7,20 @@ CLASS /ctdi/cl_print_gos_images DEFINITION
     CONSTANTS gc_objtype_qmel     TYPE swo_objtyp VALUE 'BUS2078' ##NO_TEXT.
     CONSTANTS gc_objtype_qmel_alt TYPE swo_objtyp VALUE 'QMEL' ##NO_TEXT.
 
-    CONSTANTS gc_page_width_pt  TYPE f VALUE '595.28'. " DIN A4 width in pt (210mm)
+    CONSTANTS gc_page_width_pt TYPE f VALUE '595.28'. " DIN A4 width in pt (210mm)
     CONSTANTS gc_page_height_pt TYPE f VALUE '841.89'. " DIN A4 height in pt (297mm)
-    CONSTANTS gc_margin_pt      TYPE f VALUE '36.00'.  " 0.5 inch margins
+    CONSTANTS gc_margin_pt TYPE f VALUE '36.00'.  " 0.5 inch margins
 
     TYPES: BEGIN OF ty_image_attachment,
-             atta_id   TYPE string,
-             filename  TYPE string,
-             file_ext  TYPE string,
-             mimetype  TYPE string,
-             content   TYPE xstring,
-             source    TYPE string, " 'Repair Order' or 'Notification'
-             objkey    TYPE swo_typeid,
-             width     TYPE i,
-             height    TYPE i,
+             atta_id  TYPE string,
+             filename TYPE string,
+             file_ext TYPE string,
+             mimetype TYPE string,
+             content  TYPE xstring,
+             source   TYPE string, " 'Repair Order' or 'Notification'
+             objkey   TYPE swo_typeid,
+             width    TYPE i,
+             height   TYPE i,
            END OF ty_image_attachment,
            tt_image_attachments TYPE STANDARD TABLE OF ty_image_attachment WITH EMPTY KEY.
 
@@ -131,7 +131,8 @@ ENDCLASS.
 
 
 
-CLASS /ctdi/cl_print_gos_images IMPLEMENTATION.
+CLASS /CTDI/CL_PRINT_GOS_IMAGES IMPLEMENTATION.
+
 
   METHOD append_images.
     rv_pdf = iv_pdf.
@@ -164,6 +165,49 @@ CLASS /ctdi/cl_print_gos_images IMPLEMENTATION.
 
     /ctdi/cl_print_driver_log=>log_info(
       |Successfully appended { lines( lt_images ) } GOS image(s) to Repair Order { iv_repair_order } PDF| ).
+  ENDMETHOD.
+
+
+  METHOD append_obj_bin.
+    APPEND xstrlen( cv_pdf ) TO ct_offsets.
+
+    DATA lv_head_x TYPE xstring.
+    DATA lv_tail_x TYPE xstring.
+    DATA(lv_head) = |{ iv_obj_num } 0 obj\n<< { iv_dict } >>\nstream\n|.
+    CALL FUNCTION 'SCMS_STRING_TO_XSTRING'
+      EXPORTING
+        text   = lv_head
+      IMPORTING
+        buffer = lv_head_x
+      EXCEPTIONS
+        OTHERS = 1.
+
+    CALL FUNCTION 'SCMS_STRING_TO_XSTRING'
+      EXPORTING
+        text   = |\nendstream\nendobj\n|
+      IMPORTING
+        buffer = lv_tail_x
+      EXCEPTIONS
+        OTHERS = 1.
+
+    CONCATENATE cv_pdf lv_head_x iv_stream lv_tail_x INTO cv_pdf IN BYTE MODE.
+  ENDMETHOD.
+
+
+  METHOD append_obj_str.
+    APPEND xstrlen( cv_pdf ) TO ct_offsets.
+
+    DATA lv_x TYPE xstring.
+    DATA(lv_full) = |{ iv_obj_num } 0 obj\n{ iv_content }\nendobj\n|.
+    CALL FUNCTION 'SCMS_STRING_TO_XSTRING'
+      EXPORTING
+        text   = lv_full
+      IMPORTING
+        buffer = lv_x
+      EXCEPTIONS
+        OTHERS = 1.
+
+    CONCATENATE cv_pdf lv_x INTO cv_pdf IN BYTE MODE.
   ENDMETHOD.
 
 
@@ -328,45 +372,23 @@ CLASS /ctdi/cl_print_gos_images IMPLEMENTATION.
 
     DATA lv_xref_x TYPE xstring.
     CALL FUNCTION 'SCMS_STRING_TO_XSTRING'
-      EXPORTING  text   = lv_xref
-      IMPORTING  buffer = lv_xref_x
-      EXCEPTIONS OTHERS = 1.
+      EXPORTING
+        text   = lv_xref
+      IMPORTING
+        buffer = lv_xref_x
+      EXCEPTIONS
+        OTHERS = 1.
 
     CONCATENATE rv_pdf lv_xref_x INTO rv_pdf IN BYTE MODE.
   ENDMETHOD.
 
 
-  METHOD append_obj_str.
-    APPEND xstrlen( cv_pdf ) TO ct_offsets.
-
-    DATA lv_x TYPE xstring.
-    DATA(lv_full) = |{ iv_obj_num } 0 obj\n{ iv_content }\nendobj\n|.
-    CALL FUNCTION 'SCMS_STRING_TO_XSTRING'
-      EXPORTING  text   = lv_full
-      IMPORTING  buffer = lv_x
-      EXCEPTIONS OTHERS = 1.
-
-    CONCATENATE cv_pdf lv_x INTO cv_pdf IN BYTE MODE.
-  ENDMETHOD.
-
-
-  METHOD append_obj_bin.
-    APPEND xstrlen( cv_pdf ) TO ct_offsets.
-
-    DATA lv_head_x TYPE xstring.
-    DATA lv_tail_x TYPE xstring.
-    DATA(lv_head) = |{ iv_obj_num } 0 obj\n<< { iv_dict } >>\nstream\n|.
-    CALL FUNCTION 'SCMS_STRING_TO_XSTRING'
-      EXPORTING  text   = lv_head
-      IMPORTING  buffer = lv_head_x
-      EXCEPTIONS OTHERS = 1.
-
-    CALL FUNCTION 'SCMS_STRING_TO_XSTRING'
-      EXPORTING  text   = |\nendstream\nendobj\n|
-      IMPORTING  buffer = lv_tail_x
-      EXCEPTIONS OTHERS = 1.
-
-    CONCATENATE cv_pdf lv_head_x iv_stream lv_tail_x INTO cv_pdf IN BYTE MODE.
+  METHOD escape_pdf_text.
+    DATA(lv_s) = iv_text.
+    REPLACE ALL OCCURRENCES OF '\' IN lv_s WITH '\\'.
+    REPLACE ALL OCCURRENCES OF '(' IN lv_s WITH '\('.
+    REPLACE ALL OCCURRENCES OF ')' IN lv_s WITH '\)'.
+    rv_hex = |({ lv_s })|.
   ENDMETHOD.
 
 
@@ -466,12 +488,12 @@ CLASS /ctdi/cl_print_gos_images IMPLEMENTATION.
     DATA lt_links TYPE obl_t_link.
 
     TRY.
-        cl_binary_relation=>read_links(
+        cl_binary_relation=>read_links_of_binrel(
           EXPORTING
-            is_object  = ls_object
-            ip_reltype = 'ATTA'
+            is_object    = ls_object
+            ip_relation  = 'ATTA'
           IMPORTING
-            et_links   = lt_links ).
+            et_links     = lt_links ).
       CATCH cx_root INTO DATA(lx_rel).
         /ctdi/cl_print_driver_log=>log_warning(
           |GOS attachment link lookup failed for { iv_objtype } { iv_objkey }: { lx_rel->get_text( ) }| ).
@@ -606,28 +628,11 @@ CLASS /ctdi/cl_print_gos_images IMPLEMENTATION.
       WHERE aufnr = @lv_aufnr
       INTO @rv_qmnum ##WARN_OK.
 
-    " 2. Fallback: Query AFKO by AUFNR
-    IF rv_qmnum IS INITIAL.
-      SELECT SINGLE qmnum FROM afko
-        WHERE aufnr = @lv_aufnr
-        INTO @rv_qmnum ##WARN_OK.
-    ENDIF.
-
-    " 3. Fallback: Query AFIH by AUFNR
+    " 2. Fallback: Query AFIH by AUFNR
     IF rv_qmnum IS INITIAL.
       SELECT SINGLE qmnum FROM afih
         WHERE aufnr = @lv_aufnr
         INTO @rv_qmnum ##WARN_OK.
     ENDIF.
   ENDMETHOD.
-
-
-  METHOD escape_pdf_text.
-    DATA(lv_s) = iv_text.
-    REPLACE ALL OCCURRENCES OF '\' IN lv_s WITH '\\'.
-    REPLACE ALL OCCURRENCES OF '(' IN lv_s WITH '\('.
-    REPLACE ALL OCCURRENCES OF ')' IN lv_s WITH '\)'.
-    rv_hex = |({ lv_s })|.
-  ENDMETHOD.
-
 ENDCLASS.
