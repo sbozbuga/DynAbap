@@ -326,9 +326,10 @@ CLASS /ctdi/cl_print_gos_images IMPLEMENTATION.
 
     lv_xref = lv_xref && |trailer\n<< /Size { lv_total_cnt + 1 } /Root 1 0 R >>\nstartxref\n{ lv_startxref }\n%%EOF\n|.
 
+    DATA lv_xref_x TYPE xstring.
     CALL FUNCTION 'SCMS_STRING_TO_XSTRING'
       EXPORTING  text   = lv_xref
-      IMPORTING  buffer = DATA(lv_xref_x)
+      IMPORTING  buffer = lv_xref_x
       EXCEPTIONS OTHERS = 1.
 
     CONCATENATE rv_pdf lv_xref_x INTO rv_pdf IN BYTE MODE.
@@ -338,10 +339,11 @@ CLASS /ctdi/cl_print_gos_images IMPLEMENTATION.
   METHOD append_obj_str.
     APPEND xstrlen( cv_pdf ) TO ct_offsets.
 
+    DATA lv_x TYPE xstring.
     DATA(lv_full) = |{ iv_obj_num } 0 obj\n{ iv_content }\nendobj\n|.
     CALL FUNCTION 'SCMS_STRING_TO_XSTRING'
       EXPORTING  text   = lv_full
-      IMPORTING  buffer = DATA(lv_x)
+      IMPORTING  buffer = lv_x
       EXCEPTIONS OTHERS = 1.
 
     CONCATENATE cv_pdf lv_x INTO cv_pdf IN BYTE MODE.
@@ -351,15 +353,17 @@ CLASS /ctdi/cl_print_gos_images IMPLEMENTATION.
   METHOD append_obj_bin.
     APPEND xstrlen( cv_pdf ) TO ct_offsets.
 
+    DATA lv_head_x TYPE xstring.
+    DATA lv_tail_x TYPE xstring.
     DATA(lv_head) = |{ iv_obj_num } 0 obj\n<< { iv_dict } >>\nstream\n|.
     CALL FUNCTION 'SCMS_STRING_TO_XSTRING'
       EXPORTING  text   = lv_head
-      IMPORTING  buffer = DATA(lv_head_x)
+      IMPORTING  buffer = lv_head_x
       EXCEPTIONS OTHERS = 1.
 
     CALL FUNCTION 'SCMS_STRING_TO_XSTRING'
       EXPORTING  text   = |\nendstream\nendobj\n|
-      IMPORTING  buffer = DATA(lv_tail_x)
+      IMPORTING  buffer = lv_tail_x
       EXCEPTIONS OTHERS = 1.
 
     CONCATENATE cv_pdf lv_head_x iv_stream lv_tail_x INTO cv_pdf IN BYTE MODE.
@@ -381,15 +385,19 @@ CLASS /ctdi/cl_print_gos_images IMPLEMENTATION.
       DATA lv_pos TYPE i VALUE 2.
       WHILE lv_pos < lv_len - 8.
         IF iv_content+lv_pos(1) = 'FF'.
-          DATA(lv_marker) = iv_content+(lv_pos + 1)(1).
+          DATA(lv_m_pos) = lv_pos + 1.
+          DATA(lv_marker) = iv_content+lv_m_pos(1).
           IF lv_marker = 'C0' OR lv_marker = 'C1' OR lv_marker = 'C2'.
-            ev_height = CONV i( iv_content+(lv_pos + 5)(2) ).
-            ev_width  = CONV i( iv_content+(lv_pos + 7)(2) ).
+            DATA(lv_h_pos) = lv_pos + 5.
+            DATA(lv_w_pos) = lv_pos + 7.
+            ev_height = CONV i( iv_content+lv_h_pos(2) ).
+            ev_width  = CONV i( iv_content+lv_w_pos(2) ).
             RETURN.
           ELSEIF lv_marker = 'DA' OR lv_marker = 'D9'.
             EXIT.
           ELSEIF lv_marker <> '00' AND lv_marker <> 'FF'.
-            DATA(lv_seg_len) = CONV i( iv_content+(lv_pos + 2)(2) ).
+            DATA(lv_l_pos) = lv_pos + 2.
+            DATA(lv_seg_len) = CONV i( iv_content+lv_l_pos(2) ).
             lv_pos = lv_pos + 2 + lv_seg_len.
             CONTINUE.
           ENDIF.
