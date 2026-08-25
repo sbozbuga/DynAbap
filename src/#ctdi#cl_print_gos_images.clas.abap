@@ -185,11 +185,8 @@ CLASS /ctdi/cl_print_gos_images IMPLEMENTATION.
     DATA(lv_total_imgs) = lines( it_attachments ).
     DATA(lv_num_pages)  = ( lv_total_imgs + 1 ) / 2.
 
-    " PDF Header
-    CALL FUNCTION 'SCMS_STRING_TO_XSTRING'
-      EXPORTING  text   = |%PDF-1.4\n%\xE2\xE3\xCF\xD3\n|
-      IMPORTING  buffer = rv_pdf
-      EXCEPTIONS OTHERS = 1.
+    " PDF Header (%PDF-1.4 with binary marker comment)
+    rv_pdf = '255044462D312E340A25E2E3CFD30A'.
 
     " Object 1: Catalog
     append_obj_str( EXPORTING iv_obj_num = 1
