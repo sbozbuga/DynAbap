@@ -217,26 +217,14 @@ CLASS /ctdi/cl_print_gos_images IMPLEMENTATION.
   METHOD append_obj_bin.
     APPEND xstrlen( cv_pdf ) TO ct_offsets.
 
-    DATA lv_head_x TYPE xstring.
-    DATA lv_tail_x TYPE xstring.
     DATA(lv_head) = |{ iv_obj_num } 0 obj\n<< { iv_dict } >>\nstream\n|.
-    CALL FUNCTION 'SCMS_STRING_TO_XSTRING'
-      EXPORTING
-        text     = lv_head
-        mimetype = 'text/plain; charset=iso-8859-1'
-      IMPORTING
-        buffer   = lv_head_x
-      EXCEPTIONS
-        OTHERS   = 1 ##SUBRC_OK.                  "#EC CI_SUBRC
+    DATA(lv_head_x) = cl_bcs_convert=>string_to_xstring(
+      iv_string   = lv_head
+      iv_codepage = '1100' ).
 
-    CALL FUNCTION 'SCMS_STRING_TO_XSTRING'
-      EXPORTING
-        text     = |\nendstream\nendobj\n|
-        mimetype = 'text/plain; charset=iso-8859-1'
-      IMPORTING
-        buffer   = lv_tail_x
-      EXCEPTIONS
-        OTHERS   = 1 ##SUBRC_OK.                  "#EC CI_SUBRC
+    DATA(lv_tail_x) = cl_bcs_convert=>string_to_xstring(
+      iv_string   = |\nendstream\nendobj\n|
+      iv_codepage = '1100' ).
 
     CONCATENATE cv_pdf lv_head_x iv_stream lv_tail_x INTO cv_pdf IN BYTE MODE.
   ENDMETHOD.
@@ -244,16 +232,10 @@ CLASS /ctdi/cl_print_gos_images IMPLEMENTATION.
   METHOD append_obj_str.
     APPEND xstrlen( cv_pdf ) TO ct_offsets.
 
-    DATA lv_x TYPE xstring.
     DATA(lv_full) = |{ iv_obj_num } 0 obj\n{ iv_content }\nendobj\n|.
-    CALL FUNCTION 'SCMS_STRING_TO_XSTRING'
-      EXPORTING
-        text     = lv_full
-        mimetype = 'text/plain; charset=iso-8859-1'
-      IMPORTING
-        buffer   = lv_x
-      EXCEPTIONS
-        OTHERS   = 1 ##SUBRC_OK.                  "#EC CI_SUBRC
+    DATA(lv_x) = cl_bcs_convert=>string_to_xstring(
+      iv_string   = lv_full
+      iv_codepage = '1100' ).
 
     CONCATENATE cv_pdf lv_x INTO cv_pdf IN BYTE MODE.
   ENDMETHOD.
@@ -475,15 +457,9 @@ CLASS /ctdi/cl_print_gos_images IMPLEMENTATION.
       lv_cs_obj_id = 2 + lv_num_pages + lv_p.
       READ TABLE lt_cstreams INTO lv_page_cs INDEX lv_p.
 
-      DATA lv_cs_x TYPE xstring.
-      CALL FUNCTION 'SCMS_STRING_TO_XSTRING'
-        EXPORTING
-          text     = lv_page_cs
-          mimetype = 'text/plain; charset=iso-8859-1'
-        IMPORTING
-          buffer   = lv_cs_x
-        EXCEPTIONS
-          OTHERS   = 1 ##SUBRC_OK.                "#EC CI_SUBRC
+      DATA(lv_cs_x) = cl_bcs_convert=>string_to_xstring(
+        iv_string   = lv_page_cs
+        iv_codepage = '1100' ).
 
       append_obj_bin( EXPORTING iv_obj_num = lv_cs_obj_id
                                 iv_dict    = |/Length { xstrlen( lv_cs_x ) }|
@@ -529,15 +505,9 @@ CLASS /ctdi/cl_print_gos_images IMPLEMENTATION.
 
     lv_xref = lv_xref && |trailer\n<< /Size { lv_total_cnt + 1 } /Root 1 0 R >>\nstartxref\n{ lv_startxref }\n%%EOF\n|.
 
-    DATA lv_xref_x TYPE xstring.
-    CALL FUNCTION 'SCMS_STRING_TO_XSTRING'
-      EXPORTING
-        text     = lv_xref
-        mimetype = 'text/plain; charset=iso-8859-1'
-      IMPORTING
-        buffer   = lv_xref_x
-      EXCEPTIONS
-        OTHERS   = 1 ##SUBRC_OK.                  "#EC CI_SUBRC
+    DATA(lv_xref_x) = cl_bcs_convert=>string_to_xstring(
+      iv_string   = lv_xref
+      iv_codepage = '1100' ).
 
     CONCATENATE rv_pdf lv_xref_x INTO rv_pdf IN BYTE MODE.
   ENDMETHOD.
@@ -555,20 +525,8 @@ CLASS /ctdi/cl_print_gos_images IMPLEMENTATION.
 
     " Convert PNG/BMP/TIFF to JPEG via IGS (Internet Graphics Server)
     TRY.
-        " Convert xstring to binary table for IGS
-        DATA lt_input TYPE w3mimetabtype.
-        DATA lv_input_size TYPE w3param-cont_len.
-        lv_input_size = xstrlen( iv_content ).
-
-        CALL FUNCTION 'SCMS_XSTRING_TO_BINARY'
-          EXPORTING
-            buffer        = iv_content
-          IMPORTING
-            output_length = lv_input_size
-          TABLES
-            binary_tab    = lt_input
-          EXCEPTIONS
-            OTHERS        = 1 ##SUBRC_OK.        "#EC CI_SUBRC
+        " Convert xstring to binary table for IGS via CL_BCS_CONVERT
+        DATA(lt_input) = cl_bcs_convert=>xstring_to_solix( iv_content ).
 
         " Create IGS converter and set parameters
         DATA(lo_converter) = NEW cl_igs_image_converter( ).
@@ -577,7 +535,7 @@ CLASS /ctdi/cl_print_gos_images IMPLEMENTATION.
 
         " Set input image
         lo_converter->set_image( blob      = lt_input
-                                 blob_size = lv_input_size ).
+                                 blob_size = xstrlen( iv_content ) ).
 
         " Execute conversion
         lo_converter->execute(
@@ -594,7 +552,7 @@ CLASS /ctdi/cl_print_gos_images IMPLEMENTATION.
         ENDIF.
 
         " Get converted output
-        DATA lt_output TYPE w3mimetabtype.
+        DATA lt_output TYPE solix_tab.
         DATA lv_output_size TYPE w3param-cont_len.
         DATA lv_output_type TYPE w3param-cont_type.
 
@@ -608,16 +566,10 @@ CLASS /ctdi/cl_print_gos_images IMPLEMENTATION.
           RETURN.
         ENDIF.
 
-        " Convert binary table back to xstring
-        CALL FUNCTION 'SCMS_BINARY_TO_XSTRING'
-          EXPORTING
-            input_length = lv_output_size
-          IMPORTING
-            buffer       = rv_jpeg
-          TABLES
-            binary_tab   = lt_output
-          EXCEPTIONS
-            OTHERS       = 1 ##SUBRC_OK.         "#EC CI_SUBRC
+        " Convert binary table back to xstring via CL_BCS_CONVERT
+        rv_jpeg = cl_bcs_convert=>solix_to_xstring(
+          it_solix = lt_output
+          iv_size  = CONV i( lv_output_size ) ).
 
       CATCH cx_root INTO DATA(lx_err).
         /ctdi/cl_print_driver_log=>log_warning(
@@ -797,7 +749,7 @@ CLASS /ctdi/cl_print_gos_images IMPLEMENTATION.
       ENDIF.
 
       " Retrieve binary content from Content Server
-      DATA lt_bindata TYPE TABLE OF tbl1024.
+      DATA lt_bindata TYPE solix_tab.
       DATA lv_length  TYPE i.
 
       CLEAR: lt_bindata, lv_length.
@@ -817,25 +769,16 @@ CLASS /ctdi/cl_print_gos_images IMPLEMENTATION.
           error_config = 4
           OTHERS       = 5.
 
-      IF sy-subrc <> 0 OR lv_length = 0.
+      IF sy-subrc <> 0 OR lv_length = 0 OR lt_bindata IS INITIAL.
         /ctdi/cl_print_driver_log=>log_warning(
           |Content Server read failed for doc { ls_conn-arc_doc_id }| ).
         CONTINUE.
       ENDIF.
 
-      " Convert binary table to xstring
-      DATA lv_content TYPE xstring.
-      CLEAR lv_content.
-
-      CALL FUNCTION 'SCMS_BINARY_TO_XSTRING'
-        EXPORTING
-          input_length = lv_length
-        IMPORTING
-          buffer       = lv_content
-        TABLES
-          binary_tab   = lt_bindata
-        EXCEPTIONS
-          OTHERS       = 1 ##SUBRC_OK.           "#EC CI_SUBRC
+      " ABAP 7.50 native conversion: Handles byte padding and lengths automatically
+      DATA(lv_content) = cl_bcs_convert=>solix_to_xstring(
+        it_solix = lt_bindata
+        iv_size  = lv_length ).
 
       IF lv_content IS INITIAL.
         CONTINUE.

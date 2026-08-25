@@ -140,11 +140,7 @@ CLASS lcl_tests IMPLEMENTATION.
       act = lv_pdf
       msg = 'Generated PDF should not be empty' ).
 
-    DATA lt_bin TYPE TABLE OF solisti1.
-    CALL FUNCTION 'SCMS_XSTRING_TO_BINARY'
-      EXPORTING  buffer     = lv_pdf
-      TABLES     binary_tab = lt_bin
-      EXCEPTIONS OTHERS     = 1.
+    DATA(lt_bin) = cl_bcs_convert=>xstring_to_solix( lv_pdf ).
 
     cl_abap_unit_assert=>assert_true(
       act = xsdbool( xstrlen( lv_pdf ) > 100 )
