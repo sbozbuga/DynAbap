@@ -63,9 +63,9 @@ PARAMETERS: p_aufnr TYPE aufk-aufnr OBLIGATORY, " Repair / Order ID
             p_sernr TYPE equi-sernr.           " Serial number (optional)
 
 SELECTION-SCREEN BEGIN OF BLOCK b_img WITH FRAME TITLE TEXT-020.
-PARAMETERS: p_imgdef RADIOBUTTON GROUP r_img DEFAULT 'X', " Default (Project Customizing)
-            p_imgyes RADIOBUTTON GROUP r_img,              " Force Append Images
-            p_imgno  RADIOBUTTON GROUP r_img.              " Force Suppress Images
+PARAMETERS: p_imgdef RADIOBUTTON GROUP rimg DEFAULT 'X', " Default (Project Customizing)
+            p_imgyes RADIOBUTTON GROUP rimg,              " Force Append Images
+            p_imgno  RADIOBUTTON GROUP rimg.              " Force Suppress Images
 SELECTION-SCREEN END OF BLOCK b_img.
 
 SELECTION-SCREEN BEGIN OF BLOCK b1a WITH FRAME.

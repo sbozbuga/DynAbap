@@ -67,9 +67,9 @@ PARAMETERS p_spool TYPE sap_bool AS CHECKBOX.                         " Single S
 SELECTION-SCREEN END OF BLOCK b3.
 
 SELECTION-SCREEN BEGIN OF BLOCK b4 WITH FRAME TITLE TEXT-036.
-PARAMETERS: p_imgdef RADIOBUTTON GROUP r_img DEFAULT 'X', " Default (Project Customizing)
-            p_imgyes RADIOBUTTON GROUP r_img,              " Force Append Images
-            p_imgno  RADIOBUTTON GROUP r_img.              " Force Suppress Images
+PARAMETERS: p_imgdef RADIOBUTTON GROUP rimg DEFAULT 'X', " Default (Project Customizing)
+            p_imgyes RADIOBUTTON GROUP rimg,              " Force Append Images
+            p_imgno  RADIOBUTTON GROUP rimg.              " Force Suppress Images
 SELECTION-SCREEN END OF BLOCK b4.
 
 " -----------------------------------------------------------------------
