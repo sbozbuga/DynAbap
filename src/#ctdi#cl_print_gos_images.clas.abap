@@ -465,7 +465,7 @@ CLASS /ctdi/cl_print_gos_images IMPLEMENTATION.
 
     TRY.
         DATA(lo_gos) = cl_gos_api=>create_instance( is_object = ls_object ).
-        lo_gos->get_atta_list( IMPORTING et_atta = DATA(lt_atta) ).
+        DATA(lt_atta) = lo_gos->get_atta_list( ).
       CATCH cx_gos_api INTO DATA(lx_gos).
         /ctdi/cl_print_driver_log=>log_warning(
           |GOS attachment list lookup failed for { iv_objtype } { iv_objkey }: { lx_gos->get_text( ) }| ).
@@ -477,40 +477,42 @@ CLASS /ctdi/cl_print_gos_images IMPLEMENTATION.
     ENDTRY.
 
     LOOP AT lt_atta ASSIGNING FIELD-SYMBOL(<ls_atta>).
-      DATA lv_ext TYPE string.
-      DATA(lv_fname) = CONV string( <ls_atta>-filename ).
-      DATA(lv_dot_pos) = find( val = lv_fname sub = '.' occ = -1 ).
-      IF lv_dot_pos >= 0.
-        lv_ext = to_upper( substring( val = lv_fname off = lv_dot_pos + 1 ) ).
-      ELSE.
-        lv_ext = to_upper( <ls_atta>-file_type ).
-      ENDIF.
-
-      IF is_supported_image_ext( lv_ext ) = abap_false.
-        CONTINUE.
-      ENDIF.
-
       TRY.
           DATA(ls_content) = lo_gos->get_atta_content( is_atta = <ls_atta> ).
           IF ls_content-data_xstring IS NOT INITIAL.
-            DATA ls_img TYPE ty_image_attachment.
-            ls_img-atta_id  = <ls_atta>-atta_id.
-            ls_img-filename = lv_fname.
-            ls_img-file_ext = lv_ext.
-            ls_img-content  = ls_content-data_xstring.
-            ls_img-source   = iv_source.
-            ls_img-objkey   = iv_objkey.
+            DATA(lv_fname) = COND string( WHEN ls_content-filename IS NOT INITIAL
+                                          THEN CONV string( ls_content-filename )
+                                          ELSE CONV string( <ls_atta>-descr ) ).
+            DATA(lv_ext)   = COND string( WHEN ls_content-file_type IS NOT INITIAL
+                                          THEN to_upper( CONV string( ls_content-file_type ) )
+                                          ELSE space ).
+            IF lv_ext IS INITIAL.
+              DATA(lv_dot_pos) = find( val = lv_fname sub = '.' occ = -1 ).
+              IF lv_dot_pos >= 0.
+                lv_ext = to_upper( substring( val = lv_fname off = lv_dot_pos + 1 ) ).
+              ENDIF.
+            ENDIF.
 
-            extract_image_dimensions( EXPORTING iv_content = ls_img-content
-                                                iv_ext     = ls_img-file_ext
-                                      IMPORTING ev_width   = ls_img-width
-                                                ev_height  = ls_img-height ).
+            IF is_supported_image_ext( lv_ext ) = abap_true.
+              DATA ls_img TYPE ty_image_attachment.
+              ls_img-atta_id  = |{ <ls_atta>-atta_id }|.
+              ls_img-filename = lv_fname.
+              ls_img-file_ext = lv_ext.
+              ls_img-content  = ls_content-data_xstring.
+              ls_img-source   = iv_source.
+              ls_img-objkey   = iv_objkey.
 
-            APPEND ls_img TO rt_attachments.
+              extract_image_dimensions( EXPORTING iv_content = ls_img-content
+                                                  iv_ext     = ls_img-file_ext
+                                        IMPORTING ev_width   = ls_img-width
+                                                  ev_height  = ls_img-height ).
+
+              APPEND ls_img TO rt_attachments.
+            ENDIF.
           ENDIF.
         CATCH cx_gos_api INTO DATA(lx_atta).
           /ctdi/cl_print_driver_log=>log_warning(
-            |Failed to read GOS attachment content { <ls_atta>-atta_id }: { lx_atta->get_text( ) }| ).
+            |Failed to read GOS attachment content: { lx_atta->get_text( ) }| ).
       ENDTRY.
     ENDLOOP.
   ENDMETHOD.
