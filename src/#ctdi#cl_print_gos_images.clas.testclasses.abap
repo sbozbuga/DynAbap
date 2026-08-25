@@ -40,6 +40,7 @@ CLASS lcl_tests DEFINITION FOR TESTING
     METHODS test_append_images_empty FOR TESTING.
     METHODS test_append_images_with_mock FOR TESTING.
     METHODS test_escape_pdf_text FOR TESTING.
+    METHODS test_convert_to_jpeg_passthrough FOR TESTING.
 ENDCLASS.
 
 
@@ -221,6 +222,18 @@ CLASS lcl_tests IMPLEMENTATION.
     cl_abap_unit_assert=>assert_not_initial(
       act = lv_pdf
       msg = 'Conversion with special characters in filename succeeds' ).
+  ENDMETHOD.
+
+  METHOD test_convert_to_jpeg_passthrough.
+    DATA lv_jpeg TYPE xstring VALUE 'FFD8FFE000104A46494600010101006000600000FFD9'.
+    DATA(lv_res) = /ctdi/cl_print_gos_images=>convert_to_jpeg(
+      iv_content = lv_jpeg
+      iv_ext     = 'JPG' ).
+
+    cl_abap_unit_assert=>assert_equals(
+      act = lv_res
+      exp = lv_jpeg
+      msg = 'JPEG content should pass through unchanged' ).
   ENDMETHOD.
 
 ENDCLASS.

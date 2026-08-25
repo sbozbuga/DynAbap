@@ -4,12 +4,11 @@ CLASS /ctdi/cl_print_gos_images DEFINITION
 
   PUBLIC SECTION.
     CONSTANTS gc_objtype_repair   TYPE swo_objtyp VALUE 'BUS2007' ##NO_TEXT.
+    CONSTANTS gc_objtype_cs_order TYPE swo_objtyp VALUE 'BUS2088' ##NO_TEXT.
     CONSTANTS gc_objtype_qmel     TYPE swo_objtyp VALUE 'BUS2078' ##NO_TEXT.
     CONSTANTS gc_objtype_qmel_alt TYPE swo_objtyp VALUE 'QMEL' ##NO_TEXT.
-
-    CONSTANTS gc_page_width_pt    TYPE f          VALUE '595.28'.  " DIN A4 width in pt (210mm)
-    CONSTANTS gc_page_height_pt   TYPE f          VALUE '841.89'.  " DIN A4 height in pt (297mm)
-    CONSTANTS gc_margin_pt        TYPE f          VALUE '36.00'.   " 0.5 inch margins
+    CONSTANTS gc_archiv_ar_jpg    TYPE toav0-ar_object VALUE 'ZRS_JPG' ##NO_TEXT.
+    CONSTANTS gc_archiv_ar_pdf    TYPE toav0-ar_object VALUE 'ZRS_PDF' ##NO_TEXT.
 
     TYPES: BEGIN OF ty_image_attachment,
              atta_id  TYPE string,
@@ -109,6 +108,19 @@ CLASS /ctdi/cl_print_gos_images DEFINITION
                 iv_source             TYPE string
       RETURNING VALUE(rt_attachments) TYPE tt_image_attachments.
 
+    "! Retrieves image attachments from SAP Content Server via ArchiveLink (TOA01).
+    "! Uses BUS2088 (CS-Order), BUS2007 (Repair), or BUS2078/QMEL (Notification) and filters to ZRS_JPG.
+    "!
+    "! @parameter iv_object_id | Object ID (AUFNR / QMNUM, alpha-converted)
+    "! @parameter iv_objtype | BOR Object Type (default BUS2088)
+    "! @parameter iv_source | Source label for the attachment
+    "! @parameter rt_attachments | Retrieved image attachments
+    METHODS get_content_server_attachments
+      IMPORTING iv_object_id          TYPE sibfboriid
+                iv_objtype            TYPE swo_objtyp DEFAULT gc_objtype_cs_order
+                iv_source             TYPE string
+      RETURNING VALUE(rt_attachments) TYPE tt_image_attachments.
+
   PRIVATE SECTION.
     TYPES tt_offsets TYPE STANDARD TABLE OF i WITH EMPTY KEY.
 
@@ -119,6 +131,17 @@ CLASS /ctdi/cl_print_gos_images DEFINITION
     CLASS-METHODS escape_pdf_text
       IMPORTING iv_text       TYPE string
       RETURNING VALUE(rv_hex) TYPE string.
+
+    "! Converts a non-JPEG image (PNG, BMP, TIFF) to JPEG using IGS.
+    "! Returns the original content unchanged if already JPEG.
+    "!
+    "! @parameter iv_content | Image binary xstring
+    "! @parameter iv_ext | File extension (e.g. PNG, BMP, TIFF)
+    "! @parameter rv_jpeg | Converted JPEG xstring (or empty on failure)
+    CLASS-METHODS convert_to_jpeg
+      IMPORTING iv_content     TYPE xstring
+                iv_ext         TYPE string
+      RETURNING VALUE(rv_jpeg) TYPE xstring.
 
     "! Appends an ASCII string as PDF object and records byte offset.
     "!
@@ -157,29 +180,38 @@ CLASS /ctdi/cl_print_gos_images IMPLEMENTATION.
       RETURN.
     ENDIF.
 
-    " 1. Retrieve all GOS image attachments (Order + Notification)
-    DATA(lt_images) = get_attachments( iv_repair_order = iv_repair_order ).
+    TRY.
+        " 1. Retrieve all GOS image attachments (Order + Notification)
+        DATA(lt_images) = get_attachments( iv_repair_order = iv_repair_order ).
 
-    IF lt_images IS INITIAL.
-      /ctdi/cl_print_driver_log=>log_info( |No GOS image attachments found for Repair Order { iv_repair_order }| ).
-      RETURN.
-    ENDIF.
+        IF lt_images IS INITIAL.
+          /ctdi/cl_print_driver_log=>log_info( |No GOS image attachments found for Repair Order { iv_repair_order }| ).
+          RETURN.
+        ENDIF.
 
-    " 2. Convert images to A4 PDF pages
-    DATA(lv_images_pdf) = convert_images_to_pdf( it_attachments = lt_images ).
+        " 2. Convert images to A4 PDF pages
+        DATA(lv_images_pdf) = convert_images_to_pdf( it_attachments = lt_images ).
 
-    IF lv_images_pdf IS INITIAL.
-      /ctdi/cl_print_driver_log=>log_warning(
-          |Failed to convert image attachments to PDF for Repair Order { iv_repair_order }| ).
-      RETURN.
-    ENDIF.
+        IF lv_images_pdf IS INITIAL.
+          /ctdi/cl_print_driver_log=>log_warning(
+              |Failed to convert image attachments to PDF for Repair Order { iv_repair_order }| ).
+          RETURN.
+        ENDIF.
 
-    " 3. Merge converted image pages into base PDF output
-    rv_pdf = merge_pdfs( iv_base_pdf   = iv_pdf
-                         iv_images_pdf = lv_images_pdf ).
+        " 3. Merge converted image pages into base PDF output
+        rv_pdf = merge_pdfs( iv_base_pdf   = iv_pdf
+                             iv_images_pdf = lv_images_pdf ).
 
-    /ctdi/cl_print_driver_log=>log_info(
-        |Successfully appended { lines( lt_images ) } GOS image(s) to Repair Order { iv_repair_order } PDF| ).
+        /ctdi/cl_print_driver_log=>log_info(
+            |Successfully appended { lines( lt_images ) } GOS image(s) to Repair Order { iv_repair_order } PDF| ).
+
+      CATCH cx_root INTO DATA(lx_error).
+        " Fail-safe: on ANY error, return original PDF unchanged
+        /ctdi/cl_print_driver_log=>log_exception( lx_error ).
+        /ctdi/cl_print_driver_log=>log_warning(
+            |GOS image append failed for order { iv_repair_order } - original PDF preserved| ).
+        rv_pdf = iv_pdf.
+    ENDTRY.
   ENDMETHOD.
 
   METHOD append_obj_bin.
@@ -189,14 +221,22 @@ CLASS /ctdi/cl_print_gos_images IMPLEMENTATION.
     DATA lv_tail_x TYPE xstring.
     DATA(lv_head) = |{ iv_obj_num } 0 obj\n<< { iv_dict } >>\nstream\n|.
     CALL FUNCTION 'SCMS_STRING_TO_XSTRING'
-      EXPORTING  text   = lv_head
-      IMPORTING  buffer = lv_head_x
-      EXCEPTIONS OTHERS = 1.
+      EXPORTING
+        text     = lv_head
+        mimetype = 'text/plain; charset=iso-8859-1'
+      IMPORTING
+        buffer   = lv_head_x
+      EXCEPTIONS
+        OTHERS   = 1 ##SUBRC_OK.                  "#EC CI_SUBRC
 
     CALL FUNCTION 'SCMS_STRING_TO_XSTRING'
-      EXPORTING  text   = |\nendstream\nendobj\n|
-      IMPORTING  buffer = lv_tail_x
-      EXCEPTIONS OTHERS = 1.
+      EXPORTING
+        text     = |\nendstream\nendobj\n|
+        mimetype = 'text/plain; charset=iso-8859-1'
+      IMPORTING
+        buffer   = lv_tail_x
+      EXCEPTIONS
+        OTHERS   = 1 ##SUBRC_OK.                  "#EC CI_SUBRC
 
     CONCATENATE cv_pdf lv_head_x iv_stream lv_tail_x INTO cv_pdf IN BYTE MODE.
   ENDMETHOD.
@@ -207,9 +247,13 @@ CLASS /ctdi/cl_print_gos_images IMPLEMENTATION.
     DATA lv_x TYPE xstring.
     DATA(lv_full) = |{ iv_obj_num } 0 obj\n{ iv_content }\nendobj\n|.
     CALL FUNCTION 'SCMS_STRING_TO_XSTRING'
-      EXPORTING  text   = lv_full
-      IMPORTING  buffer = lv_x
-      EXCEPTIONS OTHERS = 1.
+      EXPORTING
+        text     = lv_full
+        mimetype = 'text/plain; charset=iso-8859-1'
+      IMPORTING
+        buffer   = lv_x
+      EXCEPTIONS
+        OTHERS   = 1 ##SUBRC_OK.                  "#EC CI_SUBRC
 
     CONCATENATE cv_pdf lv_x INTO cv_pdf IN BYTE MODE.
   ENDMETHOD.
@@ -221,16 +265,121 @@ CLASS /ctdi/cl_print_gos_images IMPLEMENTATION.
       RETURN.
     ENDIF.
 
-    " Layout: Standard DIN A4 Portrait (595.28 x 841.89 pt), Max 2 images stacked vertically
-    CONSTANTS lc_w_page   TYPE f VALUE '595.28'.
-    CONSTANTS lc_h_page   TYPE f VALUE '841.89'.
-    CONSTANTS lc_margin   TYPE f VALUE '36.00'.
-    CONSTANTS lc_w_usable TYPE f VALUE '523.28'. " 595.28 - 2*36
-    CONSTANTS lc_slot_h   TYPE f VALUE '360.00'.
+    " Convert all images to JPEG for PDF embedding (/DCTDecode)
+    " JPEG passes through; PNG/BMP/TIFF are converted via IGS
+    DATA lt_jpeg_images TYPE tt_image_attachments.
+    LOOP AT it_attachments ASSIGNING FIELD-SYMBOL(<ls_check>).
+      DATA(lv_check_ext) = to_upper( <ls_check>-file_ext ).
+      IF lv_check_ext = 'JPG' OR lv_check_ext = 'JPEG'.
+        APPEND <ls_check> TO lt_jpeg_images.
+      ELSE.
+        " Convert non-JPEG to JPEG via IGS
+        DATA(lv_converted) = convert_to_jpeg( iv_content = <ls_check>-content
+                                              iv_ext     = <ls_check>-file_ext ).
+        IF lv_converted IS NOT INITIAL.
+          DATA ls_converted TYPE ty_image_attachment.
+          ls_converted = <ls_check>.
+          ls_converted-content  = lv_converted.
+          ls_converted-file_ext = 'JPG'.
+          " Re-extract dimensions from the converted JPEG
+          extract_image_dimensions(
+            EXPORTING iv_content = ls_converted-content  iv_ext = 'JPG'
+            IMPORTING ev_width = ls_converted-width  ev_height = ls_converted-height ).
+          APPEND ls_converted TO lt_jpeg_images.
+        ELSE.
+          /ctdi/cl_print_driver_log=>log_warning(
+              |Skipping attachment { <ls_check>-filename } - conversion from { <ls_check>-file_ext } to JPEG failed| ).
+        ENDIF.
+      ENDIF.
+    ENDLOOP.
 
+    IF lt_jpeg_images IS INITIAL.
+      RETURN.
+    ENDIF.
+
+    " Layout: Flowing DIN A4 Portrait (595.28 x 841.89 pt)
+    " Rule: Scale images to fit page width (no upscaling), stack top-to-bottom.
+    "        When next image won't fit remaining space, start a new page.
+    CONSTANTS lc_w_page    TYPE f VALUE '595.28'.
+    CONSTANTS lc_h_page    TYPE f VALUE '841.89'.
+    CONSTANTS lc_margin    TYPE f VALUE '36.00'.
+    CONSTANTS lc_w_usable TYPE f VALUE '523.28'. " 595.28 - 2*36
+    CONSTANTS lc_h_usable TYPE f VALUE '769.89'. " 841.89 - 2*36
+    CONSTANTS lc_caption_h TYPE f VALUE '18.00'.  " space for filename caption
+    CONSTANTS lc_gap TYPE f VALUE '12.00'.  " gap between images
+
+    " --- Phase 1: Build page plan (flowing layout) ---
+    " Pre-calculate rendered height for each image
+    TYPES: BEGIN OF ty_img_layout,
+             idx    TYPE i,       " index in lt_jpeg_images
+             ren_w  TYPE f,       " rendered width (points)
+             ren_h  TYPE f,       " rendered height (points)
+             slot_h TYPE f,       " total slot: caption + image + gap
+           END OF ty_img_layout.
+    DATA lt_layout TYPE STANDARD TABLE OF ty_img_layout WITH EMPTY KEY.
+
+    DATA(lv_total_imgs) = lines( lt_jpeg_images ).
+
+    LOOP AT lt_jpeg_images ASSIGNING FIELD-SYMBOL(<ls_pre>) .
+      DATA(lv_pre_idx) = sy-tabix.
+      DATA(lv_raw_w) = COND f( WHEN <ls_pre>-width > 0 THEN <ls_pre>-width ELSE 800 ).
+      DATA(lv_raw_h) = COND f( WHEN <ls_pre>-height > 0 THEN <ls_pre>-height ELSE 600 ).
+
+      " Scale to fit printable page area (width and height minus caption/gap), never upscale
+      DATA(lv_max_img_h) = lc_h_usable - lc_caption_h - lc_gap.
+      DATA(lv_sc) = nmin( val1 = lc_w_usable / lv_raw_w
+                          val2 = lv_max_img_h / lv_raw_h ).
+      IF lv_sc > 1. lv_sc = 1. ENDIF.
+
+      DATA(lv_ren_w) = lv_raw_w * lv_sc.
+      DATA(lv_ren_h) = lv_raw_h * lv_sc.
+      DATA(lv_slot_h) = lc_caption_h + lv_ren_h + lc_gap.
+
+      APPEND VALUE ty_img_layout( idx = lv_pre_idx  ren_w = lv_ren_w
+                                  ren_h = lv_ren_h  slot_h = lv_slot_h ) TO lt_layout.
+    ENDLOOP.
+
+    " Assign images to pages by flowing: fill top-to-bottom until page is full
+    TYPES: BEGIN OF ty_page_plan,
+             img_indices TYPE STANDARD TABLE OF i WITH EMPTY KEY,
+           END OF ty_page_plan.
+    DATA lt_pages TYPE STANDARD TABLE OF ty_page_plan WITH EMPTY KEY.
+
+    DATA lv_remaining_h TYPE f.
+    DATA ls_cur_page TYPE ty_page_plan.
+
+    lv_remaining_h = lc_h_usable.
+    CLEAR ls_cur_page.
+
+    LOOP AT lt_layout INTO DATA(ls_lay).
+      " Will this image fit on current page?
+      IF ls_lay-slot_h <= lv_remaining_h.
+        " Fits — add to current page
+        APPEND ls_lay-idx TO ls_cur_page-img_indices.
+        lv_remaining_h = lv_remaining_h - ls_lay-slot_h.
+      ELSE.
+        " Doesn't fit — flush current page (if non-empty) and start new
+        IF ls_cur_page-img_indices IS NOT INITIAL.
+          APPEND ls_cur_page TO lt_pages.
+        ENDIF.
+        CLEAR ls_cur_page.
+        APPEND ls_lay-idx TO ls_cur_page-img_indices.
+        lv_remaining_h = lc_h_usable - ls_lay-slot_h.
+      ENDIF.
+    ENDLOOP.
+
+    " Flush last page
+    IF ls_cur_page-img_indices IS NOT INITIAL.
+      APPEND ls_cur_page TO lt_pages.
+    ENDIF.
+
+    DATA(lv_num_pages) = lines( lt_pages ).
+    IF lv_num_pages = 0.
+      RETURN.
+    ENDIF.
+
+    " --- Phase 2: Build PDF structure ---
     DATA lt_offsets TYPE tt_offsets.
-    DATA(lv_total_imgs) = lines( it_attachments ).
-    DATA(lv_num_pages)  = CONV i( ceil( CONV f( lv_total_imgs ) / 2 ) ).
 
     " PDF Header (%PDF-1.4 with binary marker comment)
     rv_pdf = '255044462D312E340A25E2E3CFD30A'.
@@ -257,25 +406,24 @@ CLASS /ctdi/cl_print_gos_images IMPLEMENTATION.
 
     DATA(lv_font_obj_id) = 2 + ( 2 * lv_num_pages ) + lv_total_imgs + 1.
 
-    " Build Page Objects, Content Streams, and Image XObjects
+    " --- Phase 3: Build Page Objects and Content Streams (flowing) ---
     DATA lt_cstreams TYPE TABLE OF string.
 
     DO lv_num_pages TIMES.
       DATA(lv_p)           = sy-index.
       DATA(lv_page_obj_id) = 2 + lv_p.
       DATA(lv_cs_obj_id)   = 2 + lv_num_pages + lv_p.
-      DATA(lv_start_idx)   = ( lv_p - 1 ) * 2 + 1.
-      DATA(lv_end_idx)     = nmin( val1 = lv_p * 2
-                                   val2 = lv_total_imgs ).
+
+      " Get page plan
+      ASSIGN lt_pages[ lv_p ] TO FIELD-SYMBOL(<ls_page>).
 
       " Build XObject resource dictionary for this page
       DATA lv_xobj_dict TYPE string.
-      DATA(lv_k) = lv_start_idx.
-      WHILE lv_k <= lv_end_idx.
-        DATA(lv_img_obj_id) = 2 + ( 2 * lv_num_pages ) + lv_k.
-        lv_xobj_dict = |{ lv_xobj_dict }/Im{ lv_k } { lv_img_obj_id } 0 R |.
-        lv_k = lv_k + 1.
-      ENDWHILE.
+      CLEAR lv_xobj_dict.
+      LOOP AT <ls_page>-img_indices INTO DATA(lv_img_idx).
+        DATA(lv_img_obj_id) = 2 + ( 2 * lv_num_pages ) + lv_img_idx.
+        lv_xobj_dict = |{ lv_xobj_dict }/Im{ lv_img_idx } { lv_img_obj_id } 0 R |.
+      ENDLOOP.
 
       " Append Page Object
       append_obj_str(
@@ -288,46 +436,35 @@ CLASS /ctdi/cl_print_gos_images IMPLEMENTATION.
           cv_pdf     = rv_pdf
           ct_offsets = lt_offsets ).
 
-      " Generate Content Stream operators for page slots
+      " Generate Content Stream — flow images top to bottom
       DATA lv_page_cs TYPE string.
-      DATA lv_slot    TYPE i VALUE 0.
+      CLEAR lv_page_cs.
+      DATA(lv_cursor_y) = lc_h_page - lc_margin.  " Start at top of usable area
 
-      lv_k = lv_start_idx.
-      WHILE lv_k <= lv_end_idx.
-        lv_slot = lv_slot + 1.
-        ASSIGN it_attachments[ lv_k ] TO FIELD-SYMBOL(<ls_img>).
+      LOOP AT <ls_page>-img_indices INTO lv_img_idx.
+        ASSIGN lt_jpeg_images[ lv_img_idx ] TO FIELD-SYMBOL(<ls_img>).
+        ASSIGN lt_layout[ lv_img_idx ] TO FIELD-SYMBOL(<ls_dim>).
 
-        " Slot top coordinate (Slot 1 = Top, Slot 2 = Bottom)
-        DATA(lv_slot_y) = COND f( WHEN lv_slot = 1
-                                  THEN lc_h_page - lc_margin
-                                  ELSE lc_h_page - lc_margin - lc_slot_h - 20 ).
-
-        " Caption
-        DATA(lv_cap_y) = lv_slot_y - 12.
+        " Caption at current cursor
+        DATA(lv_cap_y) = lv_cursor_y - 12.
         DATA(lv_cap_txt) = escape_pdf_text( |[{ <ls_img>-source }] { <ls_img>-filename }| ).
-        lv_page_cs = lv_page_cs && |BT /F1 10 Tf 0 0 0 rg { lc_margin } { lv_cap_y } Td { lv_cap_txt } Tj ET\n|.
+        lv_page_cs = lv_page_cs && |BT /F1 9 Tf 0.3 0.3 0.3 rg { lc_margin } { lv_cap_y } Td { lv_cap_txt } Tj ET\n|.
 
-        " Aspect ratio scaling: scale to fit within slot
-        DATA(lv_avail_w) = lc_w_usable.
-        DATA(lv_avail_h) = lc_slot_h - 30.
-        DATA(lv_raw_w)   = COND f( WHEN <ls_img>-width > 0 THEN <ls_img>-width ELSE 800 ).
-        DATA(lv_raw_h)   = COND f( WHEN <ls_img>-height > 0 THEN <ls_img>-height ELSE 600 ).
+        " Image position: below caption
+        DATA(lv_img_y) = lv_cursor_y - lc_caption_h - <ls_dim>-ren_h.
+        DATA(lv_img_x) = lc_margin.
 
-        DATA(lv_scale) = nmin( val1 = lv_avail_w / lv_raw_w
-                               val2 = lv_avail_h / lv_raw_h ).
-        IF lv_scale > 1.
-          lv_scale = 1.
-        ENDIF.
+        " Image draw
+        lv_page_cs = lv_page_cs &&
+          |q { <ls_dim>-ren_w } 0 0 { <ls_dim>-ren_h } { lv_img_x } { lv_img_y } cm /Im{ lv_img_idx } Do Q\n|.
 
-        DATA(lv_w) = lv_raw_w * lv_scale.
-        DATA(lv_h) = lv_raw_h * lv_scale.
-        DATA(lv_x) = lc_margin + ( ( lv_avail_w - lv_w ) / 2 ).
-        DATA(lv_y) = lv_cap_y - 20 - lv_h + 5.
+        " Thin gray border
+        lv_page_cs = lv_page_cs &&
+          |0.5 w 0.6 0.6 0.6 RG { lv_img_x } { lv_img_y } { <ls_dim>-ren_w } { <ls_dim>-ren_h } re S\n|.
 
-        " Image draw operator
-        lv_page_cs = lv_page_cs && |q { lv_w } 0 0 { lv_h } { lv_x } { lv_y } cm /Im{ lv_k } Do Q\n|.
-        lv_k = lv_k + 1.
-      ENDWHILE.
+        " Move cursor down
+        lv_cursor_y = lv_img_y - lc_gap.
+      ENDLOOP.
 
       APPEND lv_page_cs TO lt_cstreams.
     ENDDO.
@@ -338,14 +475,27 @@ CLASS /ctdi/cl_print_gos_images IMPLEMENTATION.
       lv_cs_obj_id = 2 + lv_num_pages + lv_p.
       READ TABLE lt_cstreams INTO lv_page_cs INDEX lv_p.
 
-      append_obj_str( EXPORTING iv_obj_num = lv_cs_obj_id
-                                iv_content = |<< /Length { strlen( lv_page_cs ) } >>\nstream\n{ lv_page_cs }\nendstream|
+      DATA lv_cs_x TYPE xstring.
+      CALL FUNCTION 'SCMS_STRING_TO_XSTRING'
+        EXPORTING
+          text     = lv_page_cs
+          mimetype = 'text/plain; charset=iso-8859-1'
+        IMPORTING
+          buffer   = lv_cs_x
+        EXCEPTIONS
+          OTHERS   = 1 ##SUBRC_OK.                "#EC CI_SUBRC
+
+      append_obj_bin( EXPORTING iv_obj_num = lv_cs_obj_id
+                                iv_dict    = |/Length { xstrlen( lv_cs_x ) }|
+                                iv_stream  = lv_cs_x
                       CHANGING  cv_pdf     = rv_pdf
                                 ct_offsets = lt_offsets ).
     ENDDO.
 
     " Emit Image XObjects (Binary Embedding)
-    LOOP AT it_attachments ASSIGNING <ls_img>.
+    " NOTE: Only JPEG can be directly embedded via /DCTDecode.
+    " PNG/BMP/TIFF are skipped here — they are filtered out earlier in get_attachments.
+    LOOP AT lt_jpeg_images ASSIGNING <ls_img>.
       DATA(lv_i_idx)  = sy-tabix.
       DATA(lv_img_id) = 2 + ( 2 * lv_num_pages ) + lv_i_idx.
       DATA(lv_w_val)  = COND i( WHEN <ls_img>-width > 0 THEN <ls_img>-width ELSE 800 ).
@@ -381,12 +531,101 @@ CLASS /ctdi/cl_print_gos_images IMPLEMENTATION.
 
     DATA lv_xref_x TYPE xstring.
     CALL FUNCTION 'SCMS_STRING_TO_XSTRING'
-      EXPORTING  text   = lv_xref
-      IMPORTING  buffer = lv_xref_x
-      EXCEPTIONS OTHERS = 1.
+      EXPORTING
+        text     = lv_xref
+        mimetype = 'text/plain; charset=iso-8859-1'
+      IMPORTING
+        buffer   = lv_xref_x
+      EXCEPTIONS
+        OTHERS   = 1 ##SUBRC_OK.                  "#EC CI_SUBRC
 
     CONCATENATE rv_pdf lv_xref_x INTO rv_pdf IN BYTE MODE.
   ENDMETHOD.
+
+  METHOD convert_to_jpeg.
+    CLEAR rv_jpeg.
+
+    DATA(lv_ext_upper) = to_upper( iv_ext ).
+
+    " Already JPEG — return as-is
+    IF lv_ext_upper = 'JPG' OR lv_ext_upper = 'JPEG'.
+      rv_jpeg = iv_content.
+      RETURN.
+    ENDIF.
+
+    " Convert PNG/BMP/TIFF to JPEG via IGS (Internet Graphics Server)
+    TRY.
+        " Convert xstring to binary table for IGS
+        DATA lt_input TYPE w3mimetabtype.
+        DATA lv_input_size TYPE w3param-cont_len.
+        lv_input_size = xstrlen( iv_content ).
+
+        CALL FUNCTION 'SCMS_XSTRING_TO_BINARY'
+          EXPORTING
+            buffer        = iv_content
+          IMPORTING
+            output_length = lv_input_size
+          TABLES
+            binary_tab    = lt_input
+          EXCEPTIONS
+            OTHERS        = 1 ##SUBRC_OK.        "#EC CI_SUBRC
+
+        " Create IGS converter and set parameters
+        DATA(lo_converter) = NEW cl_igs_image_converter( ).
+        lo_converter->input  = lv_ext_upper.
+        lo_converter->output = 'JPG'.
+
+        " Set input image
+        lo_converter->set_image( blob      = lt_input
+                                 blob_size = lv_input_size ).
+
+        " Execute conversion
+        lo_converter->execute(
+          EXCEPTIONS
+            communication_error = 1
+            internal_error      = 2
+            external_error      = 3
+            OTHERS              = 4 ).
+
+        IF sy-subrc <> 0.
+          /ctdi/cl_print_driver_log=>log_warning(
+              |IGS image conversion failed for { lv_ext_upper }->JPG, rc={ sy-subrc }| ).
+          RETURN.
+        ENDIF.
+
+        " Get converted output
+        DATA lt_output TYPE w3mimetabtype.
+        DATA lv_output_size TYPE w3param-cont_len.
+        DATA lv_output_type TYPE w3param-cont_type.
+
+        lo_converter->get_image(
+          EXPORTING index     = 1
+          IMPORTING blob      = lt_output
+                    blob_size = lv_output_size
+                    blob_type = lv_output_type ).
+
+        IF lt_output IS INITIAL OR lv_output_size = 0.
+          RETURN.
+        ENDIF.
+
+        " Convert binary table back to xstring
+        CALL FUNCTION 'SCMS_BINARY_TO_XSTRING'
+          EXPORTING
+            input_length = lv_output_size
+          IMPORTING
+            buffer       = rv_jpeg
+          TABLES
+            binary_tab   = lt_output
+          EXCEPTIONS
+            OTHERS       = 1 ##SUBRC_OK.         "#EC CI_SUBRC
+
+      CATCH cx_root INTO DATA(lx_err).
+        /ctdi/cl_print_driver_log=>log_warning(
+            |Image conversion error for { lv_ext_upper }: { lx_err->get_text( ) }| ).
+        CLEAR rv_jpeg.
+    ENDTRY.
+  ENDMETHOD.
+
 
   METHOD escape_pdf_text.
     DATA(lv_s) = iv_text.
@@ -463,7 +702,20 @@ CLASS /ctdi/cl_print_gos_images IMPLEMENTATION.
                                                  iv_source  = 'Repair Order' ).
     APPEND LINES OF lt_order_images TO rt_attachments.
 
-    " 2. GOS images from linked Service Notification (BUS2078/QMEL)
+    " 2. Content Server images from CS-Order (BUS2088 / BUS2007 / ArchiveLink)
+    DATA(lt_cs_images) = get_content_server_attachments(
+                           iv_object_id = CONV #( lv_aufnr )
+                           iv_objtype   = gc_objtype_cs_order
+                           iv_source    = 'Repair Order' ).
+    IF lt_cs_images IS INITIAL.
+      lt_cs_images = get_content_server_attachments(
+                       iv_object_id = CONV #( lv_aufnr )
+                       iv_objtype   = gc_objtype_repair
+                       iv_source    = 'Repair Order' ).
+    ENDIF.
+    APPEND LINES OF lt_cs_images TO rt_attachments.
+
+    " 3. GOS images from linked Service Notification (BUS2078/QMEL)
     DATA(lv_qmnum) = resolve_notification( iv_aufnr = iv_repair_order ).
     IF lv_qmnum IS NOT INITIAL.
       DATA(lv_qmnum_key) = |{ lv_qmnum ALPHA = IN }|.
@@ -476,93 +728,238 @@ CLASS /ctdi/cl_print_gos_images IMPLEMENTATION.
                                                iv_source  = 'Notification' ).
       ENDIF.
       APPEND LINES OF lt_notif_images TO rt_attachments.
+
+      " 4. Content Server images from linked Notification (BUS2078 / QMEL / ArchiveLink)
+      DATA(lt_cs_notif) = get_content_server_attachments(
+                            iv_object_id = CONV #( lv_qmnum_key )
+                            iv_objtype   = gc_objtype_qmel
+                            iv_source    = 'Notification' ).
+      IF lt_cs_notif IS INITIAL.
+        lt_cs_notif = get_content_server_attachments(
+                        iv_object_id = CONV #( lv_qmnum_key )
+                        iv_objtype   = gc_objtype_qmel_alt
+                        iv_source    = 'Notification' ).
+      ENDIF.
+      APPEND LINES OF lt_cs_notif TO rt_attachments.
     ENDIF.
   ENDMETHOD.
 
-  METHOD get_gos_attachments.
+
+  METHOD get_content_server_attachments.
     CLEAR rt_attachments.
 
-    DATA ls_object TYPE sibflporb.
-    ls_object-catid  = 'BO'.
-    ls_object-typeid = iv_objtype.
-    ls_object-instid = iv_objkey.
+    " Find ArchiveLink documents on Content Server (TOA01)
+    " Supported: BUS2088 (CS-Order), BUS2007 (Repair Order), BUS2078/QMEL (Notification)
+    DATA lt_connections TYPE STANDARD TABLE OF toav0.
 
-    DATA lt_links TYPE obl_t_link.
+    cl_alink_connection=>find(
+      EXPORTING
+        sap_object = iv_objtype
+        object_id  = CONV toav0-object_id( iv_object_id )
+      IMPORTING
+        connections = lt_connections
+      EXCEPTIONS
+        not_found        = 1
+        error_authorithy = 2
+        error_parameter  = 3
+        OTHERS           = 4 ).
 
-    TRY.
-        cl_binary_relation=>read_links_of_binrel( EXPORTING is_object   = ls_object
-                                                            ip_relation = 'ATTA'
-                                                  IMPORTING et_links    = lt_links ).
-      CATCH cx_root INTO DATA(lx_rel).
-        /ctdi/cl_print_driver_log=>log_warning(
-            |GOS attachment link lookup failed for { iv_objtype } { iv_objkey }: { lx_rel->get_text( ) }| ).
-        RETURN.
-    ENDTRY.
+    IF sy-subrc <> 0 OR lt_connections IS INITIAL.
+      RETURN.
+    ENDIF.
 
-    DATA ls_doc_data    TYPE sofolenti1.
-    DATA lt_doc_content TYPE TABLE OF solisti1.
-    DATA lt_hex_content TYPE TABLE OF solix.
-    DATA lv_content     TYPE xstring.
+    " Pre-read all TOAAT filenames for the found documents (avoid SELECT in loop)
+    DATA lt_arc_doc_ids TYPE RANGE OF toaat-arc_doc_id.
+    LOOP AT lt_connections INTO DATA(ls_conn_pre) WHERE ar_object = gc_archiv_ar_jpg.
+      APPEND VALUE #( sign = 'I' option = 'EQ' low = ls_conn_pre-arc_doc_id ) TO lt_arc_doc_ids.
+    ENDLOOP.
 
-    LOOP AT lt_links ASSIGNING FIELD-SYMBOL(<ls_link>).
-      CLEAR: ls_doc_data,
-             lt_doc_content,
-             lt_hex_content,
-             lv_content.
+    DATA lt_toaat TYPE STANDARD TABLE OF toaat WITH KEY arc_doc_id.
+    IF lt_arc_doc_ids IS NOT INITIAL.
+      SELECT arc_doc_id, filename FROM toaat
+        WHERE arc_doc_id IN @lt_arc_doc_ids
+        INTO CORRESPONDING FIELDS OF TABLE @lt_toaat.
+    ENDIF.
 
-      DATA(lv_doc_id) = CONV sofolenti1-doc_id( <ls_link>-instid_b ).
-
-      CALL FUNCTION 'SO_DOCUMENT_READ_API1'
-        EXPORTING  document_id                = lv_doc_id
-        IMPORTING  document_data              = ls_doc_data
-        TABLES     object_content             = lt_doc_content
-                   contents_hex               = lt_hex_content
-        EXCEPTIONS document_id_not_exist      = 1
-                   operation_no_authorization = 2
-                   x_error                    = 3
-                   OTHERS                     = 4.
-
-      IF sy-subrc <> 0.
-        /ctdi/cl_print_driver_log=>log_warning(
-            |Failed to read SOFM document { lv_doc_id } for { iv_objtype } { iv_objkey }| ).
+    LOOP AT lt_connections INTO DATA(ls_conn).
+      " Only process image document types (ZRS_JPG)
+      IF ls_conn-ar_object <> gc_archiv_ar_jpg.
         CONTINUE.
       ENDIF.
 
+      " Get filename from pre-read TOAAT data
+      DATA lv_filename TYPE toaat-filename.
+      READ TABLE lt_toaat INTO DATA(ls_toaat) WITH KEY arc_doc_id = ls_conn-arc_doc_id.
+      IF sy-subrc = 0.
+        lv_filename = ls_toaat-filename.
+      ELSE.
+        lv_filename = |image_{ sy-tabix }.jpg|.
+      ENDIF.
+
+      " Retrieve binary content from Content Server
+      DATA lt_bindata TYPE TABLE OF tbl1024.
+      DATA lv_length  TYPE i.
+
+      CLEAR: lt_bindata, lv_length.
+
+      CALL FUNCTION 'SCMS_AO_TABLE_GET'
+        EXPORTING
+          arc_id       = ls_conn-archiv_id
+          doc_id       = ls_conn-arc_doc_id
+        IMPORTING
+          length       = lv_length
+        TABLES
+          data         = lt_bindata
+        EXCEPTIONS
+          error_http   = 1
+          error_archiv = 2
+          error_kernel = 3
+          error_config = 4
+          OTHERS       = 5.
+
+      IF sy-subrc <> 0 OR lv_length = 0.
+        /ctdi/cl_print_driver_log=>log_warning(
+          |Content Server read failed for doc { ls_conn-arc_doc_id }| ).
+        CONTINUE.
+      ENDIF.
+
+      " Convert binary table to xstring
+      DATA lv_content TYPE xstring.
+      CLEAR lv_content.
+
       CALL FUNCTION 'SCMS_BINARY_TO_XSTRING'
-        EXPORTING  input_length = CONV i( ls_doc_data-doc_size )
-        IMPORTING  buffer       = lv_content
-        TABLES     binary_tab   = lt_hex_content
-        EXCEPTIONS OTHERS       = 1.
+        EXPORTING
+          input_length = lv_length
+        IMPORTING
+          buffer       = lv_content
+        TABLES
+          binary_tab   = lt_bindata
+        EXCEPTIONS
+          OTHERS       = 1 ##SUBRC_OK.           "#EC CI_SUBRC
 
       IF lv_content IS INITIAL.
         CONTINUE.
       ENDIF.
 
+      " Determine file extension from filename
+      DATA(lv_ext) = 'JPG'.
+      DATA(lv_dot_pos) = find( val = CONV string( lv_filename ) sub = '.' occ = -1 ).
+      IF lv_dot_pos >= 0.
+        lv_ext = to_upper( substring( val = CONV string( lv_filename ) off = lv_dot_pos + 1 ) ).
+      ENDIF.
+
+      IF is_supported_image_ext( lv_ext ) = abap_false.
+        CONTINUE.
+      ENDIF.
+
+      " Build result entry
+      DATA ls_img TYPE ty_image_attachment.
+      ls_img-atta_id  = CONV #( ls_conn-arc_doc_id ).
+      ls_img-filename = CONV string( lv_filename ).
+      ls_img-file_ext = lv_ext.
+      ls_img-content  = lv_content.
+      ls_img-source   = iv_source.
+      ls_img-objkey   = iv_object_id.
+
+      extract_image_dimensions(
+        EXPORTING iv_content = ls_img-content  iv_ext = ls_img-file_ext
+        IMPORTING ev_width = ls_img-width  ev_height = ls_img-height ).
+
+      APPEND ls_img TO rt_attachments.
+    ENDLOOP.
+  ENDMETHOD.
+
+
+  METHOD get_gos_attachments.
+    CLEAR rt_attachments.
+
+    DATA(ls_object) = VALUE sibflporb(
+      catid  = 'BO'
+      typeid = iv_objtype
+      instid = iv_objkey
+    ).
+
+    DATA lt_links TYPE obl_t_link.
+
+    TRY.
+        cl_binary_relation=>read_links_of_binrel(
+          EXPORTING
+            is_object   = ls_object
+            ip_relation = 'ATTA'
+          IMPORTING
+            et_links    = lt_links ).
+      CATCH cx_root INTO DATA(lx_rel).
+        /ctdi/cl_print_driver_log=>log_warning(
+          |GOS attachment link lookup failed for { iv_objtype } { iv_objkey }: { lx_rel->get_text( ) }| ).
+        RETURN.
+    ENDTRY.
+
+    LOOP AT lt_links ASSIGNING FIELD-SYMBOL(<ls_link>).
+      DATA(lv_doc_id) = CONV so_entryid( <ls_link>-instid_b ).
+
+      DATA ls_doc_data TYPE sofolenti1.
+      DATA lt_hex_content TYPE solix_tab.
+
+      CALL FUNCTION 'SO_DOCUMENT_READ_API1'
+        EXPORTING
+          document_id                = lv_doc_id
+        IMPORTING
+          document_data              = ls_doc_data
+        TABLES
+          contents_hex               = lt_hex_content
+        EXCEPTIONS
+          document_id_not_exist      = 1
+          operation_no_authorization = 2
+          x_error                    = 3
+          OTHERS                     = 4.
+
+      IF sy-subrc <> 0 OR lt_hex_content IS INITIAL.
+        /ctdi/cl_print_driver_log=>log_warning(
+          |Failed to read SOFM document { lv_doc_id } for { iv_objtype } { iv_objkey }| ).
+        CONTINUE.
+      ENDIF.
+
+      " ABAP 7.50 native conversion: Handles byte padding and lengths automatically
+      DATA(lv_content) = cl_bcs_convert=>solix_to_xstring(
+        it_solix = lt_hex_content
+        iv_size  = CONV i( ls_doc_data-doc_size ) ).
+
+      IF lv_content IS INITIAL.
+        CONTINUE.
+      ENDIF.
+
+      " Resolve file extension: Check file_ext field -> obj_type -> filename parsing
       DATA(lv_fname) = CONV string( ls_doc_data-obj_descr ).
-      DATA(lv_ext)   = to_upper( CONV string( ls_doc_data-obj_type ) ).
+      DATA(lv_ext)   = to_upper( CONV string( ls_doc_data-file_ext ) ).
+
       IF lv_ext IS INITIAL OR lv_ext = 'EXT'.
-        DATA(lv_dot_pos) = find( val = lv_fname
-                                 sub = '.'
-                                 occ = -1 ).
+        lv_ext = to_upper( CONV string( ls_doc_data-obj_type ) ).
+      ENDIF.
+
+      IF lv_ext IS INITIAL OR lv_ext = 'EXT' OR lv_ext = 'RAW'.
+        DATA(lv_dot_pos) = find( val = lv_fname sub = '.' occ = -1 ).
         IF lv_dot_pos >= 0.
-          lv_ext = to_upper( substring( val = lv_fname
-                                        off = lv_dot_pos + 1 ) ).
+          lv_ext = to_upper( substring( val = lv_fname off = lv_dot_pos + 1 ) ).
         ENDIF.
       ENDIF.
 
       IF is_supported_image_ext( lv_ext ) = abap_true.
-        DATA ls_img TYPE ty_image_attachment.
-        ls_img-atta_id  = CONV #( lv_doc_id ).
-        ls_img-filename = lv_fname.
-        ls_img-file_ext = lv_ext.
-        ls_img-content  = lv_content.
-        ls_img-source   = iv_source.
-        ls_img-objkey   = iv_objkey.
+        DATA(ls_img) = VALUE ty_image_attachment(
+          atta_id  = CONV #( lv_doc_id )
+          filename = lv_fname
+          file_ext = lv_ext
+          content  = lv_content
+          source   = iv_source
+          objkey   = iv_objkey
+        ).
 
-        extract_image_dimensions( EXPORTING iv_content = ls_img-content
-                                            iv_ext     = ls_img-file_ext
-                                  IMPORTING ev_width   = ls_img-width
-                                            ev_height  = ls_img-height ).
+        extract_image_dimensions(
+          EXPORTING
+            iv_content = ls_img-content
+            iv_ext     = ls_img-file_ext
+          IMPORTING
+            ev_width   = ls_img-width
+            ev_height  = ls_img-height ).
 
         APPEND ls_img TO rt_attachments.
       ENDIF.
