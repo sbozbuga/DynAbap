@@ -2,4 +2,4 @@
 ***INCLUDE /CTDI/LWORKSHOP_MF02.
 *----------------------------------------------------------------------*
 
-include /CTDI/WORKSHOP_incl_se54.
+INCLUDE /ctdi/workshop_incl_se54.

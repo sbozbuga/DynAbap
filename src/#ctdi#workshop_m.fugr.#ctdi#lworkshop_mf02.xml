@@ -7,9 +7,16 @@
     <SQLX>X</SQLX>
     <SUBC>I</SUBC>
     <APPL>S</APPL>
-    <RLOAD>D</RLOAD>
+    <RLOAD>E</RLOAD>
     <UCCHECK>X</UCCHECK>
    </PROGDIR>
+   <TPOOL>
+    <item>
+     <ID>R</ID>
+     <ENTRY>Include /CTDI/LWORKSHOP_MF02</ENTRY>
+     <LENGTH>28</LENGTH>
+    </item>
+   </TPOOL>
   </asx:values>
  </asx:abap>
 </abapGit>
