@@ -22,13 +22,225 @@
      <TDLINE>The /CTDI/CL_PRINT_GOS_IMAGES class retrieves GOS image attachments</TDLINE>
     </TLINE>
     <TLINE>
-     <TDLINE>from repair orders and linked service notifications, converts them</TDLINE>
+     <TDFORMAT>/</TDFORMAT>
+     <TDLINE>from repair orders and linked service notifications, converts them into</TDLINE>
     </TLINE>
     <TLINE>
-     <TDLINE>into A4 PDF pages with aspect ratio preservation and automatic</TDLINE>
+     <TDFORMAT>/</TDFORMAT>
+     <TDLINE>A4 PDF pages with aspect ratio preservation and automatic scaling,</TDLINE>
     </TLINE>
     <TLINE>
-     <TDLINE>scaling, and merges them into the final print PDF stream.</TDLINE>
+     <TDFORMAT>/</TDFORMAT>
+     <TDLINE>and merges them into the final print PDF stream.</TDLINE>
+    </TLINE>
+    <TLINE>
+     <TDFORMAT>/</TDFORMAT>
+    </TLINE>
+    <TLINE>
+     <TDFORMAT>U1</TDFORMAT>
+     <TDLINE>ATTACHMENT SOURCES:</TDLINE>
+    </TLINE>
+    <TLINE>
+     <TDFORMAT>AS</TDFORMAT>
+     <TDLINE>- GOS/SOFFICE (SRGBTBREL + SO_DOCUMENT_READ_API1) — BUS2088 or BUS2007</TDLINE>
+    </TLINE>
+    <TLINE>
+     <TDFORMAT>/</TDFORMAT>
+     <TDLINE>- Content Server/ArchiveLink (TOA01 + SCMS_AO_TABLE_GET) — BUS2088 +</TDLINE>
+    </TLINE>
+    <TLINE>
+     <TDFORMAT>/</TDFORMAT>
+     <TDLINE>  ZRS_JPG</TDLINE>
+    </TLINE>
+    <TLINE>
+     <TDFORMAT>/</TDFORMAT>
+     <TDLINE>- Linked Service Notification (BUS2078/QMEL) — both GOS and Content</TDLINE>
+    </TLINE>
+    <TLINE>
+     <TDFORMAT>/</TDFORMAT>
+     <TDLINE>  Server</TDLINE>
+    </TLINE>
+    <TLINE>
+     <TDFORMAT>/</TDFORMAT>
+    </TLINE>
+    <TLINE>
+     <TDFORMAT>U1</TDFORMAT>
+     <TDLINE>IMAGE-TO-PDF RENDER MODES:</TDLINE>
+    </TLINE>
+    <TLINE>
+     <TDFORMAT>UT</TDFORMAT>
+     <TDLINE>- Raw PDF (gc_render_raw):</TDLINE>
+    </TLINE>
+    <TLINE>
+     <TDFORMAT>AS</TDFORMAT>
+     <TDLINE>  Builds PDF from scratch in ABAP. Only JPEG can be embedded directly</TDLINE>
+    </TLINE>
+    <TLINE>
+     <TDFORMAT>/</TDFORMAT>
+     <TDLINE>  via /DCTDecode. PNG/BMP/TIFF are converted to JPEG via IGS</TDLINE>
+    </TLINE>
+    <TLINE>
+     <TDFORMAT>/</TDFORMAT>
+     <TDLINE>  (CL_IGS_IMAGE_CONVERTER using MIME types).</TDLINE>
+    </TLINE>
+    <TLINE>
+     <TDFORMAT>UT</TDFORMAT>
+     <TDLINE>- ADS Form (gc_render_ads):</TDLINE>
+    </TLINE>
+    <TLINE>
+     <TDFORMAT>AS</TDFORMAT>
+     <TDLINE>  Renders via Adobe Form /CTDI/REPAIR_IMG. ADS natively handles JPEG,</TDLINE>
+    </TLINE>
+    <TLINE>
+     <TDFORMAT>/</TDFORMAT>
+     <TDLINE>  PNG (including transparency), BMP.</TDLINE>
+    </TLINE>
+    <TLINE>
+     <TDFORMAT>/</TDFORMAT>
+    </TLINE>
+    <TLINE>
+     <TDFORMAT>U1</TDFORMAT>
+     <TDLINE>RAW PDF STRUCTURE (convert_images_to_pdf):</TDLINE>
+    </TLINE>
+    <TLINE>
+     <TDFORMAT>AS</TDFORMAT>
+     <TDLINE>  Object 1:            Catalog (root, points to Pages)</TDLINE>
+    </TLINE>
+    <TLINE>
+     <TDFORMAT>/</TDFORMAT>
+     <TDLINE>  Object 2:            Pages Tree (A4 MediaBox 595x842pt)</TDLINE>
+    </TLINE>
+    <TLINE>
+     <TDFORMAT>/</TDFORMAT>
+     <TDLINE>  Objects 3..N+2:      Page objects (content stream + fonts + images)</TDLINE>
+    </TLINE>
+    <TLINE>
+     <TDFORMAT>/</TDFORMAT>
+     <TDLINE>  Objects N+3..2N+2:   Content Streams (PDF drawing operators per page)</TDLINE>
+    </TLINE>
+    <TLINE>
+     <TDFORMAT>/</TDFORMAT>
+     <TDLINE>  Objects 2N+3..2N+M+2: Image XObjects (raw JPEG binary /DCTDecode)</TDLINE>
+    </TLINE>
+    <TLINE>
+     <TDFORMAT>/</TDFORMAT>
+     <TDLINE>  Font /F1:            Helvetica (captions, 9pt gray)</TDLINE>
+    </TLINE>
+    <TLINE>
+     <TDFORMAT>/</TDFORMAT>
+     <TDLINE>  Font /F2:            Helvetica-Bold (title header, 16pt white)</TDLINE>
+    </TLINE>
+    <TLINE>
+     <TDFORMAT>/</TDFORMAT>
+    </TLINE>
+    <TLINE>
+     <TDFORMAT>U1</TDFORMAT>
+     <TDLINE>PDF OPERATORS USED:</TDLINE>
+    </TLINE>
+    <TLINE>
+     <TDFORMAT>AS</TDFORMAT>
+     <TDLINE>  rg          Set fill color (RGB)</TDLINE>
+    </TLINE>
+    <TLINE>
+     <TDFORMAT>/</TDFORMAT>
+     <TDLINE>  re f        Draw filled rectangle (title bar)</TDLINE>
+    </TLINE>
+    <TLINE>
+     <TDFORMAT>/</TDFORMAT>
+     <TDLINE>  BT/ET       Begin/End text block</TDLINE>
+    </TLINE>
+    <TLINE>
+     <TDFORMAT>/</TDFORMAT>
+     <TDLINE>  Tf          Select font and size</TDLINE>
+    </TLINE>
+    <TLINE>
+     <TDFORMAT>/</TDFORMAT>
+     <TDLINE>  Td          Position text cursor (x y)</TDLINE>
+    </TLINE>
+    <TLINE>
+     <TDFORMAT>/</TDFORMAT>
+     <TDLINE>  Tj          Draw text string</TDLINE>
+    </TLINE>
+    <TLINE>
+     <TDFORMAT>/</TDFORMAT>
+     <TDLINE>  q/Q         Save/Restore graphics state</TDLINE>
+    </TLINE>
+    <TLINE>
+     <TDFORMAT>/</TDFORMAT>
+     <TDLINE>  cm          Transform matrix (width 0 0 height x y) — scale+position</TDLINE>
+    </TLINE>
+    <TLINE>
+     <TDFORMAT>/</TDFORMAT>
+     <TDLINE>  Do          Draw image XObject</TDLINE>
+    </TLINE>
+    <TLINE>
+     <TDFORMAT>/</TDFORMAT>
+     <TDLINE>  RG          Set stroke color</TDLINE>
+    </TLINE>
+    <TLINE>
+     <TDFORMAT>/</TDFORMAT>
+     <TDLINE>  re S        Stroke rectangle (image border)</TDLINE>
+    </TLINE>
+    <TLINE>
+     <TDFORMAT>/</TDFORMAT>
+    </TLINE>
+    <TLINE>
+     <TDFORMAT>U1</TDFORMAT>
+     <TDLINE>LAYOUT ALGORITHM:</TDLINE>
+    </TLINE>
+    <TLINE>
+     <TDFORMAT>AS</TDFORMAT>
+     <TDLINE>  Flowing: images stack top-to-bottom on each page. Page break when</TDLINE>
+    </TLINE>
+    <TLINE>
+     <TDFORMAT>/</TDFORMAT>
+     <TDLINE>  next image won&apos;t fit remaining space. First page includes a dark</TDLINE>
+    </TLINE>
+    <TLINE>
+     <TDFORMAT>/</TDFORMAT>
+     <TDLINE>  blue-gray &quot;Repair Images&quot; title header bar. Small images share a</TDLINE>
+    </TLINE>
+    <TLINE>
+     <TDFORMAT>/</TDFORMAT>
+     <TDLINE>  page; large images get their own. No upscaling — images smaller</TDLINE>
+    </TLINE>
+    <TLINE>
+     <TDFORMAT>/</TDFORMAT>
+     <TDLINE>  than A4 render at natural size. Images exceeding 1600px are resized</TDLINE>
+    </TLINE>
+    <TLINE>
+     <TDFORMAT>/</TDFORMAT>
+     <TDLINE>  via IGS to reduce PDF file size (configurable threshold).</TDLINE>
+    </TLINE>
+    <TLINE>
+     <TDFORMAT>/</TDFORMAT>
+    </TLINE>
+    <TLINE>
+     <TDFORMAT>U1</TDFORMAT>
+     <TDLINE>ERROR HANDLING:</TDLINE>
+    </TLINE>
+    <TLINE>
+     <TDFORMAT>AS</TDFORMAT>
+     <TDLINE>  Fail-safe: any error returns the original PDF unchanged. Individual</TDLINE>
+    </TLINE>
+    <TLINE>
+     <TDFORMAT>/</TDFORMAT>
+     <TDLINE>  image failures are skipped (remaining images still process). RGBA</TDLINE>
+    </TLINE>
+    <TLINE>
+     <TDFORMAT>/</TDFORMAT>
+     <TDLINE>  PNGs that produce blank JPEGs after conversion are detected and</TDLINE>
+    </TLINE>
+    <TLINE>
+     <TDFORMAT>/</TDFORMAT>
+     <TDLINE>  skipped. All errors and diagnostics logged via</TDLINE>
+    </TLINE>
+    <TLINE>
+     <TDFORMAT>/</TDFORMAT>
+     <TDLINE>  /CTDI/CL_PRINT_DRIVER_LOG to SLG1 application log.</TDLINE>
+    </TLINE>
+    <TLINE>
+     <TDFORMAT>/</TDFORMAT>
     </TLINE>
    </LINES>
    <DESCRIPTIONS_SUB>

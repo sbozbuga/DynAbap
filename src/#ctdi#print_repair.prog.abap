@@ -66,6 +66,8 @@ SELECTION-SCREEN BEGIN OF BLOCK b_img WITH FRAME TITLE TEXT-020.
 PARAMETERS: p_imgdef RADIOBUTTON GROUP rimg DEFAULT 'X', " Default (Project Customizing)
             p_imgyes RADIOBUTTON GROUP rimg,              " Force Append Images
             p_imgno  RADIOBUTTON GROUP rimg.              " Force Suppress Images
+PARAMETERS: p_rawpdf RADIOBUTTON GROUP rren DEFAULT 'X', " Raw PDF (built-in renderer)
+            p_adspdf RADIOBUTTON GROUP rren.              " ADS Form (Adobe render)
 SELECTION-SCREEN END OF BLOCK b_img.
 
 SELECTION-SCREEN BEGIN OF BLOCK b1a WITH FRAME.
@@ -94,6 +96,11 @@ CLASS lcl_app IMPLEMENTATION.
           iv_repair_id     = p_aufnr
           iv_sernr         = p_sernr
           iv_append_images = lv_append_override ).
+
+        " Set image render mode from selection screen
+        lr_driver->set_img_render_mode( COND #(
+          WHEN p_adspdf = abap_true THEN /ctdi/cl_print_gos_images=>gc_render_ads
+          ELSE /ctdi/cl_print_gos_images=>gc_render_raw ) ).
 
         " In legacy ALCAREP02, p_sf = 'X' means "Spool mode" (do NOT download PDF).
         " Also, if called from transaction IW42, it defaults to Spool mode.

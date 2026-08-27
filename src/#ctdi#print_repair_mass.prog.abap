@@ -67,13 +67,20 @@ SELECTION-SCREEN BEGIN OF BLOCK b4 WITH FRAME TITLE TEXT-036.
 PARAMETERS: p_imgdef RADIOBUTTON GROUP rimg DEFAULT 'X', " Default (Project Customizing)
             p_imgyes RADIOBUTTON GROUP rimg,              " Force Append Images
             p_imgno  RADIOBUTTON GROUP rimg.              " Force Suppress Images
+
 SELECTION-SCREEN END OF BLOCK b4.
+
+SELECTION-SCREEN BEGIN OF BLOCK b5 WITH FRAME TITLE TEXT-037.
+PARAMETERS: p_rawpdf RADIOBUTTON GROUP rren , " Raw PDF (built-in renderer)
+            p_adspdf RADIOBUTTON GROUP rren DEFAULT 'X'.              " ADS Form (Adobe render)
+SELECTION-SCREEN END OF BLOCK b5.
 
 " -----------------------------------------------------------------------
 " ALV output structure
 " -----------------------------------------------------------------------
 TYPES: BEGIN OF ty_alv_line,
          icon        TYPE icon_d,         " Status icon
+         icon_img    TYPE icon_d,         " Image attachment icon
          aufnr       TYPE aufnr,          " Repair Order
          auart       TYPE aufart,         " Order Type
          erdat       TYPE auferfdat,      " Creation Date
@@ -223,11 +230,11 @@ CLASS lcl_mass_print IMPLEMENTATION.
                     a~werks,
                     a~ktext,
                     a~kdauf,
-                    o~vgbel         AS contract_id,
+                    o~vgbel AS contract_id,
                     q~qmnum,
                     q~qmart,
-                    f~bemot         AS skz,
-                    q~qmcod         AS akz
+                    f~bemot AS skz,
+                    q~qmcod AS akz
       FROM aufk AS a
              INNER JOIN
                qmel AS q ON q~aufnr = a~aufnr
@@ -276,6 +283,30 @@ CLASS lcl_mass_print IMPLEMENTATION.
                         akz         = <ls_order>-akz ) ).
 
     resolve_form_types( ).
+
+    " Check which orders have image attachments (single DB call)
+    DATA(lt_aufnr_range) = VALUE /ctdi/cl_print_gos_images=>ty_aufnr_range(
+                                     FOR <ls_r> IN gt_alv
+                                     ( sign = 'I' option = 'EQ' low = <ls_r>-aufnr ) ).
+
+    DATA lt_with_attachments TYPE /ctdi/cl_print_gos_images=>ty_aufnr_tab.
+    DATA(lt_with_images) = /ctdi/cl_print_gos_images=>get_orders_with_images(
+                               EXPORTING it_aufnr_range      = lt_aufnr_range
+                               IMPORTING et_with_attachments  = lt_with_attachments ).
+
+    LOOP AT gt_alv ASSIGNING FIELD-SYMBOL(<ls_img_check>).
+      " Confirmed images (Content Server ZRS_JPG) → bitmap icon
+      READ TABLE lt_with_images WITH KEY table_line = <ls_img_check>-aufnr TRANSPORTING NO FIELDS.
+      IF sy-subrc = 0.
+        <ls_img_check>-icon_img = icon_bmp.
+      ELSE.
+        " GOS attachments (may include non-images) → attachment icon
+        READ TABLE lt_with_attachments WITH KEY table_line = <ls_img_check>-aufnr TRANSPORTING NO FIELDS.
+        IF sy-subrc = 0.
+          <ls_img_check>-icon_img = icon_attachment.
+        ENDIF.
+      ENDIF.
+    ENDLOOP.
   ENDMETHOD.
 
   METHOD resolve_form_types.
@@ -357,6 +388,13 @@ CLASS lcl_mass_print IMPLEMENTATION.
         lo_col_icon->set_short_text( CONV #( TEXT-030 ) ). " Status
         lo_col_icon->set_icon( abap_true ).
         lo_col_icon->set_alignment( if_salv_c_alignment=>centered ).
+
+        DATA(lo_col_img) = CAST cl_salv_column_table( lo_columns->get_column( 'ICON_IMG' ) ).
+        lo_col_img->set_short_text( 'Att.' ).
+        lo_col_img->set_medium_text( 'Attachments' ).
+        lo_col_img->set_icon( abap_true ).
+        lo_col_img->set_alignment( if_salv_c_alignment=>centered ).
+        lo_col_img->set_output_length( 4 ).
 
         DATA(lo_col_msg) = CAST cl_salv_column_table( lo_columns->get_column( 'MSG' ) ).
         lo_col_msg->set_short_text( CONV #( TEXT-006 ) ).
@@ -452,17 +490,12 @@ CLASS lcl_mass_print IMPLEMENTATION.
                                  ev_err         = lv_count_err ).
 
       WHEN 'PDF_MERGE'.
-        IF all_adobe( lt_rows ).
-          execute_pdf_merge_ads( EXPORTING it_rows = lt_rows
-                                 IMPORTING ev_ok   = lv_count_ok
-                                           ev_err  = lv_count_err ).
-        ELSE.
-          execute_print( EXPORTING it_rows        = lt_rows
-                                   iv_save_as_pdf = abap_true
-                                   iv_merge       = abap_true
-                         IMPORTING ev_ok          = lv_count_ok
-                                   ev_err         = lv_count_err ).
-        ENDIF.
+        " Always use CL_RSPO_PDF_MERGE path — includes GOS images per order
+        execute_print( EXPORTING it_rows        = lt_rows
+                                 iv_save_as_pdf = abap_true
+                                 iv_merge       = abap_true
+                       IMPORTING ev_ok          = lv_count_ok
+                                 ev_err         = lv_count_err ).
     ENDCASE.
 
     go_salv->get_columns( )->set_optimize( abap_true ).
@@ -470,6 +503,9 @@ CLASS lcl_mass_print IMPLEMENTATION.
                                           col = abap_true ) ).
     show_summary( iv_ok  = lv_count_ok
                   iv_err = lv_count_err ).
+
+    " Show application log (debug/diagnostics)
+    /ctdi/cl_print_driver_log=>show_log( ).
   ENDMETHOD.
 
   METHOD on_double_click.
@@ -484,11 +520,11 @@ CLASS lcl_mass_print IMPLEMENTATION.
       RETURN.
     ENDIF.
 
-    SET PARAMETER ID: 'ANR' FIELD '',
-                      'RCK' FIELD '',
-                      'IQM' FIELD '',
-                      'KTN' FIELD '',
-                      'AUN' FIELD ''.
+    SET PARAMETER ID 'ANR' FIELD ''.
+    SET PARAMETER ID 'RCK' FIELD ''.
+    SET PARAMETER ID 'IQM' FIELD ''.
+    SET PARAMETER ID 'KTN' FIELD ''.
+    SET PARAMETER ID 'AUN' FIELD ''.
     CASE column.
       WHEN 'AUFNR'.
         navigate_to_transaction( iv_tcode = 'IW33'
@@ -518,12 +554,11 @@ CLASS lcl_mass_print IMPLEMENTATION.
     TRY.
         DATA(lv_append_override) = COND char1(
           WHEN p_imgyes = abap_true THEN /ctdi/cl_print_driver_base=>gc_img_override_yes
-          WHEN p_imgno  = abap_true THEN /ctdi/cl_print_driver_base=>gc_img_override_no
-          ELSE /ctdi/cl_print_driver_base=>gc_img_override_default ).
+          WHEN p_imgno = abap_true  THEN /ctdi/cl_print_driver_base=>gc_img_override_no
+          ELSE                           /ctdi/cl_print_driver_base=>gc_img_override_default ).
 
-        DATA(lr_driver) = /ctdi/cl_print_driver_base=>factory(
-          iv_repair_id     = <ls_line>-aufnr
-          iv_append_images = lv_append_override ).
+        DATA(lr_driver) = /ctdi/cl_print_driver_base=>factory( iv_repair_id     = <ls_line>-aufnr
+                                                               iv_append_images = lv_append_override ).
         lr_driver->execute( iv_save_as_pdf = abap_false
                             iv_no_dialog   = abap_false
                             iv_preview     = abap_true ).
@@ -581,7 +616,8 @@ CLASS lcl_mass_print IMPLEMENTATION.
                                             rc              = lv_rc ).
       IF lv_rc = 0 AND lv_merged IS NOT INITIAL.
         download_pdf_file( iv_pdf_data = lv_merged
-                           iv_filename = |Repair_Merged_{ ev_ok }_{ sy-datum }_{ sy-uzeit }.pdf|
+                           iv_filename = |Repair-Merged-{ ev_ok }-{ sy-datum }-{ sy-uzeit }{ COND #(
+                             WHEN p_rawpdf = abap_true THEN '_RAW' ELSE '_ADS' ) }.pdf|
                            iv_prompt   = abap_true ).
       ELSE.
         MESSAGE TEXT-015 TYPE 'S' DISPLAY LIKE 'E'.
@@ -860,7 +896,8 @@ CLASS lcl_mass_print IMPLEMENTATION.
 
     IF lt_pdf_table IS NOT INITIAL.
       download_pdf_file( iv_pdf_data = lt_pdf_table[ 1 ]
-                         iv_filename = |Repair_Merged_{ ev_ok }_{ sy-datum }_{ sy-uzeit }.pdf|
+                         iv_filename = |Repair-Merged-{ ev_ok }-{ sy-datum }-{ sy-uzeit }{ COND #(
+                           WHEN p_rawpdf = abap_true THEN '_RAW' ELSE '_ADS' ) }.pdf|
                          iv_prompt   = abap_true ).
     ELSE.
       MESSAGE TEXT-015 TYPE 'S' DISPLAY LIKE 'E'.
@@ -1008,12 +1045,16 @@ CLASS lcl_mass_print IMPLEMENTATION.
     TRY.
         DATA(lv_append_override) = COND char1(
           WHEN p_imgyes = abap_true THEN /ctdi/cl_print_driver_base=>gc_img_override_yes
-          WHEN p_imgno  = abap_true THEN /ctdi/cl_print_driver_base=>gc_img_override_no
-          ELSE /ctdi/cl_print_driver_base=>gc_img_override_default ).
+          WHEN p_imgno = abap_true  THEN /ctdi/cl_print_driver_base=>gc_img_override_no
+          ELSE                           /ctdi/cl_print_driver_base=>gc_img_override_default ).
 
-        DATA(lr_driver) = /ctdi/cl_print_driver_base=>factory(
-          iv_repair_id     = iv_aufnr
-          iv_append_images = lv_append_override ).
+        DATA(lr_driver) = /ctdi/cl_print_driver_base=>factory( iv_repair_id     = iv_aufnr
+                                                               iv_append_images = lv_append_override ).
+
+        " Set image render mode from selection screen
+        lr_driver->set_img_render_mode( COND #(
+          WHEN p_adspdf = abap_true THEN /ctdi/cl_print_gos_images=>gc_render_ads
+          ELSE /ctdi/cl_print_gos_images=>gc_render_raw ) ).
 
         IF iv_external = abap_true.
           lr_driver->set_external_job( abap_true ).

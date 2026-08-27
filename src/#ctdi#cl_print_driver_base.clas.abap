@@ -61,6 +61,10 @@ CLASS /ctdi/cl_print_driver_base DEFINITION
     METHODS set_append_images
       IMPORTING iv_append TYPE abap_bool.
 
+    "! Sets the image render mode (Raw PDF or ADS form).
+    METHODS set_img_render_mode
+      IMPORTING iv_mode TYPE char1.
+
     "! Returns the last generated PDF data (available after execute with iv_save_as_pdf = true).
     "!
     "! @parameter rv_pdf |
@@ -111,6 +115,7 @@ CLASS /ctdi/cl_print_driver_base DEFINITION
     DATA mv_collect_pdf        TYPE abap_bool.
     DATA mv_external_job       TYPE abap_bool.
     DATA mv_append_images      TYPE abap_bool.
+    DATA mv_img_render_mode   TYPE char1.
     DATA ms_repair             TYPE /ctdi/repair.
     DATA ms_project            TYPE /ctdi/rep_projec.
     DATA mt_errors             TYPE /ctdi/repair_error_tt.
@@ -370,6 +375,13 @@ CLASS /CTDI/CL_PRINT_DRIVER_BASE IMPLEMENTATION.
     ENDIF.
 
     rv_filename = condense( rv_filename ).
+
+    " Append image render mode suffix if images are enabled
+    IF mv_append_images = abap_true.
+      rv_filename = COND #( WHEN mv_img_render_mode = /ctdi/cl_print_gos_images=>gc_render_ads
+                            THEN |{ rv_filename }_ADS|
+                            ELSE |{ rv_filename }_RAW| ).
+    ENDIF.
 
     " Remove characters that are invalid in file paths
     REPLACE ALL OCCURRENCES OF '/' IN rv_filename WITH '_'.
@@ -843,6 +855,11 @@ CLASS /CTDI/CL_PRINT_DRIVER_BASE IMPLEMENTATION.
   ENDMETHOD.
 
 
+  METHOD get_append_images.
+    rv_append = mv_append_images.
+  ENDMETHOD.
+
+
   METHOD get_config_from_db.
     DATA lv_contract TYPE vbeln_va.
     DATA lv_skz      TYPE bemot.
@@ -1006,6 +1023,22 @@ CLASS /CTDI/CL_PRINT_DRIVER_BASE IMPLEMENTATION.
   ENDMETHOD.
 
 
+  METHOD process_image_attachments.
+    IF mv_append_images = abap_false OR mv_last_pdf IS INITIAL.
+      RETURN.
+    ENDIF.
+
+    TRY.
+        DATA(lo_helper) = NEW /ctdi/cl_print_gos_images( ).
+        mv_last_pdf = lo_helper->append_images( iv_repair_order = mv_repair_order
+                                                iv_pdf          = mv_last_pdf
+                                                iv_render_mode  = mv_img_render_mode ).
+      CATCH cx_root INTO DATA(lx_root).
+        /ctdi/cl_print_driver_log=>log_exception( lx_root ).
+    ENDTRY.
+  ENDMETHOD.
+
+
   METHOD raise_driver_error.
     IF ix_previous IS BOUND.
       /ctdi/cl_print_driver_log=>log_exception( ix_previous ).
@@ -1126,6 +1159,11 @@ CLASS /CTDI/CL_PRINT_DRIVER_BASE IMPLEMENTATION.
   ENDMETHOD.
 
 
+  METHOD set_append_images.
+    mv_append_images = iv_append.
+  ENDMETHOD.
+
+
   METHOD set_collect_pdf.
     mv_collect_pdf = iv_collect.
   ENDMETHOD.
@@ -1149,32 +1187,12 @@ CLASS /CTDI/CL_PRINT_DRIVER_BASE IMPLEMENTATION.
   ENDMETHOD.
 
 
+  METHOD set_img_render_mode.
+    mv_img_render_mode = iv_mode.
+  ENDMETHOD.
+
+
   METHOD unpack_io_data.
     " Default: no-op. Subclasses redefine this to unpack custom objects.
-  ENDMETHOD.
-
-
-  METHOD get_append_images.
-    rv_append = mv_append_images.
-  ENDMETHOD.
-
-
-  METHOD set_append_images.
-    mv_append_images = iv_append.
-  ENDMETHOD.
-
-
-  METHOD process_image_attachments.
-    IF mv_append_images = abap_false OR mv_last_pdf IS INITIAL.
-      RETURN.
-    ENDIF.
-
-    TRY.
-        DATA(lo_helper) = NEW /ctdi/cl_print_gos_images( ).
-        mv_last_pdf = lo_helper->append_images( iv_repair_order = mv_repair_order
-                                                iv_pdf          = mv_last_pdf ).
-      CATCH cx_root INTO DATA(lx_root).
-        /ctdi/cl_print_driver_log=>log_exception( lx_root ).
-    ENDTRY.
   ENDMETHOD.
 ENDCLASS.

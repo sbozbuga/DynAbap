@@ -2178,9 +2178,21 @@
      <LENGTH>30</LENGTH>
     </item>
     <item>
+     <ID>I</ID>
+     <KEY>037</KEY>
+     <ENTRY>PDF Render Method</ENTRY>
+     <LENGTH>27</LENGTH>
+    </item>
+    <item>
      <ID>R</ID>
      <ENTRY>Mass Print Repair Orders</ENTRY>
      <LENGTH>24</LENGTH>
+    </item>
+    <item>
+     <ID>S</ID>
+     <KEY>P_ADSPDF</KEY>
+     <ENTRY>Adobe Forms</ENTRY>
+     <LENGTH>19</LENGTH>
     </item>
     <item>
      <ID>S</ID>
@@ -2217,6 +2229,12 @@
      <KEY>P_MERGE</KEY>
      <ENTRY>Merged Spool (single PDF)</ENTRY>
      <LENGTH>35</LENGTH>
+    </item>
+    <item>
+     <ID>S</ID>
+     <KEY>P_RAWPDF</KEY>
+     <ENTRY>Raw PDF</ENTRY>
+     <LENGTH>15</LENGTH>
     </item>
     <item>
      <ID>S</ID>

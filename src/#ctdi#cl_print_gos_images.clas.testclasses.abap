@@ -42,6 +42,12 @@ CLASS lcl_tests DEFINITION FOR TESTING
     METHODS test_escape_pdf_text FOR TESTING.
     METHODS test_convert_to_jpeg_passthru FOR TESTING.
     METHODS test_deduplicate_attachments FOR TESTING.
+    METHODS test_has_png_alpha_true FOR TESTING.
+    METHODS test_has_png_alpha_false FOR TESTING.
+    METHODS test_get_mimetype_for_ext FOR TESTING.
+    METHODS test_append_null_pdf FOR TESTING.
+    METHODS test_append_null_order FOR TESTING.
+    METHODS test_jpeg_dimension_extract FOR TESTING.
 ENDCLASS.
 
 
@@ -56,18 +62,23 @@ CLASS lcl_tests IMPLEMENTATION.
   ENDMETHOD.
 
   METHOD test_filter_images.
-    DATA lt_raw TYPE /ctdi/cl_print_gos_images=>tt_image_attachments.
+    " Test image extension filtering via is_supported_image_ext
+    DATA lv_count TYPE i.
+    DATA lt_exts TYPE TABLE OF string.
+    APPEND 'JPG' TO lt_exts.
+    APPEND 'PDF' TO lt_exts.
+    APPEND 'PNG' TO lt_exts.
+    APPEND 'TXT' TO lt_exts.
+    APPEND 'TIFF' TO lt_exts.
 
-    APPEND VALUE #( filename = 'photo1.jpg' file_ext = 'JPG' ) TO lt_raw.
-    APPEND VALUE #( filename = 'doc1.pdf'   file_ext = 'PDF' ) TO lt_raw.
-    APPEND VALUE #( filename = 'photo2.png' file_ext = 'PNG' ) TO lt_raw.
-    APPEND VALUE #( filename = 'note.txt'   file_ext = 'TXT' ) TO lt_raw.
-    APPEND VALUE #( filename = 'scan.tiff'  file_ext = 'TIFF' ) TO lt_raw.
-
-    DATA(lt_filtered) = /ctdi/cl_print_gos_images=>filter_image_attachments( lt_raw ).
+    LOOP AT lt_exts INTO DATA(lv_ext).
+      IF /ctdi/cl_print_gos_images=>is_supported_image_ext( lv_ext ) = abap_true.
+        lv_count = lv_count + 1.
+      ENDIF.
+    ENDLOOP.
 
     cl_abap_unit_assert=>assert_equals(
-      act = lines( lt_filtered )
+      act = lv_count
       exp = 3
       msg = 'Should filter out non-image files (PDF, TXT)' ).
   ENDMETHOD.
@@ -278,6 +289,93 @@ CLASS lcl_tests IMPLEMENTATION.
       act = <ls_second>-atta_id
       exp = 'SOFM_002'
       msg = 'Distinct photo with same filename should be retained' ).
+  ENDMETHOD.
+
+  METHOD test_has_png_alpha_true.
+    " PNG with color type 6 (RGBA) — byte 25 = 06
+    " Signature(8) + IHDR chunk: len(4) + type(4) + width(4) + height(4) + bitdepth(1) + colortype(1)
+    " Color type at byte offset 25
+    DATA lv_rgba_png TYPE xstring VALUE '89504E470D0A1A0A0000000D4948445200000064000000C80806000000'.
+
+    cl_abap_unit_assert=>assert_true(
+      act = /ctdi/cl_print_gos_images=>has_png_alpha( lv_rgba_png )
+      msg = 'RGBA PNG (color type 6) should be detected as having alpha' ).
+  ENDMETHOD.
+
+  METHOD test_has_png_alpha_false.
+    " PNG with color type 2 (RGB, no alpha) — byte 25 = 02
+    DATA lv_rgb_png TYPE xstring VALUE '89504E470D0A1A0A0000000D4948445200000064000000C80802000000'.
+
+    cl_abap_unit_assert=>assert_false(
+      act = /ctdi/cl_print_gos_images=>has_png_alpha( lv_rgb_png )
+      msg = 'RGB PNG (color type 2) should NOT be detected as having alpha' ).
+  ENDMETHOD.
+
+  METHOD test_get_mimetype_for_ext.
+    cl_abap_unit_assert=>assert_equals(
+      act = /ctdi/cl_print_gos_images=>get_mimetype_for_ext( 'JPG' )
+      exp = 'image/jpeg'
+      msg = 'JPG should map to image/jpeg' ).
+
+    cl_abap_unit_assert=>assert_equals(
+      act = /ctdi/cl_print_gos_images=>get_mimetype_for_ext( 'png' )
+      exp = 'image/png'
+      msg = 'png (lowercase) should map to image/png' ).
+
+    cl_abap_unit_assert=>assert_equals(
+      act = /ctdi/cl_print_gos_images=>get_mimetype_for_ext( 'BMP' )
+      exp = 'image/bmp'
+      msg = 'BMP should map to image/bmp' ).
+
+    cl_abap_unit_assert=>assert_equals(
+      act = /ctdi/cl_print_gos_images=>get_mimetype_for_ext( 'TIFF' )
+      exp = 'image/tiff'
+      msg = 'TIFF should map to image/tiff' ).
+  ENDMETHOD.
+
+  METHOD test_append_null_pdf.
+    DATA lv_empty_pdf TYPE xstring.
+    DATA(lv_res) = mo_cut->append_images( iv_repair_order = '1000000001'
+                                          iv_pdf          = lv_empty_pdf ).
+
+    cl_abap_unit_assert=>assert_initial(
+      act = lv_res
+      msg = 'Empty input PDF should return empty (guard clause)' ).
+  ENDMETHOD.
+
+  METHOD test_append_null_order.
+    DATA lv_base TYPE xstring VALUE '255044462D312E34'.
+    DATA(lv_res) = mo_cut->append_images( iv_repair_order = ''
+                                          iv_pdf          = lv_base ).
+
+    cl_abap_unit_assert=>assert_equals(
+      act = lv_res
+      exp = lv_base
+      msg = 'Empty order number should return input PDF unchanged' ).
+  ENDMETHOD.
+
+  METHOD test_jpeg_dimension_extract.
+    " Minimal JPEG with SOF0 marker: FF C0 00 11 08 [height:2] [width:2]
+    " Height = 480 (01E0), Width = 640 (0280)
+    DATA lv_jpeg TYPE xstring.
+    lv_jpeg = 'FFD8FFE000104A46494600010100000100010000FFC000110801E0028003012200021101031101FFD9'.
+
+    DATA lv_w TYPE i.
+    DATA lv_h TYPE i.
+
+    /ctdi/cl_print_gos_images=>extract_image_dimensions(
+      EXPORTING iv_content = lv_jpeg
+                iv_ext     = 'JPG'
+      IMPORTING ev_width   = lv_w
+                ev_height  = lv_h ).
+
+    cl_abap_unit_assert=>assert_equals(
+      act = lv_w  exp = 640
+      msg = 'JPEG width extraction from SOF0' ).
+
+    cl_abap_unit_assert=>assert_equals(
+      act = lv_h  exp = 480
+      msg = 'JPEG height extraction from SOF0' ).
   ENDMETHOD.
 
 ENDCLASS.
