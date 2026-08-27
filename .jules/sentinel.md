@@ -20,3 +20,7 @@
 **Vulnerability:** In `src/templates/sm30_event_class_generator.abap`, the custom exception text `lx_err->message` was directly assigned to a `MESSAGE ... TYPE 'W'` statement, exposing potentially sensitive backend information directly to the UI.
 **Learning:** Even within generated standard SAP templates (like SM30 table maintenance events), custom exceptions may still contain technical messages intended for backend tracing rather than UI exposure. Passing exception texts, custom attributes, or output directly into ABAP UI messages compromises security and can leak database table, configuration, or structural names.
 **Prevention:** Always sanitize UI error messages in ABAP dialogs. Instead of embedding custom exception attributes, utilize a standardized logging layer (e.g., `/ctdi/cl_print_driver_log=>log_exception`) to store technical details securely, and issue a generic, safe `MESSAGE` string to the frontend user.
+## 2024-05-24 - Information Leakage in Exception Handling
+**Vulnerability:** Raw exception text from both business and technical exceptions was directly exposed to the UI via error messages.
+**Learning:** Returning `lx_err->get_text()` to the frontend can inadvertently leak internal backend details (e.g., database structure, logic flows).
+**Prevention:** Always log the full exception object securely on the backend and present a sanitized, generic message (like 'An unexpected system error occurred') to the user.
