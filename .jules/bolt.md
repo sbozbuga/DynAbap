@@ -19,3 +19,6 @@
 ## 2025-01-29 - Consolidate conditional sequential lookups into single DB hit
 **Learning:** Sequential `SELECT SINGLE` queries where a subsequent query is executed based on a condition (e.g., `IF kdauf IS NOT INITIAL`) cause N+1 database roundtrips when the condition is met.
 **Action:** Consolidate these into a single database hit using `LEFT OUTER JOIN`s. The database handles the conditional linking efficiently via the `ON` clause, eliminating the need for application-level conditional queries and reducing DB latency.
+## 2025-01-29 - Consolidate afih and objk lookups into single DB hit
+**Learning:** When resolving a Notification (qmnum) for a Maintenance Order (aufnr), sequential lookups on Order Header (afih) and Object List (objk) tables cause unnecessary database roundtrips.
+**Action:** Consolidate these into a single LEFT OUTER JOIN on obknr (Object list number) to prevent N+1 database roundtrips.
