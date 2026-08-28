@@ -1,4 +1,4 @@
-﻿<?xml version="1.0" encoding="utf-8"?>
+<?xml version="1.0" encoding="utf-8"?>
 <abapGit version="v1.0.0" serializer="LCL_OBJECT_DTEL" serializer_version="v1.0.0">
  <asx:abap xmlns:asx="http://www.sap.com/abapxml" version="1.0">
   <asx:values>
@@ -10,7 +10,7 @@
     <SCRLEN1>10</SCRLEN1>
     <SCRLEN2>13</SCRLEN2>
     <SCRLEN3>13</SCRLEN3>
-    <DDTEXT>Append attachement images</DDTEXT>
+    <DDTEXT>Append attachment images</DDTEXT>
     <REPTEXT>Attach images</REPTEXT>
     <SCRTEXT_S>Img. attch</SCRTEXT_S>
     <SCRTEXT_M>Attach images</SCRTEXT_M>

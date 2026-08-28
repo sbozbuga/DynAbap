@@ -1,4 +1,4 @@
-﻿<?xml version="1.0" encoding="utf-8"?>
+<?xml version="1.0" encoding="utf-8"?>
 <abapGit version="v1.0.0" serializer="LCL_OBJECT_DTEL" serializer_version="v1.0.0">
  <asx:abap xmlns:asx="http://www.sap.com/abapxml" version="1.0">
   <asx:values>
@@ -16,7 +16,7 @@
     <SCRTEXT_M>Project</SCRTEXT_M>
     <SCRTEXT_L>Project</SCRTEXT_L>
     <APPLCLASS>SAP</APPLCLASS>
-    <DTELMASTER>D</DTELMASTER>
+    <DTELMASTER>E</DTELMASTER>
     <REFKIND>D</REFKIND>
    </DD04V>
    <I18N_LANGS>
@@ -34,19 +34,19 @@
    <DD04_TEXTS>
     <item>
      <DDLANGUAGE>4</DDLANGUAGE>
-     <DDTEXT>Text poz.</DDTEXT>
-     <REPTEXT>Text</REPTEXT>
-     <SCRTEXT_S>Text</SCRTEXT_S>
-     <SCRTEXT_M>Text</SCRTEXT_M>
-     <SCRTEXT_L>Text</SCRTEXT_L>
+     <DDTEXT>Проект</DDTEXT>
+     <REPTEXT>Проект</REPTEXT>
+     <SCRTEXT_S>Проект</SCRTEXT_S>
+     <SCRTEXT_M>Проект</SCRTEXT_M>
+     <SCRTEXT_L>Проект</SCRTEXT_L>
     </item>
     <item>
      <DDLANGUAGE>C</DDLANGUAGE>
-     <DDTEXT>Text položky</DDTEXT>
-     <REPTEXT>Text</REPTEXT>
-     <SCRTEXT_S>Text</SCRTEXT_S>
-     <SCRTEXT_M>Text</SCRTEXT_M>
-     <SCRTEXT_L>Text</SCRTEXT_L>
+     <DDTEXT>Projekt</DDTEXT>
+     <REPTEXT>Projekt</REPTEXT>
+     <SCRTEXT_S>Projekt</SCRTEXT_S>
+     <SCRTEXT_M>Projekt</SCRTEXT_M>
+     <SCRTEXT_L>Projekt</SCRTEXT_L>
     </item>
     <item>
      <DDLANGUAGE>D</DDLANGUAGE>
@@ -58,59 +58,59 @@
     </item>
     <item>
      <DDLANGUAGE>F</DDLANGUAGE>
-     <DDTEXT>Texte du poste</DDTEXT>
-     <REPTEXT>Texte</REPTEXT>
-     <SCRTEXT_S>Texte</SCRTEXT_S>
-     <SCRTEXT_M>Texte</SCRTEXT_M>
-     <SCRTEXT_L>Texte</SCRTEXT_L>
+     <DDTEXT>Projet</DDTEXT>
+     <REPTEXT>Projet</REPTEXT>
+     <SCRTEXT_S>Projet</SCRTEXT_S>
+     <SCRTEXT_M>Projet</SCRTEXT_M>
+     <SCRTEXT_L>Projet</SCRTEXT_L>
     </item>
     <item>
      <DDLANGUAGE>H</DDLANGUAGE>
-     <DDTEXT>Tételszöveg</DDTEXT>
-     <REPTEXT>Szöveg</REPTEXT>
-     <SCRTEXT_S>Szöveg</SCRTEXT_S>
-     <SCRTEXT_M>Szöveg</SCRTEXT_M>
-     <SCRTEXT_L>Szöveg</SCRTEXT_L>
+     <DDTEXT>Projekt</DDTEXT>
+     <REPTEXT>Projekt</REPTEXT>
+     <SCRTEXT_S>Projekt</SCRTEXT_S>
+     <SCRTEXT_M>Projekt</SCRTEXT_M>
+     <SCRTEXT_L>Projekt</SCRTEXT_L>
     </item>
     <item>
      <DDLANGUAGE>I</DDLANGUAGE>
-     <DDTEXT>Testo posizione</DDTEXT>
-     <REPTEXT>Testo</REPTEXT>
-     <SCRTEXT_S>Testo</SCRTEXT_S>
-     <SCRTEXT_M>Testo</SCRTEXT_M>
-     <SCRTEXT_L>Testo</SCRTEXT_L>
+     <DDTEXT>Progetto</DDTEXT>
+     <REPTEXT>Progetto</REPTEXT>
+     <SCRTEXT_S>Progetto</SCRTEXT_S>
+     <SCRTEXT_M>Progetto</SCRTEXT_M>
+     <SCRTEXT_L>Progetto</SCRTEXT_L>
     </item>
     <item>
      <DDLANGUAGE>L</DDLANGUAGE>
-     <DDTEXT>Tekst pozycji</DDTEXT>
-     <REPTEXT>Opis</REPTEXT>
-     <SCRTEXT_S>Opis</SCRTEXT_S>
-     <SCRTEXT_M>Opis</SCRTEXT_M>
-     <SCRTEXT_L>Opis</SCRTEXT_L>
+     <DDTEXT>Projekt</DDTEXT>
+     <REPTEXT>Projekt</REPTEXT>
+     <SCRTEXT_S>Projekt</SCRTEXT_S>
+     <SCRTEXT_M>Projekt</SCRTEXT_M>
+     <SCRTEXT_L>Projekt</SCRTEXT_L>
     </item>
     <item>
      <DDLANGUAGE>N</DDLANGUAGE>
-     <DDTEXT>Positietekst</DDTEXT>
-     <REPTEXT>Tekst</REPTEXT>
-     <SCRTEXT_S>Tekst</SCRTEXT_S>
-     <SCRTEXT_M>Tekst</SCRTEXT_M>
-     <SCRTEXT_L>Tekst</SCRTEXT_L>
+     <DDTEXT>Project</DDTEXT>
+     <REPTEXT>Project</REPTEXT>
+     <SCRTEXT_S>Project</SCRTEXT_S>
+     <SCRTEXT_M>Project</SCRTEXT_M>
+     <SCRTEXT_L>Project</SCRTEXT_L>
     </item>
     <item>
      <DDLANGUAGE>P</DDLANGUAGE>
-     <DDTEXT>Texto do item</DDTEXT>
-     <REPTEXT>Texto</REPTEXT>
-     <SCRTEXT_S>Texto</SCRTEXT_S>
-     <SCRTEXT_M>Texto</SCRTEXT_M>
-     <SCRTEXT_L>Texto</SCRTEXT_L>
+     <DDTEXT>Projeto</DDTEXT>
+     <REPTEXT>Projeto</REPTEXT>
+     <SCRTEXT_S>Projeto</SCRTEXT_S>
+     <SCRTEXT_M>Projeto</SCRTEXT_M>
+     <SCRTEXT_L>Projeto</SCRTEXT_L>
     </item>
     <item>
      <DDLANGUAGE>S</DDLANGUAGE>
-     <DDTEXT>Texto posición</DDTEXT>
-     <REPTEXT>Texto</REPTEXT>
-     <SCRTEXT_S>Texto</SCRTEXT_S>
-     <SCRTEXT_M>Texto</SCRTEXT_M>
-     <SCRTEXT_L>Texto</SCRTEXT_L>
+     <DDTEXT>Proyecto</DDTEXT>
+     <REPTEXT>Proyecto</REPTEXT>
+     <SCRTEXT_S>Proyecto</SCRTEXT_S>
+     <SCRTEXT_M>Proyecto</SCRTEXT_M>
+     <SCRTEXT_L>Proyecto</SCRTEXT_L>
     </item>
    </DD04_TEXTS>
   </asx:values>

@@ -1,4 +1,4 @@
-﻿<?xml version="1.0" encoding="utf-8"?>
+<?xml version="1.0" encoding="utf-8"?>
 <abapGit version="v1.0.0" serializer="LCL_OBJECT_PROG" serializer_version="v1.0.0">
  <asx:abap xmlns:asx="http://www.sap.com/abapxml" version="1.0">
   <asx:values>
@@ -2536,7 +2536,25 @@
        <ID>I</ID>
        <KEY>037</KEY>
        <ENTRY>PDF-Renderverfahren</ENTRY>
-       <LENGTH>27</LENGTH>
+       <LENGTH>99</LENGTH>
+      </item>
+      <item>
+       <ID>I</ID>
+       <KEY>038</KEY>
+       <ENTRY>Projekte</ENTRY>
+       <LENGTH>99</LENGTH>
+      </item>
+      <item>
+       <ID>I</ID>
+       <KEY>039</KEY>
+       <ENTRY>Formulare</ENTRY>
+       <LENGTH>99</LENGTH>
+      </item>
+      <item>
+       <ID>I</ID>
+       <KEY>040</KEY>
+       <ENTRY>Ergebnisse</ENTRY>
+       <LENGTH>99</LENGTH>
       </item>
       <item>
        <ID>R</ID>
@@ -2558,8 +2576,8 @@
       <item>
        <ID>S</ID>
        <KEY>P_IMGDEF</KEY>
-       <ENTRY>Standard (Customizing)</ENTRY>
-       <LENGTH>30</LENGTH>
+       <ENTRY>Standard (Projekt-Customizing)</ENTRY>
+       <LENGTH>37</LENGTH>
       </item>
       <item>
        <ID>S</ID>
