@@ -22,3 +22,6 @@
 ## 2025-01-29 - Consolidate afih and objk lookups into single DB hit
 **Learning:** When resolving a Notification (qmnum) for a Maintenance Order (aufnr), sequential lookups on Order Header (afih) and Object List (objk) tables cause unnecessary database roundtrips.
 **Action:** Consolidate these into a single LEFT OUTER JOIN on obknr (Object list number) to prevent N+1 database roundtrips.
+## 2025-01-29 - Push conditional looping logic down to the database
+**Learning:** Using `SELECT ... INTO TABLE` followed by a `LOOP AT` to find a single active record based on fields (e.g., `stokz = ' ' AND stzhl = '00000000'`) is an O(N) operation that wastes memory and transfers unnecessary rows from the DB to the app server.
+**Action:** Replace the table fetch and loop with targeted `SELECT SINGLE` queries. Fetch the exact record using the loop conditions in the `WHERE` clause, and add a secondary fallback `SELECT SINGLE` if the legacy code accepted the last record when the condition wasn't met.

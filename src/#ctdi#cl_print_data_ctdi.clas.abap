@@ -31,23 +31,22 @@ CLASS /ctdi/cl_print_data_ctdi IMPLEMENTATION.
     DATA lf_repres_txt TYPE /cellag/repair_result_txt.
 
     DATA lv_bemot      TYPE afru-bemot.
-    DATA lv_stokz      TYPE afru-stokz.
-    DATA lv_stzhl      TYPE afru-stzhl.
 
     " Always get SKZ from AFRU for operation 9010
-    SELECT bemot, stokz, stzhl FROM afru
+    " Optimization: Fetch only the active SKZ confirmation instead of transferring all rows to app server
+    SELECT SINGLE bemot FROM afru
       WHERE aufnr = @mv_aufnr
         AND vornr = @/ctdi/cl_print_driver_base=>gc_operation_wfer
-      INTO TABLE @DATA(lt_afru_skz).
+        AND stokz = ' '
+        AND stzhl = '00000000'
+      INTO @lv_bemot.
 
-    LOOP AT lt_afru_skz ASSIGNING FIELD-SYMBOL(<ls_afru_skz>).
-      lv_bemot = <ls_afru_skz>-bemot.
-      lv_stokz = <ls_afru_skz>-stokz.
-      lv_stzhl = <ls_afru_skz>-stzhl.
-      IF lv_stokz = ' ' AND lv_stzhl = '00000000'.
-        EXIT.
-      ENDIF.
-    ENDLOOP.
+    IF sy-subrc <> 0.
+      SELECT SINGLE bemot FROM afru
+        WHERE aufnr = @mv_aufnr
+          AND vornr = @/ctdi/cl_print_driver_base=>gc_operation_wfer
+        INTO @lv_bemot.
+    ENDIF.
 
     " Access Sequences for /ctdi/rep_result
     TYPES: BEGIN OF ty_query_step,

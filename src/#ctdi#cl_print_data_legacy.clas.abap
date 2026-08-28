@@ -721,8 +721,6 @@ CLASS /ctdi/cl_print_data_legacy IMPLEMENTATION.
     DATA lf_repres_txt TYPE /cellag/repair_result_txt.
 
     DATA lv_bemot      TYPE afru-bemot.
-    DATA lv_stokz      TYPE afru-stokz.
-    DATA lv_stzhl      TYPE afru-stzhl.
 
     IF ms_legacy-old_serial_no IS NOT INITIAL AND ms_legacy-old_serial_no <> ms_legacy-new_serial_no.
       SELECT SINGLE repres_barc, repres_txt
@@ -734,21 +732,24 @@ CLASS /ctdi/cl_print_data_legacy IMPLEMENTATION.
 
       DATA lv_subrc TYPE sysubrc.
 
-      SELECT bemot, stokz, stzhl FROM afru
+      " Optimization: Fetch only the active SKZ confirmation instead of transferring all rows to app server
+      SELECT SINGLE bemot FROM afru
         WHERE aufnr = @mv_aufnr
           AND vornr = @/ctdi/cl_print_driver_base=>gc_operation_wfer
-        INTO TABLE @DATA(lt_afru_skz).
+          AND stokz = ' '
+          AND stzhl = '00000000'
+        INTO @lv_bemot.
 
       lv_subrc = sy-subrc.
 
-      LOOP AT lt_afru_skz ASSIGNING FIELD-SYMBOL(<ls_afru_skz>).
-        lv_bemot = <ls_afru_skz>-bemot.
-        lv_stokz = <ls_afru_skz>-stokz.
-        lv_stzhl = <ls_afru_skz>-stzhl.
-        IF lv_stokz = ' ' AND lv_stzhl = '00000000'.
-          EXIT.
-        ENDIF.
-      ENDLOOP.
+      " Fallback to any confirmation if no active one exists to preserve legacy behavior
+      IF lv_subrc <> 0.
+        SELECT SINGLE bemot FROM afru
+          WHERE aufnr = @mv_aufnr
+            AND vornr = @/ctdi/cl_print_driver_base=>gc_operation_wfer
+          INTO @lv_bemot.
+        lv_subrc = sy-subrc.
+      ENDIF.
 
       IF lv_subrc = 0.
         SELECT SINGLE repres_barc, repres_txt
