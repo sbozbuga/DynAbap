@@ -569,7 +569,8 @@ CLASS lcl_mass_print IMPLEMENTATION.
                             iv_no_dialog   = abap_false
                             iv_preview     = abap_true ).
       CATCH cx_root INTO DATA(lx).
-        MESSAGE lx->get_text( ) TYPE 'S' DISPLAY LIKE 'E'.
+        /ctdi/cl_print_driver_log=>log_exception( lx ).
+        MESSAGE TEXT-015 TYPE 'S' DISPLAY LIKE 'E'.
     ENDTRY.
   ENDMETHOD.
 
