@@ -26,10 +26,9 @@ CLASS /ctdi/cl_print_data_legacy DEFINITION
     METHODS get_repair_result.
 
   PRIVATE SECTION.
-    CONSTANTS co_equi_vers TYPE imrc_psort VALUE 'EQUI-VERS'.
-    CONSTANTS co_qmart     TYPE qmart      VALUE 'Z2'.
-    CONSTANTS co_wfer_stat TYPE j_estat    VALUE 'E0001'.
-    CONSTANTS co_zx_qmart  TYPE qmart      VALUE 'ZX'.
+    CONSTANTS co_qmart     TYPE qmart   VALUE 'Z2'.
+    CONSTANTS co_wfer_stat TYPE j_estat VALUE 'E0001'.
+    CONSTANTS co_zx_qmart  TYPE qmart   VALUE 'ZX'.
 
     DATA mv_sernr         TYPE equi-sernr.
 
@@ -44,7 +43,6 @@ CLASS /ctdi/cl_print_data_legacy DEFINITION
     DATA mv_spras         TYPE sy-langu.
     DATA mv_retlief_nr    TYPE vbeln_vl.
     DATA mv_equnr_retlief TYPE equnr.
-    DATA mv_katalogart    TYPE qkatart.
 
     DATA mv_old_serial    TYPE serge.
     DATA mv_new_serial    TYPE serge.
