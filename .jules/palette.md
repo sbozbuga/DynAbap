@@ -20,3 +20,6 @@
 ## 2026-08-20 - Missing text for background job parameters
 **Learning:** In ABAP, background selection screen parameters defined with `NO-DISPLAY` (e.g., `P_SF`) still require text descriptions in the text pool (e.g., `<TPOOL>`). This ensures proper labeling in background job scheduling screens, parameter variants, and dynamic UIs, improving UX and accessibility for administrators.
 **Action:** Always check `NO-DISPLAY` parameters and ensure they have corresponding entries in the program's XML text pool.
+## 2024-11-20 - Missing Selection Screen Text for NO-DISPLAY Parameters
+**Learning:** Background selection screen parameters defined with `NO-DISPLAY` (e.g., `P_SF`) still require text descriptions in the text pool (e.g., `<TPOOL>`). This ensures proper labeling in background job scheduling screens, parameter variants, and dynamic UIs, improving UX and accessibility for administrators.
+**Action:** When adding missing selection screen texts, ensure that parameters with `NO-DISPLAY` are also included in both default and translated text pools.
