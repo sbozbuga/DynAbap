@@ -1,4 +1,4 @@
-﻿<?xml version="1.0" encoding="utf-8"?>
+<?xml version="1.0" encoding="utf-8"?>
 <abapGit version="v1.0.0" serializer="LCL_OBJECT_MSAG" serializer_version="v1.0.0">
  <asx:abap xmlns:asx="http://www.sap.com/abapxml" version="1.0">
   <asx:values>
@@ -26,7 +26,35 @@
      <MSGNR>002</MSGNR>
      <TEXT>Print driver completed successfully for Repair &amp;1</TEXT>
     </T100>
+    <T100>
+     <SPRSL>D</SPRSL>
+     <ARBGB>/CTDI/PRINT_REPAIR</ARBGB>
+     <MSGNR>000</MSGNR>
+     <TEXT>&amp; &amp; &amp; &amp;</TEXT>
+    </T100>
+    <T100>
+     <SPRSL>D</SPRSL>
+     <ARBGB>/CTDI/PRINT_REPAIR</ARBGB>
+     <MSGNR>001</MSGNR>
+     <TEXT>Druckertreiber gestartet - Reparatur: &amp;1, Formular: &amp;2, PDF: &amp;3</TEXT>
+    </T100>
+    <T100>
+     <SPRSL>D</SPRSL>
+     <ARBGB>/CTDI/PRINT_REPAIR</ARBGB>
+     <MSGNR>002</MSGNR>
+     <TEXT>Druckertreiber erfolgreich abgeschlossen für Reparatur &amp;1</TEXT>
+    </T100>
    </T100>
+   <I18N_LANGS>
+    <LANGU>D</LANGU>
+   </I18N_LANGS>
+   <T100T>
+    <item>
+     <SPRSL>D</SPRSL>
+     <ARBGB>/CTDI/PRINT_REPAIR</ARBGB>
+     <STEXT>Meldungen Reparaturdruck</STEXT>
+    </item>
+   </T100T>
   </asx:values>
  </asx:abap>
 </abapGit>
