@@ -6,25 +6,37 @@ CLASS /ctdi/cl_print_cust_engine DEFINITION
     CONSTANTS gc_base_class TYPE seoclsname VALUE '/CTDI/CL_PRINT_DRIVER_BASE'.
 
     "! Initializes selection screen toolbar pushbuttons for Customizing navigation
+    "! @parameter rs_sscrfields | Selection screen fields structure with populated toolbar texts
     CLASS-METHODS init_toolbar
       RETURNING VALUE(rs_sscrfields) TYPE sscrfields.
 
     "! Dispatches selection screen function codes (FC02: Projects, FC03: Forms, FC04: Results)
+    "! @parameter iv_ucomm | Function code triggered by user action
     CLASS-METHODS handle_selection_screen_fcode
       IMPORTING iv_ucomm TYPE sy-ucomm.
 
     "! Calls SM30 view maintenance for the given table or view
+    "! @parameter iv_tabname | Table or View name to maintain
     CLASS-METHODS call_view_maintenance
       IMPORTING iv_tabname TYPE dd02v-tabname.
 
     "! Hook for SM30 table maintenance event (Event 05: on new entry creation)
+    "! @parameter cs_entry | Table entry being created
     CLASS-METHODS on_new_entry
       CHANGING cs_entry TYPE /ctdi/rep_forms.
 
+    "! Validates a Customizing record before saving in SM30 (Event 01)
+    "! Checks Form existence in STXFADM/FPCONTEXT, verifies driver class inheritance,
+    "! and verifies Form mandatory interface parameter compatibility.
+    "! @parameter is_entry | Customizing entry to validate
+    "! @raising /ctdi/cx_cust_error | Validation error with diagnostic details
     CLASS-METHODS validate_entry
       IMPORTING is_entry TYPE /ctdi/rep_forms
       RAISING   /ctdi/cx_cust_error.
 
+    "! Checks whether dynamic print provider class generation is permitted
+    "! Validates user S_DEVELOP authority and repository client modifiability.
+    "! @parameter rv_allowed | True if class generation is permitted, false otherwise
     CLASS-METHODS check_generation_allowed
       RETURNING VALUE(rv_allowed) TYPE abap_bool.
 

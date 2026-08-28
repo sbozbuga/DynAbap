@@ -12,11 +12,12 @@ It bridges legacy SAP ERP repair workflows (`AUFK`, `QMEL`, `AFRU`, `VBAK`, `VBA
 graph TD
     subgraph UI_Layer ["Presentation & UI Layer"]
         PR1["/CTDI/PRINT_REPAIR<br>(Single Interactive Print)"]
-        PR2["/CTDI/PRINT_REPAIR_MASS<br>(Mass ALV with Parallel RFC Engine)"]
+        PR2["/CTDI/PRINT_REPAIR_MASS<br>(Mass ALV with Spool Bundling)"]
+        PR3["/CTDI/PRINT_REPAIR_MASS_PRLL<br>(Parallel RFC Engine)"]
     end
 
     subgraph Factory_Layer ["Factory & Rule Engine"]
-        CustEng["/CTDI/CL_PRINT_CUST_ENGINE<br>(Class Resolution & Fallback)"]
+        CustEng["/CTDI/CL_PRINT_CUST_ENGINE<br>(Toolbar Init, RTTI & Fallback)"]
         BaseFact["/CTDI/CL_PRINT_DRIVER_BASE=>factory( )"]
     end
 
@@ -32,14 +33,22 @@ graph TD
         CTDIData["/CTDI/CL_PRINT_DATA_CTDI<br>(11-step Access Sequence)"]
     end
 
+    subgraph Image_Layer ["Image Attachment & Merger Subsystem"]
+        GOS["/CTDI/CL_PRINT_GOS_IMAGES<br>(GOS & ArchiveLink Retrieval + PDF Merging)"]
+    end
+
     subgraph Output_Layer ["Output & Rendering Engines"]
         ADS["Adobe Document Services (ADS)<br>(FP_JOB_OPEN / Dynamic Form Call)"]
         SSF["SAP SmartForms<br>(SSF_OPEN / SSF Function Module)"]
         PDFM["PDF Merge & Spool Bundler<br>(cl_rspo_pdf_merge / ADS Bundle)"]
     end
 
+    PR1 --> CustEng
+    PR2 --> CustEng
+    PR3 --> CustEng
     PR1 --> BaseFact
     PR2 --> BaseFact
+    PR3 --> BaseFact
     BaseFact --> CustEng
     CustEng --> BaseDrv
     BaseDrv --> CTDIDrv
@@ -49,6 +58,7 @@ graph TD
     CTDIDrv --> CTDIData
     LegDrv --> LegData
 
+    BaseDrv --> GOS
     BaseDrv --> ADS
     BaseDrv --> SSF
     BaseDrv --> PDFM
@@ -62,13 +72,16 @@ graph TD
 - **`/CTDI/PRINT_REPAIR`**: Single-order print execution transaction with interactive preview, PDF download, and print dialogs.
 - **`/CTDI/PRINT_REPAIR_MASS`**: High-performance mass processing report featuring:
   - Full-screen `CL_SALV_TABLE` with custom GUI status (`MASS_ALV`).
-  - Automatic selection deduplication prioritizing active confirmation (`AFRU-BEMOT` / `SKZ`) and primary notification (`QMEL-QMART = 'Z2'`).
-  - Asynchronous parallel execution via `CL_ABAP_PARALLEL` across application server work processes.
-  - Multi-document spool bundling (`SSF_OPEN` / `FP_JOB_OPEN`) and client-side PDF merging (`CL_RSPO_PDF_MERGE`).
+  - Selection deduplication prioritizing active confirmation (`AFRU-BEMOT` / `SKZ`) and primary notification (`QMEL-QMART = 'Z2'`).
+  - Spool bundling (`SSF_OPEN` / `FP_JOB_OPEN`), merged PDF spool jobs, and client-side download directory preservation.
+- **`/CTDI/PRINT_REPAIR_MASS_PRLL`**: High-throughput parallelized execution running across asynchronous dialog work processes via `CL_ABAP_PARALLEL`.
 
-### Layer 2: Customizing Engine & Factory Pattern
-- **Pattern:** *Factory Method* + *Strategy Pattern*.
-- **Mechanism:** `/CTDI/CL_PRINT_DRIVER_BASE=>factory( iv_repair_id )` resolves order metadata, queries the configuration table `/CTDI/REP_FORMS` via the 8-step fallback sequence, and dynamically instantiates the appropriate driver class via `/CTDI/CL_PRINT_CUST_ENGINE`.
+### Layer 2: Customizing Engine & Selection Screen Lifecycle
+- **Pattern:** *Factory Method* + *Centralized Dispatcher*.
+- **Mechanism:** 
+  - `init_toolbar( )` constructs pushbuttons `FC02` (Project), `FC03` (Forms), and `FC04` (Results) dynamically using multilingual text symbols.
+  - `handle_selection_screen_fcode( )` centrally dispatches SM30 view maintenance calls for `/CTDI/REP_PROJEC`, `/CTDI/REP_FORMS`, and `/CTDI/REP_RESULT`.
+  - In-memory RTTI (`cl_abap_typedescr`) validates driver class inheritance without executing database queries in loops.
 
 ### Layer 3: Print Pipeline & Template Method Pattern
 - **Pattern:** *Template Method Pattern*.
@@ -76,15 +89,22 @@ graph TD
   1. `read_data( )` &rarr; Hook to extract raw database records.
   2. `map_and_register_data( )` &rarr; Hook to bind typed structures to form parameters.
   3. `render_form( )` &rarr; Dynamic dispatch to Adobe Form or SmartForm runtime.
-  4. `download_pdf( )` &rarr; Client download or PDF xstring buffering.
+  4. `process_image_attachments( )` &rarr; Append scaled GOS/ArchiveLink images to generated PDF stream.
+  5. `download_pdf( )` &rarr; Client download or PDF xstring buffering.
 
-### Layer 4: Data Provider Layer
+### Layer 4: Image Attachment & PDF Merging Subsystem
+- **`/CTDI/CL_PRINT_GOS_IMAGES`**: Automatically detects and processes image attachments associated with the repair order or linked service notification:
+  - Supports both GOS/SOFFICE attachments (`SRGBTBREL` / `SO_DOCUMENT_READ_API1`) and Content Server / ArchiveLink documents (`TOA01` / `SCMS_AO_TABLE_GET` with `ZRS_JPG`).
+  - Automatically calculates A4 page dimensions and scales images while strictly preserving aspect ratio.
+  - Generates single/multi-page PDF streams (Raw PDF renderer or ADS layout `/CTDI/REPAIR_IMG`) and merges them into the driver's output stream.
+
+### Layer 5: Data Provider Layer
 - **`/CTDI/CL_PRINT_DATA_LEGACY`**: Reusable data extraction engine that resolves complex SAP relationships:
   - Order &rarr; Notification &rarr; Equipment &rarr; Serial number &rarr; Characteristic classification (`CABN`/`AUSP`).
   - Intercompany order redirection (`QMART = 'ZX'`) tracing origin orders via `QMFE` and `EKKN`.
 - **`/CTDI/CL_PRINT_DATA_CTDI`**: Domain extension that maps legacy structures to `/CTDI/REPAIR` DDIC types and evaluates an **11-step rule access sequence** against `/CTDI/REP_RESULT`.
 
-### Layer 5: Cross-Cutting Infrastructure
+### Layer 6: Cross-Cutting Infrastructure
 - **Logging:** `/CTDI/CL_PRINT_DRIVER_LOG` provides an isolated wrapper around SAP Application Log (`SLG1`), supporting runtime log level thresholds (`I`, `W`, `E`).
 - **Exceptions:** Unified hierarchy (`/CTDI/CX_PRINT_DRIVER_ERROR`, `/CTDI/CX_NO_CONFIG_FOUND`, `/CTDI/CX_CUST_ERROR`) with diagnostic message propagation.
 
@@ -146,12 +166,13 @@ graph TD
 |---|---|---|
 | **Extensibility (OCP)** | New customer forms are added by creating a data provider subclass and inserting rows into `/CTDI/REP_FORMS`. | **Zero modification** to existing reports or core driver classes. |
 | **Dual Form Technology** | Seamless execution of both Adobe Forms and SmartForms under a single API. | Allows gradual migration of legacy SmartForms to modern Adobe Interactive Forms. |
+| **Image Append Pipeline** | Automatic GOS / Content Server image extraction, scaling, and PDF merging. | Customer repair attachments are seamlessly bundled into the final document. |
 | **High Performance** | Asynchronous task parallelization (`CL_ABAP_PARALLEL`) with batch spool bundling. | Mass print jobs scaling from 10 to 1,000+ orders without UI locking or gateway timeouts. |
 | **Clean Separation of Concerns** | UI orchestration &rarr; Pipeline coordinator &rarr; Data extraction &rarr; Rendering runtime. | Independent unit testability, zero GUI dependencies in driver classes, and full background job safety. |
 
 ---
 
-## 5. Architectural Risks & Future Recommendations
+## 5. Architectural Recommendations & Future Directions
 
 1. **Database Decoupling (CDS Views / AMDP):**
    - *Current:* Complex JOINs and `SELECT SINGLE` queries in `/CTDI/CL_PRINT_DATA_LEGACY` query transactional tables directly.

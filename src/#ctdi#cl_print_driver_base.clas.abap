@@ -47,57 +47,59 @@ CLASS /ctdi/cl_print_driver_base DEFINITION
       RAISING   /ctdi/cx_print_driver_error
                 /ctdi/cx_no_config_found.
 
+    "! Sets the client download directory path
+    "! @parameter iv_dir | Directory path on client frontend
     CLASS-METHODS set_download_dir
       IMPORTING iv_dir TYPE string.
 
+    "! Returns the current client download directory path
+    "! @parameter rv_dir | Directory path on client frontend
     CLASS-METHODS get_download_dir
       RETURNING VALUE(rv_dir) TYPE string.
 
-    "! Returns whether GOS image appending is active for this driver instance.
+    "! Returns whether GOS image appending is active for this driver instance
+    "! @parameter rv_append | True if image appending is enabled, false otherwise
     METHODS get_append_images
       RETURNING VALUE(rv_append) TYPE abap_bool.
 
-    "! Sets whether GOS image appending is active for this driver instance.
+    "! Sets whether GOS image appending is active for this driver instance
+    "! @parameter iv_append | True to enable image appending, false to disable
     METHODS set_append_images
       IMPORTING iv_append TYPE abap_bool.
 
-    "! Sets the image render mode (Raw PDF or ADS form).
+    "! Sets the image render mode (Raw PDF or ADS form)
+    "! @parameter iv_mode | Render mode: 'R' for Raw PDF (built-in), 'A' for ADS form
     METHODS set_img_render_mode
       IMPORTING iv_mode TYPE char1.
 
-    "! Returns the last generated PDF data (available after execute with iv_save_as_pdf = true).
-    "!
-    "! @parameter rv_pdf |
+    "! Returns the last generated PDF data (available after execute with iv_save_as_pdf = true)
+    "! @parameter rv_pdf | Generated PDF raw stream as XSTRING
     METHODS get_last_pdf
       RETURNING VALUE(rv_pdf) TYPE xstring.
 
-    "! When set to true, download_pdf stores the PDF but does not trigger file download.
-    "!
-    "! @parameter iv_collect |
+    "! When set to true, download_pdf stores the PDF in memory but suppresses frontend download
+    "! @parameter iv_collect | True to collect/buffer PDF, false to download
     METHODS set_collect_pdf
       IMPORTING iv_collect TYPE abap_bool.
 
-    "! When set to true, the driver skips FP_JOB_OPEN/CLOSE and SSF_OPEN/CLOSE.
-    "! The caller is responsible for managing the spool/ADS job externally.
-    "!
-    "! @parameter iv_external |
+    "! When set to true, the driver skips FP_JOB_OPEN/CLOSE and SSF_OPEN/CLOSE
+    "! The caller is responsible for managing the spool/ADS job externally
+    "! @parameter iv_external | True if job lifecycle is externally managed
     METHODS set_external_job
       IMPORTING iv_external TYPE abap_bool.
 
-    "! Builds the PDF filename (without extension) from repair data.
-    "! Used for file download name and spool cover title.
-    "!
-    "! @parameter rv_filename |
+    "! Builds the standardized PDF filename (without extension) from repair data
+    "! Used for client download filenames and spool cover titles
+    "! @parameter rv_filename | Formatted PDF filename (e.g. Repair_4000101_PartA)
     METHODS build_pdf_filename
       RETURNING VALUE(rv_filename) TYPE string.
 
-    "! Executes the full print pipeline (read data + render form).
-    "!
-    "! @parameter iv_save_as_pdf |
-    "! @parameter iv_no_dialog |
-    "! @parameter iv_preview |
-    "! @parameter io_data |
-    "! @raising /ctdi/cx_print_driver_error |
+    "! Executes the full print pipeline (read data + map data + render form)
+    "! @parameter iv_save_as_pdf | True to generate and collect/download PDF
+    "! @parameter iv_no_dialog | True to suppress print popup dialog
+    "! @parameter iv_preview | True to display print preview on screen
+    "! @parameter io_data | Optional pre-extracted business data object
+    "! @raising /ctdi/cx_print_driver_error | General print execution failure
     METHODS execute
       IMPORTING iv_save_as_pdf TYPE abap_bool     DEFAULT abap_false
                 iv_no_dialog   TYPE abap_bool     DEFAULT abap_true
