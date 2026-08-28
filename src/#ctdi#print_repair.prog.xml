@@ -71,6 +71,18 @@
     </item>
     <item>
      <ID>S</ID>
+     <KEY>P_ADSPDF</KEY>
+     <ENTRY>Adobe Forms</ENTRY>
+     <LENGTH>19</LENGTH>
+    </item>
+    <item>
+     <ID>S</ID>
+     <KEY>P_RAWPDF</KEY>
+     <ENTRY>Raw PDF</ENTRY>
+     <LENGTH>15</LENGTH>
+    </item>
+    <item>
+     <ID>S</ID>
      <KEY>P_SF</KEY>
      <ENTRY>Save as PDF</ENTRY>
      <LENGTH>19</LENGTH>
