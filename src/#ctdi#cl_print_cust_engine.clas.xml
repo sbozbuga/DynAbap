@@ -54,15 +54,66 @@
    </LINES>
    <DESCRIPTIONS>
     <SEOCOMPOTX>
+     <CMPNAME>CALL_VIEW_MAINTENANCE</CMPNAME>
+     <LANGU>E</LANGU>
+     <DESCRIPT>Calls SM30 View Maintenance for table or view</DESCRIPT>
+    </SEOCOMPOTX>
+    <SEOCOMPOTX>
      <CMPNAME>GC_FORM_ALCATEL</CMPNAME>
      <LANGU>E</LANGU>
      <DESCRIPT>Name of Form Object</DESCRIPT>
+    </SEOCOMPOTX>
+    <SEOCOMPOTX>
+     <CMPNAME>HANDLE_SELECTION_SCREEN_FCODE</CMPNAME>
+     <LANGU>E</LANGU>
+     <DESCRIPT>Dispatches Selection Screen Function Codes</DESCRIPT>
+    </SEOCOMPOTX>
+    <SEOCOMPOTX>
+     <CMPNAME>INIT_TOOLBAR</CMPNAME>
+     <LANGU>E</LANGU>
+     <DESCRIPT>Initializes Selection Screen Toolbar Buttons</DESCRIPT>
     </SEOCOMPOTX>
    </DESCRIPTIONS>
    <DESCRIPTIONS_SUB>
     <SEOSUBCOTX>
      <LANGU>D</LANGU>
      <DESCRIPT>Reparatur Customizing- und Validierungs-Engine</DESCRIPT>
+    </SEOSUBCOTX>
+    <SEOSUBCOTX>
+     <CMPNAME>CALL_VIEW_MAINTENANCE</CMPNAME>
+     <SCONAME>IV_TABNAME</SCONAME>
+     <LANGU>D</LANGU>
+     <DESCRIPT>Tabellenname</DESCRIPT>
+    </SEOSUBCOTX>
+    <SEOSUBCOTX>
+     <CMPNAME>CALL_VIEW_MAINTENANCE</CMPNAME>
+     <SCONAME>IV_TABNAME</SCONAME>
+     <LANGU>E</LANGU>
+     <DESCRIPT>Table Name</DESCRIPT>
+    </SEOSUBCOTX>
+    <SEOSUBCOTX>
+     <CMPNAME>HANDLE_SELECTION_SCREEN_FCODE</CMPNAME>
+     <SCONAME>IV_UCOMM</SCONAME>
+     <LANGU>D</LANGU>
+     <DESCRIPT>Funktionscode</DESCRIPT>
+    </SEOSUBCOTX>
+    <SEOSUBCOTX>
+     <CMPNAME>HANDLE_SELECTION_SCREEN_FCODE</CMPNAME>
+     <SCONAME>IV_UCOMM</SCONAME>
+     <LANGU>E</LANGU>
+     <DESCRIPT>Function Code</DESCRIPT>
+    </SEOSUBCOTX>
+    <SEOSUBCOTX>
+     <CMPNAME>INIT_TOOLBAR</CMPNAME>
+     <SCONAME>RS_SSCRFIELDS</SCONAME>
+     <LANGU>D</LANGU>
+     <DESCRIPT>Selektionsbild-Felder</DESCRIPT>
+    </SEOSUBCOTX>
+    <SEOSUBCOTX>
+     <CMPNAME>INIT_TOOLBAR</CMPNAME>
+     <SCONAME>RS_SSCRFIELDS</SCONAME>
+     <LANGU>E</LANGU>
+     <DESCRIPT>Selection Screen Fields</DESCRIPT>
     </SEOSUBCOTX>
     <SEOSUBCOTX>
      <CMPNAME>NORMALIZE_CLASS_NAME</CMPNAME>
@@ -113,6 +164,54 @@
      <DESCRIPT>Object Type Name</DESCRIPT>
     </SEOSUBCOTX>
    </DESCRIPTIONS_SUB>
+   <I18N_TPOOL>
+    <item>
+     <LANGUAGE>D</LANGUAGE>
+     <TEXTPOOL>
+      <item>
+       <ID>I</ID>
+       <KEY>038</KEY>
+       <ENTRY>Projekt</ENTRY>
+       <LENGTH>40</LENGTH>
+      </item>
+      <item>
+       <ID>I</ID>
+       <KEY>039</KEY>
+       <ENTRY>Formulare</ENTRY>
+       <LENGTH>40</LENGTH>
+      </item>
+      <item>
+       <ID>I</ID>
+       <KEY>040</KEY>
+       <ENTRY>Ergebnisse</ENTRY>
+       <LENGTH>40</LENGTH>
+      </item>
+     </TEXTPOOL>
+    </item>
+    <item>
+     <LANGUAGE>E</LANGUAGE>
+     <TEXTPOOL>
+      <item>
+       <ID>I</ID>
+       <KEY>038</KEY>
+       <ENTRY>Project</ENTRY>
+       <LENGTH>40</LENGTH>
+      </item>
+      <item>
+       <ID>I</ID>
+       <KEY>039</KEY>
+       <ENTRY>Forms</ENTRY>
+       <LENGTH>40</LENGTH>
+      </item>
+      <item>
+       <ID>I</ID>
+       <KEY>040</KEY>
+       <ENTRY>Results</ENTRY>
+       <LENGTH>40</LENGTH>
+      </item>
+     </TEXTPOOL>
+    </item>
+   </I18N_TPOOL>
   </asx:values>
  </asx:abap>
 </abapGit>

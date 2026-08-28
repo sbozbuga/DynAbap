@@ -116,7 +116,6 @@ TYPES ty_step_tab TYPE STANDARD TABLE OF ty_step WITH EMPTY KEY.
 CLASS lcl_mass_print DEFINITION FINAL.
   PUBLIC SECTION.
     CLASS-METHODS run.
-    CLASS-METHODS fcodes.
 
   PRIVATE SECTION.
     CONSTANTS c_mode_individual TYPE i VALUE 1.
@@ -131,8 +130,6 @@ CLASS lcl_mass_print DEFINITION FINAL.
     CLASS-METHODS resolve_form_types.
     CLASS-METHODS display_alv.
     CLASS-METHODS toggle_spool_mode.
-    CLASS-METHODS view_maintenance_call
-      IMPORTING iv_tabname TYPE dd02v-tabname.
 
     CLASS-METHODS on_user_command FOR EVENT added_function OF cl_salv_events_table
       IMPORTING e_salv_function.
@@ -318,47 +315,6 @@ CLASS lcl_mass_print IMPLEMENTATION.
     ENDLOOP.
   ENDMETHOD.
 
-  METHOD fcodes.
-    CASE sscrfields-ucomm.
-      WHEN 'FC02'.
-        view_maintenance_call( '/CTDI/REP_PROJEC' ).
-      WHEN 'FC03'.
-        view_maintenance_call( '/CTDI/REP_FORMS' ).
-      WHEN 'FC04'.
-        view_maintenance_call( '/CTDI/REP_RESULT' ).
-      WHEN OTHERS.
-    ENDCASE.
-
-  ENDMETHOD.
-  METHOD view_maintenance_call.
-    DATA: lv_action TYPE c LENGTH 1 VALUE 'U'. " 'U' for Update / Maintain, 'S' for Display / Show
-
-    CALL FUNCTION 'VIEW_MAINTENANCE_CALL'
-      EXPORTING
-        action                       = lv_action
-        view_name                    = iv_tabname
-      EXCEPTIONS
-        client_reference             = 1
-        foreign_lock                 = 2
-        invalid_action               = 3
-        no_clientindependent_auth    = 4
-        no_database_function         = 5
-        no_editor_function           = 6
-        no_show_auth                 = 7
-        no_tvdir_entry               = 8
-        no_upd_auth                  = 9
-        only_show_allowed            = 10
-        system_failure               = 11
-        unknown_field_in_dba_sellist = 12
-        view_not_found               = 13
-        maintenance_prohibited       = 14
-        OTHERS                       = 15.
-
-    IF sy-subrc <> 0.
-      MESSAGE ID sy-msgid TYPE sy-msgty NUMBER sy-msgno
-              WITH sy-msgv1 sy-msgv2 sy-msgv3 sy-msgv4.
-    ENDIF.
-  ENDMETHOD.
   METHOD resolve_form_types.
     " 1. Read all config entries from /CTDI/REP_FORMS (Customizing buffer with sorted key)
     DATA lt_config TYPE SORTED TABLE OF /ctdi/rep_forms WITH NON-UNIQUE KEY vbeln skz akz.
@@ -1203,15 +1159,11 @@ ENDCLASS.
 
 INITIALIZATION.
   " Default qmart pattern: Z*
-  s_qmart[] = VALUE #( ( sign = 'I' option = 'CP' low = 'Z*' ) ).
-
-  sscrfields-functxt_01 = ' | '. "seperator
-  sscrfields-functxt_02 = |@PR@ { TEXT-038 }|. " Project
-  sscrfields-functxt_03 = |@0R@ { TEXT-039 }|. " Forms
-  sscrfields-functxt_04 = |@0Q@ { TEXT-040 }|. " Results
+  s_qmart[]  = VALUE #( ( sign = 'I' option = 'CP' low = 'Z*' ) ).
+  sscrfields = /ctdi/cl_print_cust_engine=>init_toolbar( ).
 
 AT SELECTION-SCREEN.
-  lcl_mass_print=>fcodes( ).
+  /ctdi/cl_print_cust_engine=>handle_selection_screen_fcode( sscrfields-ucomm ).
 
 START-OF-SELECTION.
   lcl_mass_print=>run( ).

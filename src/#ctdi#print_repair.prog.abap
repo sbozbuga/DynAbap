@@ -87,10 +87,6 @@ SELECTION-SCREEN END OF BLOCK b1a.
 CLASS lcl_app DEFINITION FINAL.
   PUBLIC SECTION.
     CLASS-METHODS run.
-    CLASS-METHODS fcodes.
-  PRIVATE SECTION.
-    CLASS-METHODS view_maintenance_call
-      IMPORTING iv_tabname TYPE dd02v-tabname.
 ENDCLASS.
 
 
@@ -109,14 +105,10 @@ CLASS lcl_app IMPLEMENTATION.
           iv_sernr         = p_sernr
           iv_append_images = lv_append_override ).
 
-        " Set image render mode from selection screen
-        lr_driver->set_img_render_mode( COND #(
-          WHEN p_adspdf = abap_true THEN /ctdi/cl_print_gos_images=>gc_render_ads
-          ELSE /ctdi/cl_print_gos_images=>gc_render_raw ) ).
+        lr_driver->set_img_render_mode(
+          COND #( WHEN p_adspdf = abap_true THEN 'A' ELSE 'R' ) ).
 
-        " In legacy ALCAREP02, p_sf = 'X' means "Spool mode" (do NOT download PDF).
-        " Also, if called from transaction IW42, it defaults to Spool mode.
-        " Therefore, save_as_pdf is TRUE only if p_sf is empty AND tcode is not IW42.
+        " Save as PDF if p_sf is unchecked AND not IW42 transaction
         DATA(lv_save_as_pdf) = xsdbool( p_sf = abap_false AND sy-tcode <> 'IW42' ).
 
         lr_driver->execute( iv_save_as_pdf = lv_save_as_pdf ).
@@ -142,57 +134,13 @@ CLASS lcl_app IMPLEMENTATION.
       MESSAGE TEXT-008 TYPE 'S'.
     ENDIF.
   ENDMETHOD.
-  METHOD fcodes.
-    CASE sscrfields-ucomm.
-      WHEN 'FC02'.
-        view_maintenance_call( '/CTDI/REP_PROJEC' ).
-      WHEN 'FC03'.
-        view_maintenance_call( '/CTDI/REP_FORMS' ).
-      WHEN 'FC04'.
-        view_maintenance_call( '/CTDI/REP_RESULT' ).
-      WHEN OTHERS.
-    ENDCASE.
-
-  ENDMETHOD.
-  METHOD view_maintenance_call.
-    DATA: lv_action TYPE c LENGTH 1 VALUE 'U'. " 'U' for Update / Maintain, 'S' for Display / Show
-
-    CALL FUNCTION 'VIEW_MAINTENANCE_CALL'
-      EXPORTING
-        action                       = lv_action
-        view_name                    = iv_tabname
-      EXCEPTIONS
-        client_reference             = 1
-        foreign_lock                 = 2
-        invalid_action               = 3
-        no_clientindependent_auth    = 4
-        no_database_function         = 5
-        no_editor_function           = 6
-        no_show_auth                 = 7
-        no_tvdir_entry               = 8
-        no_upd_auth                  = 9
-        only_show_allowed            = 10
-        system_failure               = 11
-        unknown_field_in_dba_sellist = 12
-        view_not_found               = 13
-        maintenance_prohibited       = 14
-        OTHERS                       = 15.
-
-    IF sy-subrc <> 0.
-      MESSAGE ID sy-msgid TYPE sy-msgty NUMBER sy-msgno
-              WITH sy-msgv1 sy-msgv2 sy-msgv3 sy-msgv4.
-    ENDIF.
-  ENDMETHOD.
 ENDCLASS.
 
 INITIALIZATION.
-  sscrfields-functxt_01 = ' | '. "seperator
-  sscrfields-functxt_02 = |@PR@ { TEXT-038 }|. " Project
-  sscrfields-functxt_03 = |@0R@ { TEXT-039 }|. " Forms
-  sscrfields-functxt_04 = |@0Q@ { TEXT-040 }|. " Results
+  sscrfields = /ctdi/cl_print_cust_engine=>init_toolbar( ).
 
 AT SELECTION-SCREEN.
-  lcl_app=>fcodes( ).
+  /ctdi/cl_print_cust_engine=>handle_selection_screen_fcode( sscrfields-ucomm ).
 
 START-OF-SELECTION.
   lcl_app=>run( ).

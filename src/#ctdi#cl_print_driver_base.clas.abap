@@ -27,7 +27,7 @@ CLASS /ctdi/cl_print_driver_base DEFINITION
     CONSTANTS gc_param_job_output    TYPE string    VALUE 'JOB_OUTPUT_INFO' ##NO_TEXT.
 
     " Image append override constants
-    CONSTANTS gc_img_override_default TYPE char1    VALUE space ##NO_TEXT.
+    CONSTANTS gc_img_override_default TYPE char1    VALUE space.
     CONSTANTS gc_img_override_yes     TYPE char1    VALUE 'X' ##NO_TEXT.
     CONSTANTS gc_img_override_no      TYPE char1    VALUE 'N' ##NO_TEXT.
 
@@ -106,7 +106,7 @@ CLASS /ctdi/cl_print_driver_base DEFINITION
       RAISING   /ctdi/cx_print_driver_error.
 
   PROTECTED SECTION.
-    CLASS-DATA mv_download_dir TYPE string.
+    CLASS-DATA gv_download_dir TYPE string.
 
     DATA mv_repair_order       TYPE aufnr.
     DATA mv_sernr              TYPE equi-sernr.
@@ -119,7 +119,7 @@ CLASS /ctdi/cl_print_driver_base DEFINITION
     DATA ms_repair             TYPE /ctdi/repair.
     DATA ms_project            TYPE /ctdi/rep_projec.
     DATA mt_errors             TYPE /ctdi/repair_error_tt.
-    DATA mt_comments           TYPE STANDARD TABLE OF tline.
+    DATA mt_comments           TYPE STANDARD TABLE OF tline WITH EMPTY KEY.
     DATA mt_custom_form_params TYPE abap_func_parmbind_tab.
 
     "! Hook: Processes and appends GOS images to mv_last_pdf if enabled
@@ -316,9 +316,8 @@ CLASS /CTDI/CL_PRINT_DRIVER_BASE IMPLEMENTATION.
     " Fetch all valid parameters for the generated function module to prevent dumps
     SELECT parameter FROM fupararef
       WHERE funcname = @iv_fm_name
-      INTO TABLE @DATA(lt_valid_params).
-
-    SORT lt_valid_params BY parameter.
+      ORDER BY parameter
+      INTO TABLE @DATA(lt_valid_params) ##SUBRC_OK.
 
     " Inject any dynamically registered custom parameters if they exist in the form
     LOOP AT mt_custom_form_params ASSIGNING FIELD-SYMBOL(<ls_custom_param>).
@@ -424,9 +423,8 @@ CLASS /CTDI/CL_PRINT_DRIVER_BASE IMPLEMENTATION.
     " Fetch all valid parameters for the generated function module to prevent dumps
     SELECT parameter FROM fupararef
       WHERE funcname = @iv_fm_name
-      INTO TABLE @DATA(lt_valid_params).
-
-    SORT lt_valid_params BY parameter.
+      ORDER BY parameter
+      INTO TABLE @DATA(lt_valid_params) ##SUBRC_OK.
 
     " Inject any dynamically registered custom parameters if they exist in the form
     LOOP AT mt_custom_form_params ASSIGNING FIELD-SYMBOL(<ls_custom_param>).
@@ -460,9 +458,9 @@ CLASS /CTDI/CL_PRINT_DRIVER_BASE IMPLEMENTATION.
 
 
   METHOD convert_otf_to_pdf.
-    DATA lt_otf         TYPE TABLE OF itcoo.
+    DATA lt_otf         TYPE STANDARD TABLE OF itcoo WITH EMPTY KEY.
     DATA lv_pdf_xstring TYPE xstring.
-    DATA lt_pdf_lines   TYPE TABLE OF tline.
+    DATA lt_pdf_lines   TYPE STANDARD TABLE OF tline WITH EMPTY KEY.
 
     lt_otf = it_otfdata.
 
@@ -485,7 +483,7 @@ CLASS /CTDI/CL_PRINT_DRIVER_BASE IMPLEMENTATION.
 
 
   METHOD detect_form_type.
-    SELECT SINGLE @abap_true FROM stxfadm              "#EC CI_SEL_NESTED
+    SELECT SINGLE @abap_true FROM stxfadm            "#EC CI_SEL_NESTED
       WHERE formname = @mv_form_name
       INTO @DATA(lv_exists) ##NEEDED.
     IF sy-subrc = 0.
@@ -521,7 +519,7 @@ CLASS /CTDI/CL_PRINT_DRIVER_BASE IMPLEMENTATION.
       RETURN.
     ENDIF.
 
-    " Guard: batch mode — frontend services are unavailable
+    " Guard: batch mode - frontend services are unavailable
     IF sy-batch IS NOT INITIAL.
       /ctdi/cl_print_driver_log=>log_warning( |PDF download skipped for Repair { mv_repair_order } in batch mode| ).
       RETURN.
@@ -539,7 +537,7 @@ CLASS /CTDI/CL_PRINT_DRIVER_BASE IMPLEMENTATION.
       RETURN.
     ENDIF.
 
-    IF mv_download_dir IS INITIAL.
+    IF gv_download_dir IS INITIAL.
       " First download: show file-save dialog to get directory + confirm filename
       cl_gui_frontend_services=>file_save_dialog( EXPORTING  default_file_name = lv_pdf_filename
                                                              default_extension = 'pdf'
@@ -555,7 +553,7 @@ CLASS /CTDI/CL_PRINT_DRIVER_BASE IMPLEMENTATION.
       set_download_dir( lv_path ).
     ENDIF.
 
-    lv_fpath = mv_download_dir && lv_pdf_filename.
+    lv_fpath = gv_download_dir && lv_pdf_filename.
 
     lv_filesize = xstrlen( mv_last_pdf ).
 
@@ -818,10 +816,10 @@ CLASS /CTDI/CL_PRINT_DRIVER_BASE IMPLEMENTATION.
 
     /ctdi/cl_print_driver_log=>log_info( |Print driver factory invoked for Repair { iv_repair_id }, Sernr { iv_sernr }| ).
 
-    get_config_from_db( EXPORTING iv_repair_id     = iv_repair_id
-                        IMPORTING ev_form_name     = lv_form_name
-                                  ev_class_name    = lv_class_name
-                                  es_project       = ls_project_db ).
+    get_config_from_db( EXPORTING iv_repair_id  = iv_repair_id
+                        IMPORTING ev_form_name  = lv_form_name
+                                  ev_class_name = lv_class_name
+                                  es_project    = ls_project_db ).
 
     TRY.
         CREATE OBJECT ro_driver TYPE (lv_class_name).
@@ -866,7 +864,7 @@ CLASS /CTDI/CL_PRINT_DRIVER_BASE IMPLEMENTATION.
              skz   TYPE bemot,
              akz   TYPE char4,
            END OF ty_query_step.
-    DATA lt_steps TYPE TABLE OF ty_query_step.
+    DATA lt_steps TYPE STANDARD TABLE OF ty_query_step WITH EMPTY KEY.
 
     resolve_contract( EXPORTING iv_repair_id   = iv_repair_id
                       IMPORTING ev_contract_id = lv_contract
@@ -915,10 +913,11 @@ CLASS /CTDI/CL_PRINT_DRIVER_BASE IMPLEMENTATION.
                     skz   = ''
                     akz   = '' ) TO lt_steps.
 
-    SELECT * FROM /ctdi/rep_forms             "#EC CI_ALL_FIELDS_NEEDED
-      WHERE vbeln = @lv_contract OR vbeln = ''       "#EC CI_SEL_NESTED
+    SELECT vbeln, skz, akz, form_name, class_name
+      FROM /ctdi/rep_forms
+      WHERE vbeln = @lv_contract OR vbeln = ''
       ORDER BY PRIMARY KEY ##SUBRC_OK
-      INTO TABLE @DATA(lt_forms).
+      INTO CORRESPONDING FIELDS OF TABLE @DATA(lt_forms).
 
     SORT lt_forms BY vbeln
                      skz
@@ -929,7 +928,7 @@ CLASS /CTDI/CL_PRINT_DRIVER_BASE IMPLEMENTATION.
                                                                      skz   = <ls_step>-skz
                                                                      akz   = <ls_step>-akz BINARY SEARCH.
       IF sy-subrc = 0.
-        ls_config = <ls_form>.
+        ls_config = CORRESPONDING #( <ls_form> ).
         EXIT.
       ENDIF.
     ENDLOOP.
@@ -943,19 +942,20 @@ CLASS /CTDI/CL_PRINT_DRIVER_BASE IMPLEMENTATION.
           message = |No configuration found in /CTDI/REP_FORMS for order { iv_repair_id } (including default fallback).|.
     ENDIF.
 
-    " Read project config (contract level) — APPEND_IMAGES lives here
-    SELECT SINGLE * FROM /ctdi/rep_projec     "#EC CI_ALL_FIELDS_NEEDED
+    " Read project config (contract level) - APPEND_IMAGES lives here
+    SELECT SINGLE vbeln, project, append_images
+      FROM /ctdi/rep_projec
       WHERE vbeln = @lv_contract ##SUBRC_OK
-      INTO @es_project.                              "#EC CI_SEL_NESTED
+      INTO CORRESPONDING FIELDS OF @es_project.
 
     /ctdi/cl_print_driver_log=>log_info(
-        |Config resolved — Contract: { lv_contract }, | &&
+        |Config resolved - Contract: { lv_contract }, | &&
         |SKZ: { lv_skz }, AKZ: { lv_akz }, Form: { ev_form_name }, Class: { ev_class_name }, AppendImg: { es_project-append_images }| ).
   ENDMETHOD.
 
 
   METHOD get_download_dir.
-    rv_dir = mv_download_dir.
+    rv_dir = gv_download_dir.
   ENDMETHOD.
 
 
@@ -1138,7 +1138,7 @@ CLASS /CTDI/CL_PRINT_DRIVER_BASE IMPLEMENTATION.
       IF ev_contract_id IS INITIAL OR lv_vbtyp <> 'G'.
         CLEAR ev_contract_id.
         /ctdi/cl_print_driver_log=>log_warning(
-            |No valid contract found for Order { lv_order_id } — proceeding with global fallback| ).
+            |No valid contract found for Order { lv_order_id } - proceeding with global fallback| ).
       ELSE.
         /ctdi/cl_print_driver_log=>log_info(
             |Resolved Order { iv_repair_id } -> Contract { ev_contract_id }, SKZ { ev_skz }, AKZ { ev_akz }| ).
@@ -1165,13 +1165,13 @@ CLASS /CTDI/CL_PRINT_DRIVER_BASE IMPLEMENTATION.
 
 
   METHOD set_download_dir.
-    mv_download_dir = iv_dir.
-    IF mv_download_dir IS NOT INITIAL.
-      DATA(lv_len) = strlen( mv_download_dir ).
+    gv_download_dir = iv_dir.
+    IF gv_download_dir IS NOT INITIAL.
+      DATA(lv_len) = strlen( gv_download_dir ).
       DATA(lv_off) = lv_len - 1.
-      DATA(lv_last_char) = mv_download_dir+lv_off(1).
+      DATA(lv_last_char) = gv_download_dir+lv_off(1).
       IF lv_last_char <> '\' AND lv_last_char <> '/'.
-        mv_download_dir = mv_download_dir && '\'.
+        gv_download_dir = gv_download_dir && '\'.
       ENDIF.
     ENDIF.
   ENDMETHOD.

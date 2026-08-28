@@ -5,6 +5,19 @@ CLASS /ctdi/cl_print_cust_engine DEFINITION
   PUBLIC SECTION.
     CONSTANTS gc_base_class TYPE seoclsname VALUE '/CTDI/CL_PRINT_DRIVER_BASE'.
 
+    "! Initializes selection screen toolbar pushbuttons for Customizing navigation
+    CLASS-METHODS init_toolbar
+      RETURNING VALUE(rs_sscrfields) TYPE sscrfields.
+
+    "! Dispatches selection screen function codes (FC02: Projects, FC03: Forms, FC04: Results)
+    CLASS-METHODS handle_selection_screen_fcode
+      IMPORTING iv_ucomm TYPE sy-ucomm.
+
+    "! Calls SM30 view maintenance for the given table or view
+    CLASS-METHODS call_view_maintenance
+      IMPORTING iv_tabname TYPE dd02v-tabname.
+
+    "! Hook for SM30 table maintenance event (Event 05: on new entry creation)
     CLASS-METHODS on_new_entry
       CHANGING cs_entry TYPE /ctdi/rep_forms.
 
@@ -57,6 +70,54 @@ ENDCLASS.
 
 
 CLASS /ctdi/cl_print_cust_engine IMPLEMENTATION.
+  METHOD call_view_maintenance.
+    DATA lv_action TYPE c LENGTH 1 VALUE 'U'. " 'U' for Update / Maintain, 'S' for Display / Show
+
+    CALL FUNCTION 'VIEW_MAINTENANCE_CALL'
+      EXPORTING
+        action                       = lv_action
+        view_name                    = iv_tabname
+      EXCEPTIONS
+        client_reference             = 1
+        foreign_lock                 = 2
+        invalid_action               = 3
+        no_clientindependent_auth    = 4
+        no_database_function         = 5
+        no_editor_function           = 6
+        no_show_auth                 = 7
+        no_tvdir_entry               = 8
+        no_upd_auth                  = 9
+        only_show_allowed            = 10
+        system_failure               = 11
+        unknown_field_in_dba_sellist = 12
+        view_not_found               = 13
+        maintenance_prohibited       = 14
+        OTHERS                       = 15.
+
+    IF sy-subrc <> 0.
+      MESSAGE ID sy-msgid TYPE sy-msgty NUMBER sy-msgno
+              WITH sy-msgv1 sy-msgv2 sy-msgv3 sy-msgv4.
+    ENDIF.
+  ENDMETHOD.
+
+  METHOD init_toolbar.
+    rs_sscrfields-functxt_01 = ' | '. " separator
+    rs_sscrfields-functxt_02 = |@PR@ { 'Project'(038) }|.
+    rs_sscrfields-functxt_03 = |@0R@ { 'Forms'(039) }|.
+    rs_sscrfields-functxt_04 = |@0Q@ { 'Results'(040) }|.
+  ENDMETHOD.
+
+  METHOD handle_selection_screen_fcode.
+    CASE iv_ucomm.
+      WHEN 'FC02'.
+        call_view_maintenance( '/CTDI/REP_PROJEC' ).
+      WHEN 'FC03'.
+        call_view_maintenance( '/CTDI/REP_FORMS' ).
+      WHEN 'FC04'.
+        call_view_maintenance( '/CTDI/REP_RESULT' ).
+    ENDCASE.
+  ENDMETHOD.
+
   METHOD check_generation_allowed.
     rv_allowed = abap_false.
 
@@ -122,7 +183,7 @@ CLASS /ctdi/cl_print_cust_engine IMPLEMENTATION.
     MESSAGE |Class { iv_class_name } generated successfully.| TYPE 'S'.
 
     " Activate the newly generated class
-    DATA lt_objects TYPE STANDARD TABLE OF dwinactiv.
+    DATA lt_objects TYPE STANDARD TABLE OF dwinactiv WITH EMPTY KEY.
     DATA ls_object  TYPE dwinactiv.
 
     ls_object-object   = 'CLAS'.
@@ -155,25 +216,25 @@ CLASS /ctdi/cl_print_cust_engine IMPLEMENTATION.
   ENDMETHOD.
 
   METHOD is_subclass_of.
-    DATA lv_current_class TYPE seoclsname.
-
-    lv_current_class = iv_class_name.
     rv_result = abap_false.
+    IF iv_class_name IS INITIAL OR iv_base_class IS INITIAL.
+      RETURN.
+    ENDIF.
 
-    WHILE lv_current_class IS NOT INITIAL.
-      IF lv_current_class = iv_base_class.
-        rv_result = abap_true.
-        RETURN.
-      ENDIF.
+    TRY.
+        DATA(lo_descr) = CAST cl_abap_classdescr(
+          cl_abap_typedescr=>describe_by_name( iv_class_name ) ).
 
-      SELECT SINGLE refclsname FROM seometarel
-        WHERE clsname = @lv_current_class
-          AND reltype = '2'
-        INTO @lv_current_class.
-      IF sy-subrc <> 0.
-        CLEAR lv_current_class.
-      ENDIF.
-    ENDWHILE.
+        WHILE lo_descr IS BOUND.
+          IF lo_descr->absolute_name CS iv_base_class.
+            rv_result = abap_true.
+            RETURN.
+          ENDIF.
+          lo_descr = lo_descr->get_super_class_type( ).
+        ENDWHILE.
+      CATCH cx_root.
+        rv_result = abap_false.
+    ENDTRY.
   ENDMETHOD.
 
   METHOD normalize_class_name.
@@ -197,6 +258,9 @@ CLASS /ctdi/cl_print_cust_engine IMPLEMENTATION.
   ENDMETHOD.
 
   METHOD on_new_entry.
+    " Hook for SM30 table maintenance event (Event 05: on new entry creation).
+    " Customizing defaulting or validation logic can be placed here.
+    CLEAR cs_entry-akz.
   ENDMETHOD.
 
   METHOD prompt_user_for_generation.
@@ -226,7 +290,7 @@ CLASS /ctdi/cl_print_cust_engine IMPLEMENTATION.
     ENDIF.
 
     " Prompt user for the target Development Package
-    DATA lt_fields     TYPE TABLE OF sval.
+    DATA lt_fields     TYPE STANDARD TABLE OF sval WITH EMPTY KEY.
     DATA ls_field      TYPE sval.
     DATA lv_returncode TYPE c LENGTH 1.
 
@@ -321,18 +385,15 @@ CLASS /ctdi/cl_print_cust_engine IMPLEMENTATION.
         EXPORTING
           contract_id = is_entry-vbeln
           message     = lv_class_err.
-    ELSE.
+    ELSEIF is_subclass_of( iv_class_name = lv_class_name
+                           iv_base_class = gc_base_class ) = abap_false.
       " Validate inheritance from base class /CTDI/CL_PRINT_DRIVER_BASE
-      IF is_subclass_of( iv_class_name = lv_class_name
-                         iv_base_class = gc_base_class ) = abap_false.
-        DATA(lv_interface_err) = |Class { is_entry-class_name } does not inherit from /CTDI/CL_PRINT_DRIVER_BASE|.
-        RAISE EXCEPTION TYPE /ctdi/cx_cust_error
-          EXPORTING
-            contract_id = is_entry-vbeln
-            message     = lv_interface_err.
-      ENDIF.
-
-    ENDIF. " select seoclass
+      DATA(lv_interface_err) = |Class { is_entry-class_name } does not inherit from /CTDI/CL_PRINT_DRIVER_BASE|.
+      RAISE EXCEPTION TYPE /ctdi/cx_cust_error
+        EXPORTING
+          contract_id = is_entry-vbeln
+          message     = lv_interface_err.
+    ENDIF.
   ENDMETHOD.
 
   METHOD validate_form_interface.
@@ -402,14 +463,9 @@ CLASS /ctdi/cl_print_cust_engine IMPLEMENTATION.
     LOOP AT lt_mandatory_params ASSIGNING FIELD-SYMBOL(<ls_param>).
       DATA(lv_param) = to_upper( <ls_param>-parameter ).
 
-      IF lv_form_type = 'S'.
-        IF line_exists( lt_framework_sf[ table_line = lv_param ] ).
-          CONTINUE.
-        ENDIF.
-      ELSE.
-        IF line_exists( lt_framework_af[ table_line = lv_param ] ).
-          CONTINUE.
-        ENDIF.
+      IF ( lv_form_type = 'S' AND line_exists( lt_framework_sf[ table_line = lv_param ] ) )
+      OR ( lv_form_type = 'A' AND line_exists( lt_framework_af[ table_line = lv_param ] ) ).
+        CONTINUE.
       ENDIF.
 
       " If we reach here, we found a custom mandatory parameter!
@@ -424,4 +480,3 @@ CLASS /ctdi/cl_print_cust_engine IMPLEMENTATION.
     ENDLOOP.
   ENDMETHOD.
 ENDCLASS.
-
