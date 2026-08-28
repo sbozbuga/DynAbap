@@ -390,7 +390,7 @@ CLASS /ctdi/cl_print_data_legacy IMPLEMENTATION.
   ENDMETHOD.
 
   METHOD get_equipment_stands.
-    " ⚡ Bolt Optimization: Consolidated sequential afih and objk lookups into a single DB hit
+    " Consolidated sequential afih and objk lookups into a single DB hit
     SELECT SINGLE a~qmnum, a~obknr, o~ihnum
       FROM afih AS a
       LEFT OUTER JOIN objk AS o ON o~obknr = a~obknr AND o~ihnum <> @space
@@ -577,7 +577,7 @@ CLASS /ctdi/cl_print_data_legacy IMPLEMENTATION.
            mv_fenum,
            mv_ctdi_odernr.
 
-    " ⚡ Bolt Optimization: Consolidate conditional sequential aufk and vbak lookups into a single DB hit
+    " Consolidate conditional sequential aufk and vbak lookups into a single DB hit
     SELECT SINGLE a~kdauf,
                   a~kdpos,
                   a~objnr,
