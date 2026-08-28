@@ -53,32 +53,44 @@
 " xx.xx.xxxx ???         ???
 " -----------------------------------------------------------------------
 REPORT /ctdi/print_repair.
-
+TYPE-POOLS icon.
 TABLES sscrfields.
 
 SELECTION-SCREEN FUNCTION KEY 1.
+SELECTION-SCREEN FUNCTION KEY 2.
+SELECTION-SCREEN FUNCTION KEY 3.
+SELECTION-SCREEN FUNCTION KEY 4.
 
 SELECTION-SCREEN BEGIN OF BLOCK b1 WITH FRAME TITLE TEXT-002.
 PARAMETERS: p_aufnr TYPE aufk-aufnr OBLIGATORY, " Repair / Order ID
             p_sernr TYPE equi-sernr.           " Serial number (optional)
 
+SELECTION-SCREEN SKIP.
+
+SELECTION-SCREEN END OF BLOCK b1.
 SELECTION-SCREEN BEGIN OF BLOCK b_img WITH FRAME TITLE TEXT-020.
 PARAMETERS: p_imgdef RADIOBUTTON GROUP rimg DEFAULT 'X', " Default (Project Customizing)
             p_imgyes RADIOBUTTON GROUP rimg,              " Force Append Images
             p_imgno  RADIOBUTTON GROUP rimg.              " Force Suppress Images
+SELECTION-SCREEN END OF BLOCK b_img.
+
+SELECTION-SCREEN BEGIN OF BLOCK b_ren WITH FRAME TITLE TEXT-021.
 PARAMETERS: p_rawpdf RADIOBUTTON GROUP rren DEFAULT 'X', " Raw PDF (built-in renderer)
             p_adspdf RADIOBUTTON GROUP rren.              " ADS Form (Adobe render)
-SELECTION-SCREEN END OF BLOCK b_img.
+SELECTION-SCREEN END OF BLOCK b_ren.
 
 SELECTION-SCREEN BEGIN OF BLOCK b1a WITH FRAME.
 PARAMETERS: p_shwlog TYPE sap_bool AS CHECKBOX, " Show logs
-            p_sf     TYPE sap_bool NO-DISPLAY.  " Save as PDF
+            p_sf     TYPE sap_bool NO-DISPLAY.  "Spool
 SELECTION-SCREEN END OF BLOCK b1a.
-SELECTION-SCREEN END OF BLOCK b1.
 " ---------------------------------------------------------------------
 CLASS lcl_app DEFINITION FINAL.
   PUBLIC SECTION.
     CLASS-METHODS run.
+    CLASS-METHODS fcodes.
+  PRIVATE SECTION.
+    CLASS-METHODS view_maintenance_call
+      IMPORTING iv_tabname TYPE dd02v-tabname.
 ENDCLASS.
 
 
@@ -130,15 +142,57 @@ CLASS lcl_app IMPLEMENTATION.
       MESSAGE TEXT-008 TYPE 'S'.
     ENDIF.
   ENDMETHOD.
+  METHOD fcodes.
+    CASE sscrfields-ucomm.
+      WHEN 'FC02'.
+        view_maintenance_call( '/CTDI/REP_PROJEC' ).
+      WHEN 'FC03'.
+        view_maintenance_call( '/CTDI/REP_FORMS' ).
+      WHEN 'FC04'.
+        view_maintenance_call( '/CTDI/REP_RESULT' ).
+      WHEN OTHERS.
+    ENDCASE.
+
+  ENDMETHOD.
+  METHOD view_maintenance_call.
+    DATA: lv_action TYPE c LENGTH 1 VALUE 'U'. " 'U' for Update / Maintain, 'S' for Display / Show
+
+    CALL FUNCTION 'VIEW_MAINTENANCE_CALL'
+      EXPORTING
+        action                       = lv_action
+        view_name                    = iv_tabname
+      EXCEPTIONS
+        client_reference             = 1
+        foreign_lock                 = 2
+        invalid_action               = 3
+        no_clientindependent_auth    = 4
+        no_database_function         = 5
+        no_editor_function           = 6
+        no_show_auth                 = 7
+        no_tvdir_entry               = 8
+        no_upd_auth                  = 9
+        only_show_allowed            = 10
+        system_failure               = 11
+        unknown_field_in_dba_sellist = 12
+        view_not_found               = 13
+        maintenance_prohibited       = 14
+        OTHERS                       = 15.
+
+    IF sy-subrc <> 0.
+      MESSAGE ID sy-msgid TYPE sy-msgty NUMBER sy-msgno
+              WITH sy-msgv1 sy-msgv2 sy-msgv3 sy-msgv4.
+    ENDIF.
+  ENDMETHOD.
 ENDCLASS.
 
 INITIALIZATION.
-  sscrfields-functxt_01 = |@HB@ { TEXT-009 }|. " Mass Print
+  sscrfields-functxt_01 = ' | '. "seperator
+  sscrfields-functxt_02 = |@PR@ { TEXT-038 }|. " Project
+  sscrfields-functxt_03 = |@0R@ { TEXT-039 }|. " Forms
+  sscrfields-functxt_04 = |@0Q@ { TEXT-040 }|. " Results
 
 AT SELECTION-SCREEN.
-  IF sscrfields-ucomm = 'FC01'.
-    SUBMIT /ctdi/print_repair_mass VIA SELECTION-SCREEN AND RETURN.
-  ENDIF.
+  lcl_app=>fcodes( ).
 
 START-OF-SELECTION.
   lcl_app=>run( ).

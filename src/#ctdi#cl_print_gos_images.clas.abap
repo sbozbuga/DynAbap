@@ -907,9 +907,7 @@ CLASS /ctdi/cl_print_gos_images IMPLEMENTATION.
              hash TYPE string,
            END OF ty_seen_hash.
 
-    " TODO: variable is assigned but never used (ABAP cleaner)
     DATA lt_seen_hashes TYPE HASHED TABLE OF ty_seen_hash WITH UNIQUE KEY hash.
-    " TODO: variable is assigned but never used (ABAP cleaner)
     DATA lt_seen_ids    TYPE HASHED TABLE OF string WITH UNIQUE KEY table_line.
 
     LOOP AT it_attachments ASSIGNING FIELD-SYMBOL(<ls_att>).

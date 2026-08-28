@@ -1,4 +1,4 @@
-<?xml version="1.0" encoding="utf-8"?>
+﻿<?xml version="1.0" encoding="utf-8"?>
 <abapGit version="v1.0.0" serializer="LCL_OBJECT_PROG" serializer_version="v1.0.0">
  <asx:abap xmlns:asx="http://www.sap.com/abapxml" version="1.0">
   <asx:values>
@@ -2067,121 +2067,139 @@
      <ID>I</ID>
      <KEY>018</KEY>
      <ENTRY>Print options</ENTRY>
-     <LENGTH>23</LENGTH>
+     <LENGTH>99</LENGTH>
     </item>
     <item>
      <ID>I</ID>
      <KEY>019</KEY>
      <ENTRY>Spool Mode</ENTRY>
-     <LENGTH>40</LENGTH>
+     <LENGTH>99</LENGTH>
     </item>
     <item>
      <ID>I</ID>
      <KEY>020</KEY>
      <ENTRY>Select spool mode for printing:</ENTRY>
-     <LENGTH>60</LENGTH>
+     <LENGTH>99</LENGTH>
     </item>
     <item>
      <ID>I</ID>
      <KEY>021</KEY>
      <ENTRY>Individual: 1 spool per order</ENTRY>
-     <LENGTH>60</LENGTH>
+     <LENGTH>99</LENGTH>
     </item>
     <item>
      <ID>I</ID>
      <KEY>022</KEY>
      <ENTRY>Bundled: grouped by form type</ENTRY>
-     <LENGTH>60</LENGTH>
+     <LENGTH>99</LENGTH>
     </item>
     <item>
      <ID>I</ID>
      <KEY>023</KEY>
      <ENTRY>Merged: single PDF spool</ENTRY>
-     <LENGTH>60</LENGTH>
+     <LENGTH>99</LENGTH>
     </item>
     <item>
      <ID>I</ID>
      <KEY>024</KEY>
      <ENTRY>Individual</ENTRY>
-     <LENGTH>12</LENGTH>
+     <LENGTH>99</LENGTH>
     </item>
     <item>
      <ID>I</ID>
      <KEY>025</KEY>
      <ENTRY>Bundled</ENTRY>
-     <LENGTH>12</LENGTH>
+     <LENGTH>99</LENGTH>
     </item>
     <item>
      <ID>I</ID>
      <KEY>026</KEY>
      <ENTRY>Merged</ENTRY>
-     <LENGTH>12</LENGTH>
+     <LENGTH>99</LENGTH>
     </item>
     <item>
      <ID>I</ID>
      <KEY>027</KEY>
      <ENTRY>Individual Spool</ENTRY>
-     <LENGTH>30</LENGTH>
+     <LENGTH>99</LENGTH>
     </item>
     <item>
      <ID>I</ID>
      <KEY>028</KEY>
      <ENTRY>Bundled Spool</ENTRY>
-     <LENGTH>30</LENGTH>
+     <LENGTH>99</LENGTH>
     </item>
     <item>
      <ID>I</ID>
      <KEY>029</KEY>
      <ENTRY>Merged Spool</ENTRY>
-     <LENGTH>30</LENGTH>
+     <LENGTH>99</LENGTH>
     </item>
     <item>
      <ID>I</ID>
      <KEY>030</KEY>
      <ENTRY>Status</ENTRY>
-     <LENGTH>10</LENGTH>
+     <LENGTH>99</LENGTH>
     </item>
     <item>
      <ID>I</ID>
      <KEY>031</KEY>
      <ENTRY>PDF Files (*.pdf)|*.pdf</ENTRY>
-     <LENGTH>30</LENGTH>
+     <LENGTH>99</LENGTH>
     </item>
     <item>
      <ID>I</ID>
      <KEY>032</KEY>
      <ENTRY>PDF merge job opening</ENTRY>
-     <LENGTH>35</LENGTH>
+     <LENGTH>99</LENGTH>
     </item>
     <item>
      <ID>I</ID>
      <KEY>033</KEY>
      <ENTRY>Mass Print Merged</ENTRY>
-     <LENGTH>30</LENGTH>
+     <LENGTH>99</LENGTH>
     </item>
     <item>
      <ID>I</ID>
      <KEY>034</KEY>
      <ENTRY>Mass Print Adobe</ENTRY>
-     <LENGTH>30</LENGTH>
+     <LENGTH>99</LENGTH>
     </item>
     <item>
      <ID>I</ID>
      <KEY>035</KEY>
      <ENTRY>Mass Print SmartForms</ENTRY>
-     <LENGTH>30</LENGTH>
+     <LENGTH>99</LENGTH>
     </item>
     <item>
      <ID>I</ID>
      <KEY>036</KEY>
-     <ENTRY>Image Append (PDF)</ENTRY>
-     <LENGTH>30</LENGTH>
+     <ENTRY>Append attached images to PDF</ENTRY>
+     <LENGTH>99</LENGTH>
     </item>
     <item>
      <ID>I</ID>
      <KEY>037</KEY>
-     <ENTRY>PDF Render Method</ENTRY>
-     <LENGTH>27</LENGTH>
+     <ENTRY>Image to PDF rendering method</ENTRY>
+     <LENGTH>99</LENGTH>
+    </item>
+    <item>
+     <ID>I</ID>
+     <KEY>038</KEY>
+     <ENTRY>Projects</ENTRY>
+     <LENGTH>99</LENGTH>
+    </item>
+    <item>
+     <ID>I</ID>
+     <KEY>039</KEY>
+     <ENTRY>Forms</ENTRY>
+     <LENGTH>99</LENGTH>
+    </item>
+    <item>
+     <ID>I</ID>
+     <KEY>040</KEY>
+     <ENTRY>Results</ENTRY>
+     <LENGTH>99</LENGTH>
     </item>
     <item>
      <ID>R</ID>
@@ -2203,8 +2221,8 @@
     <item>
      <ID>S</ID>
      <KEY>P_IMGDEF</KEY>
-     <ENTRY>Default (Customizing)</ENTRY>
-     <LENGTH>30</LENGTH>
+     <ENTRY>Default (Project Customizing)</ENTRY>
+     <LENGTH>37</LENGTH>
     </item>
     <item>
      <ID>S</ID>

@@ -291,7 +291,6 @@ CLASS /ctdi/cl_print_driver_base DEFINITION
       EXPORTING ev_form_name     TYPE fpname
                 ev_class_name    TYPE seoclsname
                 es_project       TYPE /ctdi/rep_projec
-                ev_append_images TYPE abap_bool
       RAISING   /ctdi/cx_print_driver_error
                 /ctdi/cx_no_config_found.
 
@@ -488,8 +487,7 @@ CLASS /CTDI/CL_PRINT_DRIVER_BASE IMPLEMENTATION.
   METHOD detect_form_type.
     SELECT SINGLE @abap_true FROM stxfadm              "#EC CI_SEL_NESTED
       WHERE formname = @mv_form_name
-      " TODO: variable is assigned but never used (ABAP cleaner)
-      INTO @DATA(lv_exists).
+      INTO @DATA(lv_exists) ##NEEDED.
     IF sy-subrc = 0.
       rv_type = 'S'.          " Smart Form exists in STXFADM
     ELSE.
@@ -627,7 +625,6 @@ CLASS /CTDI/CL_PRINT_DRIVER_BASE IMPLEMENTATION.
     " Configure output parameters
 *    ls_outputparams-connection = 'ADS'.
     ls_outputparams-reqnew   = abap_true.
-    ls_outputparams-reqimm   = abap_true.
     ls_outputparams-reqfinal = abap_true.
     ls_outputparams-dest     = lv_printer.
     ls_outputparams-reqimm   = lv_immed.
@@ -815,18 +812,16 @@ CLASS /CTDI/CL_PRINT_DRIVER_BASE IMPLEMENTATION.
 
 
   METHOD factory.
-    DATA lv_form_name    TYPE fpname.
-    DATA lv_class_name   TYPE seoclsname.
-    DATA ls_project_db   TYPE /ctdi/rep_projec.
-    DATA lv_append_image TYPE abap_bool.
+    DATA lv_form_name  TYPE fpname.
+    DATA lv_class_name TYPE seoclsname.
+    DATA ls_project_db TYPE /ctdi/rep_projec.
 
     /ctdi/cl_print_driver_log=>log_info( |Print driver factory invoked for Repair { iv_repair_id }, Sernr { iv_sernr }| ).
 
     get_config_from_db( EXPORTING iv_repair_id     = iv_repair_id
                         IMPORTING ev_form_name     = lv_form_name
                                   ev_class_name    = lv_class_name
-                                  es_project       = ls_project_db
-                                  ev_append_images = lv_append_image ).
+                                  es_project       = ls_project_db ).
 
     TRY.
         CREATE OBJECT ro_driver TYPE (lv_class_name).
@@ -835,11 +830,11 @@ CLASS /CTDI/CL_PRINT_DRIVER_BASE IMPLEMENTATION.
         ro_driver->mv_form_name    = lv_form_name.
         ro_driver->ms_project      = ls_project_db.
 
-        " Precedence: Selection Screen override > Customizing in /CTDI/REP_FORMS
+        " Precedence: Selection Screen override > Customizing in /CTDI/REP_PROJEC
         ro_driver->mv_append_images = COND #(
           WHEN iv_append_images = gc_img_override_yes THEN abap_true
           WHEN iv_append_images = gc_img_override_no  THEN abap_false
-          ELSE lv_append_image ).
+          ELSE ls_project_db-append_images ).
 
       CATCH cx_sy_create_object_error INTO DATA(lx_create).
         RAISE EXCEPTION TYPE /ctdi/cx_print_driver_error
@@ -942,20 +937,20 @@ CLASS /CTDI/CL_PRINT_DRIVER_BASE IMPLEMENTATION.
     IF ls_config IS NOT INITIAL.
       ev_form_name     = ls_config-form_name.
       ev_class_name    = /ctdi/cl_print_cust_engine=>normalize_class_name( ls_config-class_name ).
-      ev_append_images = ls_config-append_images.
     ELSE.
       RAISE EXCEPTION TYPE /ctdi/cx_no_config_found
         EXPORTING
           message = |No configuration found in /CTDI/REP_FORMS for order { iv_repair_id } (including default fallback).|.
     ENDIF.
 
-    /ctdi/cl_print_driver_log=>log_info(
-        |Config resolved — Contract: { lv_contract }, | &&
-        |SKZ: { lv_skz }, AKZ: { lv_akz }, Form: { ev_form_name }, Class: { ev_class_name }, AppendImg: { ev_append_images }| ).
-
+    " Read project config (contract level) — APPEND_IMAGES lives here
     SELECT SINGLE * FROM /ctdi/rep_projec     "#EC CI_ALL_FIELDS_NEEDED
       WHERE vbeln = @lv_contract ##SUBRC_OK
       INTO @es_project.                              "#EC CI_SEL_NESTED
+
+    /ctdi/cl_print_driver_log=>log_info(
+        |Config resolved — Contract: { lv_contract }, | &&
+        |SKZ: { lv_skz }, AKZ: { lv_akz }, Form: { ev_form_name }, Class: { ev_class_name }, AppendImg: { es_project-append_images }| ).
   ENDMETHOD.
 
 
