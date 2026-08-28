@@ -81,7 +81,7 @@ SELECTION-SCREEN END OF BLOCK b_ren.
 
 SELECTION-SCREEN BEGIN OF BLOCK b1a WITH FRAME.
 PARAMETERS: p_shwlog TYPE sap_bool AS CHECKBOX, " Show logs
-            p_sf     TYPE sap_bool NO-DISPLAY.  "Spool
+            p_sf     TYPE sap_bool NO-DISPLAY.  " Spool
 SELECTION-SCREEN END OF BLOCK b1a.
 " ---------------------------------------------------------------------
 CLASS lcl_app DEFINITION FINAL.
@@ -97,16 +97,14 @@ CLASS lcl_app IMPLEMENTATION.
     TRY.
         DATA(lv_append_override) = COND char1(
           WHEN p_imgyes = abap_true THEN /ctdi/cl_print_driver_base=>gc_img_override_yes
-          WHEN p_imgno  = abap_true THEN /ctdi/cl_print_driver_base=>gc_img_override_no
-          ELSE /ctdi/cl_print_driver_base=>gc_img_override_default ).
+          WHEN p_imgno = abap_true  THEN /ctdi/cl_print_driver_base=>gc_img_override_no
+          ELSE                           /ctdi/cl_print_driver_base=>gc_img_override_default ).
 
-        DATA(lr_driver) = /ctdi/cl_print_driver_base=>factory(
-          iv_repair_id     = p_aufnr
-          iv_sernr         = p_sernr
-          iv_append_images = lv_append_override ).
+        DATA(lr_driver) = /ctdi/cl_print_driver_base=>factory( iv_repair_id     = p_aufnr
+                                                               iv_sernr         = p_sernr
+                                                               iv_append_images = lv_append_override ).
 
-        lr_driver->set_img_render_mode(
-          COND #( WHEN p_adspdf = abap_true THEN 'A' ELSE 'R' ) ).
+        lr_driver->set_img_render_mode( COND #( WHEN p_adspdf = abap_true THEN 'A' ELSE 'R' ) ).
 
         " Save as PDF if p_sf is unchecked AND not IW42 transaction
         DATA(lv_save_as_pdf) = xsdbool( p_sf = abap_false AND sy-tcode <> 'IW42' ).

@@ -3,33 +3,33 @@ CLASS /ctdi/cl_print_driver_base DEFINITION
   CREATE PROTECTED.
 
   PUBLIC SECTION.
-    CONSTANTS gc_operation_wfer      TYPE vornr     VALUE '9010' ##NO_TEXT.
-    CONSTANTS gc_country_default     TYPE land1     VALUE 'DE' ##NO_TEXT.
-    CONSTANTS gc_devtype_fallback    TYPE rspoptype VALUE 'YPDF' ##NO_TEXT.
-    CONSTANTS gc_qmart_repair        TYPE qmart     VALUE 'Z2' ##NO_TEXT.
+    CONSTANTS gc_operation_wfer       TYPE vornr     VALUE '9010' ##NO_TEXT.
+    CONSTANTS gc_country_default      TYPE land1     VALUE 'DE' ##NO_TEXT.
+    CONSTANTS gc_devtype_fallback     TYPE rspoptype VALUE 'YPDF' ##NO_TEXT.
+    CONSTANTS gc_qmart_repair         TYPE qmart     VALUE 'Z2' ##NO_TEXT.
 
     " Form parameter constants (CTDI standard)
-    CONSTANTS gc_param_repair        TYPE string    VALUE 'REPAIR' ##NO_TEXT.
-    CONSTANTS gc_param_project       TYPE string    VALUE 'PROJECT' ##NO_TEXT.
-    CONSTANTS gc_param_repair_errors TYPE string    VALUE 'REPAIR_ERRORS' ##NO_TEXT.
-    CONSTANTS gc_param_comments      TYPE string    VALUE 'COMMENT_LINES' ##NO_TEXT.
+    CONSTANTS gc_param_repair         TYPE string    VALUE 'REPAIR' ##NO_TEXT.
+    CONSTANTS gc_param_project        TYPE string    VALUE 'PROJECT' ##NO_TEXT.
+    CONSTANTS gc_param_repair_errors  TYPE string    VALUE 'REPAIR_ERRORS' ##NO_TEXT.
+    CONSTANTS gc_param_comments       TYPE string    VALUE 'COMMENT_LINES' ##NO_TEXT.
 
     " Form parameter constants (Legacy Alcatel)
-    CONSTANTS gc_param_legacy_rep    TYPE string    VALUE '/CELLAG/ALCAREP' ##NO_TEXT.
-    CONSTANTS gc_param_legacy_err    TYPE string    VALUE '/CELLAG/ALCAREP_ERROR' ##NO_TEXT.
-    CONSTANTS gc_param_legacy_comm   TYPE string    VALUE 'GT_COMMENT_LINES' ##NO_TEXT.
+    CONSTANTS gc_param_legacy_rep     TYPE string    VALUE '/CELLAG/ALCAREP' ##NO_TEXT.
+    CONSTANTS gc_param_legacy_err     TYPE string    VALUE '/CELLAG/ALCAREP_ERROR' ##NO_TEXT.
+    CONSTANTS gc_param_legacy_comm    TYPE string    VALUE 'GT_COMMENT_LINES' ##NO_TEXT.
 
     " Form parameter constants (SAP Framework)
-    CONSTANTS gc_param_docparams     TYPE string    VALUE '/1BCDWB/DOCPARAMS' ##NO_TEXT.
-    CONSTANTS gc_param_formoutput    TYPE string    VALUE '/1BCDWB/FORMOUTPUT' ##NO_TEXT.
-    CONSTANTS gc_param_control_param TYPE string    VALUE 'CONTROL_PARAMETERS' ##NO_TEXT.
-    CONSTANTS gc_param_output_opt    TYPE string    VALUE 'OUTPUT_OPTIONS' ##NO_TEXT.
-    CONSTANTS gc_param_job_output    TYPE string    VALUE 'JOB_OUTPUT_INFO' ##NO_TEXT.
+    CONSTANTS gc_param_docparams      TYPE string    VALUE '/1BCDWB/DOCPARAMS' ##NO_TEXT.
+    CONSTANTS gc_param_formoutput     TYPE string    VALUE '/1BCDWB/FORMOUTPUT' ##NO_TEXT.
+    CONSTANTS gc_param_control_param  TYPE string    VALUE 'CONTROL_PARAMETERS' ##NO_TEXT.
+    CONSTANTS gc_param_output_opt     TYPE string    VALUE 'OUTPUT_OPTIONS' ##NO_TEXT.
+    CONSTANTS gc_param_job_output     TYPE string    VALUE 'JOB_OUTPUT_INFO' ##NO_TEXT.
 
     " Image append override constants
-    CONSTANTS gc_img_override_default TYPE char1    VALUE space.
-    CONSTANTS gc_img_override_yes     TYPE char1    VALUE 'X' ##NO_TEXT.
-    CONSTANTS gc_img_override_no      TYPE char1    VALUE 'N' ##NO_TEXT.
+    CONSTANTS gc_img_override_default TYPE char1     VALUE space.
+    CONSTANTS gc_img_override_yes     TYPE char1     VALUE 'X' ##NO_TEXT.
+    CONSTANTS gc_img_override_no      TYPE char1     VALUE 'N' ##NO_TEXT.
 
     "! Static factory to determine and instantiate the correct driver
     "!
@@ -95,11 +95,11 @@ CLASS /ctdi/cl_print_driver_base DEFINITION
       RETURNING VALUE(rv_filename) TYPE string.
 
     "! Executes the full print pipeline (read data + map data + render form)
-    "! @parameter iv_save_as_pdf | True to generate and collect/download PDF
-    "! @parameter iv_no_dialog | True to suppress print popup dialog
-    "! @parameter iv_preview | True to display print preview on screen
-    "! @parameter io_data | Optional pre-extracted business data object
-    "! @raising /ctdi/cx_print_driver_error | General print execution failure
+    "! @parameter iv_save_as_pdf              | True to generate and collect/download PDF
+    "! @parameter iv_no_dialog                | True to suppress print popup dialog
+    "! @parameter iv_preview                  | True to display print preview on screen
+    "! @parameter io_data                     | Optional pre-extracted business data object
+    "! @raising   /ctdi/cx_print_driver_error | General print execution failure
     METHODS execute
       IMPORTING iv_save_as_pdf TYPE abap_bool     DEFAULT abap_false
                 iv_no_dialog   TYPE abap_bool     DEFAULT abap_true
@@ -117,7 +117,7 @@ CLASS /ctdi/cl_print_driver_base DEFINITION
     DATA mv_collect_pdf        TYPE abap_bool.
     DATA mv_external_job       TYPE abap_bool.
     DATA mv_append_images      TYPE abap_bool.
-    DATA mv_img_render_mode   TYPE char1.
+    DATA mv_img_render_mode    TYPE char1.
     DATA ms_repair             TYPE /ctdi/repair.
     DATA ms_project            TYPE /ctdi/rep_projec.
     DATA mt_errors             TYPE /ctdi/repair_error_tt.
@@ -289,10 +289,10 @@ CLASS /ctdi/cl_print_driver_base DEFINITION
       RAISING   /ctdi/cx_print_driver_error.
 
     CLASS-METHODS get_config_from_db
-      IMPORTING iv_repair_id     TYPE aufnr
-      EXPORTING ev_form_name     TYPE fpname
-                ev_class_name    TYPE seoclsname
-                es_project       TYPE /ctdi/rep_projec
+      IMPORTING iv_repair_id  TYPE aufnr
+      EXPORTING ev_form_name  TYPE fpname
+                ev_class_name TYPE seoclsname
+                es_project    TYPE /ctdi/rep_projec
       RAISING   /ctdi/cx_print_driver_error
                 /ctdi/cx_no_config_found.
 
@@ -467,15 +467,19 @@ CLASS /CTDI/CL_PRINT_DRIVER_BASE IMPLEMENTATION.
     lt_otf = it_otfdata.
 
     CALL FUNCTION 'CONVERT_OTF'
-      EXPORTING  format                = 'PDF'
-      IMPORTING  bin_file              = lv_pdf_xstring
-      TABLES     otf                   = lt_otf
-                 lines                 = lt_pdf_lines
-      EXCEPTIONS err_max_linewidth     = 1
-                 err_format            = 2
-                 err_conv_not_possible = 3
-                 err_bad_otf           = 4
-                 OTHERS                = 5.
+      EXPORTING
+        format                = 'PDF'
+      IMPORTING
+        bin_file              = lv_pdf_xstring
+      TABLES
+        otf                   = lt_otf
+        lines                 = lt_pdf_lines
+      EXCEPTIONS
+        err_max_linewidth     = 1
+        err_format            = 2
+        err_conv_not_possible = 3
+        err_bad_otf           = 4
+        OTHERS                = 5.
     IF sy-subrc <> 0.
       raise_driver_error( |CONVERT_OTF failed for { mv_form_name } (subrc={ sy-subrc })| ).
     ENDIF.
@@ -532,9 +536,12 @@ CLASS /CTDI/CL_PRINT_DRIVER_BASE IMPLEMENTATION.
 
     " Convert XSTRING to binary table (using mv_last_pdf which may contain merged images)
     CALL FUNCTION 'SCMS_XSTRING_TO_BINARY'
-      EXPORTING  buffer     = mv_last_pdf
-      TABLES     binary_tab = lt_data
-      EXCEPTIONS OTHERS     = 1.
+      EXPORTING
+        buffer     = mv_last_pdf
+      TABLES
+        binary_tab = lt_data
+      EXCEPTIONS
+        OTHERS     = 1.
     IF sy-subrc <> 0.
       RETURN.
     ENDIF.
@@ -641,12 +648,14 @@ CLASS /CTDI/CL_PRINT_DRIVER_BASE IMPLEMENTATION.
     " Open Adobe print job (skip if managed externally)
     IF mv_external_job = abap_false.
       CALL FUNCTION 'FP_JOB_OPEN'
-        CHANGING   ie_outputparams = ls_outputparams
-        EXCEPTIONS cancel          = 1
-                   usage_error     = 2
-                   system_error    = 3
-                   internal_error  = 4
-                   OTHERS          = 5.
+        CHANGING
+          ie_outputparams = ls_outputparams
+        EXCEPTIONS
+          cancel          = 1
+          usage_error     = 2
+          system_error    = 3
+          internal_error  = 4
+          OTHERS          = 5.
       IF sy-subrc <> 0.
         raise_driver_error( |FP_JOB_OPEN failed (subrc={ sy-subrc })| ).
       ENDIF.
@@ -655,12 +664,15 @@ CLASS /CTDI/CL_PRINT_DRIVER_BASE IMPLEMENTATION.
     " Resolve generated function module name
     TRY.
         CALL FUNCTION 'FP_FUNCTION_MODULE_NAME'
-          EXPORTING i_name     = mv_form_name
-          IMPORTING e_funcname = lv_fm_name.
+          EXPORTING
+            i_name     = mv_form_name
+          IMPORTING
+            e_funcname = lv_fm_name.
       CATCH cx_fp_api INTO DATA(lx_fp).
         IF mv_external_job = abap_false.
           CALL FUNCTION 'FP_JOB_CLOSE'
-            EXCEPTIONS OTHERS = 0.
+            EXCEPTIONS
+              OTHERS = 0.
         ENDIF.
         raise_driver_error( iv_message  = |Adobe Form FM resolution failed for { mv_form_name }|
                             ix_previous = lx_fp ).
@@ -697,10 +709,11 @@ CLASS /CTDI/CL_PRINT_DRIVER_BASE IMPLEMENTATION.
     " Close the print job (skip if managed externally)
     IF mv_external_job = abap_false.
       CALL FUNCTION 'FP_JOB_CLOSE'
-        EXCEPTIONS usage_error    = 1
-                   system_error   = 2
-                   internal_error = 3
-                   OTHERS         = 4.
+        EXCEPTIONS
+          usage_error    = 1
+          system_error   = 2
+          internal_error = 3
+          OTHERS         = 4.
 
       IF sy-subrc <> 0.
         raise_driver_error( |Adobe Form { mv_form_name } close failed (subrc={ sy-subrc })| ).
@@ -727,11 +740,14 @@ CLASS /CTDI/CL_PRINT_DRIVER_BASE IMPLEMENTATION.
 
     " Resolve generated function module name
     CALL FUNCTION 'SSF_FUNCTION_MODULE_NAME'
-      EXPORTING  formname           = mv_form_name
-      IMPORTING  fm_name            = lv_fm_name
-      EXCEPTIONS no_form            = 1
-                 no_function_module = 2
-                 OTHERS             = 3.
+      EXPORTING
+        formname           = mv_form_name
+      IMPORTING
+        fm_name            = lv_fm_name
+      EXCEPTIONS
+        no_form            = 1
+        no_function_module = 2
+        OTHERS             = 3.
     IF sy-subrc <> 0.
       raise_driver_error( |Smart Form FM resolution failed for { mv_form_name } (subrc={ sy-subrc })| ).
     ENDIF.
@@ -751,9 +767,12 @@ CLASS /CTDI/CL_PRINT_DRIVER_BASE IMPLEMENTATION.
     " Dynamic device type based on logon language
     DATA lv_devtype TYPE rspoptype.
     CALL FUNCTION 'SSF_GET_DEVICE_TYPE'
-      EXPORTING  i_language = sy-langu
-      IMPORTING  e_devtype  = lv_devtype
-      EXCEPTIONS OTHERS     = 1.
+      EXPORTING
+        i_language = sy-langu
+      IMPORTING
+        e_devtype  = lv_devtype
+      EXCEPTIONS
+        OTHERS     = 1.
     IF sy-subrc <> 0.
       lv_devtype = gc_devtype_fallback.
     ENDIF.
@@ -825,22 +844,23 @@ CLASS /CTDI/CL_PRINT_DRIVER_BASE IMPLEMENTATION.
 
     TRY.
         CREATE OBJECT ro_driver TYPE (lv_class_name).
-        ro_driver->mv_repair_order = iv_repair_id.
-        ro_driver->mv_sernr        = iv_sernr.
-        ro_driver->mv_form_name    = lv_form_name.
-        ro_driver->ms_project      = ls_project_db.
+        ro_driver->mv_repair_order  = iv_repair_id.
+        ro_driver->mv_sernr         = iv_sernr.
+        ro_driver->mv_form_name     = lv_form_name.
+        ro_driver->ms_project       = ls_project_db.
 
         " Precedence: Selection Screen override > Customizing in /CTDI/REP_PROJEC
         ro_driver->mv_append_images = COND #(
           WHEN iv_append_images = gc_img_override_yes THEN abap_true
           WHEN iv_append_images = gc_img_override_no  THEN abap_false
-          ELSE ls_project_db-append_images ).
+          ELSE                                             ls_project_db-append_images ).
 
       CATCH cx_sy_create_object_error INTO DATA(lx_create).
         RAISE EXCEPTION TYPE /ctdi/cx_print_driver_error
-          EXPORTING repair_id = iv_repair_id
-                    message   = |Cannot instantiate class { lv_class_name }|
-                    previous  = lx_create.
+          EXPORTING
+            repair_id = iv_repair_id
+            message   = |Cannot instantiate class { lv_class_name }|
+            previous  = lx_create.
     ENDTRY.
   ENDMETHOD.
 
@@ -915,11 +935,10 @@ CLASS /CTDI/CL_PRINT_DRIVER_BASE IMPLEMENTATION.
                     skz   = ''
                     akz   = '' ) TO lt_steps.
 
-    SELECT vbeln, skz, akz, form_name, class_name
-      FROM /ctdi/rep_forms
-      WHERE vbeln = @lv_contract OR vbeln = ''
+    SELECT * FROM /ctdi/rep_forms             "#EC CI_ALL_FIELDS_NEEDED
+      WHERE vbeln = @lv_contract OR vbeln = ''       "#EC CI_SEL_NESTED
       ORDER BY PRIMARY KEY ##SUBRC_OK
-      INTO CORRESPONDING FIELDS OF TABLE @DATA(lt_forms).
+      INTO TABLE @DATA(lt_forms).
 
     SORT lt_forms BY vbeln
                      skz
@@ -930,14 +949,14 @@ CLASS /CTDI/CL_PRINT_DRIVER_BASE IMPLEMENTATION.
                                                                      skz   = <ls_step>-skz
                                                                      akz   = <ls_step>-akz BINARY SEARCH.
       IF sy-subrc = 0.
-        ls_config = CORRESPONDING #( <ls_form> ).
+        ls_config = <ls_form>.
         EXIT.
       ENDIF.
     ENDLOOP.
 
     IF ls_config IS NOT INITIAL.
-      ev_form_name     = ls_config-form_name.
-      ev_class_name    = /ctdi/cl_print_cust_engine=>normalize_class_name( ls_config-class_name ).
+      ev_form_name  = ls_config-form_name.
+      ev_class_name = /ctdi/cl_print_cust_engine=>normalize_class_name( ls_config-class_name ).
     ELSE.
       RAISE EXCEPTION TYPE /ctdi/cx_no_config_found
         EXPORTING
@@ -972,9 +991,12 @@ CLASS /CTDI/CL_PRINT_DRIVER_BASE IMPLEMENTATION.
 
     " 1. Fetch user defaults via standard API
     CALL FUNCTION 'SUSR_USER_DEFAULTS_GET'
-      EXPORTING  user_name     = sy-uname
-      IMPORTING  user_defaults = ls_user_defaults
-      EXCEPTIONS OTHERS        = 0.
+      EXPORTING
+        user_name     = sy-uname
+      IMPORTING
+        user_defaults = ls_user_defaults
+      EXCEPTIONS
+        OTHERS        = 0.
 
     " 2. Check SET/GET parameter override (/CELLAG/PAFR)
     GET PARAMETER ID '/CELLAG/PAFR' FIELD lv_user_printer.
@@ -1043,9 +1065,10 @@ CLASS /CTDI/CL_PRINT_DRIVER_BASE IMPLEMENTATION.
     /ctdi/cl_print_driver_log=>log_error( iv_message ).
 
     RAISE EXCEPTION TYPE /ctdi/cx_print_driver_error
-      EXPORTING repair_id = mv_repair_order
-                message   = iv_message
-                previous  = ix_previous.
+      EXPORTING
+        repair_id = mv_repair_order
+        message   = iv_message
+        previous  = ix_previous.
   ENDMETHOD.
 
 
@@ -1150,8 +1173,9 @@ CLASS /CTDI/CL_PRINT_DRIVER_BASE IMPLEMENTATION.
       DATA(lv_err) = |Repair Order { iv_repair_id } not found in system|.
       /ctdi/cl_print_driver_log=>log_error( lv_err ).
       RAISE EXCEPTION TYPE /ctdi/cx_print_driver_error
-        EXPORTING repair_id = iv_repair_id
-                  message   = lv_err.
+        EXPORTING
+          repair_id = iv_repair_id
+          message   = lv_err.
     ENDIF.
   ENDMETHOD.
 

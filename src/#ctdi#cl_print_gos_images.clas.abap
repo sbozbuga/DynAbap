@@ -295,7 +295,10 @@ CLASS /ctdi/cl_print_gos_images DEFINITION
 ENDCLASS.
 
 
-CLASS /ctdi/cl_print_gos_images IMPLEMENTATION.
+
+CLASS /CTDI/CL_PRINT_GOS_IMAGES IMPLEMENTATION.
+
+
   METHOD append_images.
     rv_pdf = iv_pdf.
 
@@ -340,6 +343,7 @@ CLASS /ctdi/cl_print_gos_images IMPLEMENTATION.
     ENDTRY.
   ENDMETHOD.
 
+
   METHOD append_obj_bin.
     APPEND xstrlen( cv_pdf ) TO ct_offsets.
 
@@ -365,6 +369,7 @@ CLASS /ctdi/cl_print_gos_images IMPLEMENTATION.
     CONCATENATE cv_pdf lv_head_x iv_stream lv_tail_x INTO cv_pdf IN BYTE MODE.
   ENDMETHOD.
 
+
   METHOD append_obj_str.
     APPEND xstrlen( cv_pdf ) TO ct_offsets.
 
@@ -380,6 +385,7 @@ CLASS /ctdi/cl_print_gos_images IMPLEMENTATION.
 
     CONCATENATE cv_pdf lv_x INTO cv_pdf IN BYTE MODE.
   ENDMETHOD.
+
 
   METHOD convert_images_to_pdf.
     CLEAR rv_pdf.
@@ -758,6 +764,7 @@ CLASS /ctdi/cl_print_gos_images IMPLEMENTATION.
     CONCATENATE rv_pdf lv_xref_x INTO rv_pdf IN BYTE MODE.
   ENDMETHOD.
 
+
   METHOD convert_images_to_pdf_ads.
     " Render all images in a single ADS form call — form handles layout/pagination.
     " Pass the image table; the form iterates and places each image on the page.
@@ -851,6 +858,7 @@ CLASS /ctdi/cl_print_gos_images IMPLEMENTATION.
     ENDIF.
   ENDMETHOD.
 
+
   METHOD convert_to_jpeg.
     CLEAR rv_jpeg.
 
@@ -896,6 +904,7 @@ CLASS /ctdi/cl_print_gos_images IMPLEMENTATION.
     ENDTRY.
   ENDMETHOD.
 
+
   METHOD deduplicate_attachments.
     CLEAR rt_unique.
 
@@ -907,7 +916,9 @@ CLASS /ctdi/cl_print_gos_images IMPLEMENTATION.
              hash TYPE string,
            END OF ty_seen_hash.
 
+    " TODO: variable is assigned but never used (ABAP cleaner)
     DATA lt_seen_hashes TYPE HASHED TABLE OF ty_seen_hash WITH UNIQUE KEY hash.
+    " TODO: variable is assigned but never used (ABAP cleaner)
     DATA lt_seen_ids    TYPE HASHED TABLE OF string WITH UNIQUE KEY table_line.
 
     LOOP AT it_attachments ASSIGNING FIELD-SYMBOL(<ls_att>).
@@ -943,6 +954,7 @@ CLASS /ctdi/cl_print_gos_images IMPLEMENTATION.
     ENDLOOP.
   ENDMETHOD.
 
+
   METHOD escape_pdf_text.
     DATA(lv_s) = iv_text.
     REPLACE ALL OCCURRENCES OF '\' IN lv_s WITH '\\'.
@@ -950,6 +962,7 @@ CLASS /ctdi/cl_print_gos_images IMPLEMENTATION.
     REPLACE ALL OCCURRENCES OF ')' IN lv_s WITH '\)'.
     rv_hex = |({ lv_s })|.
   ENDMETHOD.
+
 
   METHOD extract_image_dimensions.
     CLEAR: ev_width,
@@ -995,6 +1008,7 @@ CLASS /ctdi/cl_print_gos_images IMPLEMENTATION.
     ENDIF.
   ENDMETHOD.
 
+
   METHOD extract_jpeg_channels.
     " SOF marker structure: FF C0/C1/C2 [len:2] [precision:1] [height:2] [width:2] [channels:1]
     " channels byte is at offset SOF_pos + 9
@@ -1024,6 +1038,7 @@ CLASS /ctdi/cl_print_gos_images IMPLEMENTATION.
       lv_pos = lv_pos + 1.
     ENDWHILE.
   ENDMETHOD.
+
 
   METHOD get_attachments.
     CLEAR rt_attachments.
@@ -1086,6 +1101,7 @@ CLASS /ctdi/cl_print_gos_images IMPLEMENTATION.
     " Deduplicate attachments (preserves order, eliminates cross-backend duplicates)
     rt_attachments = deduplicate_attachments( rt_attachments ).
   ENDMETHOD.
+
 
   METHOD get_content_server_attachments.
     CLEAR rt_attachments.
@@ -1212,6 +1228,7 @@ CLASS /ctdi/cl_print_gos_images IMPLEMENTATION.
     ENDLOOP.
   ENDMETHOD.
 
+
   METHOD get_gos_attachments.
     CLEAR rt_attachments.
 
@@ -1305,6 +1322,7 @@ CLASS /ctdi/cl_print_gos_images IMPLEMENTATION.
     ENDLOOP.
   ENDMETHOD.
 
+
   METHOD get_mimetype_for_ext.
     DATA(lv_e) = to_upper( condense( CONV string( iv_ext ) ) ).
     rv_mimetype = COND #(
@@ -1315,6 +1333,7 @@ CLASS /ctdi/cl_print_gos_images IMPLEMENTATION.
       WHEN lv_e = 'GIF'                  THEN 'image/gif'
       ELSE                                    |image/{ to_lower( lv_e ) }| ).
   ENDMETHOD.
+
 
   METHOD get_orders_with_images.
     CLEAR: rt_aufnr_with_images,
@@ -1344,8 +1363,12 @@ CLASS /ctdi/cl_print_gos_images IMPLEMENTATION.
     LOOP AT lt_gos_links INTO DATA(ls_link).
       DATA(lv_instid) = condense( CONV string( ls_link-instid_b ) ).
       IF strlen( lv_instid ) >= 34.
-        DATA(lv_objno) = substring( val = lv_instid off = 22 len = 12 ).
-        APPEND VALUE #( sign = 'I' option = 'EQ' low = lv_objno ) TO lt_sood_keys.
+        DATA(lv_objno) = substring( val = lv_instid
+                                    off = 22
+                                    len = 12 ).
+        APPEND VALUE #( sign   = 'I'
+                        option = 'EQ'
+                        low    = lv_objno ) TO lt_sood_keys.
       ENDIF.
     ENDLOOP.
 
@@ -1366,7 +1389,9 @@ CLASS /ctdi/cl_print_gos_images IMPLEMENTATION.
       LOOP AT lt_gos_links INTO ls_link.
         lv_instid = condense( ls_link-instid_b ).
         IF strlen( lv_instid ) >= 34.
-          lv_objno = substring( val = lv_instid off = 22 len = 12 ).
+          lv_objno = substring( val = lv_instid
+                                off = 22
+                                len = 12 ).
           READ TABLE lt_img_objnos WITH KEY table_line = lv_objno TRANSPORTING NO FIELDS.
           IF sy-subrc = 0.
             INSERT CONV aufnr( ls_link-instid_a ) INTO TABLE rt_aufnr_with_images.
@@ -1396,6 +1421,7 @@ CLASS /ctdi/cl_print_gos_images IMPLEMENTATION.
     ENDLOOP.
   ENDMETHOD.
 
+
   METHOD has_png_alpha.
     " PNG IHDR chunk: byte 25 (offset from file start) = color type
     " Color types: 0=Grayscale, 2=RGB, 3=Palette, 4=Grayscale+Alpha, 6=RGBA
@@ -1419,10 +1445,12 @@ CLASS /ctdi/cl_print_gos_images IMPLEMENTATION.
     ENDIF.
   ENDMETHOD.
 
+
   METHOD is_supported_image_ext.
     DATA(lv_e) = to_upper( condense( CONV string( iv_ext ) ) ).
     rv_is_image = xsdbool( lv_e = 'JPG' OR lv_e = 'JPEG' OR lv_e = 'PNG' OR lv_e = 'BMP' OR lv_e = 'TIF' OR lv_e = 'TIFF' ).
   ENDMETHOD.
+
 
   METHOD merge_pdfs.
     rv_pdf = iv_base_pdf.
@@ -1454,6 +1482,7 @@ CLASS /ctdi/cl_print_gos_images IMPLEMENTATION.
         /ctdi/cl_print_driver_log=>log_exception( lx_root ).
     ENDTRY.
   ENDMETHOD.
+
 
   METHOD resize_if_needed.
     rv_content = iv_content.
@@ -1535,6 +1564,7 @@ CLASS /ctdi/cl_print_gos_images IMPLEMENTATION.
     ENDTRY.
   ENDMETHOD.
 
+
   METHOD resolve_notification.
     CLEAR rv_qmnum.
 
@@ -1557,4 +1587,3 @@ CLASS /ctdi/cl_print_gos_images IMPLEMENTATION.
     ENDIF.
   ENDMETHOD.
 ENDCLASS.
-

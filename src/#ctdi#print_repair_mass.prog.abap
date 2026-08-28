@@ -77,7 +77,7 @@ PARAMETERS: p_imgdef RADIOBUTTON GROUP rimg DEFAULT 'X', " Default (Project Cust
 SELECTION-SCREEN END OF BLOCK b4.
 
 SELECTION-SCREEN BEGIN OF BLOCK b5 WITH FRAME TITLE TEXT-037.
-PARAMETERS: p_rawpdf RADIOBUTTON GROUP rren , " Raw PDF (built-in renderer)
+PARAMETERS: p_rawpdf RADIOBUTTON GROUP rren, " Raw PDF (built-in renderer)
             p_adspdf RADIOBUTTON GROUP rren DEFAULT 'X'.              " ADS Form (Adobe render)
 SELECTION-SCREEN END OF BLOCK b5.
 
@@ -297,8 +297,8 @@ CLASS lcl_mass_print IMPLEMENTATION.
 
     DATA lt_with_attachments TYPE /ctdi/cl_print_gos_images=>ty_aufnr_tab.
     DATA(lt_with_images) = /ctdi/cl_print_gos_images=>get_orders_with_images(
-                               EXPORTING it_aufnr_range      = lt_aufnr_range
-                               IMPORTING et_with_attachments  = lt_with_attachments ).
+                             EXPORTING it_aufnr_range      = lt_aufnr_range
+                             IMPORTING et_with_attachments = lt_with_attachments ).
 
     LOOP AT gt_alv ASSIGNING FIELD-SYMBOL(<ls_img_check>).
       " Confirmed images (Content Server ZRS_JPG) → bitmap icon
@@ -1059,7 +1059,8 @@ CLASS lcl_mass_print IMPLEMENTATION.
 
         " Set image render mode from selection screen
         lr_driver->set_img_render_mode( COND #(
-          WHEN p_adspdf = abap_true THEN /ctdi/cl_print_gos_images=>gc_render_ads
+          WHEN p_adspdf = abap_true
+          THEN /ctdi/cl_print_gos_images=>gc_render_ads
           ELSE /ctdi/cl_print_gos_images=>gc_render_raw ) ).
 
         IF iv_external = abap_true.

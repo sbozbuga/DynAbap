@@ -1,57 +1,56 @@
-class /CTDI/CL_PRINT_DRIVER_LOG definition
-  public
-  final
-  create public .
+CLASS /ctdi/cl_print_driver_log DEFINITION
+  PUBLIC FINAL
+  CREATE PUBLIC.
 
-public section.
+  PUBLIC SECTION.
+    CLASS-DATA gv_log_level TYPE char1 VALUE 'I' ##NO_TEXT.
 
-  class-data GV_LOG_LEVEL type CHAR1 value 'I' ##NO_TEXT.
+    CLASS-METHODS set_log_level
+      IMPORTING iv_level TYPE char1.
 
-  class-methods SET_LOG_LEVEL
-    importing
-      !IV_LEVEL type CHAR1 .
     "! Log an informational message to SLG1
     "!
     "! @parameter iv_text |
     "! @parameter iv_object |
     "! @parameter iv_subobject |
-  class-methods LOG_INFO
-    importing
-      !IV_TEXT type STRING
-      !IV_OBJECT type BALOBJ_D default '/CTDI/PRINT'
-      !IV_SUBOBJECT type BALSUBOBJ default 'DRIVER' .
+    CLASS-METHODS log_info
+      IMPORTING iv_text      TYPE string
+                iv_object    TYPE balobj_d  DEFAULT '/CTDI/PRINT'
+                iv_subobject TYPE balsubobj DEFAULT 'DRIVER'.
+
     "! Log a warning message to SLG1
     "!
     "! @parameter iv_text |
     "! @parameter iv_object |
     "! @parameter iv_subobject |
-  class-methods LOG_WARNING
-    importing
-      !IV_TEXT type STRING
-      !IV_OBJECT type BALOBJ_D default '/CTDI/PRINT'
-      !IV_SUBOBJECT type BALSUBOBJ default 'DRIVER' .
+    CLASS-METHODS log_warning
+      IMPORTING iv_text      TYPE string
+                iv_object    TYPE balobj_d  DEFAULT '/CTDI/PRINT'
+                iv_subobject TYPE balsubobj DEFAULT 'DRIVER'.
+
     "! Log an error message to SLG1
     "!
     "! @parameter iv_text |
     "! @parameter iv_object |
     "! @parameter iv_subobject |
-  class-methods LOG_ERROR
-    importing
-      !IV_TEXT type STRING
-      !IV_OBJECT type BALOBJ_D default '/CTDI/PRINT'
-      !IV_SUBOBJECT type BALSUBOBJ default 'DRIVER' .
+    CLASS-METHODS log_error
+      IMPORTING iv_text      TYPE string
+                iv_object    TYPE balobj_d  DEFAULT '/CTDI/PRINT'
+                iv_subobject TYPE balsubobj DEFAULT 'DRIVER'.
+
     "! Log an exception's text to SLG1
     "!
     "! @parameter ix_exception |
     "! @parameter iv_object |
     "! @parameter iv_subobject |
-  class-methods LOG_EXCEPTION
-    importing
-      !IX_EXCEPTION type ref to CX_ROOT
-      !IV_OBJECT type BALOBJ_D default '/CTDI/PRINT'
-      !IV_SUBOBJECT type BALSUBOBJ default 'DRIVER' .
-  class-methods SAVE_LOG .
-  class-methods SHOW_LOG .
+    CLASS-METHODS log_exception
+      IMPORTING ix_exception TYPE REF TO cx_root
+                iv_object    TYPE balobj_d  DEFAULT '/CTDI/PRINT'
+                iv_subobject TYPE balsubobj DEFAULT 'DRIVER'.
+
+    CLASS-METHODS save_log.
+    CLASS-METHODS show_log.
+
   PRIVATE SECTION.
     CLASS-DATA go_app_log           TYPE REF TO /hpc/cl_uappl_log.
     CLASS-DATA gv_current_object    TYPE balobj_d.
