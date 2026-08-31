@@ -190,6 +190,8 @@ CLASS /ctdi/cl_print_data_legacy IMPLEMENTATION.
       WHERE objectclas  = 'EQUI'
         AND objectid    = @iv_equnr
         AND changenr   IN @lr_changenr
+        AND ( ( tabname = 'EQUI' AND fname = 'SERGE' ) OR
+              ( tabname = 'EQUZ' AND fname = 'MAPAR' ) )
       INTO TABLE @DATA(lt_cdpos).
     IF lt_cdpos IS INITIAL.
       RETURN.

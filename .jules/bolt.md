@@ -22,3 +22,6 @@
 ## 2025-01-29 - Consolidate afih and objk lookups into single DB hit
 **Learning:** When resolving a Notification (qmnum) for a Maintenance Order (aufnr), sequential lookups on Order Header (afih) and Object List (objk) tables cause unnecessary database roundtrips.
 **Action:** Consolidate these into a single LEFT OUTER JOIN on obknr (Object list number) to prevent N+1 database roundtrips.
+## 2025-01-29 - Push CDPOS filtering to database level
+**Learning:** Fetching unfiltered change document items from massive tables like `CDPOS` into ABAP internal tables and discarding irrelevant rows locally causes massive memory overhead and DB transfer latency.
+**Action:** Push filter conditions (like `tabname` and `fname`) directly to the database query in the `WHERE` clause to drastically reduce DB load.
