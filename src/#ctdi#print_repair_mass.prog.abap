@@ -53,15 +53,19 @@ DATA gv_contr TYPE jvbelncontract.
 " -----------------------------------------------------------------------
 SELECTION-SCREEN BEGIN OF BLOCK b1 WITH FRAME TITLE TEXT-001.
 SELECT-OPTIONS: s_aufnr FOR aufk-aufnr,                 " Repair Order
-                s_kdauf FOR aufk-kdauf,                 " Sales Order
-                s_contr FOR gv_contr,                   " Contract
-                s_qmnum FOR qmel-qmnum,                " Notification
-                s_auart FOR aufk-auart DEFAULT 'ZM03',  " Order Type
-                s_werks FOR aufk-werks,                 " Plant
-                s_erdat FOR aufk-erdat,                 " Creation Date
-                s_vornr FOR afru-vornr DEFAULT '9010',  " Operation (WFER)
-                s_qmart FOR qmel-qmart.                 " QM Notification Type
+                s_kdauf FOR aufk-kdauf NO-DISPLAY,                 " Sales Order
+                s_contr FOR gv_contr NO-DISPLAY,                   " Contract
+                s_qmnum FOR qmel-qmnum NO-DISPLAY,                " Notification
+                s_auart FOR aufk-auart DEFAULT 'ZM03' NO-DISPLAY,  " Order Type
+                s_werks FOR aufk-werks NO-DISPLAY,                 " Plant
+                s_erdat FOR aufk-erdat NO-DISPLAY,                 " Creation Date
+                s_vornr FOR afru-vornr DEFAULT '9010' NO-DISPLAY,  " Operation (WFER)
+                s_qmart FOR qmel-qmart NO-DISPLAY.                 " QM Notification Type
 SELECTION-SCREEN END OF BLOCK b1.
+
+SELECTION-SCREEN BEGIN OF BLOCK b4 WITH FRAME TITLE TEXT-036.
+PARAMETERS: p_images AS CHECKBOX.                        " Append GOS Images
+SELECTION-SCREEN SKIP.
 
 SELECTION-SCREEN BEGIN OF BLOCK b3 WITH FRAME TITLE TEXT-018.
 PARAMETERS: p_indiv RADIOBUTTON GROUP spl DEFAULT 'X',  " Individual Spool
@@ -69,17 +73,13 @@ PARAMETERS: p_indiv RADIOBUTTON GROUP spl DEFAULT 'X',  " Individual Spool
             p_merge RADIOBUTTON GROUP spl.              " Merged Spool (single PDF)
 SELECTION-SCREEN END OF BLOCK b3.
 
-SELECTION-SCREEN BEGIN OF BLOCK b4 WITH FRAME TITLE TEXT-036.
-PARAMETERS: p_imgdef RADIOBUTTON GROUP rimg DEFAULT 'X', " Default (Project Customizing)
-            p_imgyes RADIOBUTTON GROUP rimg,              " Force Append Images
-            p_imgno  RADIOBUTTON GROUP rimg.              " Force Suppress Images
-
-SELECTION-SCREEN END OF BLOCK b4.
-
 SELECTION-SCREEN BEGIN OF BLOCK b5 WITH FRAME TITLE TEXT-037.
 PARAMETERS: p_rawpdf RADIOBUTTON GROUP rren, " Raw PDF (built-in renderer)
             p_adspdf RADIOBUTTON GROUP rren DEFAULT 'X'.              " ADS Form (Adobe render)
 SELECTION-SCREEN END OF BLOCK b5.
+SELECTION-SCREEN END OF BLOCK b4.
+
+
 
 " -----------------------------------------------------------------------
 " ALV output structure
@@ -558,13 +558,8 @@ CLASS lcl_mass_print IMPLEMENTATION.
     ENDIF.
 
     TRY.
-        DATA(lv_append_override) = COND char1(
-          WHEN p_imgyes = abap_true THEN /ctdi/cl_print_driver_base=>gc_img_override_yes
-          WHEN p_imgno = abap_true  THEN /ctdi/cl_print_driver_base=>gc_img_override_no
-          ELSE                           /ctdi/cl_print_driver_base=>gc_img_override_default ).
-
-        DATA(lr_driver) = /ctdi/cl_print_driver_base=>factory( iv_repair_id     = <ls_line>-aufnr
-                                                               iv_append_images = lv_append_override ).
+        DATA(lr_driver) = /ctdi/cl_print_driver_base=>factory( iv_repair_id = <ls_line>-aufnr ).
+        lr_driver->set_append_images( p_images ).
         lr_driver->execute( iv_save_as_pdf = abap_false
                             iv_no_dialog   = abap_false
                             iv_preview     = abap_true ).
@@ -1049,13 +1044,9 @@ CLASS lcl_mass_print IMPLEMENTATION.
     CLEAR ev_pdf.
 
     TRY.
-        DATA(lv_append_override) = COND char1(
-          WHEN p_imgyes = abap_true THEN /ctdi/cl_print_driver_base=>gc_img_override_yes
-          WHEN p_imgno = abap_true  THEN /ctdi/cl_print_driver_base=>gc_img_override_no
-          ELSE                           /ctdi/cl_print_driver_base=>gc_img_override_default ).
+        DATA(lr_driver) = /ctdi/cl_print_driver_base=>factory( iv_repair_id = iv_aufnr ).
 
-        DATA(lr_driver) = /ctdi/cl_print_driver_base=>factory( iv_repair_id     = iv_aufnr
-                                                               iv_append_images = lv_append_override ).
+        lr_driver->set_append_images( p_images ).
 
         " Set image render mode from selection screen
         lr_driver->set_img_render_mode( COND #(

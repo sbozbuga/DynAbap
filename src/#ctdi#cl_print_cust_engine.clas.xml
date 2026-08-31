@@ -16,19 +16,25 @@
      <ID>I</ID>
      <KEY>038</KEY>
      <ENTRY>Project</ENTRY>
-     <LENGTH>40</LENGTH>
+     <LENGTH>99</LENGTH>
     </item>
     <item>
      <ID>I</ID>
      <KEY>039</KEY>
      <ENTRY>Forms</ENTRY>
-     <LENGTH>40</LENGTH>
+     <LENGTH>99</LENGTH>
     </item>
     <item>
      <ID>I</ID>
      <KEY>040</KEY>
      <ENTRY>Results</ENTRY>
-     <LENGTH>40</LENGTH>
+     <LENGTH>99</LENGTH>
+    </item>
+    <item>
+     <ID>I</ID>
+     <KEY>041</KEY>
+     <ENTRY>Mass Print</ENTRY>
+     <LENGTH>99</LENGTH>
     </item>
    </TPOOL>
    <I18N_TPOOL>

@@ -31,7 +31,7 @@
     <item>
      <ID>I</ID>
      <KEY>020</KEY>
-     <ENTRY>Append attached images to PDF</ENTRY>
+     <ENTRY>Additional Parameters</ENTRY>
      <LENGTH>99</LENGTH>
     </item>
     <item>
@@ -72,26 +72,15 @@
     <item>
      <ID>S</ID>
      <KEY>P_AUFNR</KEY>
-     <ENTRY>Repair / Order ID</ENTRY>
+     <ENTRY>.</ENTRY>
      <LENGTH>25</LENGTH>
+     <SPLIT>D</SPLIT>
     </item>
     <item>
      <ID>S</ID>
-     <KEY>P_IMGDEF</KEY>
-     <ENTRY>Default (Project Customizing)</ENTRY>
+     <KEY>P_IMAGES</KEY>
+     <ENTRY>Append attached images to PDF</ENTRY>
      <LENGTH>37</LENGTH>
-    </item>
-    <item>
-     <ID>S</ID>
-     <KEY>P_IMGNO</KEY>
-     <ENTRY>Force Suppress Images</ENTRY>
-     <LENGTH>30</LENGTH>
-    </item>
-    <item>
-     <ID>S</ID>
-     <KEY>P_IMGYES</KEY>
-     <ENTRY>Force Append Images</ENTRY>
-     <LENGTH>30</LENGTH>
     </item>
     <item>
      <ID>S</ID>

@@ -26,23 +26,16 @@ CLASS /ctdi/cl_print_driver_base DEFINITION
     CONSTANTS gc_param_output_opt     TYPE string    VALUE 'OUTPUT_OPTIONS' ##NO_TEXT.
     CONSTANTS gc_param_job_output     TYPE string    VALUE 'JOB_OUTPUT_INFO' ##NO_TEXT.
 
-    " Image append override constants
-    CONSTANTS gc_img_override_default TYPE char1     VALUE space.
-    CONSTANTS gc_img_override_yes     TYPE char1     VALUE 'X' ##NO_TEXT.
-    CONSTANTS gc_img_override_no      TYPE char1     VALUE 'N' ##NO_TEXT.
-
     "! Static factory to determine and instantiate the correct driver
     "!
     "! @parameter iv_repair_id |
     "! @parameter iv_sernr |
-    "! @parameter iv_append_images | Runtime override: space (Default/Customizing), 'X' (Force Append), 'N' (Force Suppress)
     "! @parameter ro_driver |
     "! @raising /ctdi/cx_print_driver_error |
     "! @raising /ctdi/cx_no_config_found |
     CLASS-METHODS factory
       IMPORTING iv_repair_id     TYPE aufnr
                 iv_sernr         TYPE equi-sernr OPTIONAL
-                iv_append_images TYPE char1      DEFAULT gc_img_override_default
       RETURNING VALUE(ro_driver) TYPE REF TO /ctdi/cl_print_driver_base
       RAISING   /ctdi/cx_print_driver_error
                 /ctdi/cx_no_config_found.
@@ -121,7 +114,7 @@ CLASS /ctdi/cl_print_driver_base DEFINITION
     DATA ms_repair             TYPE /ctdi/repair.
     DATA ms_project            TYPE /ctdi/rep_projec.
     DATA mt_errors             TYPE /ctdi/repair_error_tt.
-    DATA mt_comments           TYPE STANDARD TABLE OF tline WITH EMPTY KEY.
+    DATA mt_comments           TYPE STANDARD TABLE OF tline.
     DATA mt_custom_form_params TYPE abap_func_parmbind_tab.
 
     "! Hook: Processes and appends GOS images to mv_last_pdf if enabled
@@ -460,9 +453,9 @@ CLASS /CTDI/CL_PRINT_DRIVER_BASE IMPLEMENTATION.
 
 
   METHOD convert_otf_to_pdf.
-    DATA lt_otf         TYPE STANDARD TABLE OF itcoo WITH EMPTY KEY.
+    DATA lt_otf         TYPE TABLE OF itcoo.
     DATA lv_pdf_xstring TYPE xstring.
-    DATA lt_pdf_lines   TYPE STANDARD TABLE OF tline WITH EMPTY KEY.
+    DATA lt_pdf_lines   TYPE TABLE OF tline.
 
     lt_otf = it_otfdata.
 
@@ -849,12 +842,6 @@ CLASS /CTDI/CL_PRINT_DRIVER_BASE IMPLEMENTATION.
         ro_driver->mv_form_name     = lv_form_name.
         ro_driver->ms_project       = ls_project_db.
 
-        " Precedence: Selection Screen override > Customizing in /CTDI/REP_PROJEC
-        ro_driver->mv_append_images = COND #(
-          WHEN iv_append_images = gc_img_override_yes THEN abap_true
-          WHEN iv_append_images = gc_img_override_no  THEN abap_false
-          ELSE                                             ls_project_db-append_images ).
-
       CATCH cx_sy_create_object_error INTO DATA(lx_create).
         RAISE EXCEPTION TYPE /ctdi/cx_print_driver_error
           EXPORTING
@@ -964,7 +951,7 @@ CLASS /CTDI/CL_PRINT_DRIVER_BASE IMPLEMENTATION.
     ENDIF.
 
     " Read project config (contract level) - APPEND_IMAGES lives here
-    SELECT SINGLE vbeln, project, append_images
+    SELECT SINGLE vbeln, project, append_images "#EC CI_SEL_NESTED
       FROM /ctdi/rep_projec
       WHERE vbeln = @lv_contract ##SUBRC_OK
       INTO CORRESPONDING FIELDS OF @es_project.

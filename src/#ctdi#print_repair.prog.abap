@@ -60,6 +60,7 @@ SELECTION-SCREEN FUNCTION KEY 1.
 SELECTION-SCREEN FUNCTION KEY 2.
 SELECTION-SCREEN FUNCTION KEY 3.
 SELECTION-SCREEN FUNCTION KEY 4.
+SELECTION-SCREEN FUNCTION KEY 5.
 
 SELECTION-SCREEN BEGIN OF BLOCK b1 WITH FRAME TITLE TEXT-002.
 PARAMETERS: p_aufnr TYPE aufk-aufnr OBLIGATORY, " Repair / Order ID
@@ -69,20 +70,16 @@ SELECTION-SCREEN SKIP.
 
 SELECTION-SCREEN END OF BLOCK b1.
 SELECTION-SCREEN BEGIN OF BLOCK b_img WITH FRAME TITLE TEXT-020.
-PARAMETERS: p_imgdef RADIOBUTTON GROUP rimg DEFAULT 'X', " Default (Project Customizing)
-            p_imgyes RADIOBUTTON GROUP rimg,              " Force Append Images
-            p_imgno  RADIOBUTTON GROUP rimg.              " Force Suppress Images
-SELECTION-SCREEN END OF BLOCK b_img.
-
+PARAMETERS: p_images AS CHECKBOX.               " Append GOS Images
+PARAMETERS: p_shwlog TYPE sap_bool AS CHECKBOX, " Show logs
+            p_sf     TYPE sap_bool NO-DISPLAY.  " Spool
+SELECTION-SCREEN SKIP.
 SELECTION-SCREEN BEGIN OF BLOCK b_ren WITH FRAME TITLE TEXT-021.
 PARAMETERS: p_rawpdf RADIOBUTTON GROUP rren DEFAULT 'X', " Raw PDF (built-in renderer)
             p_adspdf RADIOBUTTON GROUP rren.              " ADS Form (Adobe render)
 SELECTION-SCREEN END OF BLOCK b_ren.
+SELECTION-SCREEN END OF BLOCK b_img.
 
-SELECTION-SCREEN BEGIN OF BLOCK b1a WITH FRAME.
-PARAMETERS: p_shwlog TYPE sap_bool AS CHECKBOX, " Show logs
-            p_sf     TYPE sap_bool NO-DISPLAY.  " Spool
-SELECTION-SCREEN END OF BLOCK b1a.
 " ---------------------------------------------------------------------
 CLASS lcl_app DEFINITION FINAL.
   PUBLIC SECTION.
@@ -95,15 +92,10 @@ CLASS lcl_app IMPLEMENTATION.
     DATA lv_emsg TYPE string.
 
     TRY.
-        DATA(lv_append_override) = COND char1(
-          WHEN p_imgyes = abap_true THEN /ctdi/cl_print_driver_base=>gc_img_override_yes
-          WHEN p_imgno = abap_true  THEN /ctdi/cl_print_driver_base=>gc_img_override_no
-          ELSE                           /ctdi/cl_print_driver_base=>gc_img_override_default ).
+        DATA(lr_driver) = /ctdi/cl_print_driver_base=>factory( iv_repair_id = p_aufnr
+                                                               iv_sernr     = p_sernr ).
 
-        DATA(lr_driver) = /ctdi/cl_print_driver_base=>factory( iv_repair_id     = p_aufnr
-                                                               iv_sernr         = p_sernr
-                                                               iv_append_images = lv_append_override ).
-
+        lr_driver->set_append_images( p_images ).
         lr_driver->set_img_render_mode( COND #( WHEN p_adspdf = abap_true THEN 'A' ELSE 'R' ) ).
 
         " Save as PDF if p_sf is unchecked AND not IW42 transaction

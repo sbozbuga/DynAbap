@@ -81,7 +81,10 @@ CLASS /ctdi/cl_print_cust_engine DEFINITION
 ENDCLASS.
 
 
-CLASS /ctdi/cl_print_cust_engine IMPLEMENTATION.
+
+CLASS /CTDI/CL_PRINT_CUST_ENGINE IMPLEMENTATION.
+
+
   METHOD call_view_maintenance.
     DATA lv_action TYPE c LENGTH 1 VALUE 'U'. " 'U' for Update / Maintain, 'S' for Display / Show
 
@@ -112,23 +115,6 @@ CLASS /ctdi/cl_print_cust_engine IMPLEMENTATION.
     ENDIF.
   ENDMETHOD.
 
-  METHOD init_toolbar.
-    rs_sscrfields-functxt_01 = ' | '. " separator
-    rs_sscrfields-functxt_02 = |@PR@ { 'Project'(038) }|.
-    rs_sscrfields-functxt_03 = |@0R@ { 'Forms'(039) }|.
-    rs_sscrfields-functxt_04 = |@0Q@ { 'Results'(040) }|.
-  ENDMETHOD.
-
-  METHOD handle_selection_screen_fcode.
-    CASE iv_ucomm.
-      WHEN 'FC02'.
-        call_view_maintenance( '/CTDI/REP_PROJEC' ).
-      WHEN 'FC03'.
-        call_view_maintenance( '/CTDI/REP_FORMS' ).
-      WHEN 'FC04'.
-        call_view_maintenance( '/CTDI/REP_RESULT' ).
-    ENDCASE.
-  ENDMETHOD.
 
   METHOD check_generation_allowed.
     rv_allowed = abap_false.
@@ -160,6 +146,7 @@ CLASS /ctdi/cl_print_cust_engine IMPLEMENTATION.
       rv_allowed = abap_true.
     ENDIF.
   ENDMETHOD.
+
 
   METHOD copy_and_activate_class.
     DATA ls_clskey     TYPE seoclskey.
@@ -218,6 +205,7 @@ CLASS /ctdi/cl_print_cust_engine IMPLEMENTATION.
     ENDIF.
   ENDMETHOD.
 
+
   METHOD generate_provider_class.
     DATA(lv_package) = prompt_user_for_generation( iv_class_name = iv_class_name
                                                    iv_vbeln      = iv_vbeln ).
@@ -226,6 +214,32 @@ CLASS /ctdi/cl_print_cust_engine IMPLEMENTATION.
                              iv_package    = lv_package
                              iv_vbeln      = iv_vbeln ).
   ENDMETHOD.
+
+
+  METHOD handle_selection_screen_fcode.
+    CASE iv_ucomm.
+      WHEN 'FC02'.
+        call_view_maintenance( '/CTDI/REP_PROJEC' ).
+      WHEN 'FC03'.
+        call_view_maintenance( '/CTDI/REP_FORMS' ).
+      WHEN 'FC04'.
+        call_view_maintenance( '/CTDI/REP_RESULT' ).
+      WHEN 'FC05'.
+        SUBMIT /ctdi/print_repair_mass VIA SELECTION-SCREEN AND RETURN.
+    ENDCASE.
+  ENDMETHOD.
+
+
+  METHOD init_toolbar.
+    rs_sscrfields-functxt_01 = ' | '. " separator
+    rs_sscrfields-functxt_02 = |@PR@ { 'Project'(038) }|.
+    rs_sscrfields-functxt_03 = |@0R@ { 'Forms'(039) }|.
+    rs_sscrfields-functxt_04 = |@0Q@ { 'Results'(040) }|.
+    IF sy-cprog = '/CTDI/PRINT_REPAIR'.
+      rs_sscrfields-functxt_05 = |@HB@ { 'Mass Print'(041) }|.
+    ENDIF.
+  ENDMETHOD.
+
 
   METHOD is_subclass_of.
     rv_result = abap_false.
@@ -249,6 +263,7 @@ CLASS /ctdi/cl_print_cust_engine IMPLEMENTATION.
     ENDTRY.
   ENDMETHOD.
 
+
   METHOD normalize_class_name.
     rv_class_name = to_upper( iv_class_name ).
 
@@ -269,11 +284,13 @@ CLASS /ctdi/cl_print_cust_engine IMPLEMENTATION.
     ENDIF.
   ENDMETHOD.
 
+
   METHOD on_new_entry.
     " Hook for SM30 table maintenance event (Event 05: on new entry creation).
     " Customizing defaulting or validation logic can be placed here.
-    CLEAR cs_entry-akz.
+*    CLEAR cs_entry-akz.
   ENDMETHOD.
+
 
   METHOD prompt_user_for_generation.
     DATA lv_answer TYPE c LENGTH 1.
@@ -338,6 +355,7 @@ CLASS /ctdi/cl_print_cust_engine IMPLEMENTATION.
       rv_package = ls_field-value.
     ENDIF.
   ENDMETHOD.
+
 
   METHOD validate_entry.
     " 1. Validate Form Name existence in Smart Forms (STXFADM) or Adobe Forms (FPCONTEXT)
@@ -407,6 +425,7 @@ CLASS /ctdi/cl_print_cust_engine IMPLEMENTATION.
           message     = lv_interface_err.
     ENDIF.
   ENDMETHOD.
+
 
   METHOD validate_form_interface.
     DATA lv_fm_name   TYPE rs38l_fnam.
