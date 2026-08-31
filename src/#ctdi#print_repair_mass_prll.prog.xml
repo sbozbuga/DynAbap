@@ -1,4 +1,4 @@
-﻿<?xml version="1.0" encoding="utf-8"?>
+<?xml version="1.0" encoding="utf-8"?>
 <abapGit version="v1.0.0" serializer="LCL_OBJECT_PROG" serializer_version="v1.0.0">
  <asx:abap xmlns:asx="http://www.sap.com/abapxml" version="1.0">
   <asx:values>
@@ -1936,7 +1936,7 @@
     <item>
      <ID>I</ID>
      <KEY>036</KEY>
-     <ENTRY>Append attached images to PDF</ENTRY>
+     <ENTRY>Additional parameters</ENTRY>
      <LENGTH>99</LENGTH>
     </item>
     <item>
@@ -1952,21 +1952,9 @@
     </item>
     <item>
      <ID>S</ID>
-     <KEY>P_IMGDEF</KEY>
-     <ENTRY>Default (Project Customizing)</ENTRY>
+     <KEY>P_IMAGES</KEY>
+     <ENTRY>Append attached images to PDF</ENTRY>
      <LENGTH>37</LENGTH>
-    </item>
-    <item>
-     <ID>S</ID>
-     <KEY>P_IMGNO</KEY>
-     <ENTRY>Force Suppress Images</ENTRY>
-     <LENGTH>30</LENGTH>
-    </item>
-    <item>
-     <ID>S</ID>
-     <KEY>P_IMGYES</KEY>
-     <ENTRY>Force Append Images</ENTRY>
-     <LENGTH>30</LENGTH>
     </item>
     <item>
      <ID>S</ID>
@@ -2153,7 +2141,7 @@
       <item>
        <ID>I</ID>
        <KEY>036</KEY>
-       <ENTRY>Bilder anhängen (PDF)</ENTRY>
+       <ENTRY>Zusätzliche Parameter</ENTRY>
        <LENGTH>99</LENGTH>
       </item>
       <item>
@@ -2169,21 +2157,9 @@
       </item>
       <item>
        <ID>S</ID>
-       <KEY>P_IMGDEF</KEY>
-       <ENTRY>Standard (Projekt-Customizing)</ENTRY>
-       <LENGTH>38</LENGTH>
-      </item>
-      <item>
-       <ID>S</ID>
-       <KEY>P_IMGNO</KEY>
-       <ENTRY>Bilder unterdrücken</ENTRY>
-       <LENGTH>30</LENGTH>
-      </item>
-      <item>
-       <ID>S</ID>
-       <KEY>P_IMGYES</KEY>
-       <ENTRY>Bilder anhängen</ENTRY>
-       <LENGTH>30</LENGTH>
+       <KEY>P_IMAGES</KEY>
+       <ENTRY>Bilder anhängen (PDF)</ENTRY>
+       <LENGTH>37</LENGTH>
       </item>
       <item>
        <ID>S</ID>
