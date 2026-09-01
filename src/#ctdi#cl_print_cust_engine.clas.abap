@@ -86,33 +86,53 @@ CLASS /CTDI/CL_PRINT_CUST_ENGINE IMPLEMENTATION.
 
 
   METHOD call_view_maintenance.
-    DATA lv_action TYPE c LENGTH 1 VALUE 'U'. " 'U' for Update / Maintain, 'S' for Display / Show
+    " Call ZSM30 in edit mode via BDC (based on SHDB recording)
+    DATA lt_bdc TYPE TABLE OF bdcdata.
+    APPEND VALUE #( program = 'ZSM30' dynpro = '0100' dynbegin = 'X' ) TO lt_bdc.
+    APPEND VALUE #( fnam = 'BDC_OKCODE' fval = '=UPD' ) TO lt_bdc.
+    APPEND VALUE #( fnam = 'VIEWNAME' fval = iv_tabname ) TO lt_bdc.
+    APPEND VALUE #( fnam = 'VIMDYNFLDS-LTD_DTA_NO' fval = 'X' ) TO lt_bdc.
 
-    CALL FUNCTION 'VIEW_MAINTENANCE_CALL'
+*    CALL TRANSACTION 'ZSM30' USING lt_bdc MODE 'E'.
+
+    CALL FUNCTION 'ZTABVIEW_MAINTENANCE_CALL'
       EXPORTING
-        action                       = lv_action
-        view_name                    = iv_tabname
-      EXCEPTIONS
-        client_reference             = 1
-        foreign_lock                 = 2
-        invalid_action               = 3
-        no_clientindependent_auth    = 4
-        no_database_function         = 5
-        no_editor_function           = 6
-        no_show_auth                 = 7
-        no_tvdir_entry               = 8
-        no_upd_auth                  = 9
-        only_show_allowed            = 10
-        system_failure               = 11
-        unknown_field_in_dba_sellist = 12
-        view_not_found               = 13
-        maintenance_prohibited       = 14
-        OTHERS                       = 15.
-
+        action    = 'U'
+*       CORR_NUMBER                          = '          '
+*       GENERATE_MAINT_TOOL_IF_MISSING       = ' '
+*       SHOW_SELECTION_POPUP                 = ' '
+        view_name = iv_tabname
+*       NO_WARNING_FOR_CLIENTINDEP           = ' '
+*       RFC_DESTINATION_FOR_UPGRADE          = ' '
+*       CLIENT_FOR_UPGRADE                   = ' '
+*       VARIANT_FOR_SELECTION                = ' '
+*       COMPLEX_SELCONDS_USED                = ' '
+*       CHECK_DDIC_MAINFLAG                  = ' '
+*       SUPPRESS_WA_POPUP                    = ' '
+*     TABLES
+*       DBA_SELLIST                          =
+*       EXCL_CUA_FUNCT                       =
+*     EXCEPTIONS
+*       CLIENT_REFERENCE                     = 1
+*       FOREIGN_LOCK                         = 2
+*       INVALID_ACTION                       = 3
+*       NO_CLIENTINDEPENDENT_AUTH            = 4
+*       NO_DATABASE_FUNCTION                 = 5
+*       NO_EDITOR_FUNCTION                   = 6
+*       NO_SHOW_AUTH                         = 7
+*       NO_TVDIR_ENTRY                       = 8
+*       NO_UPD_AUTH                          = 9
+*       ONLY_SHOW_ALLOWED                    = 10
+*       SYSTEM_FAILURE                       = 11
+*       UNKNOWN_FIELD_IN_DBA_SELLIST         = 12
+*       VIEW_NOT_FOUND                       = 13
+*       MAINTENANCE_PROHIBITED               = 14
+*       OTHERS    = 15
+      .
     IF sy-subrc <> 0.
-      MESSAGE ID sy-msgid TYPE sy-msgty NUMBER sy-msgno
-              WITH sy-msgv1 sy-msgv2 sy-msgv3 sy-msgv4.
+* Implement suitable error handling here
     ENDIF.
+
   ENDMETHOD.
 
 
@@ -231,12 +251,46 @@ CLASS /CTDI/CL_PRINT_CUST_ENGINE IMPLEMENTATION.
 
 
   METHOD init_toolbar.
-    rs_sscrfields-functxt_01 = ' | '. " separator
-    rs_sscrfields-functxt_02 = |@PR@ { 'Project'(038) }|.
-    rs_sscrfields-functxt_03 = |@0R@ { 'Forms'(039) }|.
-    rs_sscrfields-functxt_04 = |@0Q@ { 'Results'(040) }|.
+
+    "Only show customizing buttons if user is authorized for ZSM30
+    AUTHORITY-CHECK OBJECT 'S_TCODE'
+                    ID 'TCD' FIELD 'ZSM30'.
+    IF sy-subrc = 0.
+      SELECT SINGLE uname
+        FROM zsm30_user
+        WHERE uname = @sy-uname
+          AND view_name = '/CTDI/REP_PROJEC'
+          INTO @DATA(lv_uname).
+      IF sy-subrc EQ 0.
+        rs_sscrfields-functxt_02 = |@PR@ { 'Project'(038) }|.
+      ENDIF.
+
+      SELECT SINGLE uname
+        FROM zsm30_user
+        WHERE uname = @sy-uname
+          AND view_name = '/CTDI/REP_FORMS'
+          INTO @lv_uname.
+      IF sy-subrc EQ 0.
+        rs_sscrfields-functxt_03 = |@0R@ { 'Forms'(039) }|.
+      ENDIF.
+
+      SELECT SINGLE uname
+        FROM zsm30_user
+        WHERE uname = @sy-uname
+          AND view_name = '/CTDI/REP_RESULT'
+          INTO @lv_uname.
+      IF sy-subrc EQ 0.
+        rs_sscrfields-functxt_04 = |@0Q@ { 'Results'(040) }|.
+      ENDIF.
+
+      IF lv_uname IS NOT INITIAL.
+        rs_sscrfields-functxt_01 = ' | '. " separator
+      ENDIF.
+
+    ENDIF.
+
     IF sy-cprog = '/CTDI/PRINT_REPAIR'.
-      rs_sscrfields-functxt_05 = |@HB@ { 'Mass Print'(041) }|.
+      rs_sscrfields-functxt_05 = |@HB@ { 'Mass Printing'(041) }|.
     ENDIF.
   ENDMETHOD.
 

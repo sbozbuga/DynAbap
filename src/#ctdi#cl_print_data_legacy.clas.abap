@@ -281,10 +281,12 @@ CLASS /ctdi/cl_print_data_legacy IMPLEMENTATION.
   METHOD fallback_part_numbers.
     IF mv_new_part IS INITIAL.
       IF mv_new_matnr IS INITIAL.
-        "Consolidated sequential equi and mara lookups into a single JOIN
-        SELECT SINGLE e~matnr, m~mfrpn
+        " Consolidated sequential equi and mara lookups into a single JOIN
+        SELECT SINGLE e~matnr,
+                      m~mfrpn
           FROM equi AS e
-          LEFT OUTER JOIN mara AS m ON m~matnr = e~matnr
+                 LEFT OUTER JOIN
+                   mara AS m ON m~matnr = e~matnr
           WHERE e~equnr = @iv_equnr
           INTO ( @mv_new_matnr, @mv_new_part ).
       ELSEIF mv_new_matnr IS NOT INITIAL.
@@ -294,10 +296,12 @@ CLASS /ctdi/cl_print_data_legacy IMPLEMENTATION.
 
     IF mv_old_part IS INITIAL.
       IF mv_old_matnr IS INITIAL.
-        "Consolidated sequential equi and mara lookups into a single JOIN
-        SELECT SINGLE e~matnr, m~mfrpn
+        " Consolidated sequential equi and mara lookups into a single JOIN
+        SELECT SINGLE e~matnr,
+                      m~mfrpn
           FROM equi AS e
-          LEFT OUTER JOIN mara AS m ON m~matnr = e~matnr
+                 LEFT OUTER JOIN
+                   mara AS m ON m~matnr = e~matnr
           WHERE e~equnr = @mv_equnr_retlief
           INTO ( @mv_old_matnr, @mv_old_part ).
       ELSEIF mv_old_matnr IS NOT INITIAL.
@@ -389,14 +393,18 @@ CLASS /ctdi/cl_print_data_legacy IMPLEMENTATION.
 
   METHOD get_equipment_stands.
     " Consolidated sequential afih and objk lookups into a single DB hit
-    SELECT SINGLE a~qmnum, a~obknr, o~ihnum
+    SELECT SINGLE a~qmnum,
+                  a~obknr,
+                  o~ihnum
       FROM afih AS a
-      LEFT OUTER JOIN objk AS o ON o~obknr = a~obknr AND o~ihnum <> @space
+             LEFT OUTER JOIN
+               objk AS o ON o~obknr = a~obknr AND o~ihnum <> @space
       WHERE a~aufnr = @mv_aufnr
       INTO @DATA(ls_afih).
 
     DATA(lv_qmnum) = COND qmel-qmnum(
-      WHEN ls_afih-qmnum IS NOT INITIAL THEN ls_afih-qmnum
+      WHEN ls_afih-qmnum IS NOT INITIAL
+      THEN ls_afih-qmnum
       ELSE ls_afih-ihnum ).
 
     IF lv_qmnum IS INITIAL.
@@ -580,7 +588,7 @@ CLASS /ctdi/cl_print_data_legacy IMPLEMENTATION.
                   a~kdpos,
                   a~objnr,
                   k~kvgr1,
-                  k~qmnum AS vbak_qmnum,
+                  k~qmnum         AS vbak_qmnum,
                   p~/cellag/qmnum AS vbap_qmnum,
                   p~/cellag/fenum AS fenum,
                   p~posex         AS po_pos,

@@ -70,10 +70,7 @@ CLASS /ctdi/cl_print_driver_log DEFINITION
 ENDCLASS.
 
 
-
-CLASS /CTDI/CL_PRINT_DRIVER_LOG IMPLEMENTATION.
-
-
+CLASS /ctdi/cl_print_driver_log IMPLEMENTATION.
   METHOD add_to_log.
     CHECK iv_text IS NOT INITIAL.
 
@@ -108,7 +105,6 @@ CLASS /CTDI/CL_PRINT_DRIVER_LOG IMPLEMENTATION.
     ENDIF.
   ENDMETHOD.
 
-
   METHOD get_app_log.
     IF go_app_log IS INITIAL.
       " Enhance log with execution context (TCode, Mode)
@@ -134,14 +130,12 @@ CLASS /CTDI/CL_PRINT_DRIVER_LOG IMPLEMENTATION.
     ro_log = go_app_log.
   ENDMETHOD.
 
-
   METHOD log_error.
     add_to_log( iv_text      = iv_text
                 iv_msgty     = 'E'
                 iv_object    = iv_object
                 iv_subobject = iv_subobject ).
   ENDMETHOD.
-
 
   METHOD log_exception.
     DATA(lo_log) = get_app_log( iv_object    = iv_object
@@ -152,7 +146,6 @@ CLASS /CTDI/CL_PRINT_DRIVER_LOG IMPLEMENTATION.
     ENDIF.
   ENDMETHOD.
 
-
   METHOD log_info.
     add_to_log( iv_text      = iv_text
                 iv_msgty     = 'I'
@@ -160,14 +153,12 @@ CLASS /CTDI/CL_PRINT_DRIVER_LOG IMPLEMENTATION.
                 iv_subobject = iv_subobject ).
   ENDMETHOD.
 
-
   METHOD log_warning.
     add_to_log( iv_text      = iv_text
                 iv_msgty     = 'W'
                 iv_object    = iv_object
                 iv_subobject = iv_subobject ).
   ENDMETHOD.
-
 
   METHOD save_log.
     IF go_app_log IS BOUND AND gv_has_unsaved_logs = abap_true.
@@ -179,11 +170,9 @@ CLASS /CTDI/CL_PRINT_DRIVER_LOG IMPLEMENTATION.
     ENDIF.
   ENDMETHOD.
 
-
   METHOD set_log_level.
     gv_log_level = iv_level.
   ENDMETHOD.
-
 
   METHOD show_log.
     IF go_app_log IS BOUND AND gv_has_unsaved_logs = abap_true.
@@ -195,3 +184,4 @@ CLASS /CTDI/CL_PRINT_DRIVER_LOG IMPLEMENTATION.
     ENDIF.
   ENDMETHOD.
 ENDCLASS.
+

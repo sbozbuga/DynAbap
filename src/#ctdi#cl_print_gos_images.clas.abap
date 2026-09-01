@@ -295,10 +295,7 @@ CLASS /ctdi/cl_print_gos_images DEFINITION
 ENDCLASS.
 
 
-
-CLASS /CTDI/CL_PRINT_GOS_IMAGES IMPLEMENTATION.
-
-
+CLASS /ctdi/cl_print_gos_images IMPLEMENTATION.
   METHOD append_images.
     rv_pdf = iv_pdf.
 
@@ -343,7 +340,6 @@ CLASS /CTDI/CL_PRINT_GOS_IMAGES IMPLEMENTATION.
     ENDTRY.
   ENDMETHOD.
 
-
   METHOD append_obj_bin.
     APPEND xstrlen( cv_pdf ) TO ct_offsets.
 
@@ -369,7 +365,6 @@ CLASS /CTDI/CL_PRINT_GOS_IMAGES IMPLEMENTATION.
     CONCATENATE cv_pdf lv_head_x iv_stream lv_tail_x INTO cv_pdf IN BYTE MODE.
   ENDMETHOD.
 
-
   METHOD append_obj_str.
     APPEND xstrlen( cv_pdf ) TO ct_offsets.
 
@@ -385,7 +380,6 @@ CLASS /CTDI/CL_PRINT_GOS_IMAGES IMPLEMENTATION.
 
     CONCATENATE cv_pdf lv_x INTO cv_pdf IN BYTE MODE.
   ENDMETHOD.
-
 
   METHOD convert_images_to_pdf.
     CLEAR rv_pdf.
@@ -764,7 +758,6 @@ CLASS /CTDI/CL_PRINT_GOS_IMAGES IMPLEMENTATION.
     CONCATENATE rv_pdf lv_xref_x INTO rv_pdf IN BYTE MODE.
   ENDMETHOD.
 
-
   METHOD convert_images_to_pdf_ads.
     " Render all images in a single ADS form call — form handles layout/pagination.
     " Pass the image table; the form iterates and places each image on the page.
@@ -858,7 +851,6 @@ CLASS /CTDI/CL_PRINT_GOS_IMAGES IMPLEMENTATION.
     ENDIF.
   ENDMETHOD.
 
-
   METHOD convert_to_jpeg.
     CLEAR rv_jpeg.
 
@@ -903,7 +895,6 @@ CLASS /CTDI/CL_PRINT_GOS_IMAGES IMPLEMENTATION.
         CLEAR rv_jpeg.
     ENDTRY.
   ENDMETHOD.
-
 
   METHOD deduplicate_attachments.
     CLEAR rt_unique.
@@ -954,7 +945,6 @@ CLASS /CTDI/CL_PRINT_GOS_IMAGES IMPLEMENTATION.
     ENDLOOP.
   ENDMETHOD.
 
-
   METHOD escape_pdf_text.
     DATA(lv_s) = iv_text.
     REPLACE ALL OCCURRENCES OF '\' IN lv_s WITH '\\'.
@@ -962,7 +952,6 @@ CLASS /CTDI/CL_PRINT_GOS_IMAGES IMPLEMENTATION.
     REPLACE ALL OCCURRENCES OF ')' IN lv_s WITH '\)'.
     rv_hex = |({ lv_s })|.
   ENDMETHOD.
-
 
   METHOD extract_image_dimensions.
     CLEAR: ev_width,
@@ -1008,7 +997,6 @@ CLASS /CTDI/CL_PRINT_GOS_IMAGES IMPLEMENTATION.
     ENDIF.
   ENDMETHOD.
 
-
   METHOD extract_jpeg_channels.
     " SOF marker structure: FF C0/C1/C2 [len:2] [precision:1] [height:2] [width:2] [channels:1]
     " channels byte is at offset SOF_pos + 9
@@ -1038,7 +1026,6 @@ CLASS /CTDI/CL_PRINT_GOS_IMAGES IMPLEMENTATION.
       lv_pos = lv_pos + 1.
     ENDWHILE.
   ENDMETHOD.
-
 
   METHOD get_attachments.
     CLEAR rt_attachments.
@@ -1101,7 +1088,6 @@ CLASS /CTDI/CL_PRINT_GOS_IMAGES IMPLEMENTATION.
     " Deduplicate attachments (preserves order, eliminates cross-backend duplicates)
     rt_attachments = deduplicate_attachments( rt_attachments ).
   ENDMETHOD.
-
 
   METHOD get_content_server_attachments.
     CLEAR rt_attachments.
@@ -1228,7 +1214,6 @@ CLASS /CTDI/CL_PRINT_GOS_IMAGES IMPLEMENTATION.
     ENDLOOP.
   ENDMETHOD.
 
-
   METHOD get_gos_attachments.
     CLEAR rt_attachments.
 
@@ -1322,7 +1307,6 @@ CLASS /CTDI/CL_PRINT_GOS_IMAGES IMPLEMENTATION.
     ENDLOOP.
   ENDMETHOD.
 
-
   METHOD get_mimetype_for_ext.
     DATA(lv_e) = to_upper( condense( CONV string( iv_ext ) ) ).
     rv_mimetype = COND #(
@@ -1333,7 +1317,6 @@ CLASS /CTDI/CL_PRINT_GOS_IMAGES IMPLEMENTATION.
       WHEN lv_e = 'GIF'                  THEN 'image/gif'
       ELSE                                    |image/{ to_lower( lv_e ) }| ).
   ENDMETHOD.
-
 
   METHOD get_orders_with_images.
     CLEAR: rt_aufnr_with_images,
@@ -1421,7 +1404,6 @@ CLASS /CTDI/CL_PRINT_GOS_IMAGES IMPLEMENTATION.
     ENDLOOP.
   ENDMETHOD.
 
-
   METHOD has_png_alpha.
     " PNG IHDR chunk: byte 25 (offset from file start) = color type
     " Color types: 0=Grayscale, 2=RGB, 3=Palette, 4=Grayscale+Alpha, 6=RGBA
@@ -1445,12 +1427,10 @@ CLASS /CTDI/CL_PRINT_GOS_IMAGES IMPLEMENTATION.
     ENDIF.
   ENDMETHOD.
 
-
   METHOD is_supported_image_ext.
     DATA(lv_e) = to_upper( condense( CONV string( iv_ext ) ) ).
     rv_is_image = xsdbool( lv_e = 'JPG' OR lv_e = 'JPEG' OR lv_e = 'PNG' OR lv_e = 'BMP' OR lv_e = 'TIF' OR lv_e = 'TIFF' ).
   ENDMETHOD.
-
 
   METHOD merge_pdfs.
     rv_pdf = iv_base_pdf.
@@ -1482,7 +1462,6 @@ CLASS /CTDI/CL_PRINT_GOS_IMAGES IMPLEMENTATION.
         /ctdi/cl_print_driver_log=>log_exception( lx_root ).
     ENDTRY.
   ENDMETHOD.
-
 
   METHOD resize_if_needed.
     rv_content = iv_content.
@@ -1564,7 +1543,6 @@ CLASS /CTDI/CL_PRINT_GOS_IMAGES IMPLEMENTATION.
     ENDTRY.
   ENDMETHOD.
 
-
   METHOD resolve_notification.
     CLEAR rv_qmnum.
 
@@ -1587,3 +1565,4 @@ CLASS /CTDI/CL_PRINT_GOS_IMAGES IMPLEMENTATION.
     ENDIF.
   ENDMETHOD.
 ENDCLASS.
+

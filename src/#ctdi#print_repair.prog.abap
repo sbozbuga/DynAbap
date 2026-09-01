@@ -66,19 +66,17 @@ SELECTION-SCREEN BEGIN OF BLOCK b1 WITH FRAME TITLE TEXT-002.
 PARAMETERS: p_aufnr TYPE aufk-aufnr OBLIGATORY, " Repair / Order ID
             p_sernr TYPE equi-sernr.           " Serial number (optional)
 
-SELECTION-SCREEN SKIP.
-
 SELECTION-SCREEN END OF BLOCK b1.
 SELECTION-SCREEN BEGIN OF BLOCK b_img WITH FRAME TITLE TEXT-020.
-PARAMETERS: p_images AS CHECKBOX.               " Append GOS Images
-PARAMETERS: p_shwlog TYPE sap_bool AS CHECKBOX, " Show logs
+PARAMETERS p_images AS CHECKBOX.               " Append GOS Images
+PARAMETERS: p_shwlog TYPE sap_bool NO-DISPLAY, " Show logs
             p_sf     TYPE sap_bool NO-DISPLAY.  " Spool
-SELECTION-SCREEN SKIP.
-SELECTION-SCREEN BEGIN OF BLOCK b_ren WITH FRAME TITLE TEXT-021.
-PARAMETERS: p_rawpdf RADIOBUTTON GROUP rren DEFAULT 'X', " Raw PDF (built-in renderer)
-            p_adspdf RADIOBUTTON GROUP rren.              " ADS Form (Adobe render)
-SELECTION-SCREEN END OF BLOCK b_ren.
 SELECTION-SCREEN END OF BLOCK b_img.
+
+SELECTION-SCREEN BEGIN OF BLOCK b_ren WITH FRAME TITLE TEXT-021.
+PARAMETERS: p_rawpdf RADIOBUTTON GROUP rren MODIF ID hid,        " Raw PDF (built-in renderer)
+            p_adspdf RADIOBUTTON GROUP rren DEFAULT 'X' MODIF ID hid. " ADS Form (Adobe render)
+SELECTION-SCREEN END OF BLOCK b_ren.
 
 " ---------------------------------------------------------------------
 CLASS lcl_app DEFINITION FINAL.
@@ -128,6 +126,14 @@ ENDCLASS.
 
 INITIALIZATION.
   sscrfields = /ctdi/cl_print_cust_engine=>init_toolbar( ).
+
+AT SELECTION-SCREEN OUTPUT.
+  LOOP AT SCREEN.
+    IF screen-group1 = 'HID'.
+      screen-active = 0.
+      MODIFY SCREEN.
+    ENDIF.
+  ENDLOOP.
 
 AT SELECTION-SCREEN.
   /ctdi/cl_print_cust_engine=>handle_selection_screen_fcode( sscrfields-ucomm ).

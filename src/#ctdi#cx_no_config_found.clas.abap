@@ -1,37 +1,30 @@
 CLASS /ctdi/cx_no_config_found DEFINITION
   PUBLIC
-  INHERITING FROM cx_static_check
-  FINAL
-  CREATE PUBLIC .
+  INHERITING FROM cx_static_check FINAL
+  CREATE PUBLIC.
 
   PUBLIC SECTION.
     DATA message TYPE string READ-ONLY.
 
     METHODS constructor
-      IMPORTING
-        !textid   LIKE textid OPTIONAL
-        !previous LIKE previous OPTIONAL
-        !message  TYPE string OPTIONAL.
+      IMPORTING textid    LIKE textid   OPTIONAL
+                !previous LIKE previous OPTIONAL
+                !message  TYPE string   OPTIONAL.
 
     METHODS if_message~get_text REDEFINITION.
 
   PROTECTED SECTION.
+
   PRIVATE SECTION.
 ENDCLASS.
 
 
-
-CLASS /CTDI/CX_NO_CONFIG_FOUND IMPLEMENTATION.
-
-
+CLASS /ctdi/cx_no_config_found IMPLEMENTATION.
   METHOD constructor ##ADT_SUPPRESS_GENERATION.
-    CALL METHOD super->constructor
-      EXPORTING
-        textid   = textid
-        previous = previous.
+    super->constructor( textid   = textid
+                        previous = previous ).
     me->message = message.
   ENDMETHOD.
-
 
   METHOD if_message~get_text.
     IF me->message IS NOT INITIAL.
@@ -41,3 +34,4 @@ CLASS /CTDI/CX_NO_CONFIG_FOUND IMPLEMENTATION.
     ENDIF.
   ENDMETHOD.
 ENDCLASS.
+

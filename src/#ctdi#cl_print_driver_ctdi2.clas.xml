@@ -1,0 +1,58 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<abapGit version="v1.0.0" serializer="LCL_OBJECT_CLAS" serializer_version="v1.0.0">
+ <asx:abap xmlns:asx="http://www.sap.com/abapxml" version="1.0">
+  <asx:values>
+   <VSEOCLASS>
+    <CLSNAME>/CTDI/CL_PRINT_DRIVER_CTDI2</CLSNAME>
+    <LANGU>E</LANGU>
+    <DESCRIPT>Print Driver: Custom Process Subclass Template</DESCRIPT>
+    <STATE>1</STATE>
+    <CLSCCINCL>X</CLSCCINCL>
+    <FIXPT>X</FIXPT>
+    <UNICODE>X</UNICODE>
+   </VSEOCLASS>
+   <LINES>
+    <TLINE>
+     <TDFORMAT>U1</TDFORMAT>
+     <TDLINE>&amp;FUNCTIONALITY&amp;</TDLINE>
+    </TLINE>
+    <TLINE>
+     <TDFORMAT>AS</TDFORMAT>
+     <TDLINE>The /CTDI/CL_PRINT_DRIVER_TEMPLATE class is a reference subclass layout</TDLINE>
+    </TLINE>
+    <TLINE>
+     <TDLINE> template. It serves as a blueprint for developers implementing new</TDLINE>
+    </TLINE>
+    <TLINE>
+     <TDLINE> print driver subclasses in the dynamic framework.</TDLINE>
+    </TLINE>
+    <TLINE>
+     <TDFORMAT>U1</TDFORMAT>
+     <TDLINE>USAGE DETAILS</TDLINE>
+    </TLINE>
+    <TLINE>
+     <TDFORMAT>AS</TDFORMAT>
+     <TDLINE>Developers can copy this class or study its hook redefinitions to:</TDLINE>
+    </TLINE>
+    <TLINE>
+     <TDFORMAT>B1</TDFORMAT>
+     <TDLINE>- unpack_io_data: Read custom parameters from execution context.</TDLINE>
+    </TLINE>
+    <TLINE>
+     <TDFORMAT>B1</TDFORMAT>
+     <TDLINE>- fetch_data_from_db: Perform database selections or call data</TDLINE>
+    </TLINE>
+    <TLINE>
+     <TDLINE>  provider classes.</TDLINE>
+    </TLINE>
+    <TLINE>
+     <TDFORMAT>B1</TDFORMAT>
+     <TDLINE>- map_and_register_data: Map customized fields and register them</TDLINE>
+    </TLINE>
+    <TLINE>
+     <TDLINE>  safely for Smart Forms and Adobe Forms rendering.</TDLINE>
+    </TLINE>
+   </LINES>
+  </asx:values>
+ </asx:abap>
+</abapGit>

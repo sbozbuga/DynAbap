@@ -1,4 +1,4 @@
-<?xml version="1.0" encoding="utf-8"?>
+﻿<?xml version="1.0" encoding="utf-8"?>
 <abapGit version="v1.0.0" serializer="LCL_OBJECT_PROG" serializer_version="v1.0.0">
  <asx:abap xmlns:asx="http://www.sap.com/abapxml" version="1.0">
   <asx:values>
@@ -458,11 +458,47 @@
       <PATH>A</PATH>
      </RSMPE_FUNT>
      <RSMPE_FUNT>
+      <CODE>ATTACH</CODE>
+      <TEXTNO>001</TEXTNO>
+      <TEXT_TYPE>S</TEXT_TYPE>
+      <TEXT_NAME>ICON_JPG</TEXT_NAME>
+      <ICON_ID>@J0@</ICON_ID>
+      <FUN_TEXT>IMGatch</FUN_TEXT>
+     </RSMPE_FUNT>
+     <RSMPE_FUNT>
       <CODE>BACK</CODE>
       <TEXTNO>001</TEXTNO>
       <TEXT_TYPE>S</TEXT_TYPE>
       <FUN_TEXT>Back</FUN_TEXT>
       <PATH>B</PATH>
+     </RSMPE_FUNT>
+     <RSMPE_FUNT>
+      <CODE>IMGRENDR</CODE>
+      <TEXTNO>001</TEXTNO>
+      <TEXT_TYPE>S</TEXT_TYPE>
+      <TEXT_NAME>ICON_JPG</TEXT_NAME>
+      <ICON_ID>@J0@</ICON_ID>
+      <FUN_TEXT>Image Render</FUN_TEXT>
+     </RSMPE_FUNT>
+     <RSMPE_FUNT>
+      <CODE>IMG_ATTCH</CODE>
+      <TEXTNO>001</TEXTNO>
+      <TEXT_TYPE>S</TEXT_TYPE>
+      <TEXT_NAME>ICON_GOS_SERVICES_ATT_REL</TEXT_NAME>
+      <ICON_ID>@XZ@</ICON_ID>
+      <FUN_TEXT>IMG_ATTCH</FUN_TEXT>
+      <ICON_TEXT>Attach?</ICON_TEXT>
+      <INFO_TEXT>Append images to PDF</INFO_TEXT>
+     </RSMPE_FUNT>
+     <RSMPE_FUNT>
+      <CODE>IMG_RENDER</CODE>
+      <TEXTNO>001</TEXTNO>
+      <TEXT_TYPE>S</TEXT_TYPE>
+      <TEXT_NAME>ICON_JPG</TEXT_NAME>
+      <ICON_ID>@J0@</ICON_ID>
+      <FUN_TEXT>Image Render</FUN_TEXT>
+      <ICON_TEXT>Render Mode</ICON_TEXT>
+      <INFO_TEXT>Choose image2pdf render mode</INFO_TEXT>
      </RSMPE_FUNT>
      <RSMPE_FUNT>
       <CODE>MYFUNCTION</CODE>
@@ -515,10 +551,13 @@
       <INFO_TEXT>Print Selected</INFO_TEXT>
      </RSMPE_FUNT>
      <RSMPE_FUNT>
-      <CODE>PRINT_SEL2</CODE>
+      <CODE>RENDER</CODE>
       <TEXTNO>001</TEXTNO>
       <TEXT_TYPE>S</TEXT_TYPE>
-      <FUN_TEXT>Text-004</FUN_TEXT>
+      <TEXT_NAME>ICON_JPG</TEXT_NAME>
+      <ICON_ID>@J0@</ICON_ID>
+      <FUN_TEXT>Image Render2</FUN_TEXT>
+      <ICON_TEXT>Image Render</ICON_TEXT>
      </RSMPE_FUNT>
      <RSMPE_FUNT>
       <CODE>SPMODE</CODE>
@@ -991,37 +1030,37 @@
       <PFK_CODE>000001</PFK_CODE>
       <CODE>0001</CODE>
       <NO>06</NO>
-      <PFNO>28</PFNO>
-     </RSMPE_BUT>
-     <RSMPE_BUT>
-      <PFK_CODE>000001</PFK_CODE>
-      <CODE>0001</CODE>
-      <NO>07</NO>
       <PFNO>40</PFNO>
      </RSMPE_BUT>
      <RSMPE_BUT>
       <PFK_CODE>000001</PFK_CODE>
       <CODE>0001</CODE>
-      <NO>08</NO>
+      <NO>07</NO>
       <PFNO>29</PFNO>
      </RSMPE_BUT>
      <RSMPE_BUT>
       <PFK_CODE>000001</PFK_CODE>
       <CODE>0001</CODE>
-      <NO>09</NO>
+      <NO>08</NO>
       <PFNO>S</PFNO>
      </RSMPE_BUT>
      <RSMPE_BUT>
       <PFK_CODE>000001</PFK_CODE>
       <CODE>0001</CODE>
+      <NO>09</NO>
+      <PFNO>42</PFNO>
+     </RSMPE_BUT>
+     <RSMPE_BUT>
+      <PFK_CODE>000001</PFK_CODE>
+      <CODE>0001</CODE>
       <NO>10</NO>
-      <PFNO>30</PFNO>
+      <PFNO>S</PFNO>
      </RSMPE_BUT>
      <RSMPE_BUT>
       <PFK_CODE>000001</PFK_CODE>
       <CODE>0001</CODE>
       <NO>11</NO>
-      <PFNO>42</PFNO>
+      <PFNO>46</PFNO>
      </RSMPE_BUT>
      <RSMPE_BUT>
       <PFK_CODE>000001</PFK_CODE>
@@ -1033,79 +1072,73 @@
       <PFK_CODE>000001</PFK_CODE>
       <CODE>0001</CODE>
       <NO>13</NO>
-      <PFNO>46</PFNO>
-     </RSMPE_BUT>
-     <RSMPE_BUT>
-      <PFK_CODE>000001</PFK_CODE>
-      <CODE>0001</CODE>
-      <NO>14</NO>
-      <PFNO>S</PFNO>
-     </RSMPE_BUT>
-     <RSMPE_BUT>
-      <PFK_CODE>000001</PFK_CODE>
-      <CODE>0001</CODE>
-      <NO>15</NO>
       <PFNO>32</PFNO>
      </RSMPE_BUT>
      <RSMPE_BUT>
       <PFK_CODE>000001</PFK_CODE>
       <CODE>0001</CODE>
-      <NO>16</NO>
+      <NO>14</NO>
       <PFNO>33</PFNO>
      </RSMPE_BUT>
      <RSMPE_BUT>
       <PFK_CODE>000001</PFK_CODE>
       <CODE>0001</CODE>
-      <NO>17</NO>
+      <NO>15</NO>
       <PFNO>34</PFNO>
      </RSMPE_BUT>
      <RSMPE_BUT>
       <PFK_CODE>000001</PFK_CODE>
       <CODE>0001</CODE>
-      <NO>18</NO>
+      <NO>16</NO>
       <PFNO>S</PFNO>
      </RSMPE_BUT>
      <RSMPE_BUT>
       <PFK_CODE>000001</PFK_CODE>
       <CODE>0001</CODE>
-      <NO>19</NO>
+      <NO>17</NO>
       <PFNO>13</PFNO>
      </RSMPE_BUT>
      <RSMPE_BUT>
       <PFK_CODE>000001</PFK_CODE>
       <CODE>0001</CODE>
-      <NO>20</NO>
+      <NO>18</NO>
       <PFNO>14</PFNO>
      </RSMPE_BUT>
      <RSMPE_BUT>
       <PFK_CODE>000001</PFK_CODE>
       <CODE>0001</CODE>
-      <NO>21</NO>
+      <NO>19</NO>
       <PFNO>16</PFNO>
      </RSMPE_BUT>
      <RSMPE_BUT>
       <PFK_CODE>000001</PFK_CODE>
       <CODE>0001</CODE>
-      <NO>22</NO>
+      <NO>20</NO>
       <PFNO>17</PFNO>
      </RSMPE_BUT>
      <RSMPE_BUT>
       <PFK_CODE>000001</PFK_CODE>
       <CODE>0001</CODE>
-      <NO>23</NO>
+      <NO>21</NO>
       <PFNO>S</PFNO>
      </RSMPE_BUT>
      <RSMPE_BUT>
       <PFK_CODE>000001</PFK_CODE>
       <CODE>0001</CODE>
-      <NO>24</NO>
+      <NO>22</NO>
       <PFNO>09</PFNO>
      </RSMPE_BUT>
      <RSMPE_BUT>
       <PFK_CODE>000001</PFK_CODE>
       <CODE>0001</CODE>
-      <NO>25</NO>
-      <PFNO>07</PFNO>
+      <NO>23</NO>
+      <PFNO>18</PFNO>
+     </RSMPE_BUT>
+     <RSMPE_BUT>
+      <PFK_CODE>000001</PFK_CODE>
+      <CODE>0001</CODE>
+      <NO>24</NO>
+      <PFNO>43</PFNO>
      </RSMPE_BUT>
     </BUT>
     <PFK>
@@ -1202,7 +1235,7 @@
      <RSMPE_PFK>
       <CODE>000001</CODE>
       <PFNO>18</PFNO>
-      <FUNCODE>&amp;CRB</FUNCODE>
+      <FUNCODE>IMG_ATTCH</FUNCODE>
       <FUNNO>001</FUNNO>
      </RSMPE_PFK>
      <RSMPE_PFK>
@@ -1243,44 +1276,8 @@
      </RSMPE_PFK>
      <RSMPE_PFK>
       <CODE>000001</CODE>
-      <PFNO>25</PFNO>
-      <FUNCODE>&amp;ABC</FUNCODE>
-      <FUNNO>001</FUNNO>
-     </RSMPE_PFK>
-     <RSMPE_PFK>
-      <CODE>000001</CODE>
-      <PFNO>26</PFNO>
-      <FUNCODE>&amp;CRL</FUNCODE>
-      <FUNNO>001</FUNNO>
-     </RSMPE_PFK>
-     <RSMPE_PFK>
-      <CODE>000001</CODE>
-      <PFNO>27</PFNO>
-      <FUNCODE>&amp;CRR</FUNCODE>
-      <FUNNO>001</FUNNO>
-     </RSMPE_PFK>
-     <RSMPE_PFK>
-      <CODE>000001</CODE>
-      <PFNO>28</PFNO>
-      <FUNCODE>&amp;OUP</FUNCODE>
-      <FUNNO>001</FUNNO>
-     </RSMPE_PFK>
-     <RSMPE_PFK>
-      <CODE>000001</CODE>
       <PFNO>29</PFNO>
       <FUNCODE>&amp;ILT</FUNCODE>
-      <FUNNO>001</FUNNO>
-     </RSMPE_PFK>
-     <RSMPE_PFK>
-      <CODE>000001</CODE>
-      <PFNO>30</PFNO>
-      <FUNCODE>&amp;UMC</FUNCODE>
-      <FUNNO>001</FUNNO>
-     </RSMPE_PFK>
-     <RSMPE_PFK>
-      <CODE>000001</CODE>
-      <PFNO>31</PFNO>
-      <FUNCODE>%SL</FUNCODE>
       <FUNNO>001</FUNNO>
      </RSMPE_PFK>
      <RSMPE_PFK>
@@ -1352,13 +1349,7 @@
      <RSMPE_PFK>
       <CODE>000001</CODE>
       <PFNO>43</PFNO>
-      <FUNCODE>&amp;VEXCEL</FUNCODE>
-      <FUNNO>001</FUNNO>
-     </RSMPE_PFK>
-     <RSMPE_PFK>
-      <CODE>000001</CODE>
-      <PFNO>44</PFNO>
-      <FUNCODE>&amp;AQW</FUNCODE>
+      <FUNCODE>IMG_RENDER</FUNCODE>
       <FUNNO>001</FUNNO>
      </RSMPE_PFK>
      <RSMPE_PFK>
@@ -1371,18 +1362,6 @@
       <CODE>000001</CODE>
       <PFNO>46</PFNO>
       <FUNCODE>&amp;RNT_PREV</FUNCODE>
-      <FUNNO>001</FUNNO>
-     </RSMPE_PFK>
-     <RSMPE_PFK>
-      <CODE>000001</CODE>
-      <PFNO>47</PFNO>
-      <FUNCODE>&amp;GRAPH</FUNCODE>
-      <FUNNO>001</FUNNO>
-     </RSMPE_PFK>
-     <RSMPE_PFK>
-      <CODE>000001</CODE>
-      <PFNO>48</PFNO>
-      <FUNCODE>&amp;CRDESIG</FUNCODE>
       <FUNNO>001</FUNNO>
      </RSMPE_PFK>
      <RSMPE_PFK>
@@ -1782,6 +1761,14 @@
      <RSMPE_STAF>
       <STATUS>MASS_ALV</STATUS>
       <FUNCTION>HELP</FUNCTION>
+     </RSMPE_STAF>
+     <RSMPE_STAF>
+      <STATUS>MASS_ALV</STATUS>
+      <FUNCTION>IMG_ATTCH</FUNCTION>
+     </RSMPE_STAF>
+     <RSMPE_STAF>
+      <STATUS>MASS_ALV</STATUS>
+      <FUNCTION>IMG_RENDER</FUNCTION>
      </RSMPE_STAF>
      <RSMPE_STAF>
       <STATUS>MASS_ALV</STATUS>

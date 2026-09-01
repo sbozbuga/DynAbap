@@ -4,33 +4,30 @@
 CLASS /ctdi/cx_cust_error DEFINITION
   PUBLIC
   INHERITING FROM cx_static_check
-  CREATE PUBLIC .
+  CREATE PUBLIC.
 
   PUBLIC SECTION.
-    DATA: contract_id TYPE vbeln_va READ-ONLY,
-          message     TYPE string READ-ONLY.
+    DATA contract_id TYPE vbeln_va READ-ONLY.
+    DATA message     TYPE string   READ-ONLY.
 
     METHODS constructor
-      IMPORTING
-        !textid      LIKE textid OPTIONAL
-        !previous    LIKE previous OPTIONAL
-        !contract_id TYPE vbeln_va OPTIONAL
-        !message     TYPE string OPTIONAL.
+      IMPORTING textid      LIKE textid   OPTIONAL
+                !previous   LIKE previous OPTIONAL
+                contract_id TYPE vbeln_va OPTIONAL
+                !message    TYPE string   OPTIONAL.
 
     METHODS if_message~get_text REDEFINITION.
 
   PROTECTED SECTION.
+
   PRIVATE SECTION.
 ENDCLASS.
 
 
-
 CLASS /ctdi/cx_cust_error IMPLEMENTATION.
   METHOD constructor ##ADT_SUPPRESS_GENERATION.
-    CALL METHOD super->constructor
-      EXPORTING
-        textid   = textid
-        previous = previous.
+    super->constructor( textid   = textid
+                        previous = previous ).
     me->contract_id = contract_id.
     me->message     = message.
   ENDMETHOD.
@@ -43,3 +40,4 @@ CLASS /ctdi/cx_cust_error IMPLEMENTATION.
     ENDIF.
   ENDMETHOD.
 ENDCLASS.
+

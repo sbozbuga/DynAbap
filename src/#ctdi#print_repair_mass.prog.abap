@@ -64,18 +64,18 @@ SELECT-OPTIONS: s_aufnr FOR aufk-aufnr,                 " Repair Order
 SELECTION-SCREEN END OF BLOCK b1.
 
 SELECTION-SCREEN BEGIN OF BLOCK b4 WITH FRAME TITLE TEXT-036.
-PARAMETERS: p_images AS CHECKBOX.                        " Append GOS Images
-SELECTION-SCREEN SKIP.
+PARAMETERS p_images AS CHECKBOX.                        " Append GOS Images to PDFs
+*SELECTION-SCREEN SKIP.
 
 SELECTION-SCREEN BEGIN OF BLOCK b3 WITH FRAME TITLE TEXT-018.
-PARAMETERS: p_indiv RADIOBUTTON GROUP spl DEFAULT 'X',  " Individual Spool
-            p_bundl RADIOBUTTON GROUP spl,              " Bundled Spool (per form type)
-            p_merge RADIOBUTTON GROUP spl.              " Merged Spool (single PDF)
+PARAMETERS: p_indiv RADIOBUTTON GROUP spl DEFAULT 'X' MODIF ID hid,  " Individual Spool
+            p_bundl RADIOBUTTON GROUP spl MODIF ID hid,              " Bundled Spool (per form type)
+            p_merge RADIOBUTTON GROUP spl MODIF ID hid.              " Merged Spool (single PDF)
 SELECTION-SCREEN END OF BLOCK b3.
 
 SELECTION-SCREEN BEGIN OF BLOCK b5 WITH FRAME TITLE TEXT-037.
-PARAMETERS: p_rawpdf RADIOBUTTON GROUP rren, " Raw PDF (built-in renderer)
-            p_adspdf RADIOBUTTON GROUP rren DEFAULT 'X'.              " ADS Form (Adobe render)
+PARAMETERS: p_rawpdf RADIOBUTTON GROUP rren MODIF ID hid, " Raw PDF (built-in renderer)
+            p_adspdf RADIOBUTTON GROUP rren DEFAULT 'X' MODIF ID hid. " ADS Form (Adobe render)
 SELECTION-SCREEN END OF BLOCK b5.
 SELECTION-SCREEN END OF BLOCK b4.
 
@@ -122,14 +122,17 @@ CLASS lcl_mass_print DEFINITION FINAL.
     CONSTANTS c_mode_bundled    TYPE i VALUE 2.
     CONSTANTS c_mode_merged     TYPE i VALUE 3.
 
-    CLASS-DATA gt_alv        TYPE TABLE OF ty_alv_line.
-    CLASS-DATA go_salv       TYPE REF TO cl_salv_table.
-    CLASS-DATA gv_spool_mode TYPE i.
+    CLASS-DATA gt_alv         TYPE TABLE OF ty_alv_line.
+    CLASS-DATA go_salv        TYPE REF TO cl_salv_table.
+    CLASS-DATA gv_spool_mode  TYPE i.
+    CLASS-DATA gv_render_mode TYPE char1 VALUE 'A'.  " A=ADS, R=Raw PDF
 
     CLASS-METHODS select_orders.
     CLASS-METHODS resolve_form_types.
     CLASS-METHODS display_alv.
     CLASS-METHODS toggle_spool_mode.
+    CLASS-METHODS toggle_render_mode.
+    CLASS-METHODS toggle_img_attach.
 
     CLASS-METHODS on_user_command FOR EVENT added_function OF cl_salv_events_table
       IMPORTING e_salv_function.
@@ -242,11 +245,11 @@ CLASS lcl_mass_print IMPLEMENTATION.
                     f~bemot AS skz,
                     q~qmcod AS akz
       FROM aufk AS a
-             INNER JOIN
+             LEFT OUTER JOIN
                qmel AS q ON q~aufnr = a~aufnr
-                 INNER JOIN
+                 LEFT OUTER JOIN
                    vbak AS o ON o~vbeln = a~kdauf
-                     INNER JOIN
+                     LEFT OUTER JOIN
                        vbak AS c ON  c~vbeln = o~vgbel
                                  AND c~vbtyp = 'G'
                          LEFT OUTER JOIN
@@ -255,14 +258,14 @@ CLASS lcl_mass_print IMPLEMENTATION.
                                      AND f~stzhl = '00000000'
 
       WHERE a~aufnr IN @s_aufnr
-        AND a~kdauf IN @s_kdauf
-        AND a~auart IN @s_auart
-        AND a~werks IN @s_werks
-        AND a~erdat IN @s_erdat
-        AND o~vgbel IN @s_contr
+*        AND a~kdauf IN @s_kdauf
+*        AND a~auart IN @s_auart
+*        AND a~werks IN @s_werks
+*        AND a~erdat IN @s_erdat
+*        AND ( o~vgbel IN @s_contr OR o~vgbel IS NULL )
         AND f~vornr IN @s_vornr
         AND q~qmart IN @s_qmart
-        AND q~qmnum IN @s_qmnum
+*        AND ( q~qmnum IN @s_qmnum OR q~qmnum IS NULL )
       ORDER BY a~aufnr
       INTO TABLE @DATA(lt_orders) ##SUBRC_OK.
 
@@ -419,12 +422,16 @@ CLASS lcl_mass_print IMPLEMENTATION.
         lo_col_fname->set_medium_text( 'Form Name' ).
         lo_col_fname->set_long_text( 'Form Name' ).
 
-        " Hotspot columns for navigation
-        CAST cl_salv_column_table( lo_columns->get_column( 'AUFNR' ) )->set_cell_type( if_salv_c_cell_type=>hotspot ).
-        CAST cl_salv_column_table( lo_columns->get_column( 'QMNUM' ) )->set_cell_type( if_salv_c_cell_type=>hotspot ).
-        CAST cl_salv_column_table( lo_columns->get_column( 'CONTRACT_ID' ) )->set_cell_type(
-                                                                               if_salv_c_cell_type=>hotspot ).
-        CAST cl_salv_column_table( lo_columns->get_column( 'KDAUF' ) )->set_cell_type( if_salv_c_cell_type=>hotspot ).
+        " Hide columns not needed on simplified screen
+        lo_columns->get_column( 'AUART' )->set_visible( abap_false ).
+        lo_columns->get_column( 'QMART' )->set_visible( abap_false ).
+
+        " Notification column header: prefix with Z2
+        DATA(lo_col_qmnum) = CAST cl_salv_column_table( lo_columns->get_column( 'QMNUM' ) ).
+        lo_col_qmnum->set_short_text( 'Z2 Notif.' ).
+        lo_col_qmnum->set_medium_text( 'Z2 Notification' ).
+        lo_col_qmnum->set_long_text( 'Z2 Notification' ).
+
       CATCH cx_salv_not_found.
     ENDTRY.
 
@@ -449,6 +456,15 @@ CLASS lcl_mass_print IMPLEMENTATION.
       RETURN.
     ENDIF.
 
+    IF e_salv_function = 'IMG_ATTCH'.
+      toggle_img_attach( ).
+      RETURN.
+    ENDIF.
+
+    IF e_salv_function = 'IMG_RENDER'.
+      toggle_render_mode( ).
+      RETURN.
+    ENDIF.
     DATA(lt_rows) = go_salv->get_selections( )->get_selected_rows( ).
 
     IF e_salv_function = 'PREVIEW'.
@@ -510,17 +526,15 @@ CLASS lcl_mass_print IMPLEMENTATION.
     show_summary( iv_ok  = lv_count_ok
                   iv_err = lv_count_err ).
 
-    " Show application log (debug/diagnostics)
-    /ctdi/cl_print_driver_log=>show_log( ).
+*    " Show application log (debug/diagnostics)
+*    /ctdi/cl_print_driver_log=>show_log( ).
+
   ENDMETHOD.
 
   METHOD on_double_click.
-    IF row > 0.
-      execute_preview( iv_row = row ).
+    IF row <= 0.
+      RETURN.
     ENDIF.
-  ENDMETHOD.
-
-  METHOD on_link_click.
     ASSIGN gt_alv[ row ] TO FIELD-SYMBOL(<ls>).
     IF sy-subrc <> 0.
       RETURN.
@@ -549,6 +563,10 @@ CLASS lcl_mass_print IMPLEMENTATION.
                                  iv_param = 'AUN'
                                  iv_value = <ls>-kdauf ).
     ENDCASE.
+  ENDMETHOD.
+
+  METHOD on_link_click.
+    " Navigation moved to on_double_click
   ENDMETHOD.
 
   METHOD execute_preview.
@@ -617,8 +635,7 @@ CLASS lcl_mass_print IMPLEMENTATION.
                                             rc              = lv_rc ).
       IF lv_rc = 0 AND lv_merged IS NOT INITIAL.
         download_pdf_file( iv_pdf_data = lv_merged
-                           iv_filename = |Repair-Merged-{ ev_ok }-{ sy-datum }-{ sy-uzeit }{ COND #(
-                             WHEN p_rawpdf = abap_true THEN '_RAW' ELSE '_ADS' ) }.pdf|
+                           iv_filename = |Repair-Merged-{ ev_ok }-{ sy-datum }-{ sy-uzeit }.pdf|
                            iv_prompt   = abap_true ).
       ELSE.
         MESSAGE TEXT-015 TYPE 'S' DISPLAY LIKE 'E'.
@@ -897,8 +914,7 @@ CLASS lcl_mass_print IMPLEMENTATION.
 
     IF lt_pdf_table IS NOT INITIAL.
       download_pdf_file( iv_pdf_data = lt_pdf_table[ 1 ]
-                         iv_filename = |Repair-Merged-{ ev_ok }-{ sy-datum }-{ sy-uzeit }{ COND #(
-                           WHEN p_rawpdf = abap_true THEN '_RAW' ELSE '_ADS' ) }.pdf|
+                         iv_filename = |Repair-Merged-{ ev_ok }-{ sy-datum }-{ sy-uzeit }.pdf|
                          iv_prompt   = abap_true ).
     ELSE.
       MESSAGE TEXT-015 TYPE 'S' DISPLAY LIKE 'E'.
@@ -969,9 +985,9 @@ CLASS lcl_mass_print IMPLEMENTATION.
   METHOD toggle_spool_mode.
     DATA lv_button TYPE c LENGTH 1.
 
-    DATA(lv_ind) = COND string( WHEN gv_spool_mode = c_mode_individual THEN ' <<' ).
-    DATA(lv_bnd) = COND string( WHEN gv_spool_mode = c_mode_bundled THEN ' <<' ).
-    DATA(lv_mrg) = COND string( WHEN gv_spool_mode = c_mode_merged THEN ' <<' ).
+    DATA(lv_ind) = COND string( WHEN gv_spool_mode = c_mode_individual THEN '  *' ).
+    DATA(lv_bnd) = COND string( WHEN gv_spool_mode = c_mode_bundled    THEN '  *' ).
+    DATA(lv_mrg) = COND string( WHEN gv_spool_mode = c_mode_merged     THEN '  *' ).
 
     CALL FUNCTION 'POPUP_FOR_INTERACTION'
       EXPORTING
@@ -999,6 +1015,71 @@ CLASS lcl_mass_print IMPLEMENTATION.
                                           WHEN c_mode_bundled    THEN TEXT-028 " Bundled Spool
                                           WHEN c_mode_merged     THEN TEXT-029 ). " Merged Spool
       MESSAGE |{ TEXT-019 }: { lv_mode_text }| TYPE 'S'.
+    ENDIF.
+  ENDMETHOD.
+
+  METHOD toggle_render_mode.
+    DATA lv_button TYPE c LENGTH 1.
+
+    DATA(lv_ads) = COND string( WHEN gv_render_mode = 'A' THEN '  *' ).
+    DATA(lv_raw) = COND string( WHEN gv_render_mode = 'R' THEN '  *' ).
+
+    CALL FUNCTION 'POPUP_TO_DECIDE'
+      EXPORTING
+        textline1      = 'Select image-to-PDF render mode:'
+        text_option1   = |Adobe Forms{ lv_ads }|
+        text_option2   = |Raw PDF{ lv_raw }|
+        titel          = 'Image Render Mode'
+        cancel_display = ' '
+      IMPORTING
+        answer         = lv_button.
+
+    IF lv_button IS NOT INITIAL AND lv_button <> 'A'.
+      gv_render_mode = SWITCH #( lv_button
+                                 WHEN '1' THEN 'A'
+                                 WHEN '2' THEN 'R' ).
+
+      DATA(lv_text) = SWITCH string( gv_render_mode
+                                     WHEN 'A' THEN 'Adobe Form (ADS)'
+                                     WHEN 'R' THEN 'Raw PDF' ).
+      MESSAGE |Image Render: { lv_text }| TYPE 'S'.
+    ENDIF.
+  ENDMETHOD.
+
+  METHOD toggle_img_attach.
+    DATA lv_button TYPE c LENGTH 1.
+
+    DATA(lv_yes) = COND string( WHEN p_images = 'X' THEN '  *' ).
+    DATA(lv_no)  = COND string( WHEN p_images = ' ' THEN '  *' ).
+
+    CALL FUNCTION 'POPUP_TO_DECIDE'
+      EXPORTING
+        textline1         = 'Append images?'
+        text_option1      = |Yes{ lv_yes }|
+        text_option2      = |No{ lv_no }|
+        icon_text_option1 = 'ICON_ALLOW'
+        icon_text_option2 = 'ICON_REJECT'
+        titel             = 'Image Attchments'
+        cancel_display    = ' '
+      IMPORTING
+        answer            = lv_button.
+    CASE lv_button.
+      WHEN '1'.
+        p_images = 'X'.
+      WHEN '2'.
+        p_images = ' '.
+      WHEN OTHERS.
+    ENDCASE.
+
+    IF lv_button IS NOT INITIAL AND lv_button <> 'A'.
+      p_images = SWITCH #( lv_button
+                   WHEN '1' THEN 'X'
+                   WHEN '2' THEN ' ' ).
+
+      DATA(lv_text) = SWITCH string( p_images
+                        WHEN 'X' THEN 'Appending images to PDF files'
+                        WHEN ' ' THEN 'Not appending images' ).
+      MESSAGE lv_text TYPE 'S'.
     ENDIF.
   ENDMETHOD.
 
@@ -1048,11 +1129,8 @@ CLASS lcl_mass_print IMPLEMENTATION.
 
         lr_driver->set_append_images( p_images ).
 
-        " Set image render mode from selection screen
-        lr_driver->set_img_render_mode( COND #(
-          WHEN p_adspdf = abap_true
-          THEN /ctdi/cl_print_gos_images=>gc_render_ads
-          ELSE /ctdi/cl_print_gos_images=>gc_render_raw ) ).
+        " Set image render mode from ALV toolbar setting
+        lr_driver->set_img_render_mode( gv_render_mode ).
 
         IF iv_external = abap_true.
           lr_driver->set_external_job( abap_true ).
@@ -1154,8 +1232,20 @@ INITIALIZATION.
   s_qmart[]  = VALUE #( ( sign = 'I' option = 'CP' low = 'Z*' ) ).
   sscrfields = /ctdi/cl_print_cust_engine=>init_toolbar( ).
 
+AT SELECTION-SCREEN OUTPUT.
+  LOOP AT SCREEN.
+    IF screen-group1 = 'HID'.
+      screen-active = 0.
+      MODIFY SCREEN.
+    ENDIF.
+  ENDLOOP.
+
 AT SELECTION-SCREEN.
   /ctdi/cl_print_cust_engine=>handle_selection_screen_fcode( sscrfields-ucomm ).
 
 START-OF-SELECTION.
+  IF s_aufnr[] IS INITIAL.
+    MESSAGE 'Please enter at least one Repair Order number.' TYPE 'S' DISPLAY LIKE 'W'.
+    RETURN.
+  ENDIF.
   lcl_mass_print=>run( ).
