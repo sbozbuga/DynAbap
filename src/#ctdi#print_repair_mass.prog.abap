@@ -1026,10 +1026,10 @@ CLASS lcl_mass_print IMPLEMENTATION.
 
     CALL FUNCTION 'POPUP_TO_DECIDE'
       EXPORTING
-        textline1      = 'Select image-to-PDF render mode:'
-        text_option1   = |Adobe Forms{ lv_ads }|
-        text_option2   = |Raw PDF{ lv_raw }|
-        titel          = 'Image Render Mode'
+        textline1      = CONV string( TEXT-043 )
+        text_option1   = |{ TEXT-044 }{ lv_ads }|
+        text_option2   = |{ TEXT-045 }{ lv_raw }|
+        titel          = CONV string( TEXT-042 )
         cancel_display = ' '
       IMPORTING
         answer         = lv_button.
@@ -1040,9 +1040,9 @@ CLASS lcl_mass_print IMPLEMENTATION.
                                  WHEN '2' THEN 'R' ).
 
       DATA(lv_text) = SWITCH string( gv_render_mode
-                                     WHEN 'A' THEN 'Adobe Form (ADS)'
-                                     WHEN 'R' THEN 'Raw PDF' ).
-      MESSAGE |Image Render: { lv_text }| TYPE 'S'.
+                                     WHEN 'A' THEN TEXT-044
+                                     WHEN 'R' THEN TEXT-045 ).
+      MESSAGE |{ TEXT-052 }: { lv_text }| TYPE 'S'.
     ENDIF.
   ENDMETHOD.
 
@@ -1054,12 +1054,12 @@ CLASS lcl_mass_print IMPLEMENTATION.
 
     CALL FUNCTION 'POPUP_TO_DECIDE'
       EXPORTING
-        textline1         = 'Append images?'
-        text_option1      = |Yes{ lv_yes }|
-        text_option2      = |No{ lv_no }|
+        textline1         = CONV string( TEXT-047 )
+        text_option1      = |{ TEXT-050 }{ lv_yes }|
+        text_option2      = |{ TEXT-051 }{ lv_no }|
         icon_text_option1 = 'ICON_ALLOW'
         icon_text_option2 = 'ICON_REJECT'
-        titel             = 'Image Attchments'
+        titel             = CONV string( TEXT-046 )
         cancel_display    = ' '
       IMPORTING
         answer            = lv_button.
@@ -1077,8 +1077,8 @@ CLASS lcl_mass_print IMPLEMENTATION.
                    WHEN '2' THEN ' ' ).
 
       DATA(lv_text) = SWITCH string( p_images
-                        WHEN 'X' THEN 'Appending images to PDF files'
-                        WHEN ' ' THEN 'Not appending images' ).
+                        WHEN 'X' THEN TEXT-048
+                        WHEN ' ' THEN TEXT-049 ).
       MESSAGE lv_text TYPE 'S'.
     ENDIF.
   ENDMETHOD.
@@ -1245,7 +1245,7 @@ AT SELECTION-SCREEN.
 
 START-OF-SELECTION.
   IF s_aufnr[] IS INITIAL.
-    MESSAGE 'Please enter at least one Repair Order number.' TYPE 'S' DISPLAY LIKE 'W'.
+    MESSAGE TEXT-041 TYPE 'S' DISPLAY LIKE 'W'.
     RETURN.
   ENDIF.
   lcl_mass_print=>run( ).
