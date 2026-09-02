@@ -152,22 +152,22 @@ CLASS lcl_parallel_print IMPLEMENTATION.
         ENDIF.
 
       CATCH /ctdi/cx_no_config_found INTO DATA(lx_noconf).
+        /ctdi/cl_print_driver_log=>log_exception( lx_noconf ).
         ls_result-icon = icon_led_yellow.
-        ls_result-msg  = COND #( WHEN lx_noconf->previous IS BOUND
-                                 THEN lx_noconf->previous->get_text( )
-                                 ELSE lx_noconf->get_text( ) ).
+        " Sentinel Security Fix: Prevent detailed exception text from leaking to the UI
+        ls_result-msg  = 'An unexpected system error occurred'.
 
       CATCH /ctdi/cx_print_driver_error INTO DATA(lx_driver).
+        /ctdi/cl_print_driver_log=>log_exception( lx_driver ).
         ls_result-icon = icon_led_red.
-        ls_result-msg  = COND #( WHEN lx_driver->previous IS BOUND
-                                 THEN lx_driver->previous->get_text( )
-                                 ELSE lx_driver->get_text( ) ).
+        " Sentinel Security Fix: Prevent detailed exception text from leaking to the UI
+        ls_result-msg  = 'An unexpected system error occurred'.
 
       CATCH cx_root INTO DATA(lx_root).
+        /ctdi/cl_print_driver_log=>log_exception( lx_root ).
         ls_result-icon = icon_led_red.
-        ls_result-msg  = COND #( WHEN lx_root->previous IS BOUND
-                                 THEN lx_root->previous->get_text( )
-                                 ELSE lx_root->get_text( ) ).
+        " Sentinel Security Fix: Prevent detailed exception text from leaking to the UI
+        ls_result-msg  = 'An unexpected system error occurred'.
     ENDTRY.
 
     EXPORT result = ls_result TO DATA BUFFER p_out.
@@ -510,7 +510,9 @@ CLASS lcl_mass_print IMPLEMENTATION.
                             iv_no_dialog   = abap_false
                             iv_preview     = abap_true ).
       CATCH cx_root INTO DATA(lx).
-        MESSAGE lx->get_text( ) TYPE 'S' DISPLAY LIKE 'E'.
+        /ctdi/cl_print_driver_log=>log_exception( lx ).
+        " Sentinel Security Fix: Prevent detailed exception text from leaking to the UI
+        MESSAGE 'An unexpected system error occurred' TYPE 'S' DISPLAY LIKE 'E'.
     ENDTRY.
   ENDMETHOD.
 
@@ -669,24 +671,24 @@ CLASS lcl_mass_print IMPLEMENTATION.
           ev_ok = ev_ok + 1.
 
         CATCH /ctdi/cx_no_config_found INTO DATA(lx_noconf).
+          /ctdi/cl_print_driver_log=>log_exception( lx_noconf ).
           <ls_line>-icon = icon_led_yellow.
-          <ls_line>-msg  = COND #( WHEN lx_noconf->previous IS BOUND
-                                   THEN lx_noconf->previous->get_text( )
-                                   ELSE lx_noconf->get_text( ) ).
+          " Sentinel Security Fix: Prevent detailed exception text from leaking to the UI
+          <ls_line>-msg  = 'An unexpected system error occurred'.
           ev_err = ev_err + 1.
 
         CATCH /ctdi/cx_print_driver_error INTO DATA(lx_driver).
+          /ctdi/cl_print_driver_log=>log_exception( lx_driver ).
           <ls_line>-icon = icon_led_red.
-          <ls_line>-msg  = COND #( WHEN lx_driver->previous IS BOUND
-                                   THEN lx_driver->previous->get_text( )
-                                   ELSE lx_driver->get_text( ) ).
+          " Sentinel Security Fix: Prevent detailed exception text from leaking to the UI
+          <ls_line>-msg  = 'An unexpected system error occurred'.
           ev_err = ev_err + 1.
 
         CATCH cx_root INTO DATA(lx_root).
+          /ctdi/cl_print_driver_log=>log_exception( lx_root ).
           <ls_line>-icon = icon_led_red.
-          <ls_line>-msg  = COND #( WHEN lx_root->previous IS BOUND
-                                   THEN lx_root->previous->get_text( )
-                                   ELSE lx_root->get_text( ) ).
+          " Sentinel Security Fix: Prevent detailed exception text from leaking to the UI
+          <ls_line>-msg  = 'An unexpected system error occurred'.
           ev_err = ev_err + 1.
       ENDTRY.
     ENDLOOP.
@@ -792,10 +794,12 @@ CLASS lcl_mass_print IMPLEMENTATION.
               ENDIF.
               ev_ok = ev_ok + 1.
             CATCH cx_root INTO DATA(lx_a).
+              /ctdi/cl_print_driver_log=>log_exception( lx_a ).
               ASSIGN gt_alv[ aufnr = <ls_a>-aufnr ] TO <ls_alv_a>.
               IF sy-subrc = 0.
                 <ls_alv_a>-icon = icon_led_red.
-                <ls_alv_a>-msg  = lx_a->get_text( ).
+                " Sentinel Security Fix: Prevent detailed exception text from leaking to the UI
+                <ls_alv_a>-msg  = 'An unexpected system error occurred'.
               ENDIF.
               ev_err = ev_err + 1.
           ENDTRY.
@@ -851,10 +855,12 @@ CLASS lcl_mass_print IMPLEMENTATION.
               ENDIF.
               ev_ok = ev_ok + 1.
             CATCH cx_root INTO DATA(lx_s).
+              /ctdi/cl_print_driver_log=>log_exception( lx_s ).
               ASSIGN gt_alv[ aufnr = <ls_s>-aufnr ] TO <ls_alv_s>.
               IF sy-subrc = 0.
                 <ls_alv_s>-icon = icon_led_red.
-                <ls_alv_s>-msg  = lx_s->get_text( ).
+                " Sentinel Security Fix: Prevent detailed exception text from leaking to the UI
+                <ls_alv_s>-msg  = 'An unexpected system error occurred'.
               ENDIF.
               ev_err = ev_err + 1.
           ENDTRY.
@@ -917,8 +923,10 @@ CLASS lcl_mass_print IMPLEMENTATION.
           ev_ok = ev_ok + 1.
 
         CATCH cx_root INTO DATA(lx).
+          /ctdi/cl_print_driver_log=>log_exception( lx ).
           <ls_line>-icon = icon_led_red.
-          <ls_line>-msg  = lx->get_text( ).
+          " Sentinel Security Fix: Prevent detailed exception text from leaking to the UI
+          <ls_line>-msg  = 'An unexpected system error occurred'.
           ev_err = ev_err + 1.
       ENDTRY.
     ENDLOOP.

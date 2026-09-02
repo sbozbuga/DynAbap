@@ -582,7 +582,9 @@ CLASS lcl_mass_print IMPLEMENTATION.
                             iv_no_dialog   = abap_false
                             iv_preview     = abap_true ).
       CATCH cx_root INTO DATA(lx).
-        MESSAGE lx->get_text( ) TYPE 'S' DISPLAY LIKE 'E'.
+        /ctdi/cl_print_driver_log=>log_exception( lx ).
+        " Sentinel Security Fix: Prevent detailed exception text from leaking to the UI
+        MESSAGE 'An unexpected system error occurred' TYPE 'S' DISPLAY LIKE 'E'.
     ENDTRY.
   ENDMETHOD.
 
@@ -1090,13 +1092,14 @@ CLASS lcl_mass_print IMPLEMENTATION.
       IMPORTING
         e_adstrace = lv_ads_trace.
 
-    DATA(lv_base) = COND string( WHEN ix_error->previous IS BOUND
-                                 THEN ix_error->previous->get_text( )
-                                 ELSE ix_error->get_text( ) ).
+    IF lv_ads_trace IS NOT INITIAL.
+      /ctdi/cl_print_driver_log=>log_error( |ADS Trace: { lv_ads_trace }| ).
+    ENDIF.
 
-    rv_msg = COND #( WHEN lv_ads_trace IS NOT INITIAL
-                     THEN |{ lv_base } [ADS: { lv_ads_trace }]|
-                     ELSE lv_base ).
+    /ctdi/cl_print_driver_log=>log_exception( ix_error ).
+
+    " Sentinel Security Fix: Prevent detailed exception text from leaking to the UI
+    rv_msg = 'An unexpected system error occurred'.
   ENDMETHOD.
 
   METHOD show_progress.
@@ -1154,10 +1157,10 @@ CLASS lcl_mass_print IMPLEMENTATION.
         rv_ok = abap_true.
 
       CATCH /ctdi/cx_no_config_found INTO DATA(lx_noconf).
+        /ctdi/cl_print_driver_log=>log_exception( lx_noconf ).
         cs_alv-icon = icon_led_yellow.
-        cs_alv-msg  = COND #( WHEN lx_noconf->previous IS BOUND
-                              THEN lx_noconf->previous->get_text( )
-                              ELSE lx_noconf->get_text( ) ).
+        " Sentinel Security Fix: Prevent detailed exception text from leaking to the UI
+        cs_alv-msg  = 'An unexpected system error occurred'.
 
       CATCH cx_root INTO DATA(lx).
         cs_alv-icon = icon_led_red.
