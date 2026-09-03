@@ -185,11 +185,14 @@ CLASS /ctdi/cl_print_data_legacy IMPLEMENTATION.
     DATA(lr_changenr) = VALUE rseloption( FOR <fs_hdr> IN lt_cdhdr
                                           ( sign = 'I' option = 'EQ' low = <fs_hdr>-changenr ) ).
 
+    " Optimization: Push SERGE and MAPAR filters down to the DB to prevent fetching excessive change records
     SELECT changenr, tabname, fname, value_old, value_new
       FROM cdpos
       WHERE objectclas  = 'EQUI'
         AND objectid    = @iv_equnr
         AND changenr   IN @lr_changenr
+        AND ( ( tabname = 'EQUI' AND fname = 'SERGE' ) OR
+              ( tabname = 'EQUZ' AND fname = 'MAPAR' ) )
       INTO TABLE @DATA(lt_cdpos).
     IF lt_cdpos IS INITIAL.
       RETURN.
