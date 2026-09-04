@@ -74,8 +74,8 @@ PARAMETERS: p_indiv RADIOBUTTON GROUP spl DEFAULT 'X' MODIF ID hid,  " Individua
 SELECTION-SCREEN END OF BLOCK b3.
 
 SELECTION-SCREEN BEGIN OF BLOCK b5 WITH FRAME TITLE TEXT-037.
-PARAMETERS: p_rawpdf RADIOBUTTON GROUP rren MODIF ID hid, " Raw PDF (built-in renderer)
-            p_adspdf RADIOBUTTON GROUP rren DEFAULT 'X' MODIF ID hid. " ADS Form (Adobe render)
+PARAMETERS: p_rawpdf RADIOBUTTON GROUP rren DEFAULT 'X' MODIF ID hid, " Raw PDF (built-in renderer)
+            p_adspdf RADIOBUTTON GROUP rren MODIF ID hid. " ADS Form (Adobe render)
 SELECTION-SCREEN END OF BLOCK b5.
 SELECTION-SCREEN END OF BLOCK b4.
 
@@ -125,7 +125,7 @@ CLASS lcl_mass_print DEFINITION FINAL.
     CLASS-DATA gt_alv         TYPE TABLE OF ty_alv_line.
     CLASS-DATA go_salv        TYPE REF TO cl_salv_table.
     CLASS-DATA gv_spool_mode  TYPE i.
-    CLASS-DATA gv_render_mode TYPE char1 VALUE 'A'.  " A=ADS, R=Raw PDF
+    CLASS-DATA gv_render_mode TYPE char1 VALUE 'R'.  " A=ADS, R=Raw PDF
 
     CLASS-METHODS select_orders.
     CLASS-METHODS resolve_form_types.

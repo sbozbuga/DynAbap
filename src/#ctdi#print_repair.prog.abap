@@ -74,8 +74,8 @@ PARAMETERS: p_shwlog TYPE sap_bool NO-DISPLAY, " Show logs
 SELECTION-SCREEN END OF BLOCK b_img.
 
 SELECTION-SCREEN BEGIN OF BLOCK b_ren WITH FRAME TITLE TEXT-021.
-PARAMETERS: p_rawpdf RADIOBUTTON GROUP rren MODIF ID hid,        " Raw PDF (built-in renderer)
-            p_adspdf RADIOBUTTON GROUP rren DEFAULT 'X' MODIF ID hid. " ADS Form (Adobe render)
+PARAMETERS: p_rawpdf RADIOBUTTON GROUP rren DEFAULT 'X' MODIF ID hid, " Raw PDF (built-in renderer)
+            p_adspdf RADIOBUTTON GROUP rren MODIF ID hid.        " ADS Form (Adobe render)
 SELECTION-SCREEN END OF BLOCK b_ren.
 
 " ---------------------------------------------------------------------
