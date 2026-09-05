@@ -22,3 +22,6 @@
 ## 2025-01-29 - Consolidate afih and objk lookups into single DB hit
 **Learning:** When resolving a Notification (qmnum) for a Maintenance Order (aufnr), sequential lookups on Order Header (afih) and Object List (objk) tables cause unnecessary database roundtrips.
 **Action:** Consolidate these into a single LEFT OUTER JOIN on obknr (Object list number) to prevent N+1 database roundtrips.
+## 2025-01-29 - Consolidate sequential qmel and afih lookups into a single DB hit
+**Learning:** Sequential `SELECT SINGLE` lookups in fallback logic (e.g., trying to resolve `qmnum` from `qmel`, then falling back to `afih`) cause N+1 database latency.
+**Action:** Consolidate these queries into a single database hit using `LEFT OUTER JOIN`s originating from a guaranteed base header table (like `aufk`), and resolve the fallback conditionally using `COND #(...)` in ABAP.

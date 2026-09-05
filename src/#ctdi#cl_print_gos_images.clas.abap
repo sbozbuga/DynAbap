@@ -1552,17 +1552,20 @@ CLASS /ctdi/cl_print_gos_images IMPLEMENTATION.
 
     DATA(lv_aufnr) = |{ iv_aufnr ALPHA = IN }|.
 
-    " 1. Query QMEL by AUFNR
-    SELECT SINGLE qmnum FROM qmel
-      WHERE aufnr = @lv_aufnr
-      INTO @rv_qmnum ##WARN_OK.
+    " Consolidated sequential qmel and afih lookups into a single DB hit
+    SELECT SINGLE q~qmnum AS qmel_qmnum,
+                  a~qmnum AS afih_qmnum
+      FROM aufk AS k
+             LEFT OUTER JOIN
+               qmel AS q ON q~aufnr = k~aufnr
+             LEFT OUTER JOIN
+               afih AS a ON a~aufnr = k~aufnr
+      WHERE k~aufnr = @lv_aufnr
+      INTO @DATA(ls_result) ##WARN_OK.
 
-    " 2. Fallback: Query AFIH by AUFNR
-    IF rv_qmnum IS INITIAL.
-      SELECT SINGLE qmnum FROM afih
-        WHERE aufnr = @lv_aufnr
-        INTO @rv_qmnum ##WARN_OK.
-    ENDIF.
+    rv_qmnum = COND #( WHEN ls_result-qmel_qmnum IS NOT INITIAL
+                       THEN ls_result-qmel_qmnum
+                       ELSE ls_result-afih_qmnum ).
   ENDMETHOD.
 ENDCLASS.
 
