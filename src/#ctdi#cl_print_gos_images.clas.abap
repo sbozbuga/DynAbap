@@ -1552,16 +1552,19 @@ CLASS /ctdi/cl_print_gos_images IMPLEMENTATION.
 
     DATA(lv_aufnr) = |{ iv_aufnr ALPHA = IN }|.
 
-    " 1. Query QMEL by AUFNR
-    SELECT SINGLE qmnum FROM qmel
-      WHERE aufnr = @lv_aufnr
-      INTO @rv_qmnum ##WARN_OK.
+    " 1. Query QMEL and AFIH in a single roundtrip via base table AUFK
+    SELECT SINGLE q~qmnum AS qmnum_qmel,
+                  a~qmnum AS qmnum_afih
+      FROM aufk AS k
+      LEFT OUTER JOIN qmel AS q ON q~aufnr = k~aufnr
+      LEFT OUTER JOIN afih AS a ON a~aufnr = k~aufnr
+      WHERE k~aufnr = @lv_aufnr
+      INTO @DATA(ls_qmnum) ##WARN_OK.
 
-    " 2. Fallback: Query AFIH by AUFNR
-    IF rv_qmnum IS INITIAL.
-      SELECT SINGLE qmnum FROM afih
-        WHERE aufnr = @lv_aufnr
-        INTO @rv_qmnum ##WARN_OK.
+    " 2. Resolve fallback in memory
+    IF sy-subrc = 0.
+      rv_qmnum = COND #( WHEN ls_qmnum-qmnum_qmel IS NOT INITIAL THEN ls_qmnum-qmnum_qmel
+                         ELSE ls_qmnum-qmnum_afih ).
     ENDIF.
   ENDMETHOD.
 ENDCLASS.
