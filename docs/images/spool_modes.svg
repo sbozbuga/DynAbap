@@ -1,0 +1,77 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 840 380" width="840" height="380">
+  <defs>
+    <style>
+      .top-box { fill: #003366; stroke: #002244; stroke-width: 2; rx: 8; }
+      .top-title { fill: #ffffff; font-family: 'Segoe UI', Calibri, sans-serif; font-size: 15px; font-weight: bold; text-anchor: middle; }
+      .top-sub { fill: #d0e1fd; font-family: 'Segoe UI', Calibri, sans-serif; font-size: 12px; text-anchor: middle; }
+      
+      .mode-card { fill: #ffffff; stroke: #D0D7DE; stroke-width: 1.5; rx: 8; filter: drop-shadow(0 2px 4px rgba(0,0,0,0.06)); }
+      .mode-card-rec { fill: #F1F8F1; stroke: #2E7D32; stroke-width: 2; rx: 8; filter: drop-shadow(0 2px 6px rgba(46,125,50,0.15)); }
+      
+      .badge-std { fill: #EBF3FB; stroke: #0066CC; stroke-width: 1; rx: 4; }
+      .badge-rec { fill: #2E7D32; rx: 4; }
+      .badge-text-std { fill: #0066CC; font-family: 'Segoe UI', Calibri, sans-serif; font-size: 11px; font-weight: bold; text-anchor: middle; }
+      .badge-text-rec { fill: #ffffff; font-family: 'Segoe UI', Calibri, sans-serif; font-size: 11px; font-weight: bold; text-anchor: middle; }
+      
+      .card-title { fill: #1F4E79; font-family: 'Segoe UI', Calibri, sans-serif; font-size: 15px; font-weight: bold; text-anchor: middle; }
+      .card-title-rec { fill: #2E7D32; font-family: 'Segoe UI', Calibri, sans-serif; font-size: 15px; font-weight: bold; text-anchor: middle; }
+      .card-sub { fill: #555555; font-family: 'Segoe UI', Calibri, sans-serif; font-size: 12px; text-anchor: middle; }
+      .card-body { fill: #333333; font-family: 'Segoe UI', Calibri, sans-serif; font-size: 11.5px; }
+      
+      .arrow-line { stroke: #1F4E79; stroke-width: 2; fill: none; }
+      .arrow { stroke: #1F4E79; stroke-width: 2; fill: none; marker-end: url(#arrow-spool); }
+    </style>
+    <marker id="arrow-spool" markerWidth="8" markerHeight="6" refX="7" refY="3" orient="auto">
+      <polygon points="0 0, 8 3, 0 6" fill="#1F4E79" />
+    </marker>
+  </defs>
+
+  <!-- Top Selection Box -->
+  <rect x="230" y="20" width="380" height="60" class="top-box" />
+  <text x="420" y="44" class="top-title">SELECTED ORDERS IN ALV GRID (e.g., 100 Orders)</text>
+  <text x="420" y="64" class="top-sub">Batch containing 50x Adobe Forms + 50x SmartForms</text>
+
+  <!-- Routing Lines -->
+  <path d="M 420 80 L 420 110" class="arrow-line" />
+  <path d="M 150 110 L 690 110" class="arrow-line" />
+  <path d="M 150 110 L 150 135" class="arrow" />
+  <path d="M 420 110 L 420 135" class="arrow" />
+  <path d="M 690 110 L 690 135" class="arrow" />
+
+  <!-- MODE 1: Individual -->
+  <rect x="30" y="135" width="240" height="215" class="mode-card" />
+  <rect x="90" y="150" width="120" height="22" class="badge-std" />
+  <text x="150" y="165" class="badge-text-std">STANDARD</text>
+  <text x="150" y="195" class="card-title">MODE 1: INDIVIDUAL</text>
+  <text x="150" y="215" class="card-sub">1 Spool Job per Order</text>
+  <line x1="50" y1="225" x2="250" y2="225" stroke="#E1E4E8" stroke-width="1" />
+  <text x="50" y="250" class="card-body">• 100 separate spool requests</text>
+  <text x="50" y="270" class="card-body">• Created individually in SP01</text>
+  <text x="50" y="295" class="card-body">Best for: Distributing paper</text>
+  <text x="50" y="315" class="card-body">slips into individual technician trays.</text>
+
+  <!-- MODE 2: Bundled (RECOMMENDED) -->
+  <rect x="290" y="135" width="260" height="215" class="mode-card-rec" />
+  <rect x="355" y="150" width="130" height="22" class="badge-rec" />
+  <polygon points="372,157 374,161 378,162 375,165 376,169 372,167 368,169 369,165 366,162 370,161" fill="#FFFFFF" />
+  <text x="426" y="165" class="badge-text-rec">RECOMMENDED</text>
+  <text x="420" y="195" class="card-title-rec">MODE 2: BUNDLED</text>
+  <text x="420" y="215" class="card-sub">Grouped by Technology</text>
+  <line x1="310" y1="225" x2="530" y2="225" stroke="#C8E6C9" stroke-width="1" />
+  <text x="315" y="250" class="card-body">• 1 Master Spool: Adobe Batch</text>
+  <text x="315" y="270" class="card-body">• 1 Master Spool: SmartForm Batch</text>
+  <text x="315" y="295" class="card-body">Best for: Maximum printing speed,</text>
+  <text x="315" y="315" class="card-body">zero printer pauses between jobs.</text>
+
+  <!-- MODE 3: Merged -->
+  <rect x="570" y="135" width="240" height="215" class="mode-card" />
+  <rect x="630" y="150" width="120" height="22" class="badge-std" />
+  <text x="690" y="165" class="badge-text-std">UNIFIED PDF</text>
+  <text x="690" y="195" class="card-title">MODE 3: MERGED</text>
+  <text x="690" y="215" class="card-sub">Single PDF Spool Job</text>
+  <line x1="590" y1="225" x2="790" y2="225" stroke="#E1E4E8" stroke-width="1" />
+  <text x="590" y="250" class="card-body">• 1 Single combined spool request</text>
+  <text x="590" y="270" class="card-body">• Stitched via CL_RSPO_PDF_MERGE</text>
+  <text x="590" y="295" class="card-body">Best for: Physical printouts</text>
+  <text x="590" y="315" class="card-body">including inspection photos.</text>
+</svg>

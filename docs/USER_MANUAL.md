@@ -1,18 +1,8 @@
-# DynAbap /CTDI/ Repair Print Framework — End-User Manual & Operational Guide
+# /CTDI/ Repair Print Framework — End-User Manual & Operational Guide
 
 ---
 
-```
-  ██████╗ ██╗   ██╗███╗   ██╗ █████╗ ██████╗  █████╗ ██████╗ 
-  ██╔══██╗╚██╗ ██╔╝████╗  ██║██╔══██╗██╔══██╗██╔══██╗██╔══██╗
-  ██║  ██║ ╚████╔╝ ██╔██╗ ██║███████║██████╔╝███████║██████╔╝
-  ██║  ██║  ╚██╔╝  ██║╚██╗██║██╔══██║██╔══██╗██╔══██║██╔═══╝ 
-  ██████╔╝   ██║   ██║ ╚████║██║  ██║██████╔╝██║  ██║██║     
-  ╚═════╝    ╚═╝   ╚═╝  ╚═══╝╚═╝  ╚═╝╚═════╝ ╚═╝  ╚═╝╚═╝     
-   DYNAMIC REPAIR PRINT FRAMEWORK & MASS PROCESSING SYSTEM
-```
-
-> **Document Version:** 2.0  
+> **Document Version:** 2.1  
 > **Target Audience:** Workshop Technicians, Dispatchers, Warehouse Clerks, Repair Administrators, Key Users & Service Managers  
 > **System Namespace:** `/CTDI/`  
 > **Compatible SAP Releases:** SAP ERP 6.0 (EHP7/EHP8), SAP S/4HANA (On-Premise 1809+)
@@ -36,21 +26,20 @@
   - [4.5 Spool Printing Modes (Individual, Bundled, Merged)](#45-spool-printing-modes-individual-bundled-merged)
   - [4.6 PDF Export Modes (Batch Download vs. Merged PDF)](#46-pdf-export-modes-batch-download-vs-merged-pdf)
   - [4.7 On-Screen Print Preview](#47-on-screen-print-preview)
-- [5. High-Volume Parallel Processing (`/CTDI/PRINT_REPAIR_MASS_PRLL`)](#5-high-volume-parallel-processing-ctdiprint_repair_mass_prll)
-- [6. Inspection Photos & GOS Image Attachment Guide](#6-inspection-photos--gos-image-attachment-guide)
-  - [6.1 Where Images Come From](#61-where-images-come-from)
-  - [6.2 Supported Image Formats](#62-supported-image-formats)
-  - [6.3 Automatic Page Layout & Aspect Ratio Preservation](#63-automatic-page-layout--aspect-ratio-preservation)
-  - [6.4 Rendering Engines: Adobe ADS vs. Built-in Raw PDF](#64-rendering-engines-adobe-ads-vs-built-in-raw-pdf)
-- [7. Key User & Supervisor Customizing Guide](#7-key-user--supervisor-customizing-guide)
-  - [7.1 Form Routing Hierarchy (`/CTDI/REP_FORMS`)](#71-form-routing-hierarchy-ctdirep_forms)
-  - [7.2 Repair Outcome Text Resolution (`/CTDI/REP_RESULT`)](#72-repair-outcome-text-resolution-ctdirep_result)
-  - [7.3 Project Definitions (`/CTDI/REP_PROJEC`)](#73-project-definitions-ctdirep_projec)
-- [8. Troubleshooting, Diagnostics & FAQ](#8-troubleshooting-diagnostics--faq)
-  - [8.1 Spool Jobs in `SP01`](#81-spool-jobs-in-sp01)
-  - [8.2 Application Logs in `SLG1`](#82-application-logs-in-slg1)
-  - [8.3 Frequently Encountered Issues & Instant Fixes](#83-frequently-encountered-issues--instant-fixes)
-- [9. Quick Reference Cheat Sheet](#9-quick-reference-cheat-sheet)
+- [5. Inspection Photos & GOS Image Attachment Guide](#5-inspection-photos--gos-image-attachment-guide)
+  - [5.1 Where Images Come From](#51-where-images-come-from)
+  - [5.2 Supported Image Formats](#52-supported-image-formats)
+  - [5.3 Automatic Page Layout & Aspect Ratio Preservation](#53-automatic-page-layout--aspect-ratio-preservation)
+  - [5.4 Rendering Engines: Adobe ADS vs. Built-in Raw PDF](#54-rendering-engines-adobe-ads-vs-built-in-raw-pdf)
+- [6. Key User & Supervisor Customizing Guide](#6-key-user--supervisor-customizing-guide)
+  - [6.1 Form Routing Hierarchy (`/CTDI/REP_FORMS`)](#61-form-routing-hierarchy-ctdirep_forms)
+  - [6.2 Repair Outcome Text Resolution (`/CTDI/REP_RESULT`)](#62-repair-outcome-text-resolution-ctdirep_result)
+  - [6.3 Project Definitions (`/CTDI/REP_PROJEC`)](#63-project-definitions-ctdirep_projec)
+- [7. Troubleshooting, Diagnostics & FAQ](#7-troubleshooting-diagnostics--faq)
+  - [7.1 Spool Jobs in `SP01`](#71-spool-jobs-in-sp01)
+  - [7.2 Application Logs in `SLG1`](#72-application-logs-in-slg1)
+  - [7.3 Frequently Encountered Issues & Instant Fixes](#73-frequently-encountered-issues--instant-fixes)
+- [8. Quick Reference Cheat Sheet](#8-quick-reference-cheat-sheet)
 
 ---
 
@@ -58,41 +47,7 @@
 
 The **/CTDI/ Dynamic Repair Print Framework** is SAP-native software designed to handle all printing and PDF export requirements for customer repair orders, service notifications, and warranties.
 
-```
-       ┌─────────────────────────────────────────────────────────────┐
-       │                REPAIR WORKSHOP LIFE CYCLE                   │
-       └──────────────────────────────┬──────────────────────────────┘
-                                      │
-              ┌───────────────────────┴───────────────────────┐
-              ▼                                               ▼
-   ┌─────────────────────┐                         ┌─────────────────────┐
-   │ 1. SINGLE DISPATCH  │                         │  2. BATCH / SHIFT   │
-   │  - Urgent repairs   │                         │  - Morning release  │
-   │  - Counter delivery │                         │  - Shift handover   │
-   │  - Direct preview   │                         │  - Bulk archiving   │
-   │  (/CTDI/PRINT_REPAIR)│                        │(/CTDI/PRINT_REPAIR_ │
-   └──────────┬──────────┘                         │        MASS)        │
-              │                                    └──────────┬──────────┘
-              │                                               │
-              └───────────────────────┬───────────────────────┘
-                                      ▼
-                      ┌───────────────────────────────┐
-                      │    DYNAMIC ROUTING ENGINE     │
-                      │  - Contract (VBELN)           │
-                      │  - Confirm. Reason (SKZ)      │
-                      │  - Defect Code (AKZ)          │
-                      │  - Automatic SmartForm / ADS  │
-                      └───────────────┬───────────────┘
-                                      │
-              ┌───────────────────────┼───────────────────────┐
-              ▼                       ▼                       ▼
-     ┌─────────────────┐     ┌─────────────────┐     ┌─────────────────┐
-     │ PAPER SPOOL     │     │ BATCH PDF FILES │     │ MERGED PDF +    │
-     │ - Individual    │     │ - Auto-saved to │     │   INSPECTION    │
-     │ - Bundled       │     │   local folder  │     │   PHOTOS        │
-     │ - Merged Job    │     │ - 1 file/order  │     │ - Single dossier│
-     └─────────────────┘     └─────────────────┘     └─────────────────┘
-```
+![Repair Workshop Life Cycle](images/workshop_lifecycle.svg)
 
 ### Key Advantages for the Daily Operation
 
@@ -110,7 +65,6 @@ The **/CTDI/ Dynamic Repair Print Framework** is SAP-native software designed to
 |---|---|---|
 | **Workshop Technician / Operator** | `/CTDI/PRINT_REPAIR` | Print single repair slip, preview output, check inspection photos. |
 | **Dispatcher / Shipping Clerk** | `/CTDI/PRINT_REPAIR_MASS` | Review ready orders, print batch spools, export merged customer dossiers. |
-| **Night Shift / Bulk Archiving** | `/CTDI/PRINT_REPAIR_MASS_PRLL` | Process large batches (50 to 1,000+ orders) with parallel work processes. |
 | **Key User / Repair Supervisor** | `SM30` (`/CTDI/REP_FORMS`, `/CTDI/REP_RESULT`) | Configure customer layouts, maintain repair outcome texts, adjust image rules. |
 | **IT & Spool Administrator** | `SP01`, `SLG1`, `NACE` | Spool queue management, application log analysis, output condition records. |
 
@@ -122,26 +76,7 @@ Use **`/CTDI/PRINT_REPAIR`** when working on an individual repair order at the s
 
 ### 3.1 Selection Screen & Parameters
 
-```
- ┌────────────────────────────────────────────────────────────────────────┐
- │ /CTDI/PRINT_REPAIR: Single Repair Order Printout                       │
- ├────────────────────────────────────────────────────────────────────────┤
- │ [Project] [Forms] [Results] | [Mass Printing]                          │
- ├────────────────────────────────────────────────────────────────────────┤
- │                                                                        │
- │  Selection Criteria                                                    │
- │  ┌──────────────────────────────────────────────────────────────────┐  │
- │  │ Repair / Order ID:    [ 4001234        ]  (Obligatory)           │  │
- │  │ Serial Number:        [ SN-987654321   ]  (Optional)             │  │
- │  └──────────────────────────────────────────────────────────────────┘  │
- │                                                                        │
- │  Additional Options                                                    │
- │  ┌──────────────────────────────────────────────────────────────────┐  │
- │  │ [X] Append attached images to PDF (GOS)                          │  │
- │  └──────────────────────────────────────────────────────────────────┘  │
- │                                                                        │
- └────────────────────────────────────────────────────────────────────────┘
-```
+![Single Repair Order Printout Selection Screen](images/ui_single_selection.svg)
 
 #### Field Explanations
 
@@ -186,10 +121,7 @@ Use **`/CTDI/PRINT_REPAIR`** when working on an individual repair order at the s
 
 At the top of the selection screen, authorized Key Users and Supervisors have direct access to system customizing tables without leaving the transaction:
 
-```
- [ @PR@ Project ]    [ @0R@ Forms ]    [ @0Q@ Results ]    |    [ @HB@ Mass Printing ]
-     (FC02)              (FC03)            (FC04)                     (FC05)
-```
+![Quick-Access Customizing Toolbar](images/ui_customizing_toolbar.svg)
 
 - **`[Project]` (FC02):** Opens Table Maintenance for `/CTDI/REP_PROJEC` (Contract-to-project mappings).
 - **`[Forms]` (FC03):** Opens Table Maintenance for `/CTDI/REP_FORMS` (Contract-to-form & driver assignments).
@@ -207,27 +139,7 @@ At the top of the selection screen, authorized Key Users and Supervisors have di
 
 ### 4.1 Selection Screen & Filtering Orders
 
-```
- ┌────────────────────────────────────────────────────────────────────────┐
- │ /CTDI/PRINT_REPAIR_MASS: Mass Print Repair Orders                      │
- ├────────────────────────────────────────────────────────────────────────┤
- │                                                                        │
- │  Selection Criteria                                                    │
- │  ┌──────────────────────────────────────────────────────────────────┐  │
- │  │ Repair Order:         [ 4001000        ] to [ 4001500        ]   │  │
- │  │ Plant:                [ 1000           ]                         │  │
- │  │ Creation Date:        [ 01.09.2026     ] to [ 21.09.2026     ]   │  │
- │  │ Order Type:           [ ZM03           ]                         │  │
- │  │ Confirmation Reason:  [ 9010           ]                         │  │
- │  └──────────────────────────────────────────────────────────────────┘  │
- │                                                                        │
- │  Additional Parameters                                                 │
- │  ┌──────────────────────────────────────────────────────────────────┐  │
- │  │ [X] Append attached images to PDF                                │  │
- │  └──────────────────────────────────────────────────────────────────┘  │
- │                                                                        │
- └────────────────────────────────────────────────────────────────────────┘
-```
+![Mass Print Selection Screen](images/ui_mass_selection.svg)
 
 1. Enter your search criteria (Order range, Plant, or Date range).
 2. If you want inspection photos included in PDF exports, select **[X] Append attached images to PDF**.
@@ -239,20 +151,7 @@ At the top of the selection screen, authorized Key Users and Supervisors have di
 
 The program retrieves all matching orders, deduplicates records to guarantee **strictly one row per repair order**, pre-evaluates form layouts, and renders the interactive ALV Workplace:
 
-```
-┌───────────────────────────────────────────────────────────────────────────────────────────────────────────────────┐
-│ Mass Print Repair Orders (42 Orders Found)                                                                        │
-├───────────────────────────────────────────────────────────────────────────────────────────────────────────────────┤
-│ [Print Selected] [Save as PDF] [PDF Merge] [Preview] | [Spool Mode: Bundled] [Attach: ON] [Render: ADS]         │
-├──────┬──────┬────────────┬─────────────┬────────────┬────────────┬──────────┬──────────┬─────────┬──────────────┬───┤
-│ Stat │ Att. │ Order ID   │ Customer PO │ Contract   │ Z2 Notif.  │ SKZ Code │ AKZ Code │ Form    │ Form Name    │Msg│
-├──────┼──────┼────────────┼─────────────┼────────────┼────────────┼──────────┼──────────┼─────────┼──────────────┼───┤
-│  ⚪   │  🖼️   │ 4001001    │ 50008812    │ 40000010   │ 10005541   │ 10       │ SCRP     │ Adobe   │ /CTDI/REP_D  │   │
-│  ⚪   │  📎   │ 4001002    │ 50008813    │ 40000010   │ 10005542   │ 20       │ REPR     │ Adobe   │ /CTDI/REP_D  │   │
-│  ⚪   │      │ 4001003    │ 50008814    │ 40000025   │ 10005543   │ 10       │ SWAP     │ SmartF  │ /CTDI/REP_SF │   │
-│  ⚪   │  🖼️   │ 4001004    │ 50008815    │ 40000025   │ 10005544   │ 30       │ NFF      │ SmartF  │ /CTDI/REP_SF │   │
-└──────┴──────┴────────────┴─────────────┴────────────┴────────────┴──────────┴──────────┴─────────┴──────────────┴───┘
-```
+![Interactive ALV Workplace Grid](images/ui_alv_grid.svg)
 
 ---
 
@@ -294,40 +193,7 @@ You can double-click directly on specific cell values in the ALV to open the cor
 
 When clicking **`[Print Selected]`** (`PRINT_SEL`), the framework routes documents according to the currently active **Spool Mode**. You can switch the mode at any time by clicking the **`[Spool Mode]`** button in the ALV toolbar.
 
-```
- ┌─────────────────────────────────────────────────────────────┐
- │ POPUP: Select Spool Mode for Printing                       │
- ├─────────────────────────────────────────────────────────────┤
- │ Please select the spool mode for the selected orders:       │
- │                                                             │
- │  (1) Individual: 1 spool request per order                  │
- │  (2) Bundled:    Grouped by form technology (Adobe / SF) *  │
- │  (3) Merged:     Single combined PDF spool job              │
- │                                                             │
- │            [ Confirm ]              [ Cancel ]              │
- └─────────────────────────────────────────────────────────────┘
-```
-
-#### Comparison of Spool Modes
-
-```
-  ┌─────────────────────────────────────────────────────────────┐
-  │              SELECTED ORDERS (e.g., 100 Orders)             │
-  │               50x Adobe Forms  +  50x SmartForms            │
-  └──────────────────────────────┬──────────────────────────────┘
-                                 │
-         ┌───────────────────────┼───────────────────────┐
-         ▼                       ▼                       ▼
- ┌─────────────────┐     ┌─────────────────┐     ┌─────────────────┐
- │ MODE 1:         │     │ MODE 2: BUNDLED │     │ MODE 3: MERGED  │
- │ INDIVIDUAL      │     │ (RECOMMENDED)   │     │ (WITH PHOTOS)   │
- ├─────────────────┤     ├─────────────────┤     ├─────────────────┤
- │ 100 Separate    │     │ 1 Master Spool: │     │ 1 Single Spool: │
- │ Spool Requests  │     │   Adobe Batch   │     │   All 100 Orders│
- │ in SP01 (1 per  │     │ 1 Master Spool: │     │   Combined via  │
- │ order)          │     │   SmartForms    │     │   PDF Merger    │
- └─────────────────┘     └─────────────────┘     └─────────────────┘
-```
+![Comparison of Spool Modes](images/spool_modes.svg)
 
 1. **Individual Mode (`INDIVIDUAL`)**:
    - Creates a distinct spool job for every order.
@@ -372,46 +238,11 @@ To visually inspect a document layout before sending it to the printer:
 
 ---
 
-## 5. High-Volume Parallel Processing (`/CTDI/PRINT_REPAIR_MASS_PRLL`)
-
-When printing batches larger than **50 orders** (e.g., during end-of-month billing or nightly batch releases of 500+ repairs), use **`/CTDI/PRINT_REPAIR_MASS_PRLL`**.
-
-```
-                ┌────────────────────────────────────────────────────────┐
-                │             MAIN SELECTION THREAD (DIALOG)             │
-                └───────────────────────────┬────────────────────────────┘
-                                            │
-                     Splits 500 Orders across Parallel Dialog Tasks
-                               (via CL_ABAP_PARALLEL)
-                                            │
-            ┌───────────────────────────────┼───────────────────────────────┐
-            ▼                               ▼                               ▼
-   ┌──────────────────┐            ┌──────────────────┐            ┌──────────────────┐
-   │  WORK PROCESS 1  │            │  WORK PROCESS 2  │            │  WORK PROCESS N  │
-   │  Renders Orders  │            │  Renders Orders  │            │  Renders Orders  │
-   │      1 to 50     │            │     51 to 100    │            │    450 to 500    │
-   └────────┬─────────┘            └────────┬─────────┘            └────────┬─────────┘
-            │                               │                               │
-            └───────────────────────────────┼───────────────────────────────┘
-                                            ▼
-                ┌────────────────────────────────────────────────────────┐
-                │          CONSOLIDATED ALV WITH SUMMARY RESULTS         │
-                └────────────────────────────────────────────────────────┘
-```
-
-### Why use Parallel Processing?
-
-- Standard sequential printing processes orders one by one. 500 orders can take 15–25 minutes.
-- Parallel processing distributes the rendering load across up to **10 background dialog tasks** concurrently, finishing the entire run in **2–3 minutes**.
-- Prevents SAP GUI timeout errors (`TIME_OUT`).
-
----
-
-## 6. Inspection Photos & GOS Image Attachment Guide
+## 5. Inspection Photos & GOS Image Attachment Guide
 
 The `/CTDI/` Print Framework features an automated photo append pipeline managed by `/CTDI/CL_PRINT_GOS_IMAGES`.
 
-### 6.1 Where Images Come From
+### 5.1 Where Images Come From
 
 The system queries two standard SAP attachment locations:
 
@@ -423,7 +254,7 @@ The system queries two standard SAP attachment locations:
 
 ---
 
-### 6.2 Supported Image Formats
+### 5.2 Supported Image Formats
 
 | File Extension | Format | Support Status | Notes |
 |:---:|:---:|:---:|---|
@@ -435,32 +266,11 @@ The system queries two standard SAP attachment locations:
 
 ---
 
-### 6.3 Automatic Page Layout & Aspect Ratio Preservation
+### 5.3 Automatic Page Layout & Aspect Ratio Preservation
 
 Attached photos are never stretched or distorted. The engine calculates the optimal bounding box and packs **up to 2 photos per DIN A4 page** vertically:
 
-```
-  ┌──────────────────────────────────────────────────┐
-  │ DIN A4 Page (Portrait)                           │
-  │                                                  │
-  │  Order 4001001: Photo 1 (Inspection Front)       │
-  │  ┌────────────────────────────────────────────┐  │
-  │  │                                            │  │
-  │  │        [ Centered Defect Photo ]           │  │
-  │  │         (Aspect Ratio Preserved)           │  │
-  │  │                                            │  │
-  │  └────────────────────────────────────────────┘  │
-  │                                                  │
-  │  Order 4001001: Photo 2 (Serial Plate Macro)    │
-  │  ┌────────────────────────────────────────────┐  │
-  │  │                                            │  │
-  │  │        [ Centered Damage Photo ]           │  │
-  │  │         (Aspect Ratio Preserved)           │  │
-  │  │                                            │  │
-  │  └────────────────────────────────────────────┘  │
-  │                                                  │
-  └──────────────────────────────────────────────────┘
-```
+![Inspection Photo Layout](images/image_layout.svg)
 
 - If an order has **1 image**: It is centered gracefully on the page.
 - If an order has **2 images**: Both are stacked vertically on Page 1.
@@ -468,7 +278,7 @@ Attached photos are never stretched or distorted. The engine calculates the opti
 
 ---
 
-### 6.4 Rendering Engines: Adobe ADS vs. Built-in Raw PDF
+### 5.4 Rendering Engines: Adobe ADS vs. Built-in Raw PDF
 
 In the ALV Toolbar, you can toggle the image rendering method using **`[Img Render]`** (`IMG_RENDER`):
 
@@ -479,31 +289,15 @@ In the ALV Toolbar, you can toggle the image rendering method using **`[Img Rend
 
 ---
 
-## 7. Key User & Supervisor Customizing Guide
+## 6. Key User & Supervisor Customizing Guide
 
 Key users can maintain customer form routing and repair texts via Transaction **`SM30`** (or by clicking the quick-access buttons on the `/CTDI/PRINT_REPAIR` selection screen).
 
-### 7.1 Form Routing Hierarchy (`/CTDI/REP_FORMS`)
+### 6.1 Form Routing Hierarchy (`/CTDI/REP_FORMS`)
 
 When a repair order is processed, the framework evaluates table **`/CTDI/REP_FORMS`** using an **8-step priority fallback sequence**:
 
-```
-        Priority 1: Specific Contract  + Specific SKZ  + Specific AKZ
-                 │
-        Priority 2: Specific Contract  + Specific SKZ  + (Blank AKZ)
-                 │
-        Priority 3: Specific Contract  + (Blank SKZ)   + Specific AKZ
-                 │
-        Priority 4: Specific Contract  + (Blank SKZ)   + (Blank AKZ)  <-- Contract Default
-                 │
-        Priority 5: (Blank Contract)   + Specific SKZ  + Specific AKZ
-                 │
-        Priority 6: (Blank Contract)   + Specific SKZ  + (Blank AKZ)
-                 │
-        Priority 7: (Blank Contract)   + (Blank SKZ)   + Specific AKZ
-                 │
-        Priority 8: (Blank Contract)   + (Blank SKZ)   + (Blank AKZ)  <-- System Global Fallback
-```
+![Form Routing Priority Hierarchy](images/access_sequence.svg)
 
 #### Table Columns in `/CTDI/REP_FORMS`
 
@@ -523,21 +317,21 @@ When a repair order is processed, the framework evaluates table **`/CTDI/REP_FOR
 
 ---
 
-### 7.2 Repair Outcome Text Resolution (`/CTDI/REP_RESULT`)
+### 6.2 Repair Outcome Text Resolution (`/CTDI/REP_RESULT`)
 
 Table **`/CTDI/REP_RESULT`** controls the customer-facing outcome text printed on the certificate (e.g., *"Replaced main board and recalibrated antenna"*). It uses an **11-step rule access sequence** evaluating Contract, SKZ, AKZ, and whether a device exchange (Tauschfall) took place.
 
 ---
 
-### 7.3 Project Definitions (`/CTDI/REP_PROJEC`)
+### 6.3 Project Definitions (`/CTDI/REP_PROJEC`)
 
 Table **`/CTDI/REP_PROJEC`** maps the high-level business project name and customer identifier to the SAP Sales Contract number.
 
 ---
 
-## 8. Troubleshooting, Diagnostics & FAQ
+## 7. Troubleshooting, Diagnostics & FAQ
 
-### 8.1 Spool Jobs in `SP01`
+### 7.1 Spool Jobs in `SP01`
 
 To check the status of physical print jobs:
 1. Open Transaction **`SP01`**.
@@ -550,7 +344,7 @@ To check the status of physical print jobs:
 
 ---
 
-### 8.2 Application Logs in `SLG1`
+### 7.2 Application Logs in `SLG1`
 
 If an order fails with a red LED in the ALV:
 1. Open Transaction **`SLG1`**.
@@ -560,7 +354,7 @@ If an order fails with a red LED in the ALV:
 
 ---
 
-### 8.3 Frequently Encountered Issues & Instant Fixes
+### 7.3 Frequently Encountered Issues & Instant Fixes
 
 #### Issue 1: ALV row turns Yellow with message *"No configuration found in /CTDI/REP_FORMS"*
 - **Cause:** No active entry in `/CTDI/REP_FORMS` matches the Contract, SKZ, or AKZ of this order, and no Global Fallback (blank contract entry) is defined.
@@ -580,7 +374,7 @@ If an order fails with a red LED in the ALV:
 
 ---
 
-## 9. Quick Reference Cheat Sheet
+## 8. Quick Reference Cheat Sheet
 
 | I want to... | Action to take |
 |---|---|
@@ -595,4 +389,4 @@ If an order fails with a red LED in the ALV:
 
 ---
 
-*DynAbap /CTDI/ Print Framework — Built with Precision for SAP Service Operations.*
+*/CTDI/ Repair Print Framework — Built with Precision for SAP Service Operations.*

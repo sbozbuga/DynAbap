@@ -1,0 +1,87 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 840 450" width="840" height="450">
+  <defs>
+    <style>
+      .title-box { fill: #003366; stroke: #002244; stroke-width: 2; rx: 8; }
+      .title-text { fill: #ffffff; font-family: 'Segoe UI', Calibri, sans-serif; font-size: 16px; font-weight: bold; text-anchor: middle; }
+      .sub-title { fill: #d0e1fd; font-family: 'Segoe UI', Calibri, sans-serif; font-size: 12px; text-anchor: middle; }
+      .node-box { fill: #ffffff; stroke: #1F4E79; stroke-width: 2; rx: 8; filter: drop-shadow(0 2px 4px rgba(0,0,0,0.06)); }
+      .node-header { fill: #1F4E79; font-family: 'Segoe UI', Calibri, sans-serif; font-size: 14px; font-weight: bold; }
+      .node-body { fill: #444444; font-family: 'Segoe UI', Calibri, sans-serif; font-size: 12px; }
+      .engine-box { fill: #F0F4F8; stroke: #003366; stroke-width: 2.5; rx: 10; }
+      .engine-header { fill: #003366; font-family: 'Segoe UI', Calibri, sans-serif; font-size: 15px; font-weight: bold; text-anchor: middle; }
+      .engine-body { fill: #333333; font-family: 'Segoe UI', Calibri, sans-serif; font-size: 12px; text-anchor: middle; }
+      .output-box { fill: #ffffff; stroke: #2E7D32; stroke-width: 2; rx: 8; }
+      .output-header { fill: #2E7D32; font-family: 'Segoe UI', Calibri, sans-serif; font-size: 13px; font-weight: bold; text-anchor: middle; }
+      .output-body { fill: #555555; font-family: 'Segoe UI', Calibri, sans-serif; font-size: 11.5px; text-anchor: middle; }
+      .arrow { stroke: #1F4E79; stroke-width: 2; fill: none; marker-end: url(#arrowhead); }
+      .arrow-green { stroke: #2E7D32; stroke-width: 2; fill: none; marker-end: url(#arrowhead-green); }
+    </style>
+    <marker id="arrowhead" markerWidth="8" markerHeight="6" refX="7" refY="3" orient="auto">
+      <polygon points="0 0, 8 3, 0 6" fill="#1F4E79" />
+    </marker>
+    <marker id="arrowhead-green" markerWidth="8" markerHeight="6" refX="7" refY="3" orient="auto">
+      <polygon points="0 0, 8 3, 0 6" fill="#2E7D32" />
+    </marker>
+  </defs>
+
+  <!-- Top Title -->
+  <rect x="220" y="15" width="400" height="48" class="title-box" />
+  <text x="420" y="37" class="title-text">REPAIR WORKSHOP LIFE CYCLE</text>
+  <text x="420" y="53" class="sub-title">/CTDI/ Repair Print Framework</text>
+
+  <!-- Connecting Line from Top -->
+  <path d="M 420 63 L 420 85" class="arrow" />
+  <path d="M 210 85 L 630 85" stroke="#1F4E79" stroke-width="2" fill="none" />
+  <path d="M 210 85 L 210 105" class="arrow" />
+  <path d="M 630 85 L 630 105" class="arrow" />
+
+  <!-- Dispatcher Boxes -->
+  <!-- Left Box: Single Dispatch -->
+  <rect x="70" y="105" width="280" height="95" class="node-box" />
+  <text x="90" y="130" class="node-header">1. SINGLE DISPATCH</text>
+  <text x="90" y="150" class="node-body">Program: /CTDI/PRINT_REPAIR</text>
+  <text x="90" y="170" class="node-body">• Urgent technician repairs</text>
+  <text x="90" y="188" class="node-body">• Direct preview &amp; counter printouts</text>
+
+  <!-- Right Box: Batch Workplace -->
+  <rect x="490" y="105" width="280" height="95" class="node-box" />
+  <text x="510" y="130" class="node-header">2. BATCH WORKPLACE</text>
+  <text x="510" y="150" class="node-body">Program: /CTDI/PRINT_REPAIR_MASS</text>
+  <text x="510" y="170" class="node-body">• Shift release &amp; ALV mass processing</text>
+  <text x="510" y="188" class="node-body">• Spool bundling &amp; bulk PDF export</text>
+
+  <!-- Lines to Engine -->
+  <path d="M 210 200 L 210 225 L 350 225 L 350 240" class="arrow" />
+  <path d="M 630 200 L 630 225 L 490 225 L 490 240" class="arrow" />
+
+  <!-- Center Engine Box -->
+  <rect x="230" y="240" width="380" height="85" class="engine-box" />
+  <text x="420" y="265" class="engine-header">DYNAMIC ROUTING &amp; EXECUTION ENGINE</text>
+  <text x="420" y="287" class="engine-body">• Contract (VBELN) → Reason (SKZ) → Defect (AKZ)</text>
+  <text x="420" y="307" class="engine-body">• Automatic Form Detection: SmartForms vs. Adobe Forms (ADS)</text>
+
+  <!-- Lines from Engine to Outputs -->
+  <path d="M 420 325 L 420 345" stroke="#2E7D32" stroke-width="2" fill="none" />
+  <path d="M 170 345 L 670 345" stroke="#2E7D32" stroke-width="2" fill="none" />
+  <path d="M 170 345 L 170 360" class="arrow-green" />
+  <path d="M 420 345 L 420 360" class="arrow-green" />
+  <path d="M 670 345 L 670 360" class="arrow-green" />
+
+  <!-- Output 1: Paper Spool -->
+  <rect x="60" y="360" width="220" height="75" class="output-box" />
+  <text x="170" y="382" class="output-header">PAPER SPOOL OUTPUT</text>
+  <text x="170" y="402" class="output-body">Individual Spool (1 per order)</text>
+  <text x="170" y="420" class="output-body">or Bundled Shift Job</text>
+
+  <!-- Output 2: Batch PDF -->
+  <rect x="310" y="360" width="220" height="75" class="output-box" />
+  <text x="420" y="382" class="output-header">BATCH PDF EXPORT</text>
+  <text x="420" y="402" class="output-body">Auto-saved to workstation folder</text>
+  <text x="420" y="420" class="output-body">Individual files per repair</text>
+
+  <!-- Output 3: Merged Dossier -->
+  <rect x="560" y="360" width="220" height="75" class="output-box" />
+  <text x="670" y="382" class="output-header">MERGED PDF + PHOTOS</text>
+  <text x="670" y="402" class="output-body">Combined customer dossier</text>
+  <text x="670" y="420" class="output-body">Certificates + GOS Inspection photos</text>
+</svg>

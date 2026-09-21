@@ -1,0 +1,96 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 840 400" width="840" height="400">
+  <defs>
+    <style>
+      .page-bg { fill: #ffffff; stroke: #003366; stroke-width: 2; rx: 6; filter: drop-shadow(0 4px 8px rgba(0,0,0,0.1)); }
+      .page-hdr { fill: #003366; font-family: 'Segoe UI', Calibri, sans-serif; font-size: 13px; font-weight: bold; text-anchor: middle; }
+      .slot-box { fill: #F4F6F9; stroke: #B0BEC5; stroke-width: 1.5; stroke-dasharray: 4 2; rx: 4; }
+      .img-box { fill: #E3F2FD; stroke: #1976D2; stroke-width: 1.5; rx: 4; }
+      .slot-title { fill: #003366; font-family: 'Segoe UI', Calibri, sans-serif; font-size: 11px; font-weight: bold; }
+      .img-text { fill: #0D47A1; font-family: 'Segoe UI', Calibri, sans-serif; font-size: 11.5px; font-weight: bold; text-anchor: middle; }
+      .img-sub { fill: #546E7A; font-family: 'Segoe UI', Calibri, sans-serif; font-size: 10px; text-anchor: middle; }
+      .info-title { fill: #003366; font-family: 'Segoe UI', Calibri, sans-serif; font-size: 16px; font-weight: bold; }
+      .info-body { fill: #333333; font-family: 'Segoe UI', Calibri, sans-serif; font-size: 12.5px; }
+      .fmt-text { fill: #1E293B; font-family: 'Segoe UI', Calibri, sans-serif; font-size: 11.5px; font-weight: 600; }
+    </style>
+  </defs>
+
+  <!-- Left Side: A4 Page Mockup -->
+  <!-- A4 Ratio ~ 1 : 1.414. Width 240, height 340 -->
+  <g transform="translate(60, 30)">
+    <rect x="0" y="0" width="240" height="340" class="page-bg" />
+    <text x="120" y="24" class="page-hdr">DIN A4 PORTRAIT PAGE</text>
+    <line x1="20" y1="32" x2="220" y2="32" stroke="#CFD8DC" stroke-width="1" />
+
+    <!-- Slot 1 (Top) -->
+    <text x="20" y="50" class="slot-title">Photo 1 (Inspection Front)</text>
+    <rect x="20" y="56" width="200" height="120" class="slot-box" />
+    <rect x="35" y="66" width="170" height="100" class="img-box" />
+    <!-- Vector Camera Icon (Slot 1) -->
+    <g transform="translate(108, 90)">
+      <rect x="0" y="3" width="24" height="16" rx="2.5" fill="#1976D2" />
+      <polygon points="6,3 9,0 15,0 18,3" fill="#1976D2" />
+      <circle cx="12" cy="11" r="5" fill="#E3F2FD" stroke="#1976D2" stroke-width="1.2" />
+      <circle cx="12" cy="11" r="2.5" fill="#1976D2" />
+    </g>
+    <text x="120" y="125" class="img-text">Centered Defect Photo</text>
+    <text x="120" y="141" class="img-sub">(Aspect Ratio Preserved)</text>
+
+    <!-- Slot 2 (Bottom) -->
+    <text x="20" y="196" class="slot-title">Photo 2 (Serial Plate Macro)</text>
+    <rect x="20" y="202" width="200" height="120" class="slot-box" />
+    <rect x="50" y="212" width="140" height="100" class="img-box" />
+    <!-- Vector Camera Icon (Slot 2) -->
+    <g transform="translate(108, 236)">
+      <rect x="0" y="3" width="24" height="16" rx="2.5" fill="#1976D2" />
+      <polygon points="6,3 9,0 15,0 18,3" fill="#1976D2" />
+      <circle cx="12" cy="11" r="5" fill="#E3F2FD" stroke="#1976D2" stroke-width="1.2" />
+      <circle cx="12" cy="11" r="2.5" fill="#1976D2" />
+    </g>
+    <text x="120" y="271" class="img-text">Damage Detail</text>
+    <text x="120" y="287" class="img-sub">(Aspect Ratio Preserved)</text>
+  </g>
+
+  <!-- Right Side: Key Features & Rules -->
+  <g transform="translate(360, 45)">
+    <text x="0" y="20" class="info-title">AUTOMATIC DIN A4 PHOTO PACKING ALGORITHM</text>
+    
+    <text x="0" y="60" class="info-body">• Exact DIN A4 Portrait dimensions (595 × 842 pt, 36 pt margins)</text>
+    <text x="0" y="90" class="info-body">• Packs up to 2 inspection photos per A4 page vertically</text>
+    <text x="0" y="120" class="info-body">• Strict aspect-ratio preservation — zero distortion or stretching</text>
+    <text x="0" y="150" class="info-body">• Automatic horizontal centering inside each image slot</text>
+    <text x="0" y="180" class="info-body">• Metadata headers included on each photo (Order ID + Caption)</text>
+    <text x="0" y="210" class="info-body">• Multi-page handling: Images 3, 4, etc. automatically flow to Page 2+</text>
+
+    <!-- Supported Formats Box with 100% Vector Checkmarks -->
+    <rect x="0" y="245" width="455" height="70" fill="#F4F6F9" stroke="#CFD8DC" stroke-width="1" rx="6" />
+    <text x="15" y="268" font-family="'Segoe UI', Calibri, sans-serif" font-size="12px" font-weight="bold" fill="#003366">Supported Graphic Formats:</text>
+    
+    <g transform="translate(15, 278)">
+      <!-- Badge 1: JPEG / JPG -->
+      <circle cx="7" cy="12" r="6" fill="#2E7D32" />
+      <polyline points="4.5,12 6.5,14 9.5,9.5" stroke="#FFFFFF" stroke-width="1.5" fill="none" stroke-linecap="round" stroke-linejoin="round" />
+      <text x="18" y="16" class="fmt-text">JPEG / JPG</text>
+      
+      <!-- Badge 2: PNG -->
+      <g transform="translate(100, 0)">
+        <circle cx="7" cy="12" r="6" fill="#2E7D32" />
+        <polyline points="4.5,12 6.5,14 9.5,9.5" stroke="#FFFFFF" stroke-width="1.5" fill="none" stroke-linecap="round" stroke-linejoin="round" />
+        <text x="18" y="16" class="fmt-text">PNG (Transparency)</text>
+      </g>
+      
+      <!-- Badge 3: BMP -->
+      <g transform="translate(250, 0)">
+        <circle cx="7" cy="12" r="6" fill="#2E7D32" />
+        <polyline points="4.5,12 6.5,14 9.5,9.5" stroke="#FFFFFF" stroke-width="1.5" fill="none" stroke-linecap="round" stroke-linejoin="round" />
+        <text x="18" y="16" class="fmt-text">BMP</text>
+      </g>
+      
+      <!-- Badge 4: TIFF / TIF -->
+      <g transform="translate(310, 0)">
+        <circle cx="7" cy="12" r="6" fill="#2E7D32" />
+        <polyline points="4.5,12 6.5,14 9.5,9.5" stroke="#FFFFFF" stroke-width="1.5" fill="none" stroke-linecap="round" stroke-linejoin="round" />
+        <text x="18" y="16" class="fmt-text">TIFF / TIF</text>
+      </g>
+    </g>
+  </g>
+</svg>

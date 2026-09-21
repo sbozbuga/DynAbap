@@ -1,0 +1,109 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 840 460" width="840" height="460">
+  <defs>
+    <style>
+      .hdr-box { fill: #003366; rx: 6; }
+      .hdr-title { fill: #ffffff; font-family: 'Segoe UI', Calibri, sans-serif; font-size: 15px; font-weight: bold; text-anchor: middle; }
+      
+      .step-row-even { fill: #F8F9FA; stroke: #E1E4E8; stroke-width: 1; rx: 4; }
+      .step-row-odd { fill: #FFFFFF; stroke: #E1E4E8; stroke-width: 1; rx: 4; }
+      .step-row-rec { fill: #EDF7ED; stroke: #2E7D32; stroke-width: 1.5; rx: 4; }
+      
+      .step-badge { fill: #1F4E79; rx: 3; }
+      .step-badge-text { fill: #ffffff; font-family: 'Segoe UI', Calibri, sans-serif; font-size: 11px; font-weight: bold; text-anchor: middle; }
+      
+      .cell-text { fill: #262626; font-family: 'Segoe UI', Calibri, sans-serif; font-size: 12.5px; }
+      .cell-blank { fill: #888888; font-family: 'Segoe UI', Calibri, sans-serif; font-size: 12px; font-style: italic; }
+      .cell-desc { fill: #003366; font-family: 'Segoe UI', Calibri, sans-serif; font-size: 12px; font-weight: 600; }
+      
+      .col-header { fill: #1F4E79; font-family: 'Segoe UI', Calibri, sans-serif; font-size: 12px; font-weight: bold; }
+      .note-text { fill: #555555; font-family: 'Segoe UI', Calibri, sans-serif; font-size: 11.5px; }
+    </style>
+  </defs>
+
+  <!-- Title -->
+  <rect x="180" y="15" width="480" height="42" class="hdr-box" />
+  <text x="420" y="41" class="hdr-title">8-STEP FORM ROUTING PRIORITY HIERARCHY (/CTDI/REP_FORMS)</text>
+
+  <!-- Table Header -->
+  <text x="45" y="85" class="col-header">Priority</text>
+  <text x="140" y="85" class="col-header">Contract (VBELN)</text>
+  <text x="310" y="85" class="col-header">Reason (SKZ)</text>
+  <text x="460" y="85" class="col-header">Defect (AKZ)</text>
+  <text x="610" y="85" class="col-header">Match Granularity</text>
+  <line x1="30" y1="95" x2="810" y2="95" stroke="#1F4E79" stroke-width="1.5" />
+
+  <!-- Step 1 -->
+  <rect x="30" y="105" width="780" height="34" class="step-row-odd" />
+  <rect x="42" y="112" width="55" height="20" class="step-badge" />
+  <text x="70" y="126" class="step-badge-text">Step 1</text>
+  <text x="140" y="127" class="cell-text">Specific Contract</text>
+  <text x="310" y="127" class="cell-text">Specific Reason</text>
+  <text x="460" y="127" class="cell-text">Specific Defect</text>
+  <text x="610" y="127" class="cell-desc">Highest Specificity</text>
+
+  <!-- Step 2 -->
+  <rect x="30" y="145" width="780" height="34" class="step-row-even" />
+  <rect x="42" y="152" width="55" height="20" class="step-badge" />
+  <text x="70" y="166" class="step-badge-text">Step 2</text>
+  <text x="140" y="167" class="cell-text">Specific Contract</text>
+  <text x="310" y="167" class="cell-text">Specific Reason</text>
+  <text x="460" y="167" class="cell-blank">(Blank / Any)</text>
+  <text x="610" y="167" class="cell-desc">Contract + Reason</text>
+
+  <!-- Step 3 -->
+  <rect x="30" y="185" width="780" height="34" class="step-row-odd" />
+  <rect x="42" y="192" width="55" height="20" class="step-badge" />
+  <text x="70" y="206" class="step-badge-text">Step 3</text>
+  <text x="140" y="207" class="cell-text">Specific Contract</text>
+  <text x="310" y="207" class="cell-blank">(Blank / Any)</text>
+  <text x="460" y="207" class="cell-text">Specific Defect</text>
+  <text x="610" y="207" class="cell-desc">Contract + Defect</text>
+
+  <!-- Step 4 -->
+  <rect x="30" y="225" width="780" height="34" class="step-row-rec" />
+  <rect x="42" y="232" width="55" height="20" class="step-badge" />
+  <text x="70" y="246" class="step-badge-text">Step 4</text>
+  <text x="140" y="247" class="cell-text">Specific Contract</text>
+  <text x="310" y="247" class="cell-blank">(Blank / Any)</text>
+  <text x="460" y="247" class="cell-blank">(Blank / Any)</text>
+  <text x="610" y="247" class="cell-desc">Contract Default (Fallback)</text>
+
+  <!-- Step 5 -->
+  <rect x="30" y="265" width="780" height="34" class="step-row-even" />
+  <rect x="42" y="272" width="55" height="20" class="step-badge" />
+  <text x="70" y="286" class="step-badge-text">Step 5</text>
+  <text x="140" y="287" class="cell-blank">(Blank / Global)</text>
+  <text x="310" y="287" class="cell-text">Specific Reason</text>
+  <text x="460" y="287" class="cell-text">Specific Defect</text>
+  <text x="610" y="287" class="cell-desc">Global + Reason + Defect</text>
+
+  <!-- Step 6 -->
+  <rect x="30" y="305" width="780" height="34" class="step-row-odd" />
+  <rect x="42" y="312" width="55" height="20" class="step-badge" />
+  <text x="70" y="326" class="step-badge-text">Step 6</text>
+  <text x="140" y="327" class="cell-blank">(Blank / Global)</text>
+  <text x="310" y="327" class="cell-text">Specific Reason</text>
+  <text x="460" y="327" class="cell-blank">(Blank / Any)</text>
+  <text x="610" y="327" class="cell-desc">Global + Reason</text>
+
+  <!-- Step 7 -->
+  <rect x="30" y="345" width="780" height="34" class="step-row-even" />
+  <rect x="42" y="352" width="55" height="20" class="step-badge" />
+  <text x="70" y="366" class="step-badge-text">Step 7</text>
+  <text x="140" y="367" class="cell-blank">(Blank / Global)</text>
+  <text x="310" y="367" class="cell-blank">(Blank / Any)</text>
+  <text x="460" y="367" class="cell-text">Specific Defect</text>
+  <text x="610" y="367" class="cell-desc">Global + Defect</text>
+
+  <!-- Step 8 -->
+  <rect x="30" y="385" width="780" height="34" class="step-row-odd" />
+  <rect x="42" y="392" width="55" height="20" class="step-badge" />
+  <text x="70" y="406" class="step-badge-text">Step 8</text>
+  <text x="140" y="407" class="cell-blank">(Blank / Global)</text>
+  <text x="310" y="407" class="cell-blank">(Blank / Any)</text>
+  <text x="460" y="407" class="cell-blank">(Blank / Any)</text>
+  <text x="610" y="407" class="cell-desc">Global System Fallback</text>
+
+  <!-- Footer note -->
+  <text x="30" y="445" class="note-text">Evaluation stops immediately at the first matching record. Buffered in-memory for fast batch execution.</text>
+</svg>

@@ -1,0 +1,88 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 780 180" width="780" height="180">
+  <defs>
+    <style>
+      .panel-bg { fill: #FFFFFF; stroke: #CBD5E1; stroke-width: 1.5; rx: 8; filter: drop-shadow(0 3px 6px rgba(0,0,0,0.06)); }
+      .panel-hdr { fill: #003366; }
+      .hdr-text { fill: #FFFFFF; font-family: 'Segoe UI', Calibri, sans-serif; font-size: 12.5px; font-weight: bold; }
+      .hdr-badge { fill: #2B579A; rx: 3; }
+      .hdr-badge-txt { fill: #FFFFFF; font-family: 'Segoe UI', Calibri, sans-serif; font-size: 10px; font-weight: bold; }
+      .btn-card { fill: #F8FAFC; stroke: #CBD5E1; stroke-width: 1.2; rx: 6; }
+      .btn-pill { fill: #1F4E79; rx: 4; }
+      .btn-pill-text { fill: #FFFFFF; font-family: 'Segoe UI', Calibri, sans-serif; font-size: 12px; font-weight: bold; }
+      .btn-fcode-pill { fill: #E2E8F0; rx: 3; }
+      .btn-fcode-text { fill: #334155; font-family: 'Segoe UI', Calibri, sans-serif; font-size: 10px; font-weight: bold; }
+      .btn-desc-title { fill: #0F172A; font-family: 'Segoe UI', Calibri, sans-serif; font-size: 11px; font-weight: bold; }
+      .btn-desc-table { fill: #2563EB; font-family: 'Consolas', monospace; font-size: 10px; font-weight: bold; }
+      .btn-desc-sub { fill: #64748B; font-family: 'Segoe UI', Calibri, sans-serif; font-size: 9.5px; }
+      .mass-pill { fill: #0D9488; rx: 4; }
+      .mass-pill-text { fill: #FFFFFF; font-family: 'Segoe UI', Calibri, sans-serif; font-size: 12px; font-weight: bold; }
+    </style>
+  </defs>
+
+  <!-- Container -->
+  <rect x="10" y="8" width="760" height="164" class="panel-bg" />
+
+  <!-- Header Banner -->
+  <path d="M 10 16 Q 10 8 18 8 L 762 8 Q 770 8 770 16 L 770 34 L 10 34 Z" class="panel-hdr" />
+  <text x="24" y="24" class="hdr-text">QUICK-ACCESS CUSTOMIZING &amp; NAVIGATION TOOLBAR</text>
+  <rect x="580" y="14" width="175" height="15" class="hdr-badge" />
+  <text x="667" y="25" text-anchor="middle" class="hdr-badge-txt">Selection Screen Header Buttons</text>
+
+  <!-- Button Card 1: Project -->
+  <rect x="22" y="46" width="165" height="112" class="btn-card" />
+  <rect x="32" y="56" width="90" height="24" class="btn-pill" />
+  <!-- Vector Folder Icon -->
+  <polygon points="42,65 42,73 54,73 54,67 48,67 46,65" fill="#FFFFFF" />
+  <text x="82" y="72" text-anchor="middle" class="btn-pill-text">Project</text>
+  <rect x="127" y="56" width="50" height="24" class="btn-fcode-pill" />
+  <text x="152" y="72" text-anchor="middle" class="btn-fcode-text">FC02</text>
+  <text x="32" y="96" class="btn-desc-title">Project Customizing</text>
+  <text x="32" y="112" class="btn-desc-table">/CTDI/REP_PROJEC</text>
+  <text x="32" y="128" class="btn-desc-sub">Maps contract numbers</text>
+  <text x="32" y="142" class="btn-desc-sub">to high-level project IDs.</text>
+
+  <!-- Button Card 2: Forms -->
+  <rect x="197" y="46" width="165" height="112" class="btn-card" />
+  <rect x="207" y="56" width="90" height="24" class="btn-pill" />
+  <!-- Vector Form Icon -->
+  <rect x="217" y="63" width="10" height="11" rx="1" fill="#FFFFFF" />
+  <line x1="219" y1="66" x2="225" y2="66" stroke="#1F4E79" stroke-width="1" />
+  <line x1="219" y1="69" x2="225" y2="69" stroke="#1F4E79" stroke-width="1" />
+  <text x="257" y="72" text-anchor="middle" class="btn-pill-text">Forms</text>
+  <rect x="302" y="56" width="50" height="24" class="btn-fcode-pill" />
+  <text x="327" y="72" text-anchor="middle" class="btn-fcode-text">FC03</text>
+  <text x="207" y="96" class="btn-desc-title">Form Routing &amp; Drivers</text>
+  <text x="207" y="112" class="btn-desc-table">/CTDI/REP_FORMS</text>
+  <text x="207" y="128" class="btn-desc-sub">Routes Adobe / SmartForms</text>
+  <text x="207" y="142" class="btn-desc-sub">&amp; auto-generates classes.</text>
+
+  <!-- Button Card 3: Results -->
+  <rect x="372" y="46" width="165" height="112" class="btn-card" />
+  <rect x="382" y="56" width="90" height="24" class="btn-pill" />
+  <!-- Vector Chart Icon -->
+  <rect x="391" y="69" width="2.5" height="5" fill="#FFFFFF" />
+  <rect x="395" y="66" width="2.5" height="8" fill="#FFFFFF" />
+  <rect x="399" y="63" width="2.5" height="11" fill="#FFFFFF" />
+  <text x="432" y="72" text-anchor="middle" class="btn-pill-text">Results</text>
+  <rect x="477" y="56" width="50" height="24" class="btn-fcode-pill" />
+  <text x="502" y="72" text-anchor="middle" class="btn-fcode-text">FC04</text>
+  <text x="382" y="96" class="btn-desc-title">Outcome Text Rules</text>
+  <text x="382" y="112" class="btn-desc-table">/CTDI/REP_RESULT</text>
+  <text x="382" y="128" class="btn-desc-sub">11-step rule access for</text>
+  <text x="382" y="142" class="btn-desc-sub">technician outcome texts.</text>
+
+  <!-- Separator -->
+  <line x1="550" y1="52" x2="550" y2="150" stroke="#CBD5E1" stroke-width="2" stroke-dasharray="4 3" />
+
+  <!-- Button Card 4: Mass Printing -->
+  <rect x="562" y="46" width="196" height="112" class="btn-card" stroke="#99F6E4" />
+  <rect x="572" y="56" width="125" height="24" class="mass-pill" />
+  <polygon points="585,61 580,67 583,67 582,73 588,66 585,66" fill="#FFFFFF" />
+  <text x="640" y="72" text-anchor="middle" class="mass-pill-text">Mass Printing</text>
+  <rect x="702" y="56" width="46" height="24" class="btn-fcode-pill" />
+  <text x="725" y="72" text-anchor="middle" class="btn-fcode-text">FC05</text>
+  <text x="572" y="96" class="btn-desc-title">Launch Mass Workplace</text>
+  <text x="572" y="112" class="btn-desc-table">/CTDI/PRINT_REPAIR_MASS</text>
+  <text x="572" y="128" class="btn-desc-sub">Direct one-click transition to</text>
+  <text x="572" y="142" class="btn-desc-sub">ALV batch processing dashboard.</text>
+</svg>
