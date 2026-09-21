@@ -22,6 +22,15 @@ By decoupling form execution logic from hardcoded standard print programs, this 
 
 ---
 
+## Documentation & User Guides
+
+* **[End-User Manual & Operational Guide](docs/USER_MANUAL.md)**: Comprehensive manual for workshop operators, dispatchers, shipping clerks, and key users covering single printing (`/CTDI/PRINT_REPAIR`), ALV mass printing (`/CTDI/PRINT_REPAIR_MASS`), spool bundling modes, PDF export, GOS photo appending, and troubleshooting.
+* **[Architecture Analysis](ARCHITECTURE.md)**: Deep architectural breakdown of design patterns, class hierarchies, and execution pipelines.
+* **[Dynamic Printing Flow](docs/printing_flow.md)**: Runtime pipeline documentation and entry points.
+* **[GOS Image Appending Architecture](docs/gos_image_append.md)**: Technical specifications for inspection photo extraction, A4 scaling, and PDF merging.
+
+---
+
 ## File Structure
 
 All ABAP objects are structured in an **abapGit** compatible format under the `src/` directory:
